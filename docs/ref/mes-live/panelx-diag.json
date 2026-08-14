@@ -1,0 +1,18 @@
+{
+ "sdkLoaded": true,
+ "authedBefore": false,
+ "loginOk": true,
+ "authedAfter": true,
+ "cfg": {
+  "state": "200",
+  "msg": "操作成功",
+  "hasData": true,
+  "panelName": "测试流程面板",
+  "fields": 5
+ },
+ "query": {
+  "state": "200",
+  "total": 18,
+  "list": 5
+ }
+}

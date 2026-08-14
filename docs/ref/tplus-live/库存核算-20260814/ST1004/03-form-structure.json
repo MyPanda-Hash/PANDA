@@ -1,0 +1,7503 @@
+{
+  "bodyHead": "新增\n新增\n引入常用单据\n设置默认功能\n新增\n引入常用单据\n选单\n其他出库单\n设置默认功能\n其他出库单\n智能选单\n保存\n保存\nAlt+S\n保存新增\nAlt+\\\n保存为草稿\n保存为常用单据\n保存打印\nAlt+G\n设置默认功能\n保存\n保存新增\n保存为草稿\n保存为常用单据\n保存打印\n删除\n|\n审核\n|\n转换\n转换成其他出库单\n设置默认功能\n转换成其他出库单\n|\n变更\n|\n工具\n现存量查询\n变更历史\n联查\n其他出库情况\n生单流程联查\n设置\n单据设置\n移动控件位置\n调整控件宽度\n工具栏设置\n智能选单设置\n|\n打印\n直接打印\nAlt+P\n打印\nAlt+;\n预览\nAlt+/\n打印模板设置\nAlt+,\n导出\nAlt+X\n明细标签打印\n打印情况\n设置默认功能\n直接打印\n打印\n预览\n打印模板设置\n导出\n明细标签打印\n打印情况\n更多\n复制\n放弃\nAlt+Z\n草稿\nAlt+B\n导入\n下载导入模板\n附件\n刷新\n消息\n\n\n*单据日期\n*单据编号\n*业务类型\n入库类别\n仓库\n匹配来源单号\n来料客户\n\n\n 定位\n 复制到剪贴板\n 从剪贴板粘贴\n 另存为EXCEL模板\n 批量修改\n 现存量提取\n 存货中心\n更多\nCtrl+V列粘贴\n明细\n汇总\n序号\n*仓库\n\t\n*存货名称\n\t\n规格型号\n\t\n*计量单位\n\t\n*数量\n\t\n智能选单\n\t\n计量单位2\n\t\n数量2\n\t\n单价\n\t\n金额\n\t\n现存量\n\t\n现存量说明\n1\n\n\n2\n\n\n3\n\n\n4\n\n\n5\n\n\n6\n合计\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\n\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\n\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\n\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\n\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\n\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n\t\n\t\n\t\n \n\t\n\t\n\t\n \n\t\n\t\n \n\t\n\t\n\t\n\n\n\n备注\n制单人\n审核人\n审核日期\n审核时间\n打印次数\n创建时间\ntplusdemo128532853\n08141032\ntplusdemo128532853\n08141032\ntplusdemo128532853\n08141032\ntplusdemo128532853\n08141032\ntplusdemo128532853\n08141032\ntplusdemo128532853\n08141032\ntplusdemo128532853\n08141032\ntplusdemo128532853\n08141032\ntplusdemo128532853\n08141032\ntplusdemo128532853\n08141032\ntplusdemo128532853\n08141032\ntplusdemo128532853\n08141032",
+  "ctls": [
+    {
+      "label": "*机构",
+      "required": true,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": "1\t00"
+    },
+    {
+      "label": "*单据日期",
+      "required": true,
+      "left": 24,
+      "top": 71,
+      "type": "INPUT:text",
+      "value": "2026-08-14"
+    },
+    {
+      "label": "*单据编号",
+      "required": true,
+      "left": 244,
+      "top": 71,
+      "type": "INPUT:text",
+      "value": "IC-2026-08-0000-0001"
+    },
+    {
+      "label": "*业务类型",
+      "required": true,
+      "left": 464,
+      "top": 71,
+      "type": "INPUT:hidden",
+      "value": "8\t13"
+    },
+    {
+      "label": "入库类别",
+      "required": false,
+      "left": 24,
+      "top": 99,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "部门",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "经手人",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "验货人",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "验货日期",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "项目",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "出库仓库",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "仓库",
+      "required": false,
+      "left": 244,
+      "top": 99,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "往来单位编码",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "往来单位",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "往来单位简称",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "匹配来源单号",
+      "required": false,
+      "left": 464,
+      "top": 99,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "来源单据",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "外部单据号",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "来源单号",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "数据来源",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "销售订单号",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "来料客户",
+      "required": false,
+      "left": 24,
+      "top": 127,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "不可以修改标记",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "来源单据ID",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "销售订单ID",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "凭证",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "凭证字号",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "备注",
+      "required": false,
+      "left": 24,
+      "top": 461,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "制单人",
+      "required": false,
+      "left": 24,
+      "top": 489,
+      "type": "INPUT:text",
+      "value": "tplusdemo12853"
+    },
+    {
+      "label": "代理人",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": "tplusdemo12853"
+    },
+    {
+      "label": "修改人",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "审核机器人",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:checkbox",
+      "value": "on"
+    },
+    {
+      "label": "审核人",
+      "required": false,
+      "left": 244,
+      "top": 489,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "审核日期",
+      "required": false,
+      "left": 464,
+      "top": 489,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "审核时间",
+      "required": false,
+      "left": 24,
+      "top": 517,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "是否手工修改过单据号",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:checkbox",
+      "value": "on"
+    },
+    {
+      "label": "单据类型",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:text",
+      "value": "其他入库单"
+    },
+    {
+      "label": "出入库方向",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:checkbox",
+      "value": "on"
+    },
+    {
+      "label": "是否自动生成",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:checkbox",
+      "value": "on"
+    },
+    {
+      "label": "打印次数",
+      "required": false,
+      "left": 284,
+      "top": 517,
+      "type": "INPUT:text",
+      "value": "0"
+    },
+    {
+      "label": "创建时间",
+      "required": false,
+      "left": 504,
+      "top": 517,
+      "type": "INPUT:text",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:hidden",
+      "value": ""
+    },
+    {
+      "label": "",
+      "required": false,
+      "left": 0,
+      "top": 0,
+      "type": "INPUT:button",
+      "value": "增加"
+    }
+  ],
+  "footerText": "1\n\n\n2\n\n\n3\n\n\n4\n\n\n5\n\n\n6",
+  "toolbarText": "",
+  "grids": [
+    {
+      "tableIndex": 0,
+      "visibleCols": [
+        "<font>*</font>仓库",
+        "<font>*</font>存货名称",
+        "规格型号",
+        "<font>*</font>计量单位",
+        "<font>*</font>数量",
+        "智能选单",
+        "计量单位2",
+        "数量2",
+        "单价",
+        "金额",
+        "差异金额",
+        "合理损耗数量",
+        "现存量",
+        "现存量说明",
+        "仓库",
+        "存货名称",
+        "规格型号",
+        "计量单位",
+        "数量",
+        "单价",
+        "金额"
+      ],
+      "allCols": [
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "ID",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "BoxBarCodeGuid",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "<font>*</font>仓库",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "箱码",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "箱码个数",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "<font>*</font>存货名称",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "自由项组合",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "规格型号",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "BOM版本号",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "<font>*</font>计量单位",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "<font>*</font>数量",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "智能选单",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "计量单位2",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "数量2",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "批号",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "生产日期",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "失效日期",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "序列号个数",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "序列号",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "货位",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "单价",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "金额",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "差异金额",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "合理损耗数量",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "入库单号",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "现存量",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "现存量说明",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "SnSeqUpdateToken",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "SNGuid",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "原始数量",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "原始数量2",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "EditState",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "Val_Inventory",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "Code",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "货位_Val",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "HideValues",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "ID",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "仓库",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "存货名称",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "规格型号",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "BOM版本号",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "计量单位",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "数量",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "单价",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "单价2",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "金额",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "EditState",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "Val_Inventory",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "Code",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "HideValues",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 2,
+      "visibleCols": [
+        "<font>*</font>仓库",
+        "<font>*</font>存货名称",
+        "规格型号",
+        "<font>*</font>计量单位",
+        "<font>*</font>数量",
+        "智能选单",
+        "计量单位2",
+        "数量2",
+        "单价",
+        "金额",
+        "差异金额",
+        "合理损耗数量",
+        "现存量",
+        "现存量说明",
+        "仓库",
+        "存货名称",
+        "规格型号",
+        "计量单位",
+        "数量",
+        "单价",
+        "金额"
+      ],
+      "allCols": [
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "ID",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "BoxBarCodeGuid",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "<font>*</font>仓库",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "箱码",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "箱码个数",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "<font>*</font>存货名称",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "自由项组合",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "规格型号",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "BOM版本号",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "<font>*</font>计量单位",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "<font>*</font>数量",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "智能选单",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "计量单位2",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "数量2",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "批号",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "生产日期",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "失效日期",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "序列号个数",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "序列号",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "货位",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "单价",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "金额",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "差异金额",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "合理损耗数量",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "入库单号",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "现存量",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "现存量说明",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "SnSeqUpdateToken",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "SNGuid",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "原始数量",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "原始数量2",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "EditState",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "Val_Inventory",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "Code",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "货位_Val",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "HideValues",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "ID",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "仓库",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "存货名称",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "规格型号",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "BOM版本号",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "计量单位",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "数量",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "单价",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "单价2",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "金额",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "EditState",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "Val_Inventory",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "Code",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "HideValues",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 3,
+      "visibleCols": [
+        "<font>*</font>仓库",
+        "<font>*</font>存货名称",
+        "规格型号",
+        "<font>*</font>计量单位",
+        "<font>*</font>数量",
+        "智能选单",
+        "计量单位2",
+        "数量2",
+        "单价",
+        "金额",
+        "差异金额",
+        "合理损耗数量",
+        "现存量",
+        "现存量说明"
+      ],
+      "allCols": [
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "ID",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "BoxBarCodeGuid",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "<font>*</font>仓库",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "箱码",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "箱码个数",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "<font>*</font>存货名称",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "自由项组合",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "规格型号",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "BOM版本号",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "<font>*</font>计量单位",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "<font>*</font>数量",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "智能选单",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "计量单位2",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "数量2",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "批号",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "生产日期",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "失效日期",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "序列号个数",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "序列号",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "货位",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "单价",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "金额",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "差异金额",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "合理损耗数量",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "入库单号",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "现存量",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "现存量说明",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "SnSeqUpdateToken",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "SNGuid",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "原始数量",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "原始数量2",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "EditState",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "Val_Inventory",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "Code",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "货位_Val",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "HideValues",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 6,
+      "visibleCols": [
+        "<font>*</font>仓库",
+        "<font>*</font>存货名称",
+        "规格型号",
+        "<font>*</font>计量单位",
+        "<font>*</font>数量",
+        "智能选单",
+        "计量单位2",
+        "数量2",
+        "单价",
+        "金额",
+        "差异金额",
+        "合理损耗数量",
+        "现存量",
+        "现存量说明"
+      ],
+      "allCols": [
+        {
+          "t": "ID",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "BoxBarCodeGuid",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "<font>*</font>仓库",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "箱码",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "箱码个数",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "<font>*</font>存货名称",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "自由项组合",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "规格型号",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "BOM版本号",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "<font>*</font>计量单位",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "<font>*</font>数量",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "智能选单",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "计量单位2",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "数量2",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "批号",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "生产日期",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "失效日期",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "序列号个数",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "序列号",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "货位",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "单价",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "金额",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "差异金额",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "合理损耗数量",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "入库单号",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "现存量",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "现存量说明",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "SnSeqUpdateToken",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "SNGuid",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "原始数量",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "原始数量2",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "EditState",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "Val_Inventory",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "Code",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "货位_Val",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "HideValues",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 10,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 11,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 12,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 13,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodes",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "BoxBarCodeCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RowSelectVoucher",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity2",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Batch",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ProductionDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExpiryDate",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNCount",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SerialNumbers",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceAmount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "DifferenceQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ReceiveVoucherCode",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ExistingQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SnSeqUpdateToken",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "SNGuid",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ArrivalQuantity2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_InventoryLocation",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 51,
+      "visibleCols": [
+        "仓库",
+        "存货名称",
+        "规格型号",
+        "计量单位",
+        "数量",
+        "单价",
+        "金额"
+      ],
+      "allCols": [
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "ID",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "仓库",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "存货名称",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "规格型号",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "BOM版本号",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "计量单位",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "数量",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "单价",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "单价2",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "金额",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "EditState",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "Val_Inventory",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "Code",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "HideValues",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 67,
+      "visibleCols": [
+        "仓库",
+        "存货名称",
+        "规格型号",
+        "计量单位",
+        "数量",
+        "单价",
+        "金额"
+      ],
+      "allCols": [
+        {
+          "t": "ID",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "仓库",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "存货名称",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "规格型号",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "BOM版本号",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "计量单位",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "数量",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "单价",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "单价2",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "金额",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "EditState",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "Val_Inventory",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "Code",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "HideValues",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 71,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 72,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 73,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 74,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Price2",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 77,
+      "visibleCols": [
+        "货位编码",
+        "<font>*</font>计量单位",
+        "数量",
+        "结存数量说明"
+      ],
+      "allCols": [
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "ID",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "货位编码",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "<font>*</font>计量单位",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "数量",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "结存数量说明",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "EditState",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "Code",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "HideValues",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 78,
+      "visibleCols": [
+        "货位编码",
+        "<font>*</font>计量单位",
+        "数量",
+        "结存数量说明"
+      ],
+      "allCols": [
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "ID",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "货位编码",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "<font>*</font>计量单位",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "数量",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "结存数量说明",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "EditState",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "Code",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "HideValues",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 81,
+      "visibleCols": [
+        "货位编码",
+        "<font>*</font>计量单位",
+        "数量",
+        "结存数量说明"
+      ],
+      "allCols": [
+        {
+          "t": "ID",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "货位编码",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "<font>*</font>计量单位",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "数量",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "结存数量说明",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "EditState",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "Code",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "HideValues",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 85,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 86,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 87,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 88,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "InvLocation_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Unit",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Quantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ExistingCompositionQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 99,
+      "visibleCols": [
+        "IsHasSameFuncAuth",
+        "Shorthand",
+        "Department_Name",
+        "IsSalesman",
+        "CreditDate",
+        "CreditQuantity",
+        "PositionTitle_Name",
+        "Memo",
+        "SettlementPartner_Name",
+        "Specification",
+        "IsMadeSelf",
+        "InventoryPriceDTOs_RetailPriceNew",
+        "InvoiceSpecification",
+        "InvoiceUnit_Name",
+        "AutoAddFigureNo",
+        "SKUCode",
+        "SKUName",
+        "SKUInvSCost",
+        "SKULatestCost",
+        "SKUAvagCost",
+        "Inventory_Code",
+        "Inventory_Specification",
+        "Inventory_Name",
+        "Version",
+        "Manufactureplant_Name",
+        "Warehouse_Name"
+      ],
+      "allCols": [
+        {
+          "t": "编码",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "名称",
+          "a": "Name",
+          "hidden": true
+        },
+        {
+          "t": "IsHasSameFuncAuth",
+          "a": "IsHasSameFuncAuth",
+          "hidden": false
+        },
+        {
+          "t": "Shorthand",
+          "a": "Shorthand",
+          "hidden": false
+        },
+        {
+          "t": "Department_Name",
+          "a": "Department_Name",
+          "hidden": false
+        },
+        {
+          "t": "IsSalesman",
+          "a": "IsSalesman",
+          "hidden": false
+        },
+        {
+          "t": "CreditDate",
+          "a": "CreditDate",
+          "hidden": false
+        },
+        {
+          "t": "CreditQuantity",
+          "a": "CreditQuantity",
+          "hidden": false
+        },
+        {
+          "t": "PositionTitle_Name",
+          "a": "PositionTitle_Name",
+          "hidden": false
+        },
+        {
+          "t": "Memo",
+          "a": "Memo",
+          "hidden": false
+        },
+        {
+          "t": "SettlementPartner_Name",
+          "a": "SettlementPartner_Name",
+          "hidden": false
+        },
+        {
+          "t": "Specification",
+          "a": "Specification",
+          "hidden": false
+        },
+        {
+          "t": "IsMadeSelf",
+          "a": "IsMadeSelf",
+          "hidden": false
+        },
+        {
+          "t": "InventoryPriceDTOs_RetailPriceNew",
+          "a": "InventoryPriceDTOs_RetailPriceNew",
+          "hidden": false
+        },
+        {
+          "t": "InvoiceSpecification",
+          "a": "InvoiceSpecification",
+          "hidden": false
+        },
+        {
+          "t": "InvoiceUnit_Name",
+          "a": "InvoiceUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "AutoAddFigureNo",
+          "a": "AutoAddFigureNo",
+          "hidden": false
+        },
+        {
+          "t": "SKUCode",
+          "a": "SKUCode",
+          "hidden": false
+        },
+        {
+          "t": "SKUName",
+          "a": "SKUName",
+          "hidden": false
+        },
+        {
+          "t": "SKUInvSCost",
+          "a": "SKUInvSCost",
+          "hidden": false
+        },
+        {
+          "t": "SKULatestCost",
+          "a": "SKULatestCost",
+          "hidden": false
+        },
+        {
+          "t": "SKUAvagCost",
+          "a": "SKUAvagCost",
+          "hidden": false
+        },
+        {
+          "t": "Inventory_Code",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "Inventory_Specification",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "Inventory_Name",
+          "a": "Inventory_Name",
+          "hidden": false
+        },
+        {
+          "t": "Version",
+          "a": "Version",
+          "hidden": false
+        },
+        {
+          "t": "Manufactureplant_Name",
+          "a": "Manufactureplant_Name",
+          "hidden": false
+        },
+        {
+          "t": "Warehouse_Name",
+          "a": "Warehouse_Name",
+          "hidden": false
+        },
+        {
+          "t": "详细",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Name",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "IsHasSameFuncAuth",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Shorthand",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Department_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsSalesman",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "CreditDate",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "CreditQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "PositionTitle_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Memo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SettlementPartner_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsMadeSelf",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InventoryPriceDTOs_RetailPriceNew",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceSpecification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "AutoAddFigureNo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUCode",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUInvSCost",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKULatestCost",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUAvagCost",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Version",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Manufactureplant_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Warehouse_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Name",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "IsHasSameFuncAuth",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Shorthand",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Department_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsSalesman",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "CreditDate",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "CreditQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "PositionTitle_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Memo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SettlementPartner_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsMadeSelf",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InventoryPriceDTOs_RetailPriceNew",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceSpecification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "AutoAddFigureNo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUCode",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUInvSCost",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKULatestCost",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUAvagCost",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Version",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Manufactureplant_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Warehouse_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 128,
+      "visibleCols": [
+        "IsHasSameFuncAuth",
+        "Shorthand",
+        "Department_Name",
+        "IsSalesman",
+        "CreditDate",
+        "CreditQuantity",
+        "PositionTitle_Name",
+        "Memo",
+        "SettlementPartner_Name",
+        "Specification",
+        "IsMadeSelf",
+        "InventoryPriceDTOs_RetailPriceNew",
+        "InvoiceSpecification",
+        "InvoiceUnit_Name",
+        "AutoAddFigureNo",
+        "SKUCode",
+        "SKUName",
+        "SKUInvSCost",
+        "SKULatestCost",
+        "SKUAvagCost",
+        "Inventory_Code",
+        "Inventory_Specification",
+        "Inventory_Name",
+        "Version",
+        "Manufactureplant_Name",
+        "Warehouse_Name"
+      ],
+      "allCols": [
+        {
+          "t": "编码",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "名称",
+          "a": "Name",
+          "hidden": true
+        },
+        {
+          "t": "IsHasSameFuncAuth",
+          "a": "IsHasSameFuncAuth",
+          "hidden": false
+        },
+        {
+          "t": "Shorthand",
+          "a": "Shorthand",
+          "hidden": false
+        },
+        {
+          "t": "Department_Name",
+          "a": "Department_Name",
+          "hidden": false
+        },
+        {
+          "t": "IsSalesman",
+          "a": "IsSalesman",
+          "hidden": false
+        },
+        {
+          "t": "CreditDate",
+          "a": "CreditDate",
+          "hidden": false
+        },
+        {
+          "t": "CreditQuantity",
+          "a": "CreditQuantity",
+          "hidden": false
+        },
+        {
+          "t": "PositionTitle_Name",
+          "a": "PositionTitle_Name",
+          "hidden": false
+        },
+        {
+          "t": "Memo",
+          "a": "Memo",
+          "hidden": false
+        },
+        {
+          "t": "SettlementPartner_Name",
+          "a": "SettlementPartner_Name",
+          "hidden": false
+        },
+        {
+          "t": "Specification",
+          "a": "Specification",
+          "hidden": false
+        },
+        {
+          "t": "IsMadeSelf",
+          "a": "IsMadeSelf",
+          "hidden": false
+        },
+        {
+          "t": "InventoryPriceDTOs_RetailPriceNew",
+          "a": "InventoryPriceDTOs_RetailPriceNew",
+          "hidden": false
+        },
+        {
+          "t": "InvoiceSpecification",
+          "a": "InvoiceSpecification",
+          "hidden": false
+        },
+        {
+          "t": "InvoiceUnit_Name",
+          "a": "InvoiceUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "AutoAddFigureNo",
+          "a": "AutoAddFigureNo",
+          "hidden": false
+        },
+        {
+          "t": "SKUCode",
+          "a": "SKUCode",
+          "hidden": false
+        },
+        {
+          "t": "SKUName",
+          "a": "SKUName",
+          "hidden": false
+        },
+        {
+          "t": "SKUInvSCost",
+          "a": "SKUInvSCost",
+          "hidden": false
+        },
+        {
+          "t": "SKULatestCost",
+          "a": "SKULatestCost",
+          "hidden": false
+        },
+        {
+          "t": "SKUAvagCost",
+          "a": "SKUAvagCost",
+          "hidden": false
+        },
+        {
+          "t": "Inventory_Code",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "Inventory_Specification",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "Inventory_Name",
+          "a": "Inventory_Name",
+          "hidden": false
+        },
+        {
+          "t": "Version",
+          "a": "Version",
+          "hidden": false
+        },
+        {
+          "t": "Manufactureplant_Name",
+          "a": "Manufactureplant_Name",
+          "hidden": false
+        },
+        {
+          "t": "Warehouse_Name",
+          "a": "Warehouse_Name",
+          "hidden": false
+        },
+        {
+          "t": "详细",
+          "a": "ID",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 129,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Name",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "IsHasSameFuncAuth",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Shorthand",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Department_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsSalesman",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "CreditDate",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "CreditQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "PositionTitle_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Memo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SettlementPartner_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsMadeSelf",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InventoryPriceDTOs_RetailPriceNew",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceSpecification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "AutoAddFigureNo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUCode",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUInvSCost",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKULatestCost",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUAvagCost",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Version",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Manufactureplant_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Warehouse_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 130,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Name",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "IsHasSameFuncAuth",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Shorthand",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Department_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsSalesman",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "CreditDate",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "CreditQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "PositionTitle_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Memo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SettlementPartner_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsMadeSelf",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InventoryPriceDTOs_RetailPriceNew",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceSpecification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "AutoAddFigureNo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUCode",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUName",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUInvSCost",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKULatestCost",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "SKUAvagCost",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Version",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Manufactureplant_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Warehouse_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        }
+      ]
+    }
+  ],
+  "tabs": [
+    {
+      "id": "tab_RDRecordDetails",
+      "text": "明细"
+    },
+    {
+      "id": "tab_RDRecordDetails_Sum",
+      "text": "汇总"
+    }
+  ],
+  "multidetailsudi": ""
+}

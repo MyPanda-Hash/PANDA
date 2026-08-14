@@ -1,0 +1,169 @@
+
+    
+
+window.RootPath = '/tplus/';
+function LoadVoucherHtml(url) {var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP'); xhr.open('GET', url, false);    xhr.send();    document.write(xhr.responseText);};console.log('载入完毕单据模板，时间戳：' + Date.now());  function LoadVoucherHtml2(url) {var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP'); xhr.open('GET', url, false);    xhr.send();    document.write(xhr.responseText);};
+var __enableCompression_=false;
+var logindate='2026-08-14';
+var __DefaultValue = {"[%SystemTime%]":"2026-08-14 10:41:49","[%SystemDate%]":"2026-08-14","[%LoginDate%]":"2026-08-14","[%OperationPeriod%]":"2026.08","[%Operator%]":"10000012853","[%Clerk%]":"","InventoryDTO":"VoucherName_RefName_BusiType-Code","InvLocationDTO":"VoucherName_RefName_BusiType-Code"};
+
+
+
+    
+        
+        
+            
+            
+            
+            
+            新增新增引入常用单据设置默认功能新增引入常用单据修改保存保存Alt+S保存新增Alt+\保存为草稿保存为常用单据保存打印Alt+G设置默认功能保存保存新增保存为草稿保存为常用单据保存打印删除|审核弃审弃审审批情况|转换转换成其他入库单设置默认功能转换成其他入库单|变更|工具现存量查询变更历史联查其他入库情况联查设备投放单生单流程联查设置单据设置移动控件位置调整控件宽度工具栏设置|打印直接打印Alt+P打印Alt+;预览Alt+/打印模板设置Alt+,导出Alt+X明细标签打印打印情况设置默认功能直接打印打印预览打印模板设置导出明细标签打印打印情况更多复制放弃Alt+Z草稿Alt+B导入下载导入模板附件刷新消息
+                
+                
+LoadVoucherHtml('/tplus/UserFiles/OtherDispatchVoucherA9E27270638A879C2AB2EEE26E4B8745.htm');
+	
+未审已入账
+	*机构
+		
+	
+*单据日期
+		
+	
+*单据编号
+*业务类型
+		
+	
+出库类别
+		
+	
+部门
+		
+	
+入库部门
+		
+	
+经手人
+		
+	
+验货人
+		
+	
+验货日期
+		
+	
+项目
+		
+	
+入库仓库
+		
+	
+仓库
+		
+	
+往来单位编码
+		
+	
+往来单位
+		
+	
+往来单位简称
+		
+	
+来源单据
+		
+	
+外部单据号
+来源单号
+数据来源
+销售订单号
+		
+	
+来料客户
+		
+	
+销售订单ID
+来源单据ID
+不可以修改标志
+自动生入库单凭证
+凭证字号
+
+
+
+ 定位  复制到剪贴板  从剪贴板粘贴  另存为EXCEL模板  批量修改  销售订单查询  现存量提取 
+
+
+  
+    
+      
+        更多
+      
+    
+    
+      
+        
+ 现存量参照
+
+
+ 存货中心
+
+
+ 放大/缩小
+
+
+ 设置
+
+      
+    
+  
+
+
+function toggleMoreDropdown(btn) {
+  var dropdown = btn.parentElement.querySelector('.tb-group');
+  dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+function showMoreDropdown(btn) {
+  var dropdown = btn.parentElement.querySelector('.tb-group');
+  dropdown.style.display = 'block';
+}
+function hideMoreDropdown(btn) {
+  setTimeout(function() {
+    var dropdown = btn.parentElement.querySelector('.tb-group');
+    if (!dropdown.matches(':hover') && !btn.matches(':hover')) {
+      dropdown.style.display = 'none';
+    }
+  }, 100);
+}
+
+按 Ctrl+C 键复制关闭按 Ctrl+V 键粘贴优化粘贴速度覆写已有数据行确定 
+
+
+ 定位  放大/缩小 
+
+
+  
+    
+      
+        更多
+      
+    
+    
+      
+        
+ 设置
+
+      
+    
+  
+
+
+function toggleMoreDropdown(btn) {
+  var dropdown = btn.parentElement.querySelector('.tb-group');
+  dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+function showMoreDropdown(btn) {
+  var dropdown = btn.parentElement.querySelector('.tb-group');
+  dropdown.style.display = 'block';
+}
+function hideMoreDropdown(btn) {
+  setTimeout(function() {
+    var dropdown = btn.parentElement.querySelector('.tb-group');
+    if (!dropdown.matches(':hover') && !btn.matches(':ho

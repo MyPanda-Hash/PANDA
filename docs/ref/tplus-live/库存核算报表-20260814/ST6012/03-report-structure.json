@@ -1,0 +1,234 @@
+{
+  "bodyHead": "查 询\n打印\n导出\n发送邮件\n刷新\n退出\n材料出库单统计表\n单据日期:\n2026.08.01 - 2026.08.31\n仓库:\n生产车间:\n序号\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n合计\n \t\n仓库编码\n\t\n仓库\n\t\n材料编码\n\t\n材料名称\n\t\n材料规格\n\t\n主单位\n\t\n计量单位(辅单位)\n\t\n数量(主单位)\n\t\n单价(主单位)\n\t\n金额\n\t\n数量(辅单位)\n\t\n单价(辅单位)\n\t\n出库调整\n1\ttrk001\t原料仓\t\t\t\t\t\t40.00\t\t220.00\t\t\t\n2\t\t\tM10\t油封1\t30mm\t个\t个\t10.00\t2.00\t20.00\t\t\t\n3\t\t\tM12221\t储分\t\t支\t支\t20.00\t5.00\t100.00\t\t\t\n4\t\t\tM12222\t连杆\t\t支\t支\t10.00\t10.00\t100.00\t\t\t\n5\t\t\t\t\t\t\t\t\t\t\t\t\t\n6\t\t\t\t\t\t\t\t\t\t\t\t\t\n7\t\t\t\t\t\t\t\t\t\t\t\t\t\n8\t\t\t\t\t\t\t\t\t\t\t\t\t\n9\t\t\t\t\t\t\t\t\t\t\t\t\t\n10\t\t\t\t\t\t\t\t\t\t\t\t\t\n11\t\t\t\t\t\t\t\t\t\t\t\t\t\n12\t\t\t\t\t\t\t\t\t\t\t\t\t\n13\t\t\t\t\t\t\t\t\t\t\t\t\t\n14\t\t\t\t\t\t\t\t\t\t\t\t\t\n合计\t\t\t\t\t\t\t\t40.00\t\t220.00\t\t\t\n合计\n共 4 条\n1\n200 条/页\n跳至页\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\n查询\n \n公共方案\n系统方案\n材料出库单统计表\n车间领用成本分析\n个人方案\n系统方案(默认)\n查询条件分组设置\n单据日期：\t\n-\n本月\n业务类型：\t\n出库类别：\t\n领用人：\t\n材料：\t\n-\n单据状态：\t\n单据编号：\t\n-\n仓库：\t\n生产车间：\t\n材料分类：\t\n材料名称：\t\n辅单位取值：\t\n添加过滤条件\n不显示查询条件，直接进入报表\n查 询取 消\nsentinel",
+  "grids": [
+    {
+      "tableIndex": 4,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "tableIndex": 5,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "tableIndex": 6,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        }
+      ]
+    }
+  ],
+  "tabs": []
+}

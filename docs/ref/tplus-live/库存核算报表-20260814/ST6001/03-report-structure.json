@@ -1,0 +1,294 @@
+{
+  "bodyHead": "查 询\n打印\n导出\n发送邮件\n刷新\n退出\n采购入库单统计表\n单据日期:\n2026.08.01 - 2026.08.31\n仓库:\n供应商:\n序号\n1\n2\n3\n4\n5\n6\n7\n合计\n \t\n仓库编码\n\t\n仓库\n\t\n供应商编码\n\t\n供应商\n\t\n存货编码\n\t\n存货\n\t\n规格型号\n\t\n主单位\n\t\n辅单位\n\t\n实收数量(主单位)\n\t\n单价(主单位)\n\t\n金额\n\t\n单价(辅单位)\n\t\n入库调整\n\t\n费用调整\n\t\n总成本\n\t\n费用金额\n1\t1\t商品仓\t\t\t\t\t\t\t\t3565.00\t\t3565.00\t\t\t\t3565.00\t\n2\t\t\t0000004\t供应商02\t\t\t\t\t\t3565.00\t\t3565.00\t\t\t\t3565.00\t\n3\t\t\t\t\t04001\t卷筒\t\t件\t件\t3565.00\t1.00\t3565.00\t\t\t\t3565.00\t\n4\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n5\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n6\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n7\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n合计\t\t\t\t\t\t\t\t\t\t3565.00\t\t3565.00\t\t\t\t3565.00\t\n合计\n共 3 条\n1\n200 条/页\n跳至页\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046",
+  "grids": [
+    {
+      "tableIndex": 4,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "tableIndex": 5,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "tableIndex": 6,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        }
+      ]
+    }
+  ],
+  "tabs": []
+}

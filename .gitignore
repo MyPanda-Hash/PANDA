@@ -1,0 +1,21 @@
+# === Node / 前端 ===
+node_modules/
+dist/
+*.local
+.env.local
+.env.*.local
+
+# === Java / Maven ===
+target/
+*.class
+*.log
+
+# === IDE ===
+.idea/
+.vscode/
+*.iml
+
+# === 系统 ===
+Thumbs.db
+Desktop.ini
+.DS_Store

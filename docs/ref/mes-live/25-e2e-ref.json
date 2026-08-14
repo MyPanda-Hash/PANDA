@@ -1,0 +1,24 @@
+{
+  "dialogTitle": "新增销售订单",
+  "dialogTabs": [
+    "明细*"
+  ],
+  "refCellText": [
+    "选择存货名称"
+  ],
+  "refDialogTitle": "存货 · 参照选择",
+  "refRows": 10,
+  "refRowSample": [
+    "CP001\n \n铝棒 Φ80\n \nΦ80×3000\n \n轻铝\n \n件\n \n10.2\n \nfalse",
+    "CP002\n \n铝板 6061\n \n1500×3000×2\n \n轻铝\n \n件\n \n8.6\n \nfalse",
+    "CP003\n \n铝型材-散热片\n \nXD-6063-T5\n \n轻铝\n \n件\n \n18.4\n \nfalse"
+  ],
+  "selectedTip": "确定导入（3 行）",
+  "detailRowsAfter": 3,
+  "detailContent": [
+    "1\n \n \n铝棒 Φ80、铝板 6061、铝型材-散热片\n \nCP001\n \n \n \n件",
+    "2\n \n \n铝板 6061\n \nCP002\n \n \n \n件",
+    "3\n \n \n铝型材-散热片\n \nCP003\n \n \n \n件"
+  ],
+  "firstRowCalc": "1\n \n \n铝棒 Φ80、铝板 6061、铝型材-散热片\n \nCP001\n \n \n \n件"
+}

@@ -1,0 +1,63 @@
+[
+ {
+  "step": "①选中草稿行",
+  "submitMainDisabled": false,
+  "items": {
+   "提交审批": false,
+   "审批通过": true,
+   "驳回审批": true
+  },
+  "stamp": {
+   "text": "",
+   "approvedRows": 3
+  }
+ },
+ {
+  "step": "②提交审批后",
+  "submitClicked": true,
+  "items": {
+   "提交审批": true,
+   "审批通过": false,
+   "驳回审批": false
+  },
+  "stamp": {
+   "text": "",
+   "approvedRows": 3
+  }
+ },
+ {
+  "step": "③审批通过后",
+  "passClicked": true,
+  "items": {
+   "提交审批": true,
+   "审批通过": true,
+   "驳回审批": true
+  },
+  "stamp": {
+   "text": "已审批",
+   "approvedRows": 5
+  }
+ },
+ {
+  "step": "④弃审→再提交",
+  "unaudit": true,
+  "items": {
+   "提交审批": true,
+   "审批通过": false,
+   "驳回审批": false
+  }
+ },
+ {
+  "step": "⑤驳回后",
+  "rejectClicked": true,
+  "items": {
+   "提交审批": false,
+   "审批通过": true,
+   "驳回审批": true
+  },
+  "stamp": {
+   "text": "",
+   "approvedRows": 3
+  }
+ }
+]

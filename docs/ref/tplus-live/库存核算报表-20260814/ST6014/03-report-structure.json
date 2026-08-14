@@ -1,0 +1,168 @@
+{
+  "bodyHead": "查 询\n打印\n导出\n发送邮件\n刷新\n退出\n其他出库单统计表\n单据日期:\n2026.08.01 - 2026.08.31\n仓库:\n序号\n1\n2\n3\n4\n5\n6\n7\n8\n \t\n仓库编码\n\t\n仓库\n\t\n存货编码\n\t\n存货\n\t\n规格型号\n\t\n主单位\n\t\n数量(主单位)\n\t\n单价(主单位)\n\t\n数量(辅单位)\n\t\n单价(辅单位)\n\t\n金额\n\t\n出库调整\n\t\n累计调拨入库量(主单位)\n\t\n合理损耗数量(主单位)\n1\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n2\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n3\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n4\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n5\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n6\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n7\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n8\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n暂无数据\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046",
+  "grids": [
+    {
+      "tableIndex": 3,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "tableIndex": 4,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "",
+          "hidden": false
+        }
+      ]
+    }
+  ],
+  "tabs": []
+}

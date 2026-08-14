@@ -1,0 +1,5086 @@
+{
+ "bodyText": [
+  "新增",
+  "确认变更",
+  "退出",
+  "选单",
+  "选生产加工单",
+  "设置默认功能",
+  "选生产加工单",
+  "智能选单",
+  "修改",
+  "保存",
+  "保存",
+  "Alt+S",
+  "保存新增",
+  "Alt+\\",
+  "保存为草稿",
+  "保存打印",
+  "Alt+G",
+  "设置默认功能",
+  "保存",
+  "保存新增",
+  "保存为草稿",
+  "保存打印",
+  "删除",
+  "|",
+  "弃审",
+  "弃审",
+  "审核",
+  "|",
+  "审批情况",
+  "生单",
+  "生成产成品入库单",
+  "生成产成品入库单（废品）",
+  "生成补投生产加工单",
+  "生成返工生产加工单",
+  "设置默认功能",
+  "生成产成品入库单",
+  "生成产成品入库单（废品）",
+  "生成补投生产加工单",
+  "生成返工生产加工单",
+  "|",
+  "变更",
+  "工具",
+  "变更历史",
+  "|",
+  "联查",
+  "生产加工情况",
+  "材料出库情况",
+  "产成品入库情况",
+  "生单流程联查",
+  "设置",
+  "单据设置",
+  "移动控件位置",
+  "调整控件宽度",
+  "工具栏设置",
+  "|",
+  "打印",
+  "直接打印",
+  "Alt+P",
+  "打印",
+  "Alt+;",
+  "预览",
+  "Alt+/",
+  "打印模板设置",
+  "Alt+,",
+  "明细标签打印",
+  "导出",
+  "Alt+X",
+  "设置默认功能",
+  "直接打印",
+  "打印",
+  "预览",
+  "打印模板设置",
+  "明细标签打印",
+  "导出",
+  "更多",
+  "工序条码录入",
+  "Alt+R",
+  "放弃",
+  "Alt+Z",
+  "草稿",
+  "附件",
+  "刷新",
+  "消息",
+  "*单据日期",
+  "*单据编号",
+  "*业务类型",
+  "部门",
+  "经手人",
+  "加工单号",
+  "末工序按合格数量自动入库",
+  "报废自动入库",
+  "保持汇报数量不变",
+  "返修汇报",
+  "返修模式",
+  "生单模式",
+  "测试程序",
+  "匹配来源单号",
+  "定位",
+  "复制到剪贴板",
+  "另存为EXCEL模板",
+  "批量修改",
+  "班组成员/多工人",
+  "销售订单查询",
+  "放大/缩小",
+  "更多",
+  "明细",
+  "汇总",
+  "序号",
+  "*加工单号",
+  "*产品编码",
+  "*产品名称",
+  "规格型号",
+  "计划时间",
+  "完成时间",
+  "工艺类型",
+  "工艺序号",
+  "加工顺序",
+  "工艺路线",
+  "*工序编码",
+  "*工序名称"
+ ],
+ "cols": [
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": "ID",
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": "<font>*</font>加工单号",
+   "a": "ManufactureOrderCode",
+   "flag": null
+  },
+  {
+   "t": "<font>*</font>明细编码",
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": "主产品编码",
+   "a": "MainInventory_Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": "主产品名称",
+   "a": "MainInventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": "<font>*</font>产品编码",
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": "<font>*</font>产品名称",
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": "自由项组合",
+   "a": "SKUName",
+   "flag": "myhidden"
+  },
+  {
+   "t": "规格型号",
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": "SourceVoucherCnyCtlFieldVal",
+   "a": "SourceVoucherCnyCtlFieldVal",
+   "flag": "myhidden"
+  },
+  {
+   "t": "SourceVoucherDetailCnyCtlFieldVal",
+   "a": "SourceVoucherDetailCnyCtlFieldVal",
+   "flag": "myhidden"
+  },
+  {
+   "t": "首件检验状态并发控制字段",
+   "a": "FirstQualityInspectionStateCnyCtlField",
+   "flag": "myhidden"
+  },
+  {
+   "t": "来源单可编辑字段",
+   "a": "SourceVoucherCanModifyFields",
+   "flag": "myhidden"
+  },
+  {
+   "t": "计划时间",
+   "a": "pubuserdefnvc4",
+   "flag": null
+  },
+  {
+   "t": "完成时间",
+   "a": "pubuserdefnvc5",
+   "flag": null
+  },
+  {
+   "t": "BOM版本号",
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": "材料成本分配权重",
+   "a": "MaterialCostAssWeight",
+   "flag": "myhidden"
+  },
+  {
+   "t": "工艺类型",
+   "a": "ProcessMode",
+   "flag": null
+  },
+  {
+   "t": "工艺序号",
+   "a": "ProcessGroupNumber",
+   "flag": null
+  },
+  {
+   "t": "加工顺序",
+   "a": "SequenceNumber",
+   "flag": null
+  },
+  {
+   "t": "工艺路线",
+   "a": "Routing",
+   "flag": null
+  },
+  {
+   "t": "<font>*</font>工序编码",
+   "a": "Process_Code",
+   "flag": null
+  },
+  {
+   "t": "<font>*</font>工序名称",
+   "a": "Process",
+   "flag": null
+  },
+  {
+   "t": "工序备注",
+   "a": "Process_Memo",
+   "flag": null
+  },
+  {
+   "t": "车间编码",
+   "a": "WorkShop_Code",
+   "flag": null
+  },
+  {
+   "t": "生产车间",
+   "a": "WorkShop",
+   "flag": null
+  },
+  {
+   "t": "计件依据",
+   "a": "PieceworkBasis",
+   "flag": null
+  },
+  {
+   "t": "班组名称",
+   "a": "ProcessTeam",
+   "flag": null
+  },
+  {
+   "t": "工人名称",
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": "班组成员/多工人",
+   "a": "TeamPerson",
+   "flag": null
+  },
+  {
+   "t": "设备",
+   "a": "Equipment",
+   "flag": null
+  },
+  {
+   "t": "<font>*</font>报工数量",
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": "合格数量",
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": "不合格数量",
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": "工资类型",
+   "a": "SalaryType",
+   "flag": null
+  },
+  {
+   "t": "工作中心",
+   "a": "WorkCenter",
+   "flag": null
+  },
+  {
+   "t": "开工暂停次数",
+   "a": "Suspends",
+   "flag": "myhidden"
+  },
+  {
+   "t": "委外供应商",
+   "a": "Partner",
+   "flag": null
+  },
+  {
+   "t": "<font>*</font>工序单位",
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": "委外部门",
+   "a": "OutSourceDepartment",
+   "flag": null
+  },
+  {
+   "t": "委外业务员",
+   "a": "OutSourcePerson",
+   "flag": null
+  },
+  {
+   "t": "累计汇报数量",
+   "a": "TotalReportQuantity",
+   "flag": null
+  },
+  {
+   "t": "可报工数量",
+   "a": "AvailableReportQuantity",
+   "flag": null
+  },
+  {
+   "t": "序列号个数",
+   "a": "SNCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": "序列号",
+   "a": "SerialNumbers",
+   "flag": "myhidden"
+  },
+  {
+   "t": "SNGuid",
+   "a": "SNGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": "SnSeqUpdateToken",
+   "a": "SnSeqUpdateToken",
+   "flag": "myhidden"
+  },
+  {
+   "t": "合格率%",
+   "a": "QualifiedRate",
+   "flag": null
+  },
+  {
+   "t": "按辅单位计价",
+   "a": "IsUseProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": "计价辅单位",
+   "a": "ProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": "检验返工数量",
+   "a": "InspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": "返工原因",
+   "a": "MultiInspectionReturnReasonSelect",
+   "flag": null
+  },
+  {
+   "t": "跨序待修转出数量",
+   "a": "RepairQuantity",
+   "flag": null
+  },
+  {
+   "t": "跨序待修转出数量（辅单位）",
+   "a": "ProcessSubUnitRepairQuantity",
+   "flag": null
+  },
+  {
+   "t": "返修责任工序",
+   "a": "RepairProcess",
+   "flag": null
+  },
+  {
+   "t": "责任来源汇报明细",
+   "a": "RepairManufactureReportCode",
+   "flag": null
+  },
+  {
+   "t": "返修转出目的工序",
+   "a": "RepairTransferOutProcess",
+   "flag": null
+  },
+  {
+   "t": "工废数量",
+   "a": "ArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": "工废原因",
+   "a": "MultiArtificialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": "料废数量",
+   "a": "MaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": "料废原因",
+   "a": "MultiMaterialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": "工价",
+   "a": "LabourPrice",
+   "flag": null
+  },
+  {
+   "t": "报废预入仓库",
+   "a": "ScrapWarehouse",
+   "flag": null
+  },
+  {
+   "t": "单位标准工时",
+   "a": "StandardLabourTime",
+   "flag": null
+  },
+  {
+   "t": "开工日期",
+   "a": "StartDate",
+   "flag": null
+  },
+  {
+   "t": "开工时间",
+   "a": "StartTime",
+   "flag": null
+  },
+  {
+   "t": "完工日期",
+   "a": "FinishDate",
+   "flag": null
+  },
+  {
+   "t": "完工时间",
+   "a": "FinishTime",
+   "flag": null
+  },
+  {
+   "t": "手工完工",
+   "a": "IsManualProcessFinish",
+   "flag": null
+  },
+  {
+   "t": "实际工时",
+   "a": "LabourTime",
+   "flag": null
+  },
+  {
+   "t": "计时/计件金额",
+   "a": "Amount",
+   "flag": null
+  },
+  {
+   "t": "委外单价",
+   "a": "OrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": "委外单价（辅单位）",
+   "a": "ProcessSubUnitOutSourceOrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": "税率%",
+   "a": "TaxRate",
+   "flag": null
+  },
+  {
+   "t": "委外含税单价",
+   "a": "OrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": "委外含税单价（辅单位）",
+   "a": "ProcessSubUnitOutSourceOrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": "委外金额",
+   "a": "OrigDiscountAmount",
+   "flag": null
+  },
+  {
+   "t": "委外税额",
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": "委外含税金额",
+   "a": "OrigTaxAmount",
+   "flag": null
+  },
+  {
+   "t": "调整工资",
+   "a": "OtherWages",
+   "flag": null
+  },
+  {
+   "t": "需要成品检验",
+   "a": "IsNeedQualityInspection",
+   "flag": "myhidden"
+  },
+  {
+   "t": "金额",
+   "a": "RealWages",
+   "flag": null
+  },
+  {
+   "t": "备注",
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": "需求令号",
+   "a": "pubuserdefdecm1",
+   "flag": null
+  },
+  {
+   "t": "客户",
+   "a": "Customer",
+   "flag": "myhidden"
+  },
+  {
+   "t": "合格数量1",
+   "a": "pubuserdefdecm5",
+   "flag": null
+  },
+  {
+   "t": "不合格数量1",
+   "a": "pubuserdefdecm6",
+   "flag": null
+  },
+  {
+   "t": "产品字符公用自定义项1",
+   "a": "pubuserdefnvc1",
+   "flag": null
+  },
+  {
+   "t": "图号",
+   "a": "pubuserdefnvc3",
+   "flag": null
+  },
+  {
+   "t": "按数量分配计件",
+   "a": "IsDistributionByQuantity",
+   "flag": "myhidden"
+  },
+  {
+   "t": "领倒冲料",
+   "a": "IsDrawMaterialForDC",
+   "flag": null
+  },
+  {
+   "t": "按权重计算分配比例",
+   "a": "IsDistributionByWeight",
+   "flag": "myhidden"
+  },
+  {
+   "t": "产品行码",
+   "a": "ProductBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": "工序行码",
+   "a": "ProcessBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": "派工行码",
+   "a": "DispatchBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": "EditState",
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": "Val_Inventory",
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": "班组成员/多工人_Val",
+   "a": "Val_TeamPerson",
+   "flag": "myhidden"
+  },
+  {
+   "t": "开工暂停次数_Val",
+   "a": "Val_Suspends",
+   "flag": "myhidden"
+  },
+  {
+   "t": "HideValues",
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ManufactureOrderCode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "MainInventory_Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "MainInventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUName",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SourceVoucherCnyCtlFieldVal",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SourceVoucherDetailCnyCtlFieldVal",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "FirstQualityInspectionStateCnyCtlField",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SourceVoucherCanModifyFields",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc4",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc5",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "MaterialCostAssWeight",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProcessMode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessGroupNumber",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SequenceNumber",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Routing",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process_Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "WorkShop_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "WorkShop",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "PieceworkBasis",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessTeam",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "TeamPerson",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Equipment",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SalaryType",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "WorkCenter",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Suspends",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Partner",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OutSourceDepartment",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OutSourcePerson",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "TotalReportQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "AvailableReportQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SNCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SerialNumbers",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SNGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SnSeqUpdateToken",
+   "flag": "myhidden"
+  },
+  {
+   "t": "Percent",
+   "a": "QualifiedRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsUseProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiInspectionReturnReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitRepairQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairProcess",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairManufactureReportCode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairTransferOutProcess",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiArtificialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiMaterialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ScrapWarehouse",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "StandardLabourTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "StartDate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "StartTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "FinishDate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "FinishTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsManualProcessFinish",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Amount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": "Percent",
+   "a": "TaxRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OtherWages",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsNeedQualityInspection",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "RealWages",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm1",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Customer",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm5",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm6",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc1",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc3",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsDistributionByQuantity",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "IsDrawMaterialForDC",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsDistributionByWeight",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProductBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProcessBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "DispatchBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_TeamPerson",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Suspends",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ManufactureOrderCode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "MainInventory_Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "MainInventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUName",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SourceVoucherCnyCtlFieldVal",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SourceVoucherDetailCnyCtlFieldVal",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "FirstQualityInspectionStateCnyCtlField",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SourceVoucherCanModifyFields",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc4",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc5",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "MaterialCostAssWeight",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProcessMode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessGroupNumber",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SequenceNumber",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Routing",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process_Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "WorkShop_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "WorkShop",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "PieceworkBasis",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessTeam",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "TeamPerson",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Equipment",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SalaryType",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "WorkCenter",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Suspends",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Partner",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OutSourceDepartment",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OutSourcePerson",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "TotalReportQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "AvailableReportQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SNCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SerialNumbers",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SNGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SnSeqUpdateToken",
+   "flag": "myhidden"
+  },
+  {
+   "t": "Percent",
+   "a": "QualifiedRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsUseProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiInspectionReturnReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitRepairQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairProcess",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairManufactureReportCode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairTransferOutProcess",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiArtificialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiMaterialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ScrapWarehouse",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "StandardLabourTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "StartDate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "StartTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "FinishDate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "FinishTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsManualProcessFinish",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Amount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": "Percent",
+   "a": "TaxRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OtherWages",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsNeedQualityInspection",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "RealWages",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm1",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Customer",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm5",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm6",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc1",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc3",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsDistributionByQuantity",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "IsDrawMaterialForDC",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsDistributionByWeight",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProductBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProcessBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "DispatchBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_TeamPerson",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Suspends",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ManufactureOrderCode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "MainInventory_Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "MainInventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUName",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SourceVoucherCnyCtlFieldVal",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SourceVoucherDetailCnyCtlFieldVal",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "FirstQualityInspectionStateCnyCtlField",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SourceVoucherCanModifyFields",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc4",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc5",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "MaterialCostAssWeight",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProcessMode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessGroupNumber",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SequenceNumber",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Routing",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process_Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "WorkShop_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "WorkShop",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "PieceworkBasis",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessTeam",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "TeamPerson",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Equipment",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SalaryType",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "WorkCenter",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Suspends",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Partner",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OutSourceDepartment",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OutSourcePerson",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "TotalReportQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "AvailableReportQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SNCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SerialNumbers",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SNGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SnSeqUpdateToken",
+   "flag": "myhidden"
+  },
+  {
+   "t": "Percent",
+   "a": "QualifiedRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsUseProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiInspectionReturnReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitRepairQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairProcess",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairManufactureReportCode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairTransferOutProcess",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiArtificialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiMaterialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ScrapWarehouse",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "StandardLabourTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "StartDate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "StartTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "FinishDate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "FinishTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsManualProcessFinish",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Amount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": "Percent",
+   "a": "TaxRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OtherWages",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsNeedQualityInspection",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "RealWages",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm1",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Customer",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm5",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm6",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc1",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc3",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsDistributionByQuantity",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "IsDrawMaterialForDC",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsDistributionByWeight",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProductBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProcessBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "DispatchBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_TeamPerson",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Suspends",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ManufactureOrderCode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "MainInventory_Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "MainInventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUName",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SourceVoucherCnyCtlFieldVal",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SourceVoucherDetailCnyCtlFieldVal",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "FirstQualityInspectionStateCnyCtlField",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SourceVoucherCanModifyFields",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc4",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc5",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "MaterialCostAssWeight",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProcessMode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessGroupNumber",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SequenceNumber",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Routing",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process_Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "WorkShop_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "WorkShop",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "PieceworkBasis",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessTeam",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "TeamPerson",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Equipment",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SalaryType",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "WorkCenter",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Suspends",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Partner",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OutSourceDepartment",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OutSourcePerson",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "TotalReportQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "AvailableReportQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SNCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SerialNumbers",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SNGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SnSeqUpdateToken",
+   "flag": "myhidden"
+  },
+  {
+   "t": "Percent",
+   "a": "QualifiedRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsUseProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiInspectionReturnReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitRepairQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairProcess",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairManufactureReportCode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RepairTransferOutProcess",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiArtificialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiMaterialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ScrapWarehouse",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "StandardLabourTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "StartDate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "StartTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "FinishDate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "FinishTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsManualProcessFinish",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Amount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": "Percent",
+   "a": "TaxRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OtherWages",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsNeedQualityInspection",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "RealWages",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm1",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Customer",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm5",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm6",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc1",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "pubuserdefnvc3",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsDistributionByQuantity",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "IsDrawMaterialForDC",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsDistributionByWeight",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProductBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProcessBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "DispatchBarCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_TeamPerson",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Suspends",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": "ID",
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": "<font>*</font>产品编码",
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": "<font>*</font>产品名称",
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": "BOM版本号",
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": "<font>*</font>工序单位",
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": "换算率(工序单位)",
+   "a": "UnitExchangeRate",
+   "flag": null
+  },
+  {
+   "t": "<font>*</font>工序编码",
+   "a": "Process_Code",
+   "flag": null
+  },
+  {
+   "t": "<font>*</font>工序名称",
+   "a": "Process",
+   "flag": null
+  },
+  {
+   "t": "<font>*</font>报工数量",
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": "合格数量",
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": "不合格数量",
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": "工价",
+   "a": "LabourPrice",
+   "flag": null
+  },
+  {
+   "t": "工价（辅单位）",
+   "a": "ProcessSubUnitLabourPrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": "计时/计件金额",
+   "a": "Amount",
+   "flag": null
+  },
+  {
+   "t": "委外单价",
+   "a": "OrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": "委外单价（辅单位）",
+   "a": "ProcessSubUnitOutSourceOrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": "委外含税单价",
+   "a": "OrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": "委外含税单价（辅单位）",
+   "a": "ProcessSubUnitOutSourceOrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": "委外金额",
+   "a": "OrigDiscountAmount",
+   "flag": null
+  },
+  {
+   "t": "委外税额",
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": "委外含税金额",
+   "a": "OrigTaxAmount",
+   "flag": null
+  },
+  {
+   "t": "EditState",
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": "Val_Inventory",
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": "Code",
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": "HideValues",
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnitExchangeRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitLabourPrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Amount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnitExchangeRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitLabourPrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Amount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnitExchangeRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitLabourPrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Amount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnitExchangeRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Process",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitLabourPrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Amount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigDiscountPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitOutSourceOrigTaxPrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscountAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": "ID",
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": "<font>*</font>工人编码",
+   "a": "Person_Code",
+   "flag": null
+  },
+  {
+   "t": "<font>*</font>工人名称",
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": "能力权重系数",
+   "a": "AbilityWeight",
+   "flag": null
+  },
+  {
+   "t": "工时权重系数",
+   "a": "HoursWeight",
+   "flag": null
+  },
+  {
+   "t": "计件分配比例%",
+   "a": "DistributionRate",
+   "flag": null
+  },
+  {
+   "t": "报工数量",
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": "报工数量2",
+   "a": "Quantity2",
+   "flag": null
+  },
+  {
+   "t": "合格数量",
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": "不合格数量",
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": "不合格数量2",
+   "a": "UnQualifiedQuantity2",
+   "flag": null
+  },
+  {
+   "t": "检验返工数量",
+   "a": "InspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": "返工原因",
+   "a": "MultiInspectionReturnReasonSelect",
+   "flag": null
+  },
+  {
+   "t": "工废数量",
+   "a": "ArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": "工废原因",
+   "a": "MultiArtificialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": "料废数量",
+   "a": "MaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": "料废原因",
+   "a": "MultiMaterialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": "实际工时",
+   "a": "LabourTime",
+   "flag": null
+  },
+  {
+   "t": "按辅单位计价",
+   "a": "IsUseProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": "计价辅单位",
+   "a": "ProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": "换算率(辅计量)",
+   "a": "ProcessSubUnitExchangeRate",
+   "flag": null
+  },
+  {
+   "t": "报工数量（辅单位）",
+   "a": "ProcessSubUnitQuantity",
+   "flag": null
+  },
+  {
+   "t": "合格数量（辅单位）",
+   "a": "ProcessSubUnitQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": "不合格数量（辅单位）",
+   "a": "ProcessSubUnitUnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": "检验返工数量（辅单位）",
+   "a": "ProcessSubUnitInspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": "工废数量（辅单位）",
+   "a": "ProcessSubUnitArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": "料废数量（辅单位）",
+   "a": "ProcessSubUnitMaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": "调整工资",
+   "a": "OtherWages",
+   "flag": null
+  },
+  {
+   "t": "备注",
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": "EditState",
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": "Code",
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": "HideValues",
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Person_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "AbilityWeight",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "HoursWeight",
+   "flag": null
+  },
+  {
+   "t": "Percent",
+   "a": "DistributionRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity2",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity2",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiInspectionReturnReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiArtificialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiMaterialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsUseProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitExchangeRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitUnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitInspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitMaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OtherWages",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Person_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "AbilityWeight",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "HoursWeight",
+   "flag": null
+  },
+  {
+   "t": "Percent",
+   "a": "DistributionRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity2",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity2",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiInspectionReturnReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiArtificialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiMaterialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsUseProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitExchangeRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitUnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitInspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitMaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OtherWages",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Person_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "AbilityWeight",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "HoursWeight",
+   "flag": null
+  },
+  {
+   "t": "Percent",
+   "a": "DistributionRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity2",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity2",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiInspectionReturnReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiArtificialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiMaterialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsUseProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitExchangeRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitUnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitInspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitMaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OtherWages",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Person_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "AbilityWeight",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "HoursWeight",
+   "flag": null
+  },
+  {
+   "t": "Percent",
+   "a": "DistributionRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity2",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "QualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "UnQualifiedQuantity2",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiInspectionReturnReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiArtificialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MultiMaterialWasteReasonSelect",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LabourTime",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsUseProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitExchangeRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitUnQualifiedQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitInspectionReturnQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitArtificialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnitMaterialWasteQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OtherWages",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": "ID",
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": "<font>*</font>操作员编码",
+   "a": "Person_Code",
+   "flag": null
+  },
+  {
+   "t": "<font>*</font>操作员",
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": "EditState",
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": "Code",
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": "HideValues",
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Person_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Person_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Person_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Person_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Person",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": "编码",
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": "名称",
+   "a": "Name",
+   "flag": "myhidden"
+  },
+  {
+   "t": "IsHasSameFuncAuth",
+   "a": "IsHasSameFuncAuth",
+   "flag": null
+  },
+  {
+   "t": "Shorthand",
+   "a": "Shorthand",
+   "flag": null
+  },
+  {
+   "t": "Department_Name",
+   "a": "Department_Name",
+   "flag": null
+  },
+  {
+   "t": "IsSalesman",
+   "a": "IsSalesman",
+   "flag": null
+  },
+  {
+   "t": "CreditDate",
+   "a": "CreditDate",
+   "flag": null
+  },
+  {
+   "t": "CreditQuantity",
+   "a": "CreditQuantity",
+   "flag": null
+  },
+  {
+   "t": "PositionTitle_Name",
+   "a": "PositionTitle_Name",
+   "flag": null
+  },
+  {
+   "t": "SettlementPartner_Name",
+   "a": "SettlementPartner_Name",
+   "flag": null
+  },
+  {
+   "t": "Specification",
+   "a": "Specification",
+   "flag": null
+  },
+  {
+   "t": "IsMadeSelf",
+   "a": "IsMadeSelf",
+   "flag": null
+  },
+  {
+   "t": "InventoryPriceDTOs_RetailPriceNew",
+   "a": "InventoryPriceDTOs_RetailPriceNew",
+   "flag": null
+  },
+  {
+   "t": "InvoiceSpecification",
+   "a": "InvoiceSpecification",
+   "flag": null
+  },
+  {
+   "t": "InvoiceUnit_Name",
+   "a": "InvoiceUnit_Name",
+   "flag": null
+  },
+  {
+   "t": "AutoAddFigureNo",
+   "a": "AutoAddFigureNo",
+   "flag": null
+  },
+  {
+   "t": "SKUCode",
+   "a": "SKUCode",
+   "flag": null
+  },
+  {
+   "t": "SKUName",
+   "a": "SKUName",
+   "flag": null
+  },
+  {
+   "t": "SKUInvSCost",
+   "a": "SKUInvSCost",
+   "flag": null
+  },
+  {
+   "t": "SKULatestCost",
+   "a": "SKULatestCost",
+   "flag": null
+  },
+  {
+   "t": "SKUAvagCost",
+   "a": "SKUAvagCost",
+   "flag": null
+  },
+  {
+   "t": "Inventory_Code",
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": "Inventory_Specification",
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": "Inventory_Name",
+   "a": "Inventory_Name",
+   "flag": null
+  },
+  {
+   "t": "Version",
+   "a": "Version",
+   "flag": null
+  },
+  {
+   "t": "Manufactureplant_Name",
+   "a": "Manufactureplant_Name",
+   "flag": null
+  },
+  {
+   "t": "Warehouse_Name",
+   "a": "Warehouse_Name",
+   "flag": null
+  },
+  {
+   "t": "Maker",
+   "a": "Maker",
+   "flag": null
+  },
+  {
+   "t": "Auditor",
+   "a": "Auditor",
+   "flag": null
+  },
+  {
+   "t": "AuditedDate",
+   "a": "AuditedDate",
+   "flag": null
+  },
+  {
+   "t": "Workshop_Name",
+   "a": "Workshop_Name",
+   "flag": null
+  },
+  {
+   "t": "isUseProcessSubunit",
+   "a": "isUseProcessSubunit",
+   "flag": null
+  },
+  {
+   "t": "ProcessSubUnit_Name",
+   "a": "ProcessSubUnit_Name",
+   "flag": null
+  },
+  {
+   "t": "processSubUnitChangeRate",
+   "a": "processSubUnitChangeRate",
+   "flag": null
+  },
+  {
+   "t": "SalaryType_Name",
+   "a": "SalaryType_Name",
+   "flag": null
+  },
+  {
+   "t": "PieceworkBasis_Name",
+   "a": "PieceworkBasis_Name",
+   "flag": null
+  },
+  {
+   "t": "Memo",
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": "详细",
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Name",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "IsHasSameFuncAuth",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Shorthand",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Department_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsSalesman",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "CreditDate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "CreditQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "PositionTitle_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SettlementPartner_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsMadeSelf",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InventoryPriceDTOs_RetailPriceNew",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InvoiceSpecification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InvoiceUnit_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "AutoAddFigureNo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUCode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUName",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUInvSCost",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKULatestCost",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUAvagCost",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Version",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Manufactureplant_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Warehouse_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Maker",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Auditor",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "AuditedDate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Workshop_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "isUseProcessSubunit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnit_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "processSubUnitChangeRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SalaryType_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "PieceworkBasis_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Name",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "IsHasSameFuncAuth",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Shorthand",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Department_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsSalesman",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "CreditDate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "CreditQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "PositionTitle_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SettlementPartner_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsMadeSelf",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InventoryPriceDTOs_RetailPriceNew",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InvoiceSpecification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InvoiceUnit_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "AutoAddFigureNo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUCode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUName",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUInvSCost",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKULatestCost",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUAvagCost",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Version",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Manufactureplant_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Warehouse_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Maker",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Auditor",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "AuditedDate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Workshop_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "isUseProcessSubunit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ProcessSubUnit_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "processSubUnitChangeRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SalaryType_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "PieceworkBasis_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  }
+ ],
+ "fields": [
+  {
+   "left": "",
+   "top": "",
+   "label": "*机构"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "*单据日期"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "自动升单时的来源单据编码"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "*单据编号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "*业务类型"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "部门"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "经手人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "加工单号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "生产车间"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "委外供应商"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "产品编码"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "产品名称"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "规格型号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "销售订单号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "客户"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "末工序按合格数量自动入库"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "是否手动改价"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "检验工序自动报检"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "报废自动入库"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "保持汇报数量不变"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "返修汇报"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "返修模式"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "生单模式"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "待补录"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "是否汇报单自动生单"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "自动生单来源汇报单Id"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "是否是检验单触发的汇报单自动生成"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "自动生成的检验单Id"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "测试程序"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "匹配来源单号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "销售订单ID"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "凭证"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "凭证字号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "制单人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "修改人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "代理人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "审核机器人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "审核人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "审核日期"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "审核时间"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "打印次数"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "创建时间"
+  }
+ ],
+ "detailAttr": "",
+ "tabs": [
+  "tab_ManufactureReportDetails",
+  "tab_ManufactureReportDetails_Sum"
+ ],
+ "btnGroups": [
+  "新增 确认变更 退出 选单 选生产加工单 设置默认功能 选生产加工单 智能选单 修改 保存 保存 Alt+S 保存新增 Alt+\\ 保存为草稿 保存打印 Alt",
+  "选生产加工单 设置默认功能 选生产加工单",
+  "选生产加工单",
+  "保存 Alt+S 保存新增 Alt+\\ 保存为草稿 保存打印 Alt+G 设置默认功能 保存 保存新增 保存为草稿 保存打印",
+  "保存 保存新增 保存为草稿 保存打印",
+  "生成产成品入库单 生成产成品入库单（废品） 生成补投生产加工单 生成返工生产加工单 设置默认功能 生成产成品入库单 生成产成品入库单（废品） 生成补投生产加工单",
+  "生成产成品入库单 生成产成品入库单（废品） 生成补投生产加工单 生成返工生产加工单",
+  "变更历史",
+  "生产加工情况 材料出库情况 产成品入库情况 生单流程联查",
+  "单据设置 移动控件位置 调整控件宽度 工具栏设置",
+  "直接打印 Alt+P 打印 Alt+; 预览 Alt+/ 打印模板设置 Alt+, 明细标签打印 导出 Alt+X 设置默认功能 直接打印 打印 预览 打印模板",
+  "直接打印 打印 预览 打印模板设置 明细标签打印 导出",
+  "工序条码录入 Alt+R 放弃 Alt+Z 草稿 附件 刷新 消息",
+  "设置",
+  "设置"
+ ],
+ "url": "https://h2t.chanjet.com/tplus/BAPView/Voucher.aspx?sysId=mr&mId=mr10&pId=voucherView&SourceType=FromMenu&taskID=%E5%B7%A5%E5%BA%8F%E6%B1%87%E6%8A%A5%E5%8D%95&TaskSessionID=869693db-ce0e-9069-acf7-1578c91da31b"
+}

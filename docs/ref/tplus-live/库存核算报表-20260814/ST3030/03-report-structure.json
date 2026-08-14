@@ -1,0 +1,990 @@
+{
+  "bodyHead": "查找\n更新单据\n设置\n批量取成本\n汇总维度设置\n汇总导出\n汇总导入\n模板下载\n退出\n明细汇总\n序号\t\n单据类型\n\t\n单据编号\n\t\n单据日期\n\t\n仓库\n\t\n存货编码\n\t\n存货分类\n\t\n存货\n\t\n规格型号\n\t\nBOM版本号\n\t\n计量单位\n\t\n数量\n\t\n*成本价\n\t\n*成本金额\n\t\n制单人\n每页记录数\t\t 跳转到页\t\t确定\t|\t\t\t\t\t|\t当前第1页, 共1页, 总共0条记录\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046\ntplusdemo128532853\n08141046",
+  "toolbarText": "",
+  "grids": [
+    {
+      "tableIndex": 3,
+      "visibleCols": [
+        "单据类型",
+        "单据编号",
+        "单据日期",
+        "仓库",
+        "存货编码",
+        "存货分类",
+        "存货",
+        "规格型号",
+        "BOM版本号",
+        "计量单位",
+        "数量",
+        "<font>*</font>成本价",
+        "<font>*</font>成本金额",
+        "制单人"
+      ],
+      "allCols": [
+        {
+          "t": "ID",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "单据类型",
+          "a": "RDRecord_VoucherType_Name",
+          "hidden": false
+        },
+        {
+          "t": "单据编号",
+          "a": "RDRecord_Code",
+          "hidden": false
+        },
+        {
+          "t": "单据日期",
+          "a": "RDRecord_VoucherDate",
+          "hidden": false
+        },
+        {
+          "t": "仓库",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "存货编码",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "存货分类",
+          "a": "Inventory_InventoryClass_Name",
+          "hidden": false
+        },
+        {
+          "t": "存货",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "规格型号",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "BOM版本号",
+          "a": "Bom",
+          "hidden": false
+        },
+        {
+          "t": "计量单位",
+          "a": "BaseUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "数量",
+          "a": "BaseQuantity",
+          "hidden": false
+        },
+        {
+          "t": "<font>*</font>成本价",
+          "a": "BasePrice",
+          "hidden": false
+        },
+        {
+          "t": "<font>*</font>成本金额",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "手工确定成本",
+          "a": "IsManualCost",
+          "hidden": true
+        },
+        {
+          "t": "制单人",
+          "a": "RDRecord_Maker",
+          "hidden": false
+        },
+        {
+          "t": "EditState",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "Val_Inventory",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "HideValues",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 6,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "RDRecord_VoucherType_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RDRecord_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RDRecord_VoucherDate",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_InventoryClass_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BaseUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BaseQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BasePrice",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsManualCost",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "RDRecord_Maker",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 7,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "RDRecord_VoucherType_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RDRecord_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RDRecord_VoucherDate",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_InventoryClass_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BaseUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BaseQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BasePrice",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsManualCost",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "RDRecord_Maker",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 8,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "RDRecord_VoucherType_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RDRecord_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "RDRecord_VoucherDate",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Warehouse",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_InventoryClass_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Bom",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BaseUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BaseQuantity",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "BasePrice",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Amount",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsManualCost",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "RDRecord_Maker",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "EditState",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Val_Inventory",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "HideValues",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 31,
+      "visibleCols": [
+        "Memo",
+        "Shorthand",
+        "Specification",
+        "IsMadeSelf",
+        "InventoryPriceDTOs_RetailPriceNew",
+        "InvoiceSpecification",
+        "InvoiceUnit_Name",
+        "AutoAddFigureNo",
+        "Inventory_Code",
+        "Inventory_Specification",
+        "Inventory_Name",
+        "Version",
+        "Manufactureplant_Name",
+        "Warehouse_Name"
+      ],
+      "allCols": [
+        {
+          "t": "编码",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "名称",
+          "a": "Name",
+          "hidden": true
+        },
+        {
+          "t": "Memo",
+          "a": "Memo",
+          "hidden": false
+        },
+        {
+          "t": "Shorthand",
+          "a": "Shorthand",
+          "hidden": false
+        },
+        {
+          "t": "Specification",
+          "a": "Specification",
+          "hidden": false
+        },
+        {
+          "t": "IsMadeSelf",
+          "a": "IsMadeSelf",
+          "hidden": false
+        },
+        {
+          "t": "InventoryPriceDTOs_RetailPriceNew",
+          "a": "InventoryPriceDTOs_RetailPriceNew",
+          "hidden": false
+        },
+        {
+          "t": "InvoiceSpecification",
+          "a": "InvoiceSpecification",
+          "hidden": false
+        },
+        {
+          "t": "InvoiceUnit_Name",
+          "a": "InvoiceUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "AutoAddFigureNo",
+          "a": "AutoAddFigureNo",
+          "hidden": false
+        },
+        {
+          "t": "Inventory_Code",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "Inventory_Specification",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "Inventory_Name",
+          "a": "Inventory_Name",
+          "hidden": false
+        },
+        {
+          "t": "Version",
+          "a": "Version",
+          "hidden": false
+        },
+        {
+          "t": "Manufactureplant_Name",
+          "a": "Manufactureplant_Name",
+          "hidden": false
+        },
+        {
+          "t": "Warehouse_Name",
+          "a": "Warehouse_Name",
+          "hidden": false
+        },
+        {
+          "t": "ID",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Name",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Memo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Shorthand",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsMadeSelf",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InventoryPriceDTOs_RetailPriceNew",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceSpecification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "AutoAddFigureNo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Version",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Manufactureplant_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Warehouse_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Name",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Memo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Shorthand",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsMadeSelf",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InventoryPriceDTOs_RetailPriceNew",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceSpecification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "AutoAddFigureNo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Version",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Manufactureplant_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Warehouse_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 49,
+      "visibleCols": [
+        "Memo",
+        "Shorthand",
+        "Specification",
+        "IsMadeSelf",
+        "InventoryPriceDTOs_RetailPriceNew",
+        "InvoiceSpecification",
+        "InvoiceUnit_Name",
+        "AutoAddFigureNo",
+        "Inventory_Code",
+        "Inventory_Specification",
+        "Inventory_Name",
+        "Version",
+        "Manufactureplant_Name",
+        "Warehouse_Name"
+      ],
+      "allCols": [
+        {
+          "t": "编码",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "名称",
+          "a": "Name",
+          "hidden": true
+        },
+        {
+          "t": "Memo",
+          "a": "Memo",
+          "hidden": false
+        },
+        {
+          "t": "Shorthand",
+          "a": "Shorthand",
+          "hidden": false
+        },
+        {
+          "t": "Specification",
+          "a": "Specification",
+          "hidden": false
+        },
+        {
+          "t": "IsMadeSelf",
+          "a": "IsMadeSelf",
+          "hidden": false
+        },
+        {
+          "t": "InventoryPriceDTOs_RetailPriceNew",
+          "a": "InventoryPriceDTOs_RetailPriceNew",
+          "hidden": false
+        },
+        {
+          "t": "InvoiceSpecification",
+          "a": "InvoiceSpecification",
+          "hidden": false
+        },
+        {
+          "t": "InvoiceUnit_Name",
+          "a": "InvoiceUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "AutoAddFigureNo",
+          "a": "AutoAddFigureNo",
+          "hidden": false
+        },
+        {
+          "t": "Inventory_Code",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "Inventory_Specification",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "Inventory_Name",
+          "a": "Inventory_Name",
+          "hidden": false
+        },
+        {
+          "t": "Version",
+          "a": "Version",
+          "hidden": false
+        },
+        {
+          "t": "Manufactureplant_Name",
+          "a": "Manufactureplant_Name",
+          "hidden": false
+        },
+        {
+          "t": "Warehouse_Name",
+          "a": "Warehouse_Name",
+          "hidden": false
+        },
+        {
+          "t": "ID",
+          "a": "ID",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 50,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Name",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Memo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Shorthand",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsMadeSelf",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InventoryPriceDTOs_RetailPriceNew",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceSpecification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "AutoAddFigureNo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Version",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Manufactureplant_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Warehouse_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "tableIndex": 51,
+      "visibleCols": [],
+      "allCols": [
+        {
+          "t": "",
+          "a": "Code",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Name",
+          "hidden": true
+        },
+        {
+          "t": "",
+          "a": "Memo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Shorthand",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "IsMadeSelf",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InventoryPriceDTOs_RetailPriceNew",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceSpecification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "InvoiceUnit_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "AutoAddFigureNo",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Code",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Specification",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Inventory_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Version",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Manufactureplant_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "Warehouse_Name",
+          "hidden": false
+        },
+        {
+          "t": "",
+          "a": "ID",
+          "hidden": true
+        }
+      ]
+    }
+  ],
+  "tabs": []
+}
