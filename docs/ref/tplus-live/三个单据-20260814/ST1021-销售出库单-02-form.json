@@ -1,0 +1,3263 @@
+{
+ "bodyText": [
+  "新增",
+  "新增",
+  "引入常用单据",
+  "设置默认功能",
+  "新增",
+  "引入常用单据",
+  "选单",
+  "选销售订单",
+  "设置默认功能",
+  "选销售订单",
+  "智能选单",
+  "保存",
+  "保存",
+  "Alt+S",
+  "保存新增",
+  "Alt+\\",
+  "保存为草稿",
+  "保存为常用单据",
+  "保存打印",
+  "Alt+G",
+  "设置默认功能",
+  "保存",
+  "保存新增",
+  "保存为草稿",
+  "保存为常用单据",
+  "保存打印",
+  "删除",
+  "|",
+  "审核",
+  "|",
+  "生单",
+  "生成销售出库单(销售退货)",
+  "设置默认功能",
+  "生成销售出库单(销售退货)",
+  "|",
+  "变更",
+  "|",
+  "工具",
+  "现存量查询",
+  "变更历史",
+  "联查",
+  "销售订单情况",
+  "退库情况",
+  "出库情况",
+  "生单流程联查",
+  "设置",
+  "单据设置",
+  "移动控件位置",
+  "调整控件宽度",
+  "工具栏设置",
+  "智能选单设置",
+  "|",
+  "打印",
+  "直接打印",
+  "Alt+P",
+  "打印",
+  "Alt+;",
+  "预览",
+  "Alt+/",
+  "打印模板设置",
+  "Alt+,",
+  "导出",
+  "Alt+X",
+  "明细标签打印",
+  "打印情况",
+  "设置默认功能",
+  "直接打印",
+  "打印",
+  "预览",
+  "打印模板设置",
+  "导出",
+  "明细标签打印",
+  "打印情况",
+  "更多",
+  "复制",
+  "放弃",
+  "Alt+Z",
+  "草稿",
+  "Alt+B",
+  "导入",
+  "下载导入模板",
+  "附件",
+  "刷新",
+  "消息",
+  "*单据日期",
+  "*单据编号",
+  "*业务类型",
+  "退货原因",
+  "*客户",
+  "*结算客户",
+  "匹配来源单号",
+  "经手人",
+  "仓库",
+  "定位",
+  "复制到剪贴板",
+  "从剪贴板粘贴",
+  "另存为EXCEL模板",
+  "批量修改",
+  "销售订单查询",
+  "现存量提取",
+  "更多",
+  "Ctrl+V列粘贴",
+  "明细",
+  "汇总",
+  "序号",
+  "*仓库",
+  "*存货名称",
+  "*存货编码",
+  "规格型号",
+  "*计量单位",
+  "*数量",
+  "智能选单",
+  "成本价",
+  "税率%",
+  "售价",
+  "含税售价",
+  "销售金额",
+  "税额",
+  "含税销售金额",
+  "折扣金额"
+ ],
+ "cols": [
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": "ID",
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": "BoxBarCodeGuid",
+   "a": "BoxBarCodeGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": "<font>*</font>仓库",
+   "a": "Warehouse",
+   "flag": null
+  },
+  {
+   "t": "箱码",
+   "a": "BoxBarCodes",
+   "flag": "myhidden"
+  },
+  {
+   "t": "箱码个数",
+   "a": "BoxBarCodeCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": "<font>*</font>存货名称",
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": "自由项组合",
+   "a": "SKUName",
+   "flag": "myhidden"
+  },
+  {
+   "t": "<font>*</font>存货编码",
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": "规格型号",
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": "BOM版本号",
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": "<font>*</font>计量单位",
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": "<font>*</font>数量",
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": "智能选单",
+   "a": "RowSelectVoucher",
+   "flag": null
+  },
+  {
+   "t": "批号",
+   "a": "Batch",
+   "flag": "myhidden"
+  },
+  {
+   "t": "生产日期",
+   "a": "ProductionDate",
+   "flag": "myhidden"
+  },
+  {
+   "t": "失效日期",
+   "a": "ExpiryDate",
+   "flag": "myhidden"
+  },
+  {
+   "t": "序列号个数",
+   "a": "SNCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": "序列号",
+   "a": "SerialNumbers",
+   "flag": "myhidden"
+  },
+  {
+   "t": "货位",
+   "a": "InventoryLocation",
+   "flag": "myhidden"
+  },
+  {
+   "t": "成本价",
+   "a": "Price",
+   "flag": null
+  },
+  {
+   "t": "税率%",
+   "a": "TaxRate",
+   "flag": null
+  },
+  {
+   "t": "售价",
+   "a": "OrigSalePrice",
+   "flag": null
+  },
+  {
+   "t": "含税售价",
+   "a": "OrigTaxSalePrice",
+   "flag": null
+  },
+  {
+   "t": "销售金额",
+   "a": "OrigSaleAmount",
+   "flag": null
+  },
+  {
+   "t": "税额",
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": "含税销售金额",
+   "a": "OrigTaxSaleAmount",
+   "flag": null
+  },
+  {
+   "t": "折扣金额",
+   "a": "OrigDiscount",
+   "flag": null
+  },
+  {
+   "t": "入库单号",
+   "a": "ReceiveVoucherCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": "SnSeqUpdateToken",
+   "a": "SnSeqUpdateToken",
+   "flag": "myhidden"
+  },
+  {
+   "t": "SNGuid",
+   "a": "SNGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": "现存量",
+   "a": "ExistingQuantity",
+   "flag": null
+  },
+  {
+   "t": "现存量说明",
+   "a": "ExistingCompositionQuantity",
+   "flag": null
+  },
+  {
+   "t": "价格策略取值维度",
+   "a": "PriceDimension",
+   "flag": "myhidden"
+  },
+  {
+   "t": "需求令号",
+   "a": "pubuserdefdecm1",
+   "flag": null
+  },
+  {
+   "t": "编号",
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": "退货原因",
+   "a": "ReturnReason",
+   "flag": null
+  },
+  {
+   "t": "EditState",
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": "Val_Inventory",
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": "货位_Val",
+   "a": "Val_InventoryLocation",
+   "flag": "myhidden"
+  },
+  {
+   "t": "HideValues",
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "BoxBarCodeGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Warehouse",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "BoxBarCodes",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "BoxBarCodeCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUName",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RowSelectVoucher",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Batch",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProductionDate",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ExpiryDate",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SNCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SerialNumbers",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "InventoryLocation",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Price",
+   "flag": null
+  },
+  {
+   "t": "Percent",
+   "a": "TaxRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigSalePrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSalePrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigSaleAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSaleAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ReceiveVoucherCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SnSeqUpdateToken",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SNGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ExistingQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ExistingCompositionQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "PriceDimension",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm1",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ReturnReason",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_InventoryLocation",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "BoxBarCodeGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Warehouse",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "BoxBarCodes",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "BoxBarCodeCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUName",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RowSelectVoucher",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Batch",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProductionDate",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ExpiryDate",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SNCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SerialNumbers",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "InventoryLocation",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Price",
+   "flag": null
+  },
+  {
+   "t": "Percent",
+   "a": "TaxRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigSalePrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSalePrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigSaleAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSaleAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ReceiveVoucherCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SnSeqUpdateToken",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SNGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ExistingQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ExistingCompositionQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "PriceDimension",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm1",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ReturnReason",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_InventoryLocation",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "BoxBarCodeGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Warehouse",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "BoxBarCodes",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "BoxBarCodeCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUName",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RowSelectVoucher",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Batch",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProductionDate",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ExpiryDate",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SNCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SerialNumbers",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "InventoryLocation",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Price",
+   "flag": null
+  },
+  {
+   "t": "Percent",
+   "a": "TaxRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigSalePrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSalePrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigSaleAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSaleAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ReceiveVoucherCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SnSeqUpdateToken",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SNGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ExistingQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ExistingCompositionQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "PriceDimension",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm1",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ReturnReason",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_InventoryLocation",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "BoxBarCodeGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Warehouse",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "BoxBarCodes",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "BoxBarCodeCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUName",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "RowSelectVoucher",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Batch",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ProductionDate",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ExpiryDate",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SNCount",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SerialNumbers",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "InventoryLocation",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Price",
+   "flag": null
+  },
+  {
+   "t": "Percent",
+   "a": "TaxRate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigSalePrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSalePrice",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigSaleAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTax",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSaleAmount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "OrigDiscount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ReceiveVoucherCode",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SnSeqUpdateToken",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SNGuid",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ExistingQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ExistingCompositionQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "PriceDimension",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "pubuserdefdecm1",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ReturnReason",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_InventoryLocation",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": "ID",
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": "仓库",
+   "a": "Warehouse",
+   "flag": null
+  },
+  {
+   "t": "存货名称",
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": "存货编码",
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": "规格型号",
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": "BOM版本号",
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": "计量单位",
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": "数量",
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": "成本价",
+   "a": "Price",
+   "flag": null
+  },
+  {
+   "t": "成本价2",
+   "a": "Price2",
+   "flag": "myhidden"
+  },
+  {
+   "t": "售价",
+   "a": "OrigSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": "含税售价",
+   "a": "OrigTaxSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": "折扣金额",
+   "a": "OrigDiscount",
+   "flag": null
+  },
+  {
+   "t": "本币售价",
+   "a": "SalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": "本币含税售价",
+   "a": "TaxSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": "售价2",
+   "a": "OrigSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": "含税售价2",
+   "a": "OrigTaxSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": "本币售价2",
+   "a": "SalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": "本币含税售价2",
+   "a": "TaxSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": "EditState",
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": "Val_Inventory",
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": "Code",
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": "HideValues",
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Warehouse",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Price",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Price2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigDiscount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "TaxSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "TaxSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Warehouse",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Price",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Price2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigDiscount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "TaxSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "TaxSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Warehouse",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Price",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Price2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigDiscount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "TaxSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "TaxSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Warehouse",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Bom",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Price",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Price2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigDiscount",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "TaxSalePrice",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "OrigTaxSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "SalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "TaxSalePrice2",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Val_Inventory",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": "ID",
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": "货位编码",
+   "a": "InvLocation_Code",
+   "flag": null
+  },
+  {
+   "t": "<font>*</font>计量单位",
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": "数量",
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": "结存数量说明",
+   "a": "ExistingCompositionQuantity",
+   "flag": null
+  },
+  {
+   "t": "EditState",
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": "Code",
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": "HideValues",
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": null,
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "InvLocation_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ExistingCompositionQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "InvLocation_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ExistingCompositionQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "InvLocation_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ExistingCompositionQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "InvLocation_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Unit",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Quantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ExistingCompositionQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "EditState",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "HideValues",
+   "flag": "myhidden"
+  },
+  {
+   "t": "编码",
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": "名称",
+   "a": "Name",
+   "flag": "myhidden"
+  },
+  {
+   "t": "IsHasSameFuncAuth",
+   "a": "IsHasSameFuncAuth",
+   "flag": null
+  },
+  {
+   "t": "SettlementPartner_Name",
+   "a": "SettlementPartner_Name",
+   "flag": null
+  },
+  {
+   "t": "CardCode",
+   "a": "CardCode",
+   "flag": null
+  },
+  {
+   "t": "MemberType_Name",
+   "a": "MemberType_Name",
+   "flag": null
+  },
+  {
+   "t": "Mobilephone",
+   "a": "Mobilephone",
+   "flag": null
+  },
+  {
+   "t": "StoreType_Name",
+   "a": "StoreType_Name",
+   "flag": null
+  },
+  {
+   "t": "Person_Name",
+   "a": "Person_Name",
+   "flag": null
+  },
+  {
+   "t": "Warehouse_Name",
+   "a": "Warehouse_Name",
+   "flag": null
+  },
+  {
+   "t": "Department_Name",
+   "a": "Department_Name",
+   "flag": null
+  },
+  {
+   "t": "Customer_Name",
+   "a": "Customer_Name",
+   "flag": null
+  },
+  {
+   "t": "Shorthand",
+   "a": "Shorthand",
+   "flag": null
+  },
+  {
+   "t": "IsSalesman",
+   "a": "IsSalesman",
+   "flag": null
+  },
+  {
+   "t": "CreditDate",
+   "a": "CreditDate",
+   "flag": null
+  },
+  {
+   "t": "CreditQuantity",
+   "a": "CreditQuantity",
+   "flag": null
+  },
+  {
+   "t": "PositionTitle_Name",
+   "a": "PositionTitle_Name",
+   "flag": null
+  },
+  {
+   "t": "Memo",
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": "LogisticsCampany_Name",
+   "a": "LogisticsCampany_Name",
+   "flag": null
+  },
+  {
+   "t": "contactperson",
+   "a": "contactperson",
+   "flag": null
+  },
+  {
+   "t": "contactphone",
+   "a": "contactphone",
+   "flag": null
+  },
+  {
+   "t": "province",
+   "a": "province",
+   "flag": null
+  },
+  {
+   "t": "city",
+   "a": "city",
+   "flag": null
+  },
+  {
+   "t": "districtarea",
+   "a": "districtarea",
+   "flag": null
+  },
+  {
+   "t": "detailaddress",
+   "a": "detailaddress",
+   "flag": null
+  },
+  {
+   "t": "SendWarehouseDTOs_Warehouse_Name",
+   "a": "SendWarehouseDTOs_Warehouse_Name",
+   "flag": null
+  },
+  {
+   "t": "SendInfoDTOs_SendPerson",
+   "a": "SendInfoDTOs_SendPerson",
+   "flag": null
+  },
+  {
+   "t": "SendInfoDTOs_SendMobilePhone",
+   "a": "SendInfoDTOs_SendMobilePhone",
+   "flag": null
+  },
+  {
+   "t": "SendInfoDTOs_CarInfo",
+   "a": "SendInfoDTOs_CarInfo",
+   "flag": null
+  },
+  {
+   "t": "TruckType_Name",
+   "a": "TruckType_Name",
+   "flag": null
+  },
+  {
+   "t": "TruckNum",
+   "a": "TruckNum",
+   "flag": null
+  },
+  {
+   "t": "Specification",
+   "a": "Specification",
+   "flag": null
+  },
+  {
+   "t": "IsMadeSelf",
+   "a": "IsMadeSelf",
+   "flag": null
+  },
+  {
+   "t": "InventoryPriceDTOs_RetailPriceNew",
+   "a": "InventoryPriceDTOs_RetailPriceNew",
+   "flag": null
+  },
+  {
+   "t": "InvoiceSpecification",
+   "a": "InvoiceSpecification",
+   "flag": null
+  },
+  {
+   "t": "InvoiceUnit_Name",
+   "a": "InvoiceUnit_Name",
+   "flag": null
+  },
+  {
+   "t": "AutoAddFigureNo",
+   "a": "AutoAddFigureNo",
+   "flag": null
+  },
+  {
+   "t": "SKUCode",
+   "a": "SKUCode",
+   "flag": null
+  },
+  {
+   "t": "SKUName",
+   "a": "SKUName",
+   "flag": null
+  },
+  {
+   "t": "SKUInvSCost",
+   "a": "SKUInvSCost",
+   "flag": null
+  },
+  {
+   "t": "SKULatestCost",
+   "a": "SKULatestCost",
+   "flag": null
+  },
+  {
+   "t": "SKUAvagCost",
+   "a": "SKUAvagCost",
+   "flag": null
+  },
+  {
+   "t": "Inventory_Code",
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": "Inventory_Specification",
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": "Inventory_Name",
+   "a": "Inventory_Name",
+   "flag": null
+  },
+  {
+   "t": "Version",
+   "a": "Version",
+   "flag": null
+  },
+  {
+   "t": "Manufactureplant_Name",
+   "a": "Manufactureplant_Name",
+   "flag": null
+  },
+  {
+   "t": "详细",
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Name",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "IsHasSameFuncAuth",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SettlementPartner_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "CardCode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MemberType_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Mobilephone",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "StoreType_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Person_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Warehouse_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Department_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Customer_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Shorthand",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsSalesman",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "CreditDate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "CreditQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "PositionTitle_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LogisticsCampany_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "contactperson",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "contactphone",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "province",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "city",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "districtarea",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "detailaddress",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SendWarehouseDTOs_Warehouse_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SendInfoDTOs_SendPerson",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SendInfoDTOs_SendMobilePhone",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SendInfoDTOs_CarInfo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "TruckType_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "TruckNum",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsMadeSelf",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InventoryPriceDTOs_RetailPriceNew",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InvoiceSpecification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InvoiceUnit_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "AutoAddFigureNo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUCode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUName",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUInvSCost",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKULatestCost",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUAvagCost",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Version",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Manufactureplant_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Code",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "Name",
+   "flag": "myhidden"
+  },
+  {
+   "t": null,
+   "a": "IsHasSameFuncAuth",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SettlementPartner_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "CardCode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "MemberType_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Mobilephone",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "StoreType_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Person_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Warehouse_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Department_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Customer_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Shorthand",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsSalesman",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "CreditDate",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "CreditQuantity",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "PositionTitle_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Memo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "LogisticsCampany_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "contactperson",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "contactphone",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "province",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "city",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "districtarea",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "detailaddress",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SendWarehouseDTOs_Warehouse_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SendInfoDTOs_SendPerson",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SendInfoDTOs_SendMobilePhone",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SendInfoDTOs_CarInfo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "TruckType_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "TruckNum",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "IsMadeSelf",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InventoryPriceDTOs_RetailPriceNew",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InvoiceSpecification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "InvoiceUnit_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "AutoAddFigureNo",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUCode",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUName",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUInvSCost",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKULatestCost",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "SKUAvagCost",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Code",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Specification",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Inventory_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Version",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "Manufactureplant_Name",
+   "flag": null
+  },
+  {
+   "t": null,
+   "a": "ID",
+   "flag": "myhidden"
+  }
+ ],
+ "fields": [
+  {
+   "left": "",
+   "top": "",
+   "label": "*机构"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "*单据日期"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "*单据编号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "*业务类型"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "票据类型"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "退货原因"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "出库类别"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "客户编码"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "*客户"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "客户简称"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "送达照片"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "*配送方式"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "*结算客户"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "会员编号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "会员卡号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "会员姓名"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "手机号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "积分余额"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "通讯地址"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "部门"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "门店"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "匹配来源单号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "经手人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "验货人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "验货日期"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "发货人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "发货日期"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "项目"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "仓库"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "收货仓库"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "*币种"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "*汇率"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "运输方式"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "协同上游单据类型ID"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "协同上游单据ID"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "送货地址"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "省份"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "城市"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "区县"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "物流网点"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "运单号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "发货单号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "发货日期"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "送货人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "所有司机"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "配送员"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "送货日期"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "司机电话"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "车辆(自有)"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "所有车辆"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "坐标地址"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "运费"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "物流结算方式"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "车辆信息"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "司机姓名"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "物流状态"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "容器号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "联系人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "联系电话"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "客户手机号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "数据来源"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "来源单据"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "外部单据号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "来源单号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "销售订单号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "代发销售订单号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "协同对方单号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "自动流转生单"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "协同类型"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "委托角色"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "对方机构"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "委托方"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "受托方"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "对方协同ID"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "委托采购商"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "代发客户名称"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "代发客户联系人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "代发客户联系方式"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "代发客户手机号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "代发收货地址"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "委托采购价"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "销售订单ID"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "不可以修改标志"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "是否手工修改过单据号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "VoucherType"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "出入库方向"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "是否自动生成"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "是否只读"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "总箱数(箱号)"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "原始版本"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "来源单据ID"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "路线"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "派车人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "送达时间"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "返仓时间"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "派车时间"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "装车时间"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "凭证"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "凭证字号"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "制单人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "代理人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "修改人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "审核机器人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "审核人"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "审核日期"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "审核时间"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "打印次数"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "创建时间"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "协同标识"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "协同状态"
+  },
+  {
+   "left": "",
+   "top": "",
+   "label": "协同收货仓库"
+  }
+ ],
+ "detailAttr": "",
+ "tabs": [
+  "tab_RDRecordDetails",
+  "tab_RDRecordDetails_Sum"
+ ],
+ "btnGroups": [
+  "新增 新增 引入常用单据 设置默认功能 新增 引入常用单据 选单 选销售订单 设置默认功能 选销售订单 智能选单 保存 保存 Alt+S 保存新增 Alt+\\ ",
+  "新增 引入常用单据 设置默认功能 新增 引入常用单据",
+  "新增 引入常用单据",
+  "选销售订单 设置默认功能 选销售订单",
+  "选销售订单",
+  "保存 Alt+S 保存新增 Alt+\\ 保存为草稿 保存为常用单据 保存打印 Alt+G 设置默认功能 保存 保存新增 保存为草稿 保存为常用单据 保存打印",
+  "保存 保存新增 保存为草稿 保存为常用单据 保存打印",
+  "生成销售出库单(销售退货) 设置默认功能 生成销售出库单(销售退货)",
+  "生成销售出库单(销售退货)",
+  "现存量查询 变更历史",
+  "销售订单情况 退库情况 出库情况 生单流程联查",
+  "单据设置 移动控件位置 调整控件宽度 工具栏设置 智能选单设置",
+  "直接打印 Alt+P 打印 Alt+; 预览 Alt+/ 打印模板设置 Alt+, 导出 Alt+X 明细标签打印 打印情况 设置默认功能 直接打印 打印 预览",
+  "直接打印 打印 预览 打印模板设置 导出 明细标签打印 打印情况",
+  "复制 放弃 Alt+Z 草稿 Alt+B 导入 下载导入模板 附件 刷新 消息",
+  "现存量参照 存货中心 放大/缩小 设置",
+  "设置"
+ ],
+ "url": "https://h2t.chanjet.com/tplus/BAPView/Voucher.aspx?mId=ST1021&sysId=ST&pId=voucherView&SourceType=FromMenu&taskID=%E9%94%80%E5%94%AE%E5%87%BA%E5%BA%93%E5%8D%95&TaskSessionID=d4d70f28-3ccb-c980-6f00-99e4dd1ea5c0"
+}

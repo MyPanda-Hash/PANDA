@@ -1,0 +1,35 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: light-mes-backend
+  datasource:
+    url: jdbc:mysql://localhost:3306/light_mes?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: never
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+
+mes:
+  jwt:
+    secret: light-mes-jwt-secret-key-please-change-in-production-0123456789
+    expire-hours: 24
+  panelx:
+    base-url: https://demo.kwaidoo.com/VF_DEV/
+    bus-domain-code: SdkTest
+    app-code: SdkTest
+    username: admin
+    password: "123456"
+    panel-map:
+      MANU_ORDER: SdkTest_IML_00002

@@ -1,0 +1,61 @@
+{
+  "rowsBefore": 11,
+  "pageState": {
+    "hash": "#/panelx/list/DEPT",
+    "hasTable": true,
+    "hasInline": true,
+    "body": "轻MES | 一号工厂 | 系统管理员 | 已认证 | 一号工厂 | 登录日期 -- | 服务到期 2027-08-13 | 更新公告 | 5 | 3 | 2 | 系统管理员 | 我的桌面 | 智能供应链 | 新生产 | 基础设置 | 基础"
+  },
+  "lastRowText": "11\n \n \n \n \nfalse\n \n保存\n取消",
+  "lastBox": {
+    "x": 427,
+    "y": 664,
+    "w": 328,
+    "h": 32
+  },
+  "inlineInputShown300": {
+    "hasInput": false,
+    "html": "<div class=\"cell el-tooltip\" style=\"width: 326px;\"><!----><span data-v-4f2a2f3a=\"\"></span></div>"
+  },
+  "inlineDispatchRetry": {
+    "hasInput": true
+  },
+  "inlineInputShown": true,
+  "typed1": true,
+  "val1": "D99",
+  "typed2": true,
+  "val2": "测试部门99",
+  "afterInlineSave": {
+    "rows": 12,
+    "hasNew": true,
+    "msg": "新增成功：DEPT-011"
+  },
+  "dialogTitle": "新增部门",
+  "dialogFields": [
+    "部门编码*",
+    "部门名称*",
+    "负责人",
+    "停用"
+  ],
+  "afterDialogSave": {
+    "dialogGone": true,
+    "hasNew": true,
+    "rows": 13
+  },
+  "dblOpen": {
+    "url": "#/panelx/form/DEPT?operationName=%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B&code=DEPT-012",
+    "formShown": true
+  },
+  "initDialog": {
+    "labels": [
+      "期初余额单号*",
+      "单据日期",
+      "仓库*",
+      "备注"
+    ],
+    "tabs": [
+      "明细*"
+    ]
+  },
+  "initDialogRows": 1
+}

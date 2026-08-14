@@ -1,0 +1,28 @@
+[
+ {
+  "step": "进入面板(无会话)",
+  "dlg": {
+   "shown": true,
+   "title": "登录 PanelX 平台",
+   "hasUser": true
+  },
+  "url": "http://localhost:5174/#/panelx/list/MANU_ORDER"
+ },
+ {
+  "step": "平台登录后",
+  "dlg": "closed",
+  "panelInfo": "测试流程面板 · MANU_ORDER",
+  "rows": 19,
+  "firstRow": [
+   "1",
+   "Do_not_change_sample_111",
+   "",
+   "发起",
+   "",
+   "",
+   "查看"
+  ],
+  "toolbar": "操作",
+  "bodyHead": "轻MES|一号工厂|admin|已认证|一号工厂|登录日期 2026-08-14|服务到期 2027-08-13|更新公告|5|3|2|管理员|我的桌面|智能供应链|新生产|生产管理|智慧车间|基础设置|TOP应用|我的桌面|生产加工单|关"
+ }
+]

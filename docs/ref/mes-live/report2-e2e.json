@@ -1,0 +1,200 @@
+[
+ {
+  "code": "SALES_ORDER_DETAIL",
+  "ok": true,
+  "rowCount": 7,
+  "first": [
+   "1",
+   "2026-08-14",
+   "SO-2026-08-0001",
+   "已审核",
+   "KH001",
+   "华东铝业",
+   "华东铝业"
+  ],
+  "panelInfo": "销售订单明细表 · SALES_ORDER_DETAIL"
+ },
+ {
+  "code": "SALES_ORDER_STATS",
+  "ok": true,
+  "rowCount": 6,
+  "first": [
+   "1",
+   "KH001",
+   "华东铝业",
+   "销售一部",
+   "张伟",
+   "CP001",
+   "铝棒 Φ80"
+  ],
+  "panelInfo": "销售订单统计表 · SALES_ORDER_STATS"
+ },
+ {
+  "code": "SALES_ORDER_EXEC",
+  "ok": true,
+  "rowCount": 7,
+  "first": [
+   "1",
+   "SO-2026-08-0001",
+   "2026-08-14",
+   "KH001",
+   "华东铝业",
+   "销售一部",
+   "张伟"
+  ],
+  "panelInfo": "销售订单执行表 · SALES_ORDER_EXEC"
+ },
+ {
+  "code": "SALES_ORDER_PROGRESS",
+  "ok": true,
+  "rowCount": 7,
+  "first": [
+   "1",
+   "SO-2026-08-0001",
+   "2026-08-14",
+   "华东铝业",
+   "CP001",
+   "铝棒 Φ80",
+   "Φ80×3000"
+  ],
+  "panelInfo": "销售订单生产进度表 · SALES_ORDER_PROGRESS"
+ },
+ {
+  "code": "MANU_ORDER_DETAIL",
+  "ok": true,
+  "rowCount": 8,
+  "first": [
+   "1",
+   "MO-2026-08-0009",
+   "生产中",
+   "熔铸车间",
+   "KH001",
+   "华东铝业",
+   "CP001"
+  ],
+  "panelInfo": "生产加工单明细表 · MANU_ORDER_DETAIL"
+ },
+ {
+  "code": "MANU_ORDER_STATS",
+  "ok": true,
+  "rowCount": 5,
+  "first": [
+   "1",
+   "CP001",
+   "铝棒 Φ80",
+   "Φ80×3000",
+   "件",
+   "1",
+   "200"
+  ],
+  "panelInfo": "生产加工单统计表 · MANU_ORDER_STATS"
+ },
+ {
+  "code": "MANU_PROC_STATS",
+  "ok": true,
+  "rowCount": 10,
+  "first": [
+   "1",
+   "PX001",
+   "下料",
+   "熔铸车间",
+   "WC-01 熔铸中心",
+   "下料班",
+   "锯床-01"
+  ],
+  "panelInfo": "生产加工单工序统计表 · MANU_PROC_STATS"
+ },
+ {
+  "code": "PROC_DETAIL",
+  "ok": true,
+  "rowCount": 3,
+  "first": [
+   "1",
+   "MR-2026-08-0002",
+   "草稿",
+   "2026-08-14",
+   "MO-2026-08-0002",
+   "精整车间",
+   "CP003"
+  ],
+  "panelInfo": "工序明细表 · PROC_DETAIL"
+ },
+ {
+  "code": "PROC_STATS",
+  "ok": true,
+  "rowCount": 3,
+  "first": [
+   "1",
+   "PX003",
+   "铣削",
+   "精整车间",
+   "铣工班",
+   "陈强",
+   "1"
+  ],
+  "panelInfo": "工序统计表 · PROC_STATS"
+ },
+ {
+  "code": "SALARY_DETAIL",
+  "ok": true,
+  "rowCount": 3,
+  "first": [
+   "1",
+   "MR-2026-08-0002",
+   "2026-08-14",
+   "草稿",
+   "MO-2026-08-0002",
+   "PX003",
+   "铣削"
+  ],
+  "panelInfo": "工资明细表 · SALARY_DETAIL"
+ },
+ {
+  "code": "SALARY_STATS",
+  "ok": true,
+  "rowCount": 3,
+  "first": [
+   "1",
+   "陈强",
+   "铣工班",
+   "计件",
+   "1",
+   "296",
+   "1776"
+  ],
+  "panelInfo": "工资统计表 · SALARY_STATS"
+ },
+ {
+  "code": "REWORK_REPORT",
+  "ok": true,
+  "rowCount": 3,
+  "first": [
+   "1",
+   "MO-2026-08-0009",
+   "2026-08-14",
+   "生产中",
+   "MO-2026-08-0009",
+   "CP001",
+   "铝棒 Φ80"
+  ],
+  "panelInfo": "返修工序汇报单 · REWORK_REPORT"
+ },
+ {
+  "code": "MANU_BOARD",
+  "ok": true,
+  "count": 5,
+  "title": "生产看板 （参考 T+ 生产在制看板 / 生产库存看板 / 生产运营看板）"
+ },
+ {
+  "code": "REWORK_DESK",
+  "ok": true,
+  "count": 3,
+  "title": "返修工作台 （待返修任务池 · 对齐 T+ 返修工作台）"
+ },
+ {
+  "code": "SOLUTION_CENTER",
+  "ok": true,
+  "count": 3,
+  "title": "方案中心 （行业方案 / 应用市场 · 对齐 T+ 方案中心形态）"
+ }
+]

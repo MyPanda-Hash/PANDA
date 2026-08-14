@@ -1,0 +1,210 @@
+{
+  "name": "智能供应链",
+  "code": "ISC",
+  "children": [
+    {
+      "name": "销售管理",
+      "code": "SA",
+      "groups": [
+        {
+          "group": "单据",
+          "items": [
+            {
+              "name": "销售订单",
+              "code": "#SA03",
+              "alltitle": "销售订单",
+              "isDetail": false
+            },
+            {
+              "name": "统计表",
+              "code": "#SA6001",
+              "alltitle": "销售订单统计表",
+              "isDetail": true
+            },
+            {
+              "name": "明细表",
+              "code": "#SA4001",
+              "alltitle": "销售订单明细表",
+              "isDetail": true
+            }
+          ]
+        },
+        {
+          "group": "执行表",
+          "items": [
+            {
+              "name": "销售订单执行表",
+              "code": "#SA8006",
+              "alltitle": "销售订单执行表",
+              "isDetail": false
+            }
+          ]
+        },
+        {
+          "group": "更多",
+          "items": [
+            {
+              "name": "销售订单生产进度表",
+              "code": "#SA8018",
+              "alltitle": "销售订单生产进度表",
+              "isDetail": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "库存核算",
+      "code": "ST",
+      "groups": [
+        {
+          "group": "单据",
+          "items": [
+            {
+              "name": "采购入库单",
+              "code": "#ST1001",
+              "alltitle": "采购入库单",
+              "isDetail": false
+            },
+            {
+              "name": "统计表",
+              "code": "#ST6001",
+              "alltitle": "采购入库单统计表",
+              "isDetail": true
+            },
+            {
+              "name": "明细表",
+              "code": "#ST4001",
+              "alltitle": "采购入库单明细表",
+              "isDetail": true
+            },
+            {
+              "name": "产成品入库单",
+              "code": "#ST1002",
+              "alltitle": "产成品入库单",
+              "isDetail": false
+            },
+            {
+              "name": "统计表",
+              "code": "#ST6002",
+              "alltitle": "产成品入库单统计表",
+              "isDetail": true
+            },
+            {
+              "name": "明细表",
+              "code": "#ST4002",
+              "alltitle": "产成品入库单明细表",
+              "isDetail": true
+            },
+            {
+              "name": "其他入库单",
+              "code": "#ST1004",
+              "alltitle": "其他入库单",
+              "isDetail": false
+            },
+            {
+              "name": "统计表",
+              "code": "#ST6004",
+              "alltitle": "其他入库单统计表",
+              "isDetail": true
+            },
+            {
+              "name": "明细表",
+              "code": "#ST4004",
+              "alltitle": "其他入库单明细表",
+              "isDetail": true
+            },
+            {
+              "name": "销售出库单",
+              "code": "#ST1021",
+              "alltitle": "销售出库单",
+              "isDetail": false
+            },
+            {
+              "name": "统计表",
+              "code": "#ST6011",
+              "alltitle": "销售出库单统计表",
+              "isDetail": true
+            },
+            {
+              "name": "明细表",
+              "code": "#ST4005",
+              "alltitle": "销售出库单明细表",
+              "isDetail": true
+            },
+            {
+              "name": "材料出库单",
+              "code": "#ST1022",
+              "alltitle": "材料出库单",
+              "isDetail": false
+            },
+            {
+              "name": "统计表",
+              "code": "#ST6012",
+              "alltitle": "材料出库单统计表",
+              "isDetail": true
+            },
+            {
+              "name": "明细表",
+              "code": "#ST4006",
+              "alltitle": "材料出库单明细表",
+              "isDetail": true
+            },
+            {
+              "name": "其他出库单",
+              "code": "#ST1024",
+              "alltitle": "其他出库单",
+              "isDetail": false
+            },
+            {
+              "name": "统计表",
+              "code": "#ST6014",
+              "alltitle": "其他出库单统计表",
+              "isDetail": true
+            },
+            {
+              "name": "明细表",
+              "code": "#ST4008",
+              "alltitle": "其他出库单明细表",
+              "isDetail": true
+            }
+          ]
+        },
+        {
+          "group": "成本核算",
+          "items": [
+            {
+              "name": "成本手工维护",
+              "code": "#ST3030",
+              "alltitle": "成本手工维护",
+              "isDetail": false
+            }
+          ]
+        },
+        {
+          "group": "库存账表",
+          "items": [
+            {
+              "name": "库存状况表",
+              "code": "#ST9001",
+              "alltitle": "库存状况表",
+              "isDetail": false
+            },
+            {
+              "name": "收发存汇总表",
+              "code": "#ST6061",
+              "alltitle": "收发存汇总表",
+              "isDetail": false
+            },
+            {
+              "name": "库存台账",
+              "code": "#ST9002",
+              "alltitle": "库存台账",
+              "isDetail": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

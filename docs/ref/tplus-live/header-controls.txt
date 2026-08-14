@@ -1,0 +1,39 @@
+{"left":10,"top":5,"width":220,"label":"*合同号","ctlId":"lab_VoucherDate","ctlType":"DateDropDown","value":"2026-08-14"}
+{"left":240,"top":5,"width":220,"label":"*锭号","ctlId":"lab_Code","ctlType":"TextBox","value":"MO-2026-08-0009"}
+{"left":470,"top":5,"width":220,"label":"*批号","ctlId":"lab_BusiType","ctlType":"RefComboBox","value":""}
+{"left":10,"top":30,"width":220,"label":"*生产车间","ctlId":"lab_Department","ctlType":"RefComboBox","value":""}
+{"left":10,"top":30,"width":220,"label":"制单人","ctlId":"lab_Maker","ctlType":"TextBox","value":"tplusdemo12852"}
+{"left":240,"top":30,"width":220,"label":"预开工日","ctlId":"lab_PreStartDate","ctlType":"DateDropDown","value":"2026-08-14"}
+{"left":240,"top":30,"width":220,"label":"审核人","ctlId":"lab_Auditor","ctlType":"TextBox","value":"可录入50个汉字"}
+{"left":470,"top":30,"width":220,"label":"预完工日","ctlId":"lab_PreFinishDate","ctlType":"DateDropDown","value":"2026-08-14"}
+{"left":470,"top":30,"width":220,"label":"审核日期","ctlId":"lab_AuditedDate","ctlType":"DateDropDown","value":"例如 yyyy-mm-dd"}
+{"left":10,"top":55,"width":220,"label":"销售订单号","ctlId":"lab_SaleOrderCode","ctlType":"TextComboBox","value":""}
+{"left":10,"top":55,"width":260,"label":"审核时间","ctlId":"lab_AuditedTime","ctlType":"DateDropDown","value":"例如 yyyy-mm-dd"}
+{"left":240,"top":55,"width":220,"label":"客户编码","ctlId":"lab_Customer_Code","ctlType":"RefComboBox","value":""}
+{"left":470,"top":55,"width":220,"label":"客户","ctlId":"lab_Customer","ctlType":"RefComboBox","value":""}
+{"left":470,"top":55,"width":220,"label":"打印次数","ctlId":"lab_PrintCount","ctlType":"TextBox","value":"0"}
+{"left":10,"top":80,"width":220,"label":"*测试程序","ctlId":"lab_priuserdefnvc1","ctlType":"TextBox","value":"可录入60个汉字"}
+{"left":10,"top":80,"width":260,"label":"创建时间","ctlId":"lab_CreatedTime","ctlType":"DateDropDown","value":"例如 yyyy-mm-dd"}
+{"left":240,"top":80,"width":220,"label":"测试程序","ctlId":"lab_pubuserdefnvc1","ctlType":"TextBox","value":"可录入60个汉字"}
+{"left":470,"top":80,"width":220,"label":"生产订单客户","ctlId":"lab_pubuserdefnvc2","ctlType":"RefComboBox","value":""}
+{"left":470,"top":80,"width":220,"label":"审核机器人","ctlId":"lab_IsRobotApprove","ctlType":"CheckBox","value":"审核机器人"}
+{"left":10,"top":105,"width":220,"label":"*机构","ctlId":"lab_MarketingOrgan","ctlType":"RefComboBox","value":"*机构"}
+{"left":10,"top":105,"width":220,"label":"代理人","ctlId":"lab_Agency","ctlType":"TextBox","value":"代理人"}
+{"left":240,"top":105,"width":220,"label":"重量","ctlId":"lab_Project","ctlType":"RefComboBox","value":"重量"}
+{"left":240,"top":105,"width":220,"label":"修改人","ctlId":"lab_Reviser","ctlType":"TextBox","value":"修改人"}
+{"left":470,"top":105,"width":220,"label":"开工日期","ctlId":"lab_StartDate","ctlType":"DateDropDown","value":"开工日期"}
+{"left":470,"top":105,"width":220,"label":"变更人","ctlId":"lab_Changer","ctlType":"TextBox","value":"变更人"}
+{"left":10,"top":130,"width":220,"label":"完工日期","ctlId":"lab_FinishDate","ctlType":"DateDropDown","value":"完工日期"}
+{"left":10,"top":130,"width":220,"label":"变更日期","ctlId":"lab_ChangeDate","ctlType":"DateDropDown","value":"变更日期"}
+{"left":240,"top":130,"width":220,"label":"启用派工","ctlId":"lab_IsStartDispatching","ctlType":"CheckBox","value":"启用派工"}
+{"left":470,"top":130,"width":220,"label":"自动转移","ctlId":"lab_IsAutoTransfer","ctlType":"CheckBox","value":"自动转移"}
+{"left":10,"top":155,"width":220,"label":"产品自动添加到材料","ctlId":"lab_IsProductAutoAddMaterial","ctlType":"CheckBox","value":"产品自动添加到材料"}
+{"left":240,"top":155,"width":220,"label":"是否手工修改单据编码","ctlId":"lab_IsModifiedCode","ctlType":"CheckBox","value":"是否手工修改单据编码"}
+{"left":470,"top":155,"width":220,"label":"IsNoModify","ctlId":"lab_IsNoModify","ctlType":"TextBox","value":"IsNoModify"}
+{"left":10,"top":180,"width":220,"label":"销售订单ID","ctlId":"lab_SaleOrderId","ctlType":"TextBox","value":"销售订单ID"}
+{"left":240,"top":180,"width":220,"label":"是否变更操作","ctlId":"lab_IsChanged","ctlType":"CheckBox","value":"是否变更操作"}
+{"left":470,"top":180,"width":220,"label":"外部单据号","ctlId":"lab_ExternalCode","ctlType":"TextBox","value":"外部单据号"}
+{"left":10,"top":205,"width":220,"label":"是否只读","ctlId":"lab_IsReadOnly","ctlType":"CheckBox","value":"是否只读"}
+{"left":240,"top":205,"width":220,"label":"负责人","ctlId":"lab_Person","ctlType":"RefComboBox","value":"负责人"}
+{"left":470,"top":205,"width":220,"label":"启用领料申请","ctlId":"lab_IsMaterialRequest","ctlType":"CheckBox","value":"启用领料申请"}
+{"left":10,"top":230,"width":220,"label":"对方仓库","ctlId":"lab_ReceiveWarehouse","ctlType":"RefComboBox","value":"对方仓库"}
