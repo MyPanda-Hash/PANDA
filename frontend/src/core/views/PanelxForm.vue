@@ -314,6 +314,16 @@ async function openSelectDialog() {
     // 对齐 T+ 选单前提：已生效（已审核）且未中止的来源单据
     const res = await engine.queryFormDataList({ panelCode: cfg.source, condition: { 单据状态: '已审核' }, pageNo: 1, pageSize: 100 })
     let rows = res.list || []
+    // 来源列表返回单据级行（带 detail）时展开为明细行（对齐 T+ 选单按明细行展示/带出；有 detailRows 配置则保持单据粒度）
+    if (!cfg.detailRows && rows.some((r) => r.detail)) {
+      const flat = []
+      for (const r of rows) {
+        const d = r.detail
+        const key = d ? Object.keys(d)[0] : null
+        if (key && Array.isArray(d[key])) for (const it of d[key]) flat.push({ ...r, ...it })
+      }
+      if (flat.length) rows = flat
+    }
     // detailRows 配置时选单粒度=单据（如工序汇报单选生产加工单）：按单据编号去重，避免一张多产品单显示多行
     if (cfg.detailRows) {
       const seen = new Set()
