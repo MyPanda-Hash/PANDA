@@ -167,8 +167,8 @@
                 </el-table>
               </el-tab-pane>
 
-              <!-- 汇总 -->
-              <el-tab-pane label="汇总" name="summary">
+              <!-- 汇总（真实 T+ 仅产成品明细/材料明细有汇总页签，工序明细无） -->
+              <el-tab-pane v-if="tab.summaryItems && tab.summaryItems.length" label="汇总" name="summary">
                 <el-table :data="summaryRows(tab)" size="small" border>
                   <el-table-column prop="label" label="汇总项目" min-width="220" />
                   <el-table-column prop="value" label="数值" min-width="160" align="right" />

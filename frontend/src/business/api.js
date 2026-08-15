@@ -1,5 +1,7 @@
 import request from '@core/request'
 import { menuTree } from './menus'
+// 运行模式开关统一定义在通用层 core/env.js：本文件内部使用需显式 import（re-export 不创建本地绑定）
+import { USE_MOCK, USE_PANELX, USE_PORTAL_MOCK } from '@core/env'
 
 // 运行模式开关统一定义在通用层 core/env.js，这里转发保持既有调用方兼容
 export {
