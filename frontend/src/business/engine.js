@@ -10535,7 +10535,10 @@ export async function getFormDescriptor({ panelCode, code }) {
 export async function queryFormDataList(params) {
   if (USE_MOCK) {
     await mockDelay()
-    let rows = flattenFor(params.panelCode)
+    // 生产加工单：返回单据级行（带 detail），供列表页按单据翻页展示明细
+    let rows = params.panelCode === 'MANU_ORDER'
+      ? MOCK_ROWS.map((r) => ({ ...r, detail: r.detail ? { products: [...r.detail.products], materials: [...r.detail.materials], processes: [...r.detail.processes] } : r.detail })).sort((a, b) => (a['编号'] < b['编号'] ? 1 : -1))
+      : flattenFor(params.panelCode)
     const cond = params.condition || {}
     for (const [k, v] of Object.entries(cond)) {
       if (v === undefined || v === null || v === '') continue

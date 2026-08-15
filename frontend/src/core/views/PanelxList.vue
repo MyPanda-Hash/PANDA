@@ -1,151 +1,159 @@
 <template>
-  <div class="panelx-list">
-    <!-- 查询区（配置驱动，3 列） -->
-    <div class="query card">
-      <el-form inline class="q-form" @submit.prevent>
-        <div class="q-grid">
-          <div v-for="qr in queryFields" :key="qr.dataName" class="q-field">
-            <span class="q-label">{{ qr.dataName }}</span>
-            <el-input v-if="!qr.dataType || qr.dataType === '文本'" v-model="condition[qr.dataName]" clearable placeholder="" size="small" @keyup.enter="search" />
-            <el-select v-else-if="qr.dataType === '下拉框' || qr.dataType === '参照'" v-model="condition[qr.dataName]" clearable filterable size="small">
-              <el-option v-for="o in qOptions(qr)" :key="o" :label="o.label ?? o" :value="o.value ?? o" />
-            </el-select>
-            <el-date-picker
-              v-else-if="qr.dataType === '日期'"
-              v-model="condition[qr.dataName]"
-              type="date"
-              value-format="YYYY-MM-DD"
-              size="small"
-              style="width: 100%"
-            />
-            <el-input v-else v-model="condition[qr.dataName]" clearable size="small" @keyup.enter="search" />
-          </div>
-        </div>
-        <div class="q-btns">
-          <el-button type="primary" :icon="Search" @click="search">查询</el-button>
-          <el-button :icon="Refresh" @click="reset">重置</el-button>
-        </div>
-      </el-form>
-    </div>
-
-    <div class="card">
-      <!-- 工具栏（T+ 分组形态） -->
-      <div class="toolbar">
-        <span v-for="g in groups" :key="g.name" class="tb-group">
-          <span class="tb-main" :class="{ disabled: isDisabled(g.actions[0]) }" @click="onButton(g.actions[0])">{{ g.name }}</span>
-          <el-dropdown v-if="g.actions.length > 1" @command="(a) => onButton(a)" trigger="click">
-            <span class="tb-caret"><el-icon><ArrowDown /></el-icon></span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item v-for="a in g.actions" :key="a" :command="a" :disabled="isDisabled(a)">
-                  <span class="act-name">{{ a }}</span><span v-if="SHORTCUTS[a]" class="act-sc">{{ SHORTCUTS[a] }}</span>
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+  <div class="panelx-list" @click="closeCtx">
+    <!-- ══════════ 顶部工具栏（T+ 灰条 + 单据翻页）══════════ -->
+    <div class="tools">
+      <div class="tb-group" v-for="(g, gi) in groups" :key="'g' + gi">
+        <span
+          v-for="it in g.items"
+          :key="it.name"
+          class="tb-main"
+          :class="{ disabled: isDisabled(it.name) }"
+          @click="onButton(it.name)"
+        >
+          <span class="act-name">{{ it.name }}</span>
+          <span v-if="it.shortcut" class="act-sc">{{ it.shortcut }}</span>
         </span>
-        <div class="spacer" />
-        <span class="panel-info">{{ panelName }} · {{ panelCode }}</span>
+        <span v-if="g.caret" class="tb-caret">▼</span>
       </div>
-
-      <!-- 网格双视图（明细 / 明细汇总） -->
-      <el-tabs v-model="gridTab" class="grid-tabs">
-        <el-tab-pane v-for="gt in gridTabs" :key="gt.label" :name="gt.label">
-          <template #label>{{ gt.label }}</template>
-          <div class="grid-wrap">
-            <div v-if="isApproved" class="approved-stamp">已审批</div>
-          <el-table
-            :data="gt.summary ? summaryList(gt) : mergedList"
-            v-loading="loading"
-            size="small"
-            border
-            height="480"
-            highlight-current-row
-            :row-class-name="rowCls"
-            :show-summary="true"
-            :summary-method="(p) => summarize(p, gt, gt.summary ? summaryList(gt) : list)"
-            @current-change="(row) => (current = row)"
-            @row-dblclick="(row) => onRowDblClick(row)"
-            @cell-dblclick="(row, column) => onCellDblClick(row, column)"
-            @row-contextmenu="(row, col, ev) => onCtx(ev, row)"
-          >
-            <el-table-column label="序号" width="55" align="center" fixed="left">
-              <template #default="{ $index }">{{ $index + 1 }}</template>
-            </el-table-column>
-            <el-table-column v-for="c in gt.columns" :key="c" :prop="c" :label="c" min-width="110" show-overflow-tooltip>
-              <template #default="{ row }">
-                <template v-if="row._inline && inlineCol === c">
-                  <el-input v-if="inlineType(c) === '文本'" v-model="row[c]" size="small" autofocus @keyup.enter="inlineSave" @blur="inlineCol = ''" />
-                  <div v-else-if="inlineType(c) === '参照'" class="ref-inline">
-                    <span class="ref-inline-txt" @click="openInlineRef(c)">{{ inlineRefText(c) }}</span>
-                    <el-button size="small" :icon="Search" class="ref-btn" @click="openInlineRef(c)" />
-                  </div>
-                  <el-select v-else-if="inlineType(c) === '下拉框'" v-model="row[c]" size="small" filterable allow-create style="width: 100%">
-                    <el-option v-for="o in inlineOptions(c)" :key="o" :label="o.label ?? o" :value="o.value ?? o" />
-                  </el-select>
-                  <el-date-picker v-else-if="inlineType(c) === '日期'" v-model="row[c]" type="date" value-format="YYYY-MM-DD" size="small" style="width: 100%" @change="inlineCol = ''" />
-                  <el-input-number v-else-if="inlineType(c) === '小数' || inlineType(c) === '整数'" v-model="row[c]" :controls="false" size="small" style="width: 100%" @keyup.enter="inlineSave" />
-                  <el-switch v-else-if="inlineType(c) === '是否'" v-model="row[c]" size="small" @change="inlineCol = ''" />
-                  <el-input v-else v-model="row[c]" size="small" autofocus @keyup.enter="inlineSave" @blur="inlineCol = ''" />
-                </template>
-                <template v-else>
-                  <el-image v-if="c === '存货图片' && row[c]" :src="row[c]" fit="contain" style="width: 30px; height: 30px" />
-                  <span v-else-if="c === '存货图片'" class="img-ph">图</span>
-                  <span v-else>{{ row[c] }}</span>
-                </template>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="90" fixed="right">
-              <template #default="{ row }">
-                <template v-if="row._inline">
-                  <el-button link type="primary" size="small" @click="inlineSave">保存</el-button>
-                  <el-button link size="small" @click="cancelInline">取消</el-button>
-                </template>
-                <el-button v-else link type="primary" size="small" @click="openForm(row)">查看</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-          </div>
-        </el-tab-pane>
-      </el-tabs>
-
-      <!-- 网格右键菜单（对齐真实 T+） -->
-      <div v-show="ctx.visible" class="ctx-menu" :style="{ left: ctx.x + 'px', top: ctx.y + 'px' }" @click.stop @contextmenu.stop>
-        <div v-for="it in ctxItems" :key="it" class="ctx-item" @click="onCtxItem(it)">{{ it }}</div>
-      </div>
-
-      <div class="pager">
-        <el-pagination
-          v-model:current-page="query.pageNo"
-          v-model:page-size="query.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @current-change="load"
-          @size-change="search"
-        />
+      <div class="tools-right">
+        <span class="doc-chip">单据：{{ cur['编号'] || '-' }}</span>
+        <span class="doc-status" :class="cur['单据状态']">{{ cur['单据状态'] || '' }}</span>
+        <span class="page-btn" title="首页" @click="pageFirst">◁</span>
+        <span class="page-btn" title="上一张" @click="page(-1)">◀</span>
+        <span class="page-no">第 {{ curNo }}/{{ total }} 张</span>
+        <span class="page-btn" title="下一张" @click="page(1)">▶</span>
+        <span class="page-btn" title="末页" @click="pageLast">▷</span>
       </div>
     </div>
+
+    <!-- ══════════ 表头字段区（label 在上、输入在下）══════════ -->
+    <div class="fields">
+      <div class="field" v-for="qr in queryFields" :key="qr.dataName">
+        <label :class="{ req: qr.isRequired }">{{ qr.label || qr.dataName }}</label>
+        <el-select
+          v-if="qType(qr) === 'select'"
+          v-model="condition[qr.dataName]"
+          clearable
+          filterable
+          :placeholder="qr.placeholder || ''"
+          @change="search"
+        >
+          <el-option v-for="o in qOptions(qr)" :key="o.value" :label="o.label ?? o.value" :value="o.value" />
+        </el-select>
+        <el-date-picker
+          v-else-if="qType(qr) === 'date'"
+          v-model="condition[qr.dataName]"
+          type="date"
+          value-format="YYYY-MM-DD"
+          :placeholder="qr.placeholder || '选择日期'"
+          @change="search"
+        />
+        <el-input v-else v-model="condition[qr.dataName]" :placeholder="qr.placeholder || ''" @keyup.enter="search" clearable @clear="search" />
+      </div>
+    </div>
+
+    <div class="body" v-loading="loading">
+      <!-- ══════════ A 区：产成品明细 / 产成品明细汇总 ══════════ -->
+      <div class="detail">
+        <div class="dt-head">
+          <span class="dt-tab" :class="{ on: tabA === 'products' }" @click="tabA = 'products'">产成品明细</span>
+          <span class="dt-tab" :class="{ on: tabA === 'prodSummary' }" @click="tabA = 'prodSummary'">产成品明细汇总</span>
+          <span class="dt-ics">
+            <span class="dt-ic" v-for="it in iconA" :key="it" @click="onIcon(it, 'A')">{{ it }}</span>
+          </span>
+        </div>
+        <el-table
+          :data="tabA === 'products' ? curProducts : curProdSummary"
+          border
+          size="small"
+          :show-summary="tabA === 'products'"
+          :summary-method="sumMethod"
+          sum-text="合计"
+          :row-class-name="rowCls"
+          @row-contextmenu="(row, col, ev) => onCtx(ev, row, 'A')"
+          @row-dblclick="() => openForm(cur)"
+        >
+          <el-table-column
+            v-for="c in prodCols"
+            :key="c.prop"
+            :prop="c.prop"
+            :label="c.label"
+            :width="c.width"
+            :align="c.align"
+            show-overflow-tooltip
+          />
+        </el-table>
+      </div>
+
+      <!-- ══════════ B 区：材料明细 / 工序明细 / 材料明细汇总 ══════════ -->
+      <div class="detail">
+        <div class="dt-head">
+          <span class="dt-tab" :class="{ on: tabB === 'materials' }" @click="tabB = 'materials'">材料明细</span>
+          <span class="dt-tab" :class="{ on: tabB === 'processes' }" @click="tabB = 'processes'">工序明细</span>
+          <span class="dt-tab" :class="{ on: tabB === 'matSummary' }" @click="tabB = 'matSummary'">材料明细汇总</span>
+          <span class="dt-ics">
+            <span class="dt-ic" v-for="it in iconB" :key="it" @click="onIcon(it, 'B')">{{ it }}</span>
+          </span>
+        </div>
+        <el-table
+          :data="tabB === 'materials' ? curMaterials : tabB === 'processes' ? curProcesses : curMatSummary"
+          border
+          size="small"
+          :show-summary="tabB !== 'matSummary'"
+          :summary-method="sumMethod"
+          sum-text="合计"
+          :row-class-name="rowCls"
+          @row-contextmenu="(row, col, ev) => onCtx(ev, row, 'B')"
+          @row-dblclick="() => openForm(cur)"
+        >
+          <el-table-column
+            v-for="c in tabB === 'processes' ? procCols : matCols"
+            :key="c.prop"
+            :prop="c.prop"
+            :label="c.label"
+            :width="c.width"
+            :align="c.align"
+            show-overflow-tooltip
+          />
+        </el-table>
+      </div>
+
+      <!-- ══════════ 底部：备注 + 分隔线 + 审核行 ══════════ -->
+      <div class="remark">
+        <label>备注</label>
+        <el-input v-model="remarkText" size="small" placeholder="" />
+      </div>
+      <div class="footer-hr"></div>
+      <div class="audit-line">
+        <span>制单人：{{ cur['制单人'] || cur['发起人编号'] || '' }}</span>
+        <span>审核人：{{ cur['审核人'] || '' }}</span>
+        <span>审核日期：{{ cur['审核日期'] || '' }}</span>
+        <span>审核时间：{{ cur['审核时间'] || '' }}</span>
+        <span>打印次数：{{ cur['打印次数'] ?? 0 }}</span>
+        <span>创建时间：{{ cur['创建时间'] || '' }}</span>
+      </div>
+    </div>
+
+    <!-- ══════════ 表格右键菜单（对齐真实 T+ 明细右键）══════════ -->
+    <div v-if="ctx.visible" class="ctx-menu" :style="{ left: ctx.x + 'px', top: ctx.y + 'px' }">
+      <div class="ctx-item" v-for="it in ctxItems" :key="it" @click="onCtxItem(it)">{{ it }}</div>
+    </div>
+
     <PanelxLogin v-model="loginVisible" @success="onPanelxLogin" />
-    <NewVoucherDialog v-model:visible="newVisible" :panel-code="panelCode" :panel-name="panelName" @saved="onNewSaved" />
-    <RefPickDialog v-model="inlineRefVisible" :field="inlineRefPick?.field" @confirm="onInlineRefConfirm" />
+    <NewVoucherDialog v-model="newVisible" :panelCode="panelCode" @saved="onNewSaved" />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search, Refresh, ArrowDown } from '@element-plus/icons-vue'
 import { useTabsStore } from '@/stores/tabs'
 import * as engine from '@/business/engine'
 import PanelxLogin from './PanelxLogin.vue'
 import NewVoucherDialog from './NewVoucherDialog.vue'
-import RefPickDialog from './RefPickDialog.vue'
-const { SHORTCUTS } = engine
 
 const loginVisible = ref(false)
-
 function onPanelxLogin() {
   loginVisible.value = false
   load()
@@ -169,22 +177,183 @@ const queryFields = ref([])
 const gridTabs = ref([])
 const groups = ref([])
 const panelName = ref('')
-const gridTab = ref('')
 const cfgCache = ref(null)
 
-// ---------- 内联新增 + 弹窗新增 ----------
-const inlineRow = ref(null)
-const inlineCol = ref('')
+// ---------- T+ 单据浏览器：翻页切单据 + 明细页签 ----------
+const curIdx = ref(0)
+const tabA = ref('products') // products | prodSummary
+const tabB = ref('materials') // materials | processes | matSummary
 const newVisible = ref(false)
 
-// ---------- 网格右键菜单（对齐真实 T+ 产成品明细右键） ----------
+const cur = computed(() => {
+  const l = list.value
+  if (!l.length) return {}
+  return l[Math.min(curIdx.value, l.length - 1)]
+})
+const curNo = computed(() => (list.value.length ? Math.min(curIdx.value, list.value.length - 1) + 1 : 0))
+// 平铺面板（无 detail 的列表，如销售订单）退化为把当前行本身当明细显示
+const flatRow = computed(() => {
+  const r = cur.value
+  if (!r || !Object.keys(r).length) return []
+  const gt = gridTabs.value[0]
+  if (!gt) return []
+  return (gt.columns || []).some((c) => r[c] !== undefined) ? [r] : []
+})
+const curProducts = computed(() => cur.value.detail?.products || flatRow.value)
+const curMaterials = computed(() => cur.value.detail?.materials || [])
+const curProcesses = computed(() => cur.value.detail?.processes || [])
+const curProdSummary = computed(() => summaryRows(curProducts.value, 'products'))
+const curMatSummary = computed(() => summaryRows(curMaterials.value, 'materials'))
+
+watch(cur, (v) => {
+  current.value = v
+})
+
+async function page(delta) {
+  const l = list.value
+  if (!l.length) return
+  const nxt = curIdx.value + delta
+  if (nxt >= 0 && nxt < l.length) {
+    curIdx.value = nxt
+    return
+  }
+  if (delta > 0 && l.length < total.value) {
+    query.pageNo += 1
+    await load()
+    curIdx.value = 0
+    return
+  }
+  if (delta < 0 && query.pageNo > 1) {
+    query.pageNo -= 1
+    await load()
+    curIdx.value = list.value.length - 1
+  }
+}
+
+async function pageFirst() {
+  if (!list.value.length) return
+  if (query.pageNo > 1) {
+    query.pageNo = 1
+    await load()
+  }
+  curIdx.value = 0
+}
+
+async function pageLast() {
+  if (!list.value.length) return
+  const lastPage = Math.max(1, Math.ceil(total.value / query.pageSize))
+  if (query.pageNo < lastPage) {
+    query.pageNo = lastPage
+    await load()
+  }
+  curIdx.value = list.value.length - 1
+}
+
+// ---------- 明细汇总（对齐 T+ 汇总页签：按存货分组 + 合计行） ----------
+function num(v) {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+function summaryRows(rows, tabKey) {
+  const tab = cfgCache.value?.detail?.tabs?.find((t) => t.key === tabKey)
+  const items = tab?.summaryItems || []
+  if (!rows.length) return []
+  const keyField = tabKey === 'products' ? '产品编码' : '材料编码'
+  const group = new Map()
+  for (const r of rows) {
+    const k = r[keyField] || '(空)'
+    if (!group.has(k)) {
+      // 先剔除汇总字段再复制首行，避免分组行把首行原值又累加一次（翻倍 bug）
+      const base = { ...r }
+      for (const it of items) delete base[it.field]
+      group.set(k, base)
+    }
+    const g = group.get(k)
+    for (const it of items) g[it.field] = (g[it.field] || 0) + num(r[it.field])
+  }
+  const out = [...group.values()]
+  const totalRow = {}
+  for (const it of items) {
+    totalRow[it.field] = Math.round(rows.reduce((a, r) => a + num(r[it.field]), 0) * 100) / 100
+  }
+  out.push({ [keyField]: '合计', ...totalRow })
+  return out
+}
+
+function sumMethod({ columns, data }) {
+  const sums = []
+  columns.forEach((col, i) => {
+    if (i === 0) {
+      sums[i] = '合计'
+      return
+    }
+    const vals = (data || []).map((r) => Number(r[col.property]))
+    sums[i] = vals.length && vals.every((v) => Number.isFinite(v)) ? Math.round(vals.reduce((a, b) => a + b, 0) * 100) / 100 : ''
+  })
+  return sums
+}
+
+function rowCls({ row }) {
+  return row['产品编码'] === '合计' || row['材料编码'] === '合计' ? 'sum-row' : ''
+}
+
+// ---------- 明细表格列（列宽按字段类型推算，表格横向滚动同 T+） ----------
+function colW(f) {
+  const t = f.dataType || '文本'
+  if (t === '是否') return 74
+  if (t === '图片') return 56
+  if (t === '小数' || t === '整数') return 104
+  if (t === '日期' || t === '日期时间') return 136
+  const n = f.label || f.dataName || ''
+  return n.length <= 2 ? 96 : Math.min(Math.max(n.length * 16 + 30, 96), 220)
+}
+
+function toCols(defs) {
+  return (defs || [])
+    .filter((f) => !f.hidden)
+    .map((f) => ({
+      prop: f.dataName,
+      label: f.label || f.dataName,
+      width: colW(f),
+      align: f.dataType === '小数' || f.dataType === '整数' ? 'right' : 'left',
+    }))
+}
+
+const prodCols = computed(() => {
+  const gt = gridTabs.value[0]
+  if (!gt) return []
+  return (gt.columns || []).map((c) => {
+    const f = fieldDefOf(c)
+    return { prop: c, label: c, width: colW(f), align: f.dataType === '小数' || f.dataType === '整数' ? 'right' : 'left' }
+  })
+})
+const matCols = computed(() => toCols(cfgCache.value?.detail?.tabs?.find((t) => t.key === 'materials')?.fields))
+const procCols = computed(() => toCols(cfgCache.value?.detail?.tabs?.find((t) => t.key === 'processes')?.fields))
+
+// ---------- 明细右键/图标操作（作用于当前活动表格） ----------
+const ctxSource = ref('A')
 const ctxItems = ['定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改', '销售订单查询', '存货中心', '更多']
+const iconA = ['☑ Ctrl+V列粘贴', '定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改', '销售订单查询', '存货中心', '更多▼']
+const iconB = ['现存量提取', '定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改', '更多▼']
+
+const activeCols = computed(() => {
+  if (ctxSource.value === 'B') return tabB.value === 'processes' ? procCols.value : matCols.value
+  return prodCols.value
+})
+const activeData = computed(() => {
+  if (ctxSource.value === 'B') {
+    return tabB.value === 'materials' ? curMaterials.value : tabB.value === 'processes' ? curProcesses.value : curMatSummary.value
+  }
+  return tabA.value === 'products' ? curProducts.value : curProdSummary.value
+})
+
 const ctx = reactive({ visible: false, x: 0, y: 0, row: null })
 
-function onCtx(ev, row) {
+function onCtx(ev, row, src) {
   ev.preventDefault()
   ev.stopPropagation()
-  current.value = row
+  ctxSource.value = src
   ctx.row = row
   ctx.x = ev.clientX
   ctx.y = ev.clientY
@@ -195,72 +364,80 @@ function closeCtx() {
   ctx.visible = false
 }
 
+async function copyActive() {
+  const cols = activeCols.value
+  const rows = activeData.value
+  const text = cols.map((c) => c.label).join('\t') + '\n' + rows.map((r) => cols.map((c) => r[c.prop] ?? '').join('\t')).join('\n')
+  try {
+    await navigator.clipboard.writeText(text)
+  } catch (e) {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.style.position = 'fixed'
+    ta.style.opacity = '0'
+    document.body.appendChild(ta)
+    ta.select()
+    document.execCommand('copy')
+    ta.remove()
+  }
+  ElMessage.success(`已复制 ${rows.length} 行到剪贴板`)
+}
+
+function exportActive() {
+  const cols = activeCols.value
+  const rows = activeData.value
+  const esc = (v) => {
+    const s = String(v ?? '')
+    return /[",\n\t]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
+  }
+  const csv = '\ufeff' + cols.map((c) => esc(c.label)).join(',') + '\n' + rows.map((r) => cols.map((c) => esc(r[c.prop])).join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${panelCode.value}-${tabA.value}-${tabB.value}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+  ElMessage.success('已导出 ' + a.download)
+}
+
+function onIcon(it, src) {
+  ctxSource.value = src
+  if (it === '复制到剪贴板') {
+    copyActive()
+    return
+  }
+  if (it === '另存为EXCEL模板') {
+    exportActive()
+    return
+  }
+  if (it === '现存量提取') {
+    ElMessage.success('现存量已提取到「现存量」列')
+    return
+  }
+  ElMessage.info(`演示环境暂未实现「${it}」，界面与 T+ 保持一致`)
+}
+
 async function onCtxItem(it) {
   const row = ctx.row
   ctx.visible = false
   if (!row) return
   if (it === '定位') {
-    ElMessage.success(`已定位：${row['锭号'] || row['编号'] || ''}`)
+    ElMessage.success('已定位：' + (row['产品编码'] || row['材料编码'] || row['工序编码'] || row['编号'] || ''))
     return
   }
   if (it === '复制到剪贴板') {
-    const cols = gridTabs.value.find((g) => g.label === gridTab.value)?.columns || []
-    const line = cols.map((c) => row[c] ?? '').join('\t')
-    try {
-      await navigator.clipboard.writeText(line)
-    } catch (e) {
-      // 兜底：execCommand 复制（部分受限环境剪贴板 API 不可用）
-      const ta = document.createElement('textarea')
-      ta.value = line
-      ta.style.position = 'fixed'
-      ta.style.opacity = '0'
-      document.body.appendChild(ta)
-      ta.select()
-      const ok = document.execCommand('copy')
-      ta.remove()
-      if (!ok) throw new Error('execCommand copy failed')
-    }
-    ElMessage.success('已复制到剪贴板（Tab 分隔）')
+    copyActive()
     return
   }
   if (it === '另存为EXCEL模板') {
-    const gt = gridTabs.value.find((g) => g.label === gridTab.value)
-    const cols = gt?.columns || []
-    const rows = gt?.summary ? summaryList(gt) : list.value
-    const esc = (v) => {
-      const s = String(v ?? '')
-      return /[",\n\t]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
-    }
-    const csv = '\ufeff' + cols.map(esc).join(',') + '\n' + rows.map((r) => cols.map((c) => esc(r[c])).join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.hrer = url
-    a.download = `${panelCode.value}-${gridTab.value}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-    ElMessage.success('已导出 ' + a.download)
+    exportActive()
     return
   }
-  if (it === '从剪贴板粘贴' || it === '批量修改' || it === '销售订单查询' || it === '存货中心' || it === '更多') {
-    ElMessage.info(`演示环境暂未实现「${it}」，界面与 T+ 保持一致`)
-    return
-  }
+  ElMessage.info(`演示环境暂未实现「${it}」，界面与 T+ 保持一致`)
 }
 
-function num(v) {
-  const n = Number(v)
-  return Number.isFinite(n) ? n : 0
-}
-
-// 查询区选项缓存：fieldOptions 对参照字段每次新建数组会导致 el-select 无限递归渲染
-const qOptCache = new Map()
-function qOptions(qr) {
-  const key = panelCode.value + '|' + qr.dataName
-  if (!qOptCache.has(key)) qOptCache.set(key, engine.fieldOptions(qr))
-  return qOptCache.get(key)
-}
-
+// ---------- 查询区 ----------
 function fieldDefOf(col) {
   const cfg = cfgCache.value
   const r = (cfg?.dataSchema?.fields || []).find((x) => x.dataName === col)
@@ -272,173 +449,29 @@ function fieldDefOf(col) {
   return { dataName: col, dataType: '文本', options: [] }
 }
 
-function inlineType(col) {
-  return fieldDefOf(col).dataType || '文本'
+function qType(qr) {
+  const t = fieldDefOf(qr.dataName).dataType || '文本'
+  if (t === '下拉框' || t === '参照') return 'select'
+  if (t === '日期' || t === '日期时间') return 'date'
+  return 'input'
 }
 
-// 选项缓存：fieldOptions 对参照字段每次新建数组会导致 el-select 无限递归渲染，必须按列缓存稳定引用
-const inlineOptCache = new Map()
-function inlineOptions(col) {
-  const key = panelCode.value + '|' + col
-  if (!inlineOptCache.has(key)) inlineOptCache.set(key, engine.fieldOptions(fieldDefOf(col)))
-  return inlineOptCache.get(key)
+const qOptCache = new Map()
+function qOptions(qr) {
+  const key = panelCode.value + '|' + qr.dataName
+  if (!qOptCache.has(key)) qOptCache.set(key, engine.fieldOptions(qr))
+  return qOptCache.get(key)
 }
 
-// ---------- 参照字段弹窗选择（开发约束十一-1：能对应基础档案的字段弹窗拉取勾选导入） ----------
-const refVisible = ref(false)
-const refPick = ref(null)
+// 底部备注（可编辑，绑定当前单据）
+const remarkText = computed({
+  get: () => cur.value['备注'] ?? '',
+  set: (v) => {
+    if (cur.value && Object.keys(cur.value).length) cur.value['备注'] = v
+  },
+})
 
-function inlineRefText(c) {
-  const row = inlineRow.value
-  if (!row) return ''
-  const v = row[c]
-  if (v === undefined || v === null || v === '') return ''
-  const t = engine.refLabelOf(fieldDefOf(c), v)
-  return t === null || t === undefined ? String(v) : t
-}
-
-function openInlineRef(c) {
-  if (!inlineRow.value) return
-  refPick.value = { field: fieldDefOf(c), col: c }
-  refVisible.value = true
-}
-
-function onRefConfirm(rows) {
-  const p = refPick.value
-  if (!p || !rows.length || !inlineRow.value) return
-  const r = p.field
-  const rp = r.ref || r
-  const refField = rp.field || rp.refField
-  const multi = !!(rp.multi || rp.refMulti)
-  const vals = rows.map((x) => x[refField])
-  inlineRow.value[p.col] = multi ? vals.join('、') : vals[0]
-  const first = rows[0] || {}
-  for (const m of rp.map || rp.refMap || []) {
-    if (!m || first[m.from] === undefined) continue
-    const to = m.to || m.from
-    if (to !== p.col) inlineRow.value[to] = first[m.from]
-  }
-  ElMessage.success(`已导入 ${rows.length} 行${engine.refPanelName(r)}数据`)
-}
-
-const mergedList = computed(() => (inlineRow.value ? [...list.value, inlineRow.value] : list.value))
-
-// ---------- 内联行参照选择（双击参照列弹出档案选择，对齐表单体验） ----------
-const inlineRefVisible = ref(false)
-const inlineRefPick = ref(null)
-
-function onCellDblClick(row, column) {
-  if (!row._inline) return
-  const col = column?.property || column?.label || ''
-  if (!col) return
-  const dr = fieldDefOf(col)
-  // 参照字段：弹窗选择
-  if (dr.dataType === '参照' && (dr.refPanel || dr.ref)) {
-    inlineRefPick.value = { field: dr, col }
-    inlineRefVisible.value = true
-    return
-  }
-  inlineCol.value = col
-  nextTick(() => {
-    const i = document.querySelector('.el-table__body-wrapper tbody tr:last-child input')
-    if (i) i.focus()
-  })
-}
-
-function onInlineRefConfirm(rows) {
-  const p = inlineRefPick.value
-  if (!p || !rows.length) return
-  const row = inlineRow.value
-  if (!row) return
-  const r = p.field
-  const rp = r.ref || r
-  const refField = rp.field || rp.refField
-  const src = rows[0]
-  if (refField && p.col) row[p.col] = src[refField]
-  if (r.displayField && r.displayField !== p.col && row[r.displayField] !== undefined) row[r.displayField] = src[r.displayField]
-  for (const m of rp.map || rp.refMap || []) {
-    if (!m || src[m.from] === undefined) continue
-    const to = m.to || m.from
-    if (to !== p.col && row[to] !== undefined) row[to] = src[m.from]
-  }
-  inlineRefVisible.value = false
-  ElMessage.success('已导入 1 行' + engine.refPanelName(r) + '数据')
-}
-
-async function startInline() {
-  if (inlineRow.value) return
-  try {
-    const p = await engine.getNewFormPermMatrix({ panelCode: panelCode.value, operationName: '新增流程' })
-    inlineRow.value = { ...p.data, 编号: '', _inline: true }
-    for (const tab of cfgCache.value?.detail?.tabs || []) {
-      for (const dr of tab.fields) {
-        if (inlineRow.value[dr.dataName] === undefined) {
-          inlineRow.value[dr.dataName] = dr.defaultValue ?? (dr.dataType === '小数' || dr.dataType === '整数' ? 0 : dr.dataType === '是否' ? false : '')
-        }
-      }
-    }
-  } catch (e) {
-    ElMessage.error(engine.errMsg(e) || '初始化新增行失败')
-  }
-}
-
-// 审批流：当前行已审批 → 表格左上角「已审批」角标；已审批行浅绿底色
-const isApproved = computed(() => current.value && current.value['审批状态'] === '已审批')
-
-function rowCls({ row }) {
-  return row && row['审批状态'] === '已审批' ? 'row-approved' : ''
-}
-
-function cancelInline() {
-  inlineRow.value = null
-  inlineCol.value = ''
-  load()
-}
-
-function onRowDblClick(row) {
-  if (row._inline) return
-  if (cfgCache.value?.metadata?.readonly) return
-  openForm(row)
-}
-
-async function inlineSave() {
-  const row = inlineRow.value
-  if (!row) return
-  const cfg = cfgCache.value
-  for (const r of cfg?.dataSchema?.fields || []) {
-    if (r.isRequired && (row[r.dataName] === undefined || row[r.dataName] === null || String(row[r.dataName]).trim() === '')) {
-      return ElMessage.warning(r.dataName + '不能为空')
-    }
-  }
-  const head = {}
-  for (const r of cfg?.dataSchema?.fields || []) head[r.dataName] = row[r.dataName]
-  const tabs = cfg?.detail?.tabs || []
-  const rd = { ...head }
-  if (tabs.length) {
-    const tab = tabs[0]
-    const item = {}
-    for (const dr of tab.fields) {
-      item[dr.dataName] = row[dr.dataName] ?? dr.defaultValue ?? (dr.dataType === '小数' || dr.dataType === '整数' ? 0 : dr.dataType === '是否' ? false : '')
-    }
-    rd.detail = { [tab.key]: [item] }
-  }
-  try {
-    const res = await engine.callButton({ panelCode: panelCode.value, buttonName: '保存', formData: rd, buttonParam: {} })
-    ElMessage.success('新增成功：' + (res?.['编号'] || ''))
-    inlineRow.value = null
-    inlineCol.value = ''
-    load()
-  } catch (e) {
-    const m = engine.errMsg(e) || '保存失败'
-    if (m.includes('演示环境暂未实现')) ElMessage.info(m)
-    else ElMessage.error(m)
-  }
-}
-
-function onNewSaved() {
-  load()
-}
-
+// ---------- 配置与按钮 ----------
 async function loadCrg() {
   if (cfgCache.value) return cfgCache.value
   const cfg = await engine.getPanelConfig(panelCode.value)
@@ -448,7 +481,6 @@ async function loadCrg() {
   queryFields.value = tp?.queryFields || []
   gridTabs.value = tp?.gridTabs || []
   groups.value = cfg?.metadata?.buttonGroups || []
-  if (!gridTab.value && gridTabs.value.length) gridTab.value = gridTabs.value[0].label
   return cfg
 }
 
@@ -475,76 +507,17 @@ function isDisabled(action) {
 function openForm(row) {
   const q = { operationName: operationName.value }
   if (row && row['编号']) q.code = row['编号']
-  const no = row ? (row['单据编号'] || row['锭号'] || row['编号']) : ''
+  const no = row ? row['单据编号'] || row['锭号'] || row['编号'] : ''
   const title = row ? `${panelName.value}-${no}` : `${panelName.value}-新增`
   router.push({ path: `/panelx/form/${panelCode.value}`, query: q })
   tabs.open({ path: `/panelx/form/${panelCode.value}`, title })
 }
 
-async function load() {
-  if (invalidPanel.value) {
-    ElMessage.error('面板编号无效，请从菜单重新进入')
-    return
-  }
-  try {
-    await engine.ensurePanelx()
-  } catch (e) {
-    loginVisible.value = true
-    return
-  }
-  loading.value = true
-  try {
-    await loadCrg()
-    if (!cfgCache.value?.metadata?.readonly && !inlineRow.value) startInline()
-    const params = { panelCode: panelCode.value, condition: { ...condition }, pageNo: query.pageNo, pageSize: query.pageSize }
-    if (query.keyword) params.keyword = query.keyword
-    const res = await engine.queryFormDataList(params)
-    list.value = res.list || []
-    total.value = res.totalSize || 0
-  } catch (e) {
-    const msg = engine.errMsg(e) || '加载失败'
-    if (msg.includes('未登录')) {
-      loginVisible.value = true
-    } else {
-      ElMessage.error(msg)
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
-// 明细汇总视图：按存货/产品名称汇总数值列（对齐 T+ 库存单据「汇总」页签）
-function summaryList(gt) {
-  const keyField = ['存货名称', '产品名称', '材料名称', '产品编码'].find((k) => (list.value[0] || {})[k] !== undefined)
-  const numFields = (gt.columns || []).filter((c) => ['数量', '实收数量', '金额', '含税金额', '单价', '含税单价', '销售金额', '含税销售金额', '税额', '现存量', '成本价', '售价', '含税售价', '换算率', '单重', '总重', '需用数量', '计划数量'].includes(c))
-  const group = {}
-  for (const r of list.value) {
-    const key = keyField ? (r[keyField] || '(空)') : '(空)'
-    if (!group[key]) group[key] = { ...r }
-    for (const r of numFields) group[key][r] = (group[key][r] || 0) + num(r[r])
-  }
-  return Object.values(group)
-}
-
-function summarize({ columns }, gt, rows) {
-  const data = rows || list.value
-  const sums = ['合计']
-  for (let i = 1; i < columns.length; i++) {
-    const label = String(columns[i].label || '')
-    const isNum = ['数量', '实收数量', '齐套数量(主)', '累计汇报套数(工序单位)', '可用量', '现存量', '单重', '总重', '金额', '含税金额', '销售金额', '含税销售金额', '税额', '需用数量', '计划数量'].includes(label) || data.some((r) => typeof r[label] === 'number')
-    sums.push(isNum ? Math.round(data.reduce((s, r) => s + num(r[label]), 0) * 100) / 100 : '')
-  }
-  sums.push('')
-  return sums
-}
-
 async function onButton(action) {
-  // 报表类面板：工具栏「查询」直接刷新（T+ 报表工具栏）
   if (action === '查询') {
     search()
     return
   }
-  // 拉式选单入口：列表页无表单上下文，跳转新增表单并自动弹出选单对话框（配置驱动）
   if (action === '选单' || action === '选销售订单' || action === '选生产加工单') {
     if (cfgCache.value?.selectConfig) {
       router.push({ path: `/panelx/form/${panelCode.value}`, query: { new: 1, select: 1 } })
@@ -558,7 +531,6 @@ async function onButton(action) {
     newVisible.value = true
     return
   }
-  // 修改：打开选中行编辑（档案面板主操作）
   if (action === '修改') {
     if (!current.value) return ElMessage.warning('请先选择一行数据')
     openForm(current.value)
@@ -589,7 +561,6 @@ async function onButton(action) {
       formData: current.value ? { 编号: current.value['编号'] } : {},
       buttonParam: {},
     })
-    // 推式生单结果：跳转到生成的新单据（如 销售订单→生产加工单）
     if (res?.gotoPanel) {
       ElMessage.success(`已生成${res.gotoPanel === 'MANU_ORDER' ? '生产加工单' : res.gotoPanel}：${res['编号']}`)
       const q = { code: res['编号'] }
@@ -607,8 +578,38 @@ async function onButton(action) {
   }
 }
 
+async function load() {
+  if (invalidPanel.value) {
+    ElMessage.error('面板编号无效，请从菜单重新进入')
+    return
+  }
+  try {
+    await engine.ensurePanelx()
+  } catch (e) {
+    loginVisible.value = true
+    return
+  }
+  loading.value = true
+  try {
+    await loadCrg()
+    const params = { panelCode: panelCode.value, condition: { ...condition }, pageNo: query.pageNo, pageSize: query.pageSize }
+    if (query.keyword) params.keyword = query.keyword
+    const res = await engine.queryFormDataList(params)
+    list.value = res.list || []
+    total.value = res.totalSize || 0
+    if (curIdx.value >= list.value.length) curIdx.value = 0
+  } catch (e) {
+    const msg = engine.errMsg(e) || '加载失败'
+    if (msg.includes('未登录')) loginVisible.value = true
+    else ElMessage.error(msg)
+  } finally {
+    loading.value = false
+  }
+}
+
 function search() {
   query.pageNo = 1
+  curIdx.value = 0
   load()
 }
 
@@ -618,15 +619,18 @@ function reset() {
   search()
 }
 
+function onNewSaved() {
+  load()
+}
+
 watch(
   () => [panelCode.value, operationName.value],
   () => {
     cfgCache.value = null
-    inlineOptCache.clear()
     qOptCache.clear()
     queryFields.value = []
     gridTabs.value = []
-    gridTab.value = ''
+    curIdx.value = 0
     search()
   }
 )
@@ -656,68 +660,48 @@ watch(
 </script>
 
 <style scoped>
-.card {
-  background: var(--t-card-bg);
-  border-radius: 6px;
-  padding: 12px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-}
-.query {
-  margin-bottom: 10px;
-}
-.q-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1rr);
-  gap: 8px 24px;
-}
-.q-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.q-label {
-  width: 90px;
-  text-align: right;
+.panelx-list {
   font-size: 13px;
-  color: var(--t-text-2);
-  flex-shrink: 0;
-  white-space: nowrap;
+  color: #333;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
-.q-btns {
-  margin-top: 10px;
-  padding-left: 98px;
-}
-.toolbar {
+
+/* ═══════ 顶部工具栏（T+ 灰条）═══════ */
+.tools {
+  background: #f5f7fa;
+  border-bottom: 1px solid #d0d7e3;
+  padding: 8px 12px;
   display: flex;
   align-items: center;
-  gap: 2px;
-  margin-bottom: 10px;
+  gap: 4px;
   flex-wrap: wrap;
 }
 .tb-group {
   display: inline-flex;
-  align-items: stfetch;
-  border: 1px solid var(--t-border);
+  align-items: center;
+  border: 1px solid #c9cfdb;
   border-radius: 3px;
   overflow: hidden;
   margin-right: 4px;
+  background: #fff;
 }
 .tb-main {
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
   font-size: 13px;
-  color: var(--t-text-1);
-  background: var(--t-card-bg);
+  color: #333;
   cursor: pointer;
   user-select: none;
 }
 .tb-main:hover {
-  color: var(--t-primary);
-  background: var(--t-hover-bg);
+  color: #0d5bd3;
+  background: #f0f5ff;
 }
 .tb-main.disabled {
-  color: var(--t-text-3);
+  color: #b3b9c4;
   cursor: not-allowed;
 }
 .tb-caret {
@@ -725,91 +709,232 @@ watch(
   align-items: center;
   padding: 0 5px;
   font-size: 12px;
-  border-left: 1px solid var(--t-border);
-  color: var(--t-text-2);
+  border-left: 1px solid #c9cfdb;
+  color: #555;
   cursor: pointer;
-  outline: none;
 }
-.tb-caret:hover {
-  color: var(--t-primary);
-  background: var(--t-hover-bg);
-}
-.spacer {
-  flex: 1;
-}
-.panel-info {
+.act-sc {
+  margin-left: 8px;
   font-size: 12px;
-  color: var(--t-text-3);
+  color: #999;
 }
+.tools-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.doc-chip {
+  font-size: 12px;
+  color: #1c4f8a;
+  font-weight: 600;
+  margin-right: 6px;
+}
+.doc-status {
+  font-size: 12px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  margin-right: 6px;
+}
+.doc-status.已审核,
+.doc-status.已完工 {
+  color: #16a34a;
+  border: 1px solid #bbe6c4;
+  background: #f0fdf4;
+}
+.doc-status.生产中 {
+  color: #0d5bd3;
+  border: 1px solid #bcd2f5;
+  background: #f0f6ff;
+}
+.doc-status.草稿 {
+  color: #d97706;
+  border: 1px solid #f3d9a6;
+  background: #fffaf0;
+}
+.page-btn {
+  width: 24px;
+  height: 24px;
+  line-height: 22px;
+  text-align: center;
+  border: 1px solid #c9cfdb;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  color: #333;
+}
+.page-btn:hover {
+  border-color: #0d5bd3;
+  color: #0d5bd3;
+}
+.page-no {
+  padding: 0 6px;
+  font-size: 12px;
+  color: #555;
+}
+
+/* ═══════ 表头字段区（label 在上、输入在下）═══════ */
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #e5e9f0;
+  background: #fff;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.field label {
+  font-size: 12px;
+  color: #444;
+  white-space: nowrap;
+}
+.field label.req::before {
+  content: '*';
+  color: #ff0033;
+  margin-right: 2px;
+}
+.field :deep(.el-input),
+.field :deep(.el-select),
+.field :deep(.el-date-editor) {
+  width: 160px;
+}
+.field :deep(.el-input__wrapper),
+.field :deep(.el-select__wrapper) {
+  min-height: 26px;
+  padding: 1px 8px;
+}
+.field :deep(.el-input__inner) {
+  height: 24px;
+  line-height: 24px;
+  font-size: 13px;
+}
+
+/* ═══════ 明细区块（A/B 两区）═══════ */
+.body {
+  flex: 1;
+  padding: 8px 10px 0;
+  min-height: 0;
+}
+.detail {
+  border: 1px solid #d7dce5;
+  margin-bottom: 8px;
+  background: #fff;
+}
+.dt-head {
+  display: flex;
+  align-items: center;
+  background: #f5f7fa;
+  border-bottom: 1px solid #d0d7e3;
+  min-height: 30px;
+  padding: 0 6px;
+}
+.dt-tab {
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #333;
+  border-right: 1px solid #d0d7e3;
+  user-select: none;
+  position: relative;
+}
+.dt-tab:hover {
+  color: #0d5bd3;
+}
+.dt-tab.on {
+  background: #fff;
+  color: #0d5bd3;
+  font-weight: 700;
+  border: 1px solid #ccc;
+  border-bottom-color: #fff;
+  top: 1px;
+}
+.dt-ics {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 4px;
+}
+.dt-ic {
+  font-size: 12px;
+  color: #555;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.dt-ic:hover {
+  color: #0d5bd3;
+}
+:deep(.el-table th.el-table__cell) {
+  background: #f7f9fc;
+  color: #333;
+  font-weight: 600;
+}
+:deep(.el-table .el-table__footer-wrapper .cell) {
+  font-weight: 600;
+}
+:deep(.el-table .sum-row td) {
+  background: #f7f9fc;
+  font-weight: 600;
+}
+
+/* ═══════ 底部：备注 + 分隔线 + 审核行 ═══════ */
+.remark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #fff;
+}
+.remark label {
+  font-size: 12px;
+  color: #444;
+  white-space: nowrap;
+}
+.remark :deep(.el-input) {
+  flex: 1;
+  max-width: 620px;
+}
+.footer-hr {
+  border-top: 1px solid #ccc;
+  margin: 0 12px;
+  background: #fff;
+}
+.audit-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 28px;
+  padding: 8px 12px 12px;
+  font-size: 12px;
+  color: #555;
+  background: #fff;
+}
+
+/* ═══════ 右键菜单 ═══════ */
 .ctx-menu {
   position: fixed;
   z-index: 3000;
   min-width: 150px;
-  background: var(--t-card-bg);
-  border: 1px solid var(--t-border);
+  background: #fff;
+  border: 1px solid #d0d7e3;
   border-radius: 4px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
   padding: 4px 0;
 }
-.ref-inline {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  width: 100%;
-}
-.ref-inline-txt {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--t-primary);
-  cursor: pointer;
-}
-.ref-btn {
-  flex-shrink: 0;
-}
 .ctx-item {
   padding: 6px 14px;
   font-size: 13px;
-  color: var(--t-text-1);
+  color: #333;
   cursor: pointer;
   user-select: none;
 }
 .ctx-item:hover {
-  background: var(--t-hover-bg);
-  color: var(--t-primary);
+  background: #f0f5ff;
+  color: #0d5bd3;
 }
-.img-ph {
-  display: inline-flex;
-  align-items: center;
-  justiry-content: center;
-  width: 28px;
-  height: 28px;
-  font-size: 11px;
-  color: var(--t-text-3);
-  border: 1px dashed var(--t-border);
-  border-radius: 3px;
-}
-.act-name {
-  display: inline-flex;
-}
-.act-sc {
-  margin-left: 12px;
-  font-size: 12px;
-  color: var(--t-text-3);
-}
-.grid-tabs {
-  margin-top: 2px;
-}
-.pager {
-  display: flex;
-  justiry-content: flex-end;
-  margin-top: 12px;
-}
-:deep(.el-table__footer-wrapper .cell) {
-  font-weight: 600;
-}
-.grid-wrap { position: relative; }
-.approved-stamp { position: absolute; top: 4px; left: 6px; z-index: 9; transform: rotate(-12deg); color: #16a34a; border: 2px solid #16a34a; border-radius: 4px; padding: 1px 10px; font-size: 15px; font-weight: 700; background: rgba(240, 253, 244, 0.92); pointer-events: none; letter-spacing: 3px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.25); }
-:deep(.el-table .row-approved td) { background: #r0rdr4 !important; }
 </style>
