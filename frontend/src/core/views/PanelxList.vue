@@ -85,22 +85,38 @@
         </el-table>
       </div>
 
-      <!-- ══════════ ④ 表尾：备注 + 分隔线 + 审核行（仅单据类）══════════ -->
-      <template v-if="showFooter">
-        <div class="remark">
-          <label>备注</label>
-          <el-input v-model="remarkText" size="small" placeholder="" />
+    </div>
+
+    <!-- ══════════ ④ 表尾（固定在页面底部，滚动明细时始终可见；含顶部按钮条 + 备注 + 审核行）══════════ -->
+    <div v-if="showFooter" class="footer">
+      <div class="footer-btns">
+        <div class="tb-group" v-for="(g, gi) in groups" :key="'f' + gi">
+          <span
+            v-for="it in g.items"
+            :key="it.name"
+            class="tb-main"
+            :class="{ disabled: isDisabled(it.name) }"
+            @click="onButton(it.name)"
+          >
+            <span class="act-name">{{ it.name }}</span>
+            <span v-if="it.shortcut" class="act-sc">{{ it.shortcut }}</span>
+          </span>
+          <span v-if="g.caret" class="tb-caret">▼</span>
         </div>
-        <div class="footer-hr"></div>
-        <div class="audit-line">
-          <span>制单人：{{ cur['制单人'] || cur['发起人编号'] || '' }}</span>
-          <span>审核人：{{ cur['审核人'] || '' }}</span>
-          <span>审核日期：{{ cur['审核日期'] || '' }}</span>
-          <span>审核时间：{{ cur['审核时间'] || '' }}</span>
-          <span>打印次数：{{ cur['打印次数'] ?? 0 }}</span>
-          <span>创建时间：{{ cur['创建时间'] || '' }}</span>
-        </div>
-      </template>
+      </div>
+      <div class="remark">
+        <label>备注</label>
+        <el-input v-model="remarkText" size="small" placeholder="" />
+      </div>
+      <div class="footer-hr"></div>
+      <div class="audit-line">
+        <span>制单人：{{ cur['制单人'] || cur['发起人编号'] || '' }}</span>
+        <span>审核人：{{ cur['审核人'] || '' }}</span>
+        <span>审核日期：{{ cur['审核日期'] || '' }}</span>
+        <span>审核时间：{{ cur['审核时间'] || '' }}</span>
+        <span>打印次数：{{ cur['打印次数'] ?? 0 }}</span>
+        <span>创建时间：{{ cur['创建时间'] || '' }}</span>
+      </div>
     </div>
 
     <!-- ══════════ 表格右键菜单（对齐真实 T+ 明细右键）══════════ -->
@@ -935,7 +951,26 @@ watch(
   font-weight: 600;
 }
 
-/* ═══════ ④ 表尾：备注 + 分隔线 + 审核行 ═══════ */
+/* ═══════ ④ 表尾固定条（sticky 底部：滚动明细时始终可见）═══════ */
+.footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  background: #fff;
+  border-top: 1px solid #d0d7e3;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+.footer-btns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-bottom: 1px solid #eef1f5;
+}
+
+/* ═══════ 表尾：备注 + 分隔线 + 审核行 ═══════ */
 .remark {
   display: flex;
   align-items: center;
