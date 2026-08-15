@@ -68,117 +68,131 @@
         </div>
       </div>
 
-      <!-- 表体：三明细，各带 明细/汇总 子页签 -->
+      <!-- 表体：三明细上下堆叠（对齐真实 T+：每区自带 明细/汇总 页签行 + 图标行 + 网格 + 分隔条） -->
       <div v-if="tabs.length" class="detail">
-        <el-tabs v-model="activeTab">
-          <el-tab-pane v-for="tab in tabs" :key="tab.key" :name="tab.key">
-            <template #label>
-              <span>{{ tab.label }}<span v-if="tab.isRequired" class="req">*</span></span>
-            </template>
-
-            <div class="tab-toolbar">
+        <div v-for="(tab, ti) in tabs" :key="tab.key" class="detail-block">
+          <div class="dt-head">
+            <div class="dt-tabs">
+              <span class="dt-tab" :class="{ on: (subActive[tab.key] || 'detail') === 'detail' }" @click="subActive[tab.key] = 'detail'">
+                {{ tab.label }}<span v-if="tab.isRequired" class="req">*</span>
+              </span>
+              <span
+                v-if="tab.summaryItems && tab.summaryItems.length"
+                class="dt-tab"
+                :class="{ on: subActive[tab.key] === 'summary' }"
+                @click="subActive[tab.key] = 'summary'"
+              >{{ tab.label }}汇总</span>
+            </div>
+            <div class="dt-actions">
               <el-button v-if="editable" size="small" :icon="Plus" @click="addDetailRow(tab)">增行</el-button>
+              <span class="dt-ic" v-if="ti === 0">Ctrl+V列粘贴</span>
+              <span class="dt-ic">定位</span>
+              <span class="dt-ic">复制到剪贴板</span>
+              <span class="dt-ic">从剪贴板粘贴</span>
+              <span class="dt-ic">另存为EXCEL模板</span>
+              <span class="dt-ic">批量修改</span>
+              <span class="dt-ic" v-if="ti === 0">销售订单查询</span>
+              <span class="dt-ic">存货中心</span>
+              <span class="dt-ic" v-if="ti === 1">现存量提取</span>
+              <span class="dt-ic">更多</span>
               <span class="tab-hint">{{ tabHint(tab) }}</span>
             </div>
+          </div>
 
-            <el-tabs v-model="subActive[tab.key]" class="sub-tabs">
-              <!-- 明细 -->
-              <el-tab-pane label="明细" name="detail">
-                <el-table
-                  :data="detailData[tab.key] || []"
-                  size="small"
-                  border
-                  :show-summary="true"
-                  :summary-method="(p) => summarize(p, tab)"
-                  height="380"
-                >
-                  <el-table-column v-if="tab.subTable" type="expand" width="40">
-                    <template #default="{ row }">
-                      <div class="sub-wrap">
-                        <div class="sub-head">
-                          <span class="sub-title">{{ tab.subTable.label }}</span>
-                          <el-button v-if="editable" size="small" :icon="Plus" @click="addSubRow(row, tab)">增行</el-button>
-                        </div>
-                        <el-table :data="row['子表材料'] || []" size="small" border>
-                          <el-table-column label="序号" width="50" align="center">
-                            <template #default="{ $index }">{{ $index + 1 }}</template>
-                          </el-table-column>
-                          <el-table-column v-for="sr in tab.subTable.fields" :key="sr.dataName" :label="sr.dataName" min-width="100">
-                            <template #default="{ row: sr }">
-                              <el-select v-if="sr.dataType === '下拉框'" v-model="sr[sr.dataName]" :disabled="!editable" filterable allow-create style="width: 100%">
-                                <el-option v-for="o in sr.options || []" :key="o" :label="o" :value="o" />
-                              </el-select>
-                              <el-input-number v-else-if="sr.dataType === '小数' || sr.dataType === '整数'" v-model="sr[sr.dataName]" :controls="false" :disabled="!editable" style="width: 100%" />
-                              <el-input v-else v-model="sr[sr.dataName]" :disabled="!editable" />
-                            </template>
-                          </el-table-column>
-                          <el-table-column v-if="editable" label="操作" width="50" align="center">
-                            <template #default="{ $index }">
-                              <el-icon class="del" @click="row['子表材料'].splice($index, 1)"><Delete /></el-icon>
-                            </template>
-                          </el-table-column>
-                        </el-table>
-                      </div>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="序号" width="50" align="center" fixed="left">
-                    <template #default="{ $index }">{{ $index + 1 }}</template>
-                  </el-table-column>
-                  <el-table-column
-                    v-for="dr in visibleFields(tab)"
-                    :key="dr.dataName"
-                    :label="dr.dataName"
-                    min-width="110"
-                    :class-name="dr.computed ? 'computed-col' : ''"
-                  >
-                    <template #default="{ row }">
-                      <template v-if="dr.dataType === '参照'">
-                        <span class="ref-cell" :class="{ disabled: !editable || dr.computed }" @click="openDetailRef(dr, row, tab)">{{ drRefText(dr, row) }}</span>
-                      </template>
-                      <el-select v-else-if="dr.dataType === '下拉框'" v-model="row[dr.dataName]" :disabled="!editable || dr.computed" filterable allow-create style="width: 100%">
-                        <el-option v-for="o in dr.options || []" :key="o" :label="o.label ?? o" :value="o.value ?? o" />
-                      </el-select>
-                      <el-switch v-else-if="dr.dataType === '是否'" v-model="row[dr.dataName]" :disabled="!editable || dr.computed" />
-                      <el-image
-                        v-else-if="dr.dataType === '图片'"
-                        :src="row[dr.dataName] || ''"
-                        fit="contain"
-                        style="width: 34px; height: 34px"
-                      >
-                        <template #error>
-                          <span class="img-ph">图</span>
+          <!-- 明细视图 -->
+          <template v-if="(subActive[tab.key] || 'detail') === 'detail'">
+            <el-table
+              :data="detailData[tab.key] || []"
+              size="small"
+              border
+              :show-summary="true"
+              :summary-method="(p) => summarize(p, tab)"
+              height="380"
+            >
+              <el-table-column v-if="tab.subTable" type="expand" width="40">
+                <template #default="{ row }">
+                  <div class="sub-wrap">
+                    <div class="sub-head">
+                      <span class="sub-title">{{ tab.subTable.label }}</span>
+                      <el-button v-if="editable" size="small" :icon="Plus" @click="addSubRow(row, tab)">增行</el-button>
+                    </div>
+                    <el-table :data="row['子表材料'] || []" size="small" border>
+                      <el-table-column label="序号" width="50" align="center">
+                        <template #default="{ $index }">{{ $index + 1 }}</template>
+                      </el-table-column>
+                      <el-table-column v-for="sr in tab.subTable.fields" :key="sr.dataName" :label="sr.dataName" min-width="100">
+                        <template #default="{ row: sr }">
+                          <el-select v-if="sr.dataType === '下拉框'" v-model="sr[sr.dataName]" :disabled="!editable" filterable allow-create style="width: 100%">
+                            <el-option v-for="o in sr.options || []" :key="o" :label="o" :value="o" />
+                          </el-select>
+                          <el-input-number v-else-if="sr.dataType === '小数' || sr.dataType === '整数'" v-model="sr[sr.dataName]" :controls="false" :disabled="!editable" style="width: 100%" />
+                          <el-input v-else v-model="sr[sr.dataName]" :disabled="!editable" />
                         </template>
-                      </el-image>
-                      <el-input-number
-                        v-else-if="dr.dataType === '小数' || dr.dataType === '整数'"
-                        v-model="row[dr.dataName]"
-                        :controls="false"
-                        :disabled="!editable || dr.computed"
-                        style="width: 100%"
-                      />
-                      <el-input v-else v-model="row[dr.dataName]" :disabled="!editable || dr.computed" />
+                      </el-table-column>
+                      <el-table-column v-if="editable" label="操作" width="50" align="center">
+                        <template #default="{ $index }">
+                          <el-icon class="del" @click="row['子表材料'].splice($index, 1)"><Delete /></el-icon>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="序号" width="50" align="center" fixed="left">
+                <template #default="{ $index }">{{ $index + 1 }}</template>
+              </el-table-column>
+              <el-table-column
+                v-for="dr in visibleFields(tab)"
+                :key="dr.dataName"
+                :label="dr.dataName"
+                min-width="110"
+                :class-name="dr.computed ? 'computed-col' : ''"
+              >
+                <template #default="{ row }">
+                  <template v-if="dr.dataType === '参照'">
+                    <span class="ref-cell" :class="{ disabled: !editable || dr.computed }" @click="openDetailRef(dr, row, tab)">{{ drRefText(dr, row) }}</span>
+                  </template>
+                  <el-select v-else-if="dr.dataType === '下拉框'" v-model="row[dr.dataName]" :disabled="!editable || dr.computed" filterable allow-create style="width: 100%">
+                    <el-option v-for="o in dr.options || []" :key="o" :label="o.label ?? o" :value="o.value ?? o" />
+                  </el-select>
+                  <el-switch v-else-if="dr.dataType === '是否'" v-model="row[dr.dataName]" :disabled="!editable || dr.computed" />
+                  <el-image
+                    v-else-if="dr.dataType === '图片'"
+                    :src="row[dr.dataName] || ''"
+                    fit="contain"
+                    style="width: 34px; height: 34px"
+                  >
+                    <template #error>
+                      <span class="img-ph">图</span>
                     </template>
-                  </el-table-column>
-                  <el-table-column v-if="editable" label="操作" width="50" align="center" fixed="right">
-                    <template #default="{ $index }">
-                      <el-icon class="del" @click="detailData[tab.key].splice($index, 1)"><Delete /></el-icon>
-                    </template>
-                  </el-table-column>
-                </el-table>
-              </el-tab-pane>
+                  </el-image>
+                  <el-input-number
+                    v-else-if="dr.dataType === '小数' || dr.dataType === '整数'"
+                    v-model="row[dr.dataName]"
+                    :controls="false"
+                    :disabled="!editable || dr.computed"
+                    style="width: 100%"
+                  />
+                  <el-input v-else v-model="row[dr.dataName]" :disabled="!editable || dr.computed" />
+                </template>
+              </el-table-column>
+              <el-table-column v-if="editable" label="操作" width="50" align="center" fixed="right">
+                <template #default="{ $index }">
+                  <el-icon class="del" @click="detailData[tab.key].splice($index, 1)"><Delete /></el-icon>
+                </template>
+              </el-table-column>
+            </el-table>
+          </template>
 
-              <!-- 汇总（真实 T+ 仅产成品明细/材料明细有汇总页签，工序明细无） -->
-              <el-tab-pane v-if="tab.summaryItems && tab.summaryItems.length" label="汇总" name="summary">
-                <el-table :data="summaryRows(tab)" size="small" border>
-                  <el-table-column prop="label" label="汇总项目" min-width="220" />
-                  <el-table-column prop="value" label="数值" min-width="160" align="right" />
-                </el-table>
-              </el-tab-pane>
-            </el-tabs>
-          </el-tab-pane>
-        </el-tabs>
+          <!-- 汇总视图（真实 T+ 仅产成品明细/材料明细有汇总页签） -->
+          <el-table v-else :data="summaryRows(tab)" size="small" border>
+            <el-table-column prop="label" label="汇总项目" min-width="220" />
+            <el-table-column prop="value" label="数值" min-width="160" align="right" />
+          </el-table>
+
+          <div v-if="ti < tabs.length - 1" class="dt-splitter"></div>
+        </div>
       </div>
-
       <!-- 表尾（审核信息栏，对齐真实 T+ 底栏） -->
       <div class="audit-line">
         <span>制单人：{{ form['发起人编号'] || '-' }}</span>
@@ -980,4 +994,52 @@ watch(() => [panelCode.value, code.value], load)
 :deep(.el-table__footer-wrapper .cell) {
   font-weight: 600;
 }
-</style>
+.detail-block {
+  margin-bottom: 4px;
+}
+.dt-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0 2px;
+}
+.dt-tabs {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.dt-tab {
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  padding-bottom: 3px;
+  user-select: none;
+}
+.dt-tab.on {
+  color: #3788FF;
+  font-weight: 700;
+  border-bottom: 2px solid #3788FF;
+}
+.dt-tab .req {
+  color: #dc2626;
+}
+.dt-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #333;
+}
+.dt-ic {
+  color: #333;
+  cursor: pointer;
+}
+.dt-ic:hover {
+  color: #3788FF;
+}
+.dt-splitter {
+  height: 8px;
+  border-top: 1px solid #ddd;
+  margin: 6px 0;
+}</style>
