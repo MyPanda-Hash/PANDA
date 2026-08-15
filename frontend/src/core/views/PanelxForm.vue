@@ -19,6 +19,9 @@
         <span class="tb-group">
           <span class="tb-main back" @click="back">返回</span>
         </span>
+        <div class="tools-right">
+          <span class="pg">◁</span><span class="pg">◀</span><span class="pg">▶</span><span class="pg">▷</span>
+        </div>
       </div>
 
       <!-- 单据标题 -->
@@ -193,6 +196,13 @@
           <div v-if="ti < tabs.length - 1" class="dt-splitter"></div>
         </div>
       </div>
+      <!-- 表尾备注区（对齐真实 T+：备注 + 分隔线 + 审核信息行） -->
+      <div class="remark">
+        <label>备注</label>
+        <el-input v-model="form['备注']" :disabled="!editable" style="width: 100%" />
+      </div>
+      <div class="footer-hr"></div>
+
       <!-- 表尾（审核信息栏，对齐真实 T+ 底栏） -->
       <div class="audit-line">
         <span>制单人：{{ form['发起人编号'] || '-' }}</span>
@@ -802,60 +812,74 @@ watch(() => [panelCode.value, code.value], load)
 }
 .tools {
   display: flex;
-  gap: 2px;
-  flex-wrap: wrap;
   align-items: center;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--t-border-light);
+  gap: 0;
+  flex-wrap: wrap;
+  background: #f5f7fa;
+  border-bottom: 1px solid #d0d7e3;
+  padding: 8px 12px;
 }
 .tb-group {
   display: inline-flex;
-  align-items: stfetch;
-  border: 1px solid var(--t-border);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-right: 4px;
+  align-items: center;
+  margin-right: 12px;
 }
 .tb-main {
   display: inline-flex;
   align-items: center;
-  padding: 5px 12px;
+  padding: 0;
   font-size: 13px;
-  color: var(--t-text-1);
-  background: var(--t-card-bg);
+  color: #222;
+  background: transparent;
   cursor: pointer;
   user-select: none;
+  text-decoration: none;
 }
 .tb-main:hover {
-  color: var(--t-primary);
-  background: var(--t-hover-bg);
+  color: #3788FF;
 }
 .tb-main.disabled {
-  color: var(--t-text-3);
+  color: #999;
   cursor: not-allowed;
 }
 .tb-main.back {
-  margin-left: 6px;
+  margin-left: 0;
 }
 .tb-caret {
   display: inline-flex;
   align-items: center;
-  padding: 0 6px;
+  padding: 0 2px;
   font-size: 12px;
-  border-left: 1px solid var(--t-border);
-  color: var(--t-text-2);
+  color: #222;
   cursor: pointer;
   outline: none;
 }
 .tb-caret:hover {
-  color: var(--t-primary);
-  background: var(--t-hover-bg);
+  color: #3788FF;
+}
+.tools-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.tools-right .pg {
+  width: 22px;
+  height: 20px;
+  border: 1px solid #d0d7e3;
+  background: #fff;
+  color: #222;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
 }
 .head {
   display: flex;
-  justiry-content: space-between;
+  justify-content: space-between;
   align-items: center;
-  margin: 8px 0;
+  margin: 8px 0 4px;
 }
 .title {
   display: flex;
@@ -865,33 +889,41 @@ watch(() => [panelCode.value, code.value], load)
 .title .no {
   font-size: 16px;
   font-weight: 700;
-  color: var(--t-text-1);
+  color: #222;
 }
 .fields {
-  display: grid;
-  grid-template-columns: repeat(3, 1rr);
-  gap: 8px 18px;
-  padding: 10px 0;
-  border-top: 1px solid var(--t-border-light);
-  border-bottom: 1px solid var(--t-border-light);
-  min-height: 120px;
+  display: block;
+  padding: 12px;
+  background: #fff;
+  min-height: 0;
 }
 .field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: inline-block;
+  vertical-align: top;
+  margin: 0 24px 8px 0;
 }
 .field label {
-  width: 110px;
-  text-align: right;
+  display: block;
+  margin-bottom: 4px;
   font-size: 13px;
-  color: var(--t-text-2);
-  flex-shrink: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #222;
+  text-align: left;
   white-space: nowrap;
 }
 .field .req {
+  color: #dc2626;
+}
+.field .el-input,
+.field .el-select,
+.field .el-date-editor,
+.field .ref-ctl {
+  width: 160px !important;
+}
+.field .ref-ctl {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}.field .req {
   color: #dc2626;
 }
 .detail {
@@ -1042,4 +1074,84 @@ watch(() => [panelCode.value, code.value], load)
   height: 8px;
   border-top: 1px solid #ddd;
   margin: 6px 0;
+}.remark {
+  margin-top: 14px;
+}
+.remark label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #222;
+}
+.footer-hr {
+  border-top: 1px solid #ccc;
+  margin: 10px 0;
+}
+.audit-line {
+  margin-top: 10px;
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #222;
+}
+.dt-head {
+  border-bottom: 1px solid #ccc;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff;
+}
+.dt-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+.dt-tab {
+  display: inline-block;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #222;
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin-bottom: -1px;
+  user-select: none;
+  background: transparent;
+}
+.dt-tab.on {
+  border: 1px solid #ccc;
+  border-bottom: 1px solid #fff;
+  background: #fff;
+  font-weight: 700;
+}
+.dt-tab .req {
+  color: #dc2626;
+}
+.dt-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #222;
+}
+.dt-ic {
+  color: #222;
+  cursor: pointer;
+  text-decoration: none;
+}
+.dt-ic:hover {
+  color: #3788FF;
+}
+.dt-splitter {
+  height: 10px;
+  border-bottom: 1px solid #d0d7e3;
+  background: #f5f7fa;
+}
+.detail :deep(.el-table th.el-table__cell) {
+  background: #f7f9fc;
+  color: #222;
+  font-weight: 700;
 }</style>

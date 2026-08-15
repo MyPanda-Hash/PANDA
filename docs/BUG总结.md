@@ -54,3 +54,8 @@
 - ripgrep 对个别中文文件名报 `os error 234` → 换 PowerShell Select-String
 - raw.githubusercontent.com / github.com 从 harness 直连不通 → 用 web_search 或 npmmirror 镜像
 - PowerShell `$home` 是只读自动变量，脚本变量别用这名
+### 8. CSS 里的 f→r 残留（stfetch / justiry-content / 1rr）
+- **现象**：`.tools` 的 `align-items: stfetch`、`.head` 的 `justiry-content`、`.fields` 的 `grid-template-columns: repeat(3, 1rr)`——无效样式值被浏览器忽略，导致字段区布局错乱（本应 3 列）
+- **根因**：与第 1 条同源的 f→r 事故残留；CSS 无效属性不报错，构建也查不出
+- **修复**：本次按真实 T+ 重写 CSS 时一并纠正（stretch/justify-content/1fr）
+- **教训**：f→r 事故后不仅要扫 JS，**CSS 里的 stretch/justify/flex/1fr 等词也要核对**（`stretch`/`justify`/`flex` 含 f）
