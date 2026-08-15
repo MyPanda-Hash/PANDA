@@ -10532,13 +10532,24 @@ export async function getFormDescriptor({ panelCode, code }) {
   return unwrap(await request.get('/px/getFormDescriptor', { params: { panelCode, code } }))
 }
 
+// 单据类面板：列表查询返回单据级行（带 detail）
+const VOUCHER_CODES = new Set(['MANU_ORDER', 'SO_ORDER', 'PROCESS_REPORT', ...Object.keys(INV_CONFIGS)])
+
 export async function queryFormDataList(params) {
   if (USE_MOCK) {
     await mockDelay()
-    // 生产加工单：返回单据级行（带 detail），供列表页按单据翻页展示明细
-    let rows = params.panelCode === 'MANU_ORDER'
-      ? MOCK_ROWS.map((r) => ({ ...r, detail: r.detail ? { products: [...r.detail.products], materials: [...r.detail.materials], processes: [...r.detail.processes] } : r.detail })).sort((a, b) => (a['编号'] < b['编号'] ? 1 : -1))
-      : flattenFor(params.panelCode)
+    // 单据类面板（生产加工单/销售订单/库存6单/工序汇报单）：返回单据级行（带 detail），
+    // 供列表页按单据翻页展示明细（见 docs/页面开发规范.md 数据契约）；档案/报表类保持平铺行
+    let rows
+    if (VOUCHER_CODES.has(params.panelCode)) {
+      rows = panelOf(params.panelCode).rows.map((r) => ({
+        ...r,
+        detail: r.detail ? Object.fromEntries(Object.entries(r.detail).map(([k, v]) => [k, [...v]])) : r.detail,
+      }))
+      rows.sort((a, b) => (a['编号'] < b['编号'] ? 1 : -1))
+    } else {
+      rows = flattenFor(params.panelCode)
+    }
     const cond = params.condition || {}
     for (const [k, v] of Object.entries(cond)) {
       if (v === undefined || v === null || v === '') continue
