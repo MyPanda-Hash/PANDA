@@ -3,17 +3,13 @@
     <!-- ══════════ ① 顶部工具栏（T+ 灰条 + 单据翻页）══════════ -->
     <div class="tools">
       <div class="tb-group" v-for="(g, gi) in groups" :key="'g' + gi">
-        <span
-          v-for="it in g.items"
-          :key="it.name"
-          class="tb-main"
-          :class="{ disabled: isDisabled(it.name) }"
-          @click="onButton(it.name)"
-        >
-          <span class="act-name">{{ it.name }}</span>
-          <span v-if="it.shortcut" class="act-sc">{{ it.shortcut }}</span>
+        <span class="tb-main" :class="{ disabled: isDisabled(btnName(g)) }" @click="onButton(btnName(g))">
+          <span class="act-name">{{ g.name }}</span>
         </span>
-        <span v-if="g.caret" class="tb-caret">▼</span>
+        <span v-if="actsOf(g).length > 1" class="tb-caret" @click.stop="toggleGroup(gi)">▼</span>
+        <div v-if="openGroup === gi" class="tb-menu">
+          <div class="ctx-item" v-for="a in actsOf(g)" :key="a" @click="onGroupAction(a)">{{ a }}</div>
+        </div>
       </div>
       <div class="tools-right">
         <span class="doc-chip">单据：{{ cur['编号'] || cur['单据编号'] || '-' }}</span>
@@ -87,23 +83,8 @@
 
     </div>
 
-    <!-- ══════════ ④ 表尾（固定在页面底部，滚动明细时始终可见；含顶部按钮条 + 备注 + 审核行）══════════ -->
+    <!-- ══════════ ④ 表尾（固定在页面底部，滚动明细时始终可见；备注 + 审核行）══════════ -->
     <div v-if="showFooter" class="footer">
-      <div class="footer-btns">
-        <div class="tb-group" v-for="(g, gi) in groups" :key="'f' + gi">
-          <span
-            v-for="it in g.items"
-            :key="it.name"
-            class="tb-main"
-            :class="{ disabled: isDisabled(it.name) }"
-            @click="onButton(it.name)"
-          >
-            <span class="act-name">{{ it.name }}</span>
-            <span v-if="it.shortcut" class="act-sc">{{ it.shortcut }}</span>
-          </span>
-          <span v-if="g.caret" class="tb-caret">▼</span>
-        </div>
-      </div>
       <div class="remark">
         <label>备注</label>
         <el-input v-model="remarkText" size="small" placeholder="" />
@@ -420,6 +401,23 @@ function onCtx(ev, row, b) {
 
 function closeCtx() {
   ctx.visible = false
+  openGroup.value = -1
+}
+
+// ---------- 工具栏分组（配置 {name, actions}：主按钮=第一个 action，actions>1 显示 ▼ 下拉） ----------
+const openGroup = ref(-1)
+function actsOf(g) {
+  return g.actions || g.items || []
+}
+function btnName(g) {
+  return actsOf(g)[0] || g.name
+}
+function toggleGroup(gi) {
+  openGroup.value = openGroup.value === gi ? -1 : gi
+}
+function onGroupAction(a) {
+  openGroup.value = -1
+  onButton(a)
 }
 
 async function copyActive() {
@@ -740,11 +738,26 @@ watch(
 .tb-group {
   display: inline-flex;
   align-items: center;
+  position: relative;
   border: 1px solid #c9cfdb;
   border-radius: 3px;
-  overflow: hidden;
+  overflow: visible;
   margin-right: 4px;
   background: #fff;
+}
+.tb-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 3000;
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid #d0d7e3;
+  border-radius: 4px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+  padding: 4px 0;
+  max-height: 360px;
+  overflow: auto;
 }
 .tb-main {
   display: inline-flex;
@@ -960,14 +973,6 @@ watch(
   border-top: 1px solid #d0d7e3;
   box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.06);
   flex-shrink: 0;
-}
-.footer-btns {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border-bottom: 1px solid #eef1f5;
 }
 
 /* ═══════ 表尾：备注 + 分隔线 + 审核行 ═══════ */
