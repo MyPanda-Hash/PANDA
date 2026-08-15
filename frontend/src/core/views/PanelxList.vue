@@ -63,6 +63,7 @@
         </div>
         <el-table
           :data="blockRows(b)"
+          :height="tableH(b)"
           border
           size="small"
           :show-summary="tabView(b, activeTab(b)) !== 'summary'"
@@ -308,10 +309,27 @@ function summaryRows(rows, b) {
   return out
 }
 
-function blockRows(b) {
+// 所有表格固定展示 5 行：不足补空占位行（{_placeholder:true}），超出 5 行鼠标滚动（见 docs/页面开发规范.md）
+const MIN_ROWS = 5
+const ROW_H = 31
+const HEAD_H = 32
+const FOOT_H = 32
+
+function blockData(b) {
   const t = activeTab(b)
   const rows = detailRows(t)
   return tabView(b, t) === 'summary' ? summaryRows(rows, t) : rows
+}
+
+function blockRows(b) {
+  const out = blockData(b).map((r) => r)
+  while (out.length < MIN_ROWS) out.push({ _placeholder: true })
+  return out
+}
+
+function tableH(b) {
+  const hasFooter = tabView(b, activeTab(b)) !== 'summary'
+  return HEAD_H + MIN_ROWS * ROW_H + (hasFooter ? FOOT_H : 0)
 }
 
 function blockCols(b) {
@@ -334,18 +352,21 @@ function num(v) {
 
 function sumMethod({ columns, data }) {
   const sums = []
+  // 占位行不参与合计
+  const real = (data || []).filter((r) => !r._placeholder)
   columns.forEach((col, i) => {
     if (i === 0) {
       sums[i] = '合计'
       return
     }
-    const vals = (data || []).map((r) => Number(r[col.property]))
+    const vals = real.map((r) => Number(r[col.property]))
     sums[i] = vals.length && vals.every((v) => Number.isFinite(v)) ? Math.round(vals.reduce((a, b) => a + b, 0) * 100) / 100 : ''
   })
   return sums
 }
 
 function rowCls({ row }) {
+  if (row._placeholder) return 'ph-row'
   return ['产品编码', '材料编码', '存货编码', '存货名称', '产品名称', '材料名称'].some((k) => row[k] === '合计') ? 'sum-row' : ''
 }
 
@@ -369,7 +390,7 @@ const ctxBlock = ref(null)
 const ctx = reactive({ visible: false, x: 0, y: 0, row: null })
 
 const activeCols = computed(() => (ctxBlock.value ? blockCols(ctxBlock.value) : []))
-const activeData = computed(() => (ctxBlock.value ? blockRows(ctxBlock.value) : []))
+const activeData = computed(() => (ctxBlock.value ? blockData(ctxBlock.value) : []))
 
 function onCtx(ev, row, b) {
   ev.preventDefault()
@@ -387,7 +408,7 @@ function closeCtx() {
 
 async function copyActive() {
   const cols = activeCols.value
-  const rows = activeData.value
+  const rows = (activeData.value || []).filter((r) => !r._placeholder)
   const text = cols.map((c) => c.label).join('\t') + '\n' + rows.map((r) => cols.map((c) => r[c.prop] ?? '').join('\t')).join('\n')
   try {
     await navigator.clipboard.writeText(text)
@@ -406,7 +427,7 @@ async function copyActive() {
 
 function exportActive() {
   const cols = activeCols.value
-  const rows = activeData.value
+  const rows = (activeData.value || []).filter((r) => !r._placeholder)
   const esc = (v) => {
     const s = String(v ?? '')
     return /[",\n\t]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
@@ -896,6 +917,15 @@ watch(
   background: #f7f9fc;
   color: #333;
   font-weight: 600;
+}
+:deep(.el-table th .cell) {
+  white-space: nowrap;
+}
+/* 固定 5 行：所有数据行统一 31px 高（含空占位行，占位行不渲染成矮行） */
+:deep(.el-table .el-table__body td) {
+  height: 31px;
+  padding: 0;
+  vertical-align: middle;
 }
 :deep(.el-table .el-table__footer-wrapper .cell) {
   font-weight: 600;
