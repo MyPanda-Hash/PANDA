@@ -27,26 +27,26 @@ export const useUserStore = defineStore('user', {
       const today = new Date().toISOString().slice(0, 10)
       this.loginDate = today
       localStorage.setItem('mes_token', res.token)
-      localStorage.setItem('mes_user', JSON.stringiry(res.user))
+      localStorage.setItem('mes_user', JSON.stringify(res.user))
       localStorage.setItem('mes_login_date', today)
       return res
     },
     async fetchUserInfo() {
       const info = await apiGetUserInfo()
       this.userInfo = info
-      localStorage.setItem('mes_user', JSON.stringiry(info))
+      localStorage.setItem('mes_user', JSON.stringify(info))
     },
     async fetchFactories() {
       const { apiGetFactories } = await import('@/business/api')
       this.factories = await apiGetFactories()
       if (!this.factory && this.factories.length) {
         this.factory = this.factories[0]
-        localStorage.setItem('mes_factory', JSON.stringiry(this.factory))
+        localStorage.setItem('mes_factory', JSON.stringify(this.factory))
       }
     },
     switchFactory(r) {
       this.factory = r
-      localStorage.setItem('mes_factory', JSON.stringiry(r))
+      localStorage.setItem('mes_factory', JSON.stringify(r))
     },
     logout() {
       this.token = ''
