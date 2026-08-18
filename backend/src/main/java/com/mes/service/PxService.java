@@ -458,7 +458,7 @@ public class PxService {
         Map<String, Object> detail = new HashMap<>();
         detail.put("products", products);
         detail.put("materials", materials);
-        detail.put("processes", new ArrayList<>());
+        detail.put("processes", defaultProcesses(products, String.valueOf(moData.getOrDefault("生产车间", "熔铸车间"))));
 
         FormData mo = new FormData();
         mo.setPanelCode("MANU_ORDER");
@@ -501,6 +501,10 @@ public class PxService {
         List<Map<String, Object>> procs = detailMap.get("processes") instanceof List
                 ? (List<Map<String, Object>>) detailMap.get("processes") : new ArrayList<>();
         if (products.isEmpty()) throw new IllegalStateException("生产加工单无产成品明细：" + no);
+        // 工序兜底：加工单无工序明细时按默认 3 道工序生成（下料/机加工/检验）
+        if (procs.isEmpty()) {
+            procs = defaultProcesses(products, String.valueOf(head.getOrDefault("生产车间", "熔铸车间")));
+        }
         Map<String, Object> p0 = products.get(0);
 
         String newNo = generateFormNo("PROCESS_REPORT");
@@ -583,6 +587,74 @@ public class PxService {
         out.put("gotoPanel", "PROCESS_REPORT");
         out.put("编号", newNo);
         return out;
+    }
+
+    /**
+     * 默认工序（3 道：下料/机加工/检验）：推式生单生成加工单时附带，工序汇报单按此生成待汇报行
+     */
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> defaultProcesses(List<Map<String, Object>> products, String workshop) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        Map<String, Object> p0 = products.isEmpty() ? new HashMap<>() : products.get(0);
+        Object qty = p0.getOrDefault("数量", 0);
+        Object req = p0.getOrDefault("需求令号", "");
+        Object fig = p0.getOrDefault("图号", "");
+        addDefaultProc(out, 1, "PX001", "下料", workshop, "锯床-01", "下料班", "王强", qty, 2.5, 0.05, req, fig);
+        addDefaultProc(out, 2, "PX002", "机加工", workshop, "数控车床-01", "车工班", "李强", qty, 3.5, 0.1, req, fig);
+        addDefaultProc(out, 3, "PX007", "检验", workshop, "检测台-01", "质检班", "赵敏", qty, 1.5, 0.03, req, fig);
+        return out;
+    }
+
+    private void addDefaultProc(List<Map<String, Object>> out, int seq, String code, String name, String workshop,
+                                String equip, String team, String worker, Object qty, double price, double stdHour,
+                                Object req, Object fig) {
+        Map<String, Object> it = new HashMap<>();
+        it.put("工序行码", "");
+        it.put("工艺类型", "自制");
+        it.put("工艺序号", 0);
+        it.put("加工顺序", seq);
+        it.put("加工类型", "自制");
+        it.put("工序编码", code);
+        it.put("工序名称", name);
+        it.put("工序备注", "");
+        it.put("生产车间", workshop);
+        it.put("工作中心", workshop + "中心");
+        it.put("设备", equip);
+        it.put("班组", team);
+        it.put("工人", worker);
+        it.put("委外供应商", "");
+        it.put("委外单价", 0);
+        it.put("税率%", 13);
+        it.put("委外金额", 0);
+        it.put("按辅单位计价", false);
+        it.put("计价辅单位", "件");
+        it.put("换算率(辅单位)", 1);
+        it.put("计价辅数量", 0);
+        it.put("工序完工状态", "未完工");
+        it.put("手工完工", false);
+        it.put("行中止", false);
+        it.put("工价（辅单位）", 0);
+        it.put("工废工价", 0);
+        it.put("工废工价（辅单位）", 0);
+        it.put("料废工价", 0);
+        it.put("料废工价（辅单位）", 0);
+        it.put("工序单位", "件");
+        it.put("计划数量", qty);
+        it.put("工资类型", "计件");
+        it.put("工价", price);
+        it.put("金额", 0);
+        it.put("关键工序", false);
+        it.put("单位标准工时", stdHour);
+        it.put("待返修数量-本序发现", 0);
+        it.put("待返修数量-他序发现", 0);
+        it.put("计划时间", "");
+        it.put("完成时间", "");
+        it.put("单重", 0);
+        it.put("总重", 0);
+        it.put("需求令号", req);
+        it.put("子表材料", new ArrayList<>());
+        it.put("工序字符专用自定义项1", "");
+        out.add(it);
     }
 
     private Map<String, Object> create(String panelCode, Map<String, Object> formData, String userName) {
