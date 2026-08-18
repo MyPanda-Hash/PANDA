@@ -23,7 +23,7 @@ mybatis-plus:
 
 mes:
   jwt:
-    secret: light-mes-jwt-secret-key-please-change-in-production-0123456789
+    secret: 04aff72d4a76a807f1e8f9c2114fb51c422b26a4f89c4a019474a22b77af6fd0b89b7b565579799ae0bd80377a9239ffff6770163d0f0990ccd8282dd43f6b41
     expire-hours: 24
   panelx:
     base-url: https://demo.kwaidoo.com/VF_DEV/
