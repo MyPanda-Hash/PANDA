@@ -16,6 +16,7 @@ public class SysUser {
     private String factoryCode;
     private Integer enabled;
     private Long roleId;
+    private Long deptId;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -33,4 +34,6 @@ public class SysUser {
     public void setEnabled(Integer enabled) { this.enabled = enabled; }
     public Long getRoleId() { return roleId; }
     public void setRoleId(Long roleId) { this.roleId = roleId; }
+    public Long getDeptId() { return deptId; }
+    public void setDeptId(Long deptId) { this.deptId = deptId; }
 }

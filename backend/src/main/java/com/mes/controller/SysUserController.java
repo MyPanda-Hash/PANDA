@@ -2,8 +2,10 @@ package com.mes.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mes.dto.ApiResult;
+import com.mes.entity.SysDept;
 import com.mes.entity.SysRole;
 import com.mes.entity.SysUser;
+import com.mes.mapper.SysDeptMapper;
 import com.mes.mapper.SysRoleMapper;
 import com.mes.mapper.SysUserMapper;
 import com.mes.service.RoleService;
@@ -23,13 +25,15 @@ public class SysUserController {
 
     private final SysUserMapper userMapper;
     private final SysRoleMapper roleMapper;
+    private final SysDeptMapper deptMapper;
     private final RoleService roleService;
     private final PasswordEncoder passwordEncoder;
 
-    public SysUserController(SysUserMapper userMapper, SysRoleMapper roleMapper,
+    public SysUserController(SysUserMapper userMapper, SysRoleMapper roleMapper, SysDeptMapper deptMapper,
                              RoleService roleService, PasswordEncoder passwordEncoder) {
         this.userMapper = userMapper;
         this.roleMapper = roleMapper;
+        this.deptMapper = deptMapper;
         this.roleService = roleService;
         this.passwordEncoder = passwordEncoder;
     }
@@ -61,6 +65,13 @@ public class SysUserController {
                 m.put("roleCode", "");
                 m.put("roleName", "");
             }
+            m.put("deptId", u.getDeptId());
+            if (u.getDeptId() != null) {
+                SysDept d = deptMapper.selectById(u.getDeptId());
+                m.put("deptName", d != null ? d.getDeptName() : "");
+            } else {
+                m.put("deptName", "");
+            }
             out.add(m);
         }
         return ApiResult.ok(out);
@@ -89,6 +100,7 @@ public class SysUserController {
         user.setFactoryCode(String.valueOf(body.getOrDefault("factoryCode", "F01")));
         user.setEnabled(body.get("enabled") == null ? 1 : Integer.valueOf(String.valueOf(body.get("enabled"))));
         user.setRoleId(body.get("roleId") == null ? null : Long.valueOf(String.valueOf(body.get("roleId"))));
+        user.setDeptId(body.get("deptId") == null ? null : Long.valueOf(String.valueOf(body.get("deptId"))));
         if (id != null) userMapper.updateById(user);
         else userMapper.insert(user);
         return ApiResult.ok(null);
