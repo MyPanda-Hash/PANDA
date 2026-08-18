@@ -103,6 +103,7 @@ public class SysUserController {
         user.setDeptId(body.get("deptId") == null ? null : Long.valueOf(String.valueOf(body.get("deptId"))));
         if (id != null) userMapper.updateById(user);
         else userMapper.insert(user);
+        roleService.invalidatePermCache();
         return ApiResult.ok(null);
     }
 }

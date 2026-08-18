@@ -14,6 +14,7 @@ import com.mes.mapper.SysUserMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 角色与面板权限：角色 CRUD、角色-面板授权（含审批权限）、当前用户权限计算。
@@ -28,6 +29,14 @@ public class RoleService {
     private final SysUserMapper userMapper;
     private final PanelConfigMapper panelConfigMapper;
     private final ObjectMapper json = new ObjectMapper();
+
+    // ---- 性能缓存：面板清单（TTL 60s）与用户权限结果（TTL 30s，写操作失效）----
+    private static final long PANEL_TTL_MS = 60_000L;
+    private static final long PERM_TTL_MS = 30_000L;
+    private volatile List<Map<String, Object>> panelsCache = null;
+    private volatile long panelsCacheAt = 0L;
+    private final Map<String, Map<String, Object>> permCache = new ConcurrentHashMap<>();
+    private final Map<String, Long> permCacheAt = new ConcurrentHashMap<>();
 
     public RoleService(SysRoleMapper roleMapper, SysRolePanelMapper rolePanelMapper,
                        SysUserMapper userMapper, PanelConfigMapper panelConfigMapper) {
@@ -59,6 +68,7 @@ public class RoleService {
             role.setIsAdmin(0);
             roleMapper.updateById(role);
         }
+        invalidatePermCache();
         return role;
     }
 
@@ -74,21 +84,27 @@ public class RoleService {
             u.setRoleId(null);
             userMapper.updateById(u);
         }
+        invalidatePermCache();
     }
 
     // ---------- 面板清单（含是否有审批流） ----------
 
     public List<Map<String, Object>> listPanels() {
-        List<Map<String, Object>> out = new ArrayList<>();
-        for (PanelConfig pc : panelConfigMapper.selectList(
-                new LambdaQueryWrapper<PanelConfig>().orderByAsc(PanelConfig::getId))) {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("panelCode", pc.getPanelCode());
-            m.put("panelName", pc.getPanelName());
-            m.put("hasApproval", hasApproval(pc));
-            out.add(m);
+        long now = System.currentTimeMillis();
+        if (panelsCache == null || now - panelsCacheAt > PANEL_TTL_MS) {
+            List<Map<String, Object>> out = new ArrayList<>();
+            for (PanelConfig pc : panelConfigMapper.selectList(
+                    new LambdaQueryWrapper<PanelConfig>().orderByAsc(PanelConfig::getId))) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("panelCode", pc.getPanelCode());
+                m.put("panelName", pc.getPanelName());
+                m.put("hasApproval", hasApproval(pc));
+                out.add(m);
+            }
+            panelsCache = out;
+            panelsCacheAt = now;
         }
-        return out;
+        return panelsCache;
     }
 
     private boolean hasApproval(PanelConfig pc) {
@@ -143,11 +159,29 @@ public class RoleService {
                 rolePanelMapper.insert(rp);
             }
         }
+        invalidatePermCache();
     }
 
     // ---------- 当前用户权限 ----------
 
     public Map<String, Object> getPerms(String userName) {
+        long now = System.currentTimeMillis();
+        Map<String, Object> cached = permCache.get(userName);
+        Long at = permCacheAt.get(userName);
+        if (cached != null && at != null && now - at < PERM_TTL_MS) return cached;
+        Map<String, Object> result = computePerms(userName);
+        permCache.put(userName, result);
+        permCacheAt.put(userName, now);
+        return result;
+    }
+
+    /** 权限变更（角色/授权/用户）后调用，使权限缓存失效 */
+    public void invalidatePermCache() {
+        permCache.clear();
+        permCacheAt.clear();
+    }
+
+    private Map<String, Object> computePerms(String userName) {
         Map<String, Object> out = new LinkedHashMap<>();
         SysUser user = userMapper.selectOne(new LambdaQueryWrapper<SysUser>().eq(SysUser::getUserName, userName));
         boolean isAdmin = false;
