@@ -690,11 +690,18 @@ public class PxService {
             fd = new FormData();
             fd.setPanelCode(panelCode);
             // 存货新单：按类别前缀编号（产成品 CP-、原材料 YL-、辅助材料 FZ-、包装物 BZ-、半成品 BC-）
-            // 基础档案类：面板代码-3位序号（EMP-009 / DEPT-011）；单据类：日期序号
-            String cat = categoryOf(panelCode);
-            fd.setFormNo("INV".equals(panelCode)
-                    ? invNo(formData.get("类别") == null ? "" : String.valueOf(formData.get("类别")))
-                    : ("基础档案".equals(cat) ? archNo(panelCode) : generateFormNo(panelCode)));
+            // 编号规则：基础档案 / 自编码面板（autoCodeField 非「单据编号」，如 工艺路线编码/物料清单编码/期初*号）→ 面板代码-3位序号；
+            //          标准单据（单据编号 或 无 autoCodeField）→ 日期序号（SO-/MO-/FI-/RK-/CK-/GX-）
+            String autoField = autoCodeFieldOf(panelCode);
+            String newNo;
+            if ("INV".equals(panelCode)) {
+                newNo = invNo(formData.get("类别") == null ? "" : String.valueOf(formData.get("类别")));
+            } else if (autoField == null || autoField.isBlank() || "单据编号".equals(autoField)) {
+                newNo = generateFormNo(panelCode);
+            } else {
+                newNo = archNo(panelCode);
+            }
+            fd.setFormNo(newNo);
             fd.setData(toJson(formData));
             fd.setDetailData(detail == null ? "{}" : toJson(detail));
             fd.setStatus("INV".equals(panelCode) ? "启用" : "草稿"); // 存货类别单据初始状态=启用
@@ -977,6 +984,12 @@ public class PxService {
         Map<String, Object> cfg = loadConfig(panelCode);
         Object cat = cfg.get("metadata") == null ? null : ((Map<String, Object>) cfg.get("metadata")).get("panelCategory");
         return cat == null ? "" : String.valueOf(cat);
+    }
+
+    private String autoCodeFieldOf(String panelCode) {
+        Map<String, Object> cfg = loadConfig(panelCode);
+        Object f = cfg.get("metadata") == null ? null : ((Map<String, Object>) cfg.get("metadata")).get("autoCodeField");
+        return f == null ? "" : String.valueOf(f);
     }
 
     /** 基础档案编号：面板代码-3位序号（如 EMP-009 / DEPT-011），与种子数据格式一致 */
