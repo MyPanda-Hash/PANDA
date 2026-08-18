@@ -272,6 +272,7 @@
     <RefPickDialog v-model="refVisible" :field="refPick?.field" :mode="refPick?.mode" @confirm="onRefConfirm" />
     <ApprovalHistoryDialog v-model="approvalVisible" :panelCode="panelCode" :formNo="approvalNo" />
     <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
+    <ImportDialog v-model="impVisible" :fields="impFields" :target-label="impLabel" @imported="onImported" />
     <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
   </div>
 </template>
@@ -288,6 +289,7 @@ import PanelxLogin from './PanelxLogin.vue'
 import RefPickDialog from './RefPickDialog.vue'
 import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
+import ImportDialog from './ImportDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
 const { SHORTCUTS } = engine
 
@@ -340,6 +342,9 @@ const payloadCache = ref(null)
 const approvalVisible = ref(false)
 const approvalNo = ref('')
 const selVisible = ref(false)
+const impVisible = ref(false)
+const impFields = ref([])
+const impLabel = ref('明细')
 const selCfg = ref(null)
 
 // ---------- 拉式选单（配置驱动：selectConfig 定义来源面板/列/字段映射） ----------
@@ -957,6 +962,15 @@ async function onButton(action) {
     back()
     return
   }
+  // Excel 导入：识别当前主明细 tab 字段，导入后追加明细行
+  if (action === '导入') {
+    const tab = tabs.value[0]
+    if (!tab) return ElMessage.warning('该面板无明细可导入')
+    impFields.value = (tab.fields || []).filter((f) => !f.hidden)
+    impLabel.value = tab.label || '明细'
+    impVisible.value = true
+    return
+  }
   // 拉式选单（配置驱动：selectConfig.generateButton 存在 → 新弹窗直接生单；否则旧带入流程）
   if (action === '选单' || action === '选销售订单' || action === '选生产加工单') {
     const sc = payloadCache.value?.selectConfig
@@ -1101,6 +1115,15 @@ async function onButton(action) {
 
 function back() {
   router.push({ path: `/panelx/list/${panelCode.value}` })
+}
+
+// Excel 导入完成：行追加到主明细，提示保存落库
+function onImported(rows) {
+  const tab = tabs.value[0]
+  if (!tab || !Array.isArray(rows)) return
+  const target = detailData[tab.key] || (detailData[tab.key] = [])
+  for (const r of rows) target.push(r)
+  ElMessage.success('已导入 ' + rows.length + ' 行到「' + (tab.label || tab.key) + '」，请点击保存落库')
 }
 
 // 新选单弹窗生单完成：跳转到第一张生成的单据表单

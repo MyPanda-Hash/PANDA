@@ -124,6 +124,7 @@
     <NewVoucherDialog v-model:visible="newVisible" :panelCode="panelCode" :panel-name="panelName" @saved="onNewSaved" />
     <BomDialog v-model="bomVisible" :item="bomItem" :parentDoc="bomParent" @saved="onBomSaved" />
     <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
+    <ImportDialog v-model="impVisible" :fields="impFields" :target-label="impLabel" @imported="onImported" />
     <ApprovalHistoryDialog v-model="approvalVisible" :panelCode="panelCode" :formNo="approvalNo" />
     <el-dialog v-model="catPickVisible" title="选择类别添加存货" width="360px" append-to-body>
       <el-select v-model="catPick" style="width: 100%" placeholder="选择存货类别">
@@ -152,6 +153,7 @@ import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
 import BomDialog from './BomDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
+import ImportDialog from './ImportDialog.vue'
 
 const loginVisible = ref(false)
 function onPanelxLogin() {
@@ -183,6 +185,9 @@ const newVisible = ref(false)
 const approvalVisible = ref(false)
 const approvalNo = ref('')
 const selVisible = ref(false)
+const impVisible = ref(false)
+const impFields = ref([])
+const impLabel = ref('明细')
 const selCfg = ref(null)
 const bomVisible = ref(false)
 const bomItem = ref(null)
@@ -669,6 +674,18 @@ async function onButton(action) {
     search()
     return
   }
+  if (action === '导入') {
+    // Excel 导入：识别 A 区主明细字段，导入后追加行并自动保存
+    const blk = blocks.value.find((x) => x.id === 'A')
+    const tab = blk ? activeTab(blk) : null
+    if (!tab) return ElMessage.warning('该面板无明细可导入')
+    // 字段定义取自面板配置 detail.tabs（blocks 的 tab 只有列名 cols）
+    const tabDef = (cfgCache.value?.detail?.tabs || []).find((t) => t.key === tab.key) || tab
+    impFields.value = (tabDef.fields || []).filter((f) => !f.hidden)
+    impLabel.value = tab.label || '明细'
+    impVisible.value = true
+    return
+  }
   if (action === '选单' || action === '选销售订单' || action === '选生产加工单') {
     const sc = cfgCache.value?.selectConfig
     if (sc) {
@@ -905,6 +922,38 @@ function onNewSaved() {
 
 function onSelGenerated() {
   load()
+}
+
+// Excel 导入完成：追加到当前单据主明细并自动保存
+async function onImported(rows) {
+  const blk = blocks.value.find((x) => x.id === 'A')
+  const tab = blk ? activeTab(blk) : null
+  const key = tab ? tab.key : 'items'
+  if (!cur.value.detail || !Array.isArray(cur.value.detail[key])) {
+    if (!cur.value.detail) cur.value.detail = {}
+    cur.value.detail[key] = []
+  }
+  for (const r of rows) cur.value.detail[key].push(r)
+  ElMessage.success('已导入 ' + rows.length + ' 行，正在保存…')
+  try {
+    const head = { ...cur.value }
+    delete head.detail
+    delete head['编号']
+    delete head['单据状态']
+    delete head['创建时间']
+    delete head['更新时间']
+    delete head['发起人编号']
+    await engine.callButton({
+      panelCode: panelCode.value,
+      buttonName: '保存',
+      formData: { ...head, 编号: cur.value['编号'], detail: { ...cur.value.detail } },
+      buttonParam: {},
+    })
+    ElMessage.success('导入并保存成功')
+    load()
+  } catch (e) {
+    ElMessage.error(engine.errMsg(e) || '保存失败')
+  }
 }
 
 // 存货（INV）面板：单击行 → 打开 BOM 管理弹窗（勾选存货添加子件、可多级下钻）
