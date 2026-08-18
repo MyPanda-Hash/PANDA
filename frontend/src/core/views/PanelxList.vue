@@ -679,9 +679,12 @@ async function onButton(action) {
     const blk = blocks.value.find((x) => x.id === 'A')
     const tab = blk ? activeTab(blk) : null
     if (!tab) return ElMessage.warning('该面板无明细可导入')
-    // 字段定义取自面板配置 detail.tabs（blocks 的 tab 只有列名 cols）
-    const tabDef = (cfgCache.value?.detail?.tabs || []).find((t) => t.key === tab.key) || tab
-    impFields.value = (tabDef.fields || []).filter((f) => !f.hidden)
+    // 字段定义取自面板配置 detail.tabs（blocks 的 tab 只有列名 cols）；档案面板无明细 tab → 用 dataSchema.fields
+    const tabDef = (cfgCache.value?.detail?.tabs || []).find((t) => t.key === tab.key)
+    const fields = (tabDef && tabDef.fields && tabDef.fields.length)
+      ? tabDef.fields
+      : (cfgCache.value?.dataSchema?.fields || [])
+    impFields.value = (fields || []).filter((f) => !f.hidden)
     impLabel.value = tab.label || '明细'
     impVisible.value = true
     return
@@ -924,8 +927,25 @@ function onSelGenerated() {
   load()
 }
 
-// Excel 导入完成：追加到当前单据主明细并自动保存
+// Excel 导入完成：单据面板追加到当前单明细并保存；档案面板（无明细 tab）逐行新建档案
 async function onImported(rows) {
+  const hasDetailTabs = (cfgCache.value?.detail?.tabs || []).length > 0
+  if (!hasDetailTabs) {
+    // 档案类（EMP/DEPT/WH…）：Excel 每行 = 一条新档案
+    ElMessage.success('已解析 ' + rows.length + ' 行，正在逐条建档…')
+    let ok = 0
+    try {
+      for (const r of rows) {
+        await engine.callButton({ panelCode: panelCode.value, buttonName: '保存', formData: { ...r }, buttonParam: {} })
+        ok++
+      }
+      ElMessage.success('已导入 ' + ok + ' 条档案')
+    } catch (e) {
+      ElMessage.error(engine.errMsg(e) || '第 ' + (ok + 1) + ' 条导入失败')
+    }
+    load()
+    return
+  }
   const blk = blocks.value.find((x) => x.id === 'A')
   const tab = blk ? activeTab(blk) : null
   const key = tab ? tab.key : 'items'

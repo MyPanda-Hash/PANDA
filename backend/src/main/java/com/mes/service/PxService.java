@@ -690,9 +690,11 @@ public class PxService {
             fd = new FormData();
             fd.setPanelCode(panelCode);
             // 存货新单：按类别前缀编号（产成品 CP-、原材料 YL-、辅助材料 FZ-、包装物 BZ-、半成品 BC-）
+            // 基础档案类：面板代码-3位序号（EMP-009 / DEPT-011）；单据类：日期序号
+            String cat = categoryOf(panelCode);
             fd.setFormNo("INV".equals(panelCode)
                     ? invNo(formData.get("类别") == null ? "" : String.valueOf(formData.get("类别")))
-                    : generateFormNo(panelCode));
+                    : ("基础档案".equals(cat) ? archNo(panelCode) : generateFormNo(panelCode)));
             fd.setData(toJson(formData));
             fd.setDetailData(detail == null ? "{}" : toJson(detail));
             fd.setStatus("INV".equals(panelCode) ? "启用" : "草稿"); // 存货类别单据初始状态=启用
@@ -969,6 +971,20 @@ public class PxService {
                 .eq(FormData::getPanelCode, panelCode)
                 .eq(FormData::getFormNo, no)) > 0);
         return no;
+    }
+
+    private String categoryOf(String panelCode) {
+        Map<String, Object> cfg = loadConfig(panelCode);
+        Object cat = cfg.get("metadata") == null ? null : ((Map<String, Object>) cfg.get("metadata")).get("panelCategory");
+        return cat == null ? "" : String.valueOf(cat);
+    }
+
+    /** 基础档案编号：面板代码-3位序号（如 EMP-009 / DEPT-011），与种子数据格式一致 */
+    private String archNo(String panelCode) {
+        long count = formMapper.selectCount(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, panelCode)
+                .likeRight(FormData::getFormNo, panelCode + "-"));
+        return panelCode + "-" + String.format("%03d", count + 1);
     }
 
     private Map<String, Object> parseData(String s) {
