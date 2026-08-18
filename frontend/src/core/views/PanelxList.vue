@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="panelx-list" @click="closeCtx">
     <!-- ══════════ ① 顶部工具栏（T+ 灰条 + 单据翻页）══════════ -->
     <div class="tools">
@@ -13,6 +13,7 @@
       </div>
       <div class="tools-right">
         <span class="doc-chip">单据：{{ cur['编号'] || cur['单据编号'] || '-' }}</span>
+        <span v-if="cur['类别']" class="doc-cat">{{ cur['类别'] }}</span>
         <span v-if="cur['单据状态']" class="doc-status" :class="cur['单据状态']">{{ cur['单据状态'] }}</span>
         <span class="page-btn" title="首页" @click="pageFirst">◁</span>
         <span class="page-btn" title="上一张" @click="page(-1)">◀</span>
@@ -51,8 +52,10 @@
     <div class="body" v-loading="loading">
       <!-- ══════════ ③ 表中 · 明细区块（配置驱动：区块内多页签，同 T+）══════════ -->
       <div class="detail" v-for="b in blocks" :key="b.id">
+        <div v-if="isApproved" class="approved-stamp">已审批</div>
         <div class="dt-head">
           <span v-for="it in headItems(b)" :key="it.kind + it.key" class="dt-tab" :class="{ on: isOn(b, it) }" @click="switchTab(b, it)">{{ it.label }}</span>
+          <span v-if="b.id === 'B' && activeTab(b).key === 'materials' && selectedProduct" class="filter-hint">当前产品：{{ selectedProduct }} 的 BOM 子件</span>
           <span class="dt-ics">
             <span class="dt-ic" v-for="ic in b.isMain ? iconA : iconB" :key="ic" @click="onIcon(ic, b)">{{ ic }}</span>
           </span>
@@ -65,19 +68,30 @@
           :show-summary="tabView(b, activeTab(b)) !== 'summary'"
           :summary-method="sumMethod"
           sum-text="合计"
-          :row-class-name="rowCls"
+          :row-class-name="(o) => rowCls(o, b)"
+          @selection-change="(r) => (delSel = r)"
           @row-contextmenu="(row, col, ev) => onCtx(ev, row, b)"
           @row-dblclick="() => openForm(cur)"
+          @row-click="(row) => onRowClick(row, b)"
+          @click.capture="(e) => onTableClick(b, e)"
         >
+          <el-table-column v-if="delMode && b.isMain" type="selection" width="45" fixed="left" />
           <el-table-column
             v-for="c in blockCols(b)"
             :key="c.prop"
             :prop="c.prop"
             :label="c.label"
-            :width="c.width"
+            :min-width="c.width"
             :align="c.align"
             show-overflow-tooltip
-          />
+          >
+            <template v-if="c.prop === '材料编码' && activeTab(b).key === 'materials'" #default="{ row }">
+              <span class="mat-cell">
+                <span>{{ row[c.prop] }}</span>
+                <span v-if="hasSubBom(row[c.prop])" class="mat-star" title="该材料有下级子件 BOM，点击行查看">*</span>
+              </span>
+            </template>
+          </el-table-column>
         </el-table>
       </div>
 
@@ -97,6 +111,7 @@
         <span>审核时间：{{ cur['审核时间'] || '' }}</span>
         <span>打印次数：{{ cur['打印次数'] ?? 0 }}</span>
         <span>创建时间：{{ cur['创建时间'] || '' }}</span>
+        <span>审核意见：{{ cur['审核意见'] || '-' }}</span>
       </div>
     </div>
 
@@ -106,18 +121,36 @@
     </div>
 
     <PanelxLogin v-model="loginVisible" @success="onPanelxLogin" />
-    <NewVoucherDialog v-model="newVisible" :panelCode="panelCode" @saved="onNewSaved" />
+    <NewVoucherDialog v-model:visible="newVisible" :panelCode="panelCode" @saved="onNewSaved" />
+    <BomDialog v-model="bomVisible" :item="bomItem" :parentDoc="bomParent" @saved="onBomSaved" />
+    <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
+    <ApprovalHistoryDialog v-model="approvalVisible" :panelCode="panelCode" :formNo="approvalNo" />
+    <el-dialog v-model="catPickVisible" title="选择类别添加存货" width="360px" append-to-body>
+      <el-select v-model="catPick" style="width: 100%" placeholder="选择存货类别">
+        <el-option v-for="c in ['产成品', '原材料', '辅助材料', '包装物', '半成品']" :key="c" :label="c" :value="c" />
+      </el-select>
+      <div style="margin-top:8px;font-size:12px;color:#999">存货固定 5 张类别单据，新增物品进入对应类别单据的明细中</div>
+      <template #footer>
+        <el-button @click="catPickVisible = false">取消</el-button>
+        <el-button type="primary" :disabled="!catPick" @click="gotoCategory">打开该类别单据</el-button>
+      </template>
+    </el-dialog>
+    <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useTabsStore } from '@/stores/tabs'
 import * as engine from '@/business/engine'
 import PanelxLogin from './PanelxLogin.vue'
 import NewVoucherDialog from './NewVoucherDialog.vue'
+import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
+import SelectVoucherDialog from './SelectVoucherDialog.vue'
+import BomDialog from './BomDialog.vue'
+import SubBomDialog from './SubBomDialog.vue'
 
 const loginVisible = ref(false)
 function onPanelxLogin() {
@@ -145,6 +178,27 @@ const groups = ref([])
 const panelName = ref('')
 const cfgCache = ref(null)
 const newVisible = ref(false)
+const approvalVisible = ref(false)
+const approvalNo = ref('')
+const selVisible = ref(false)
+const selCfg = ref(null)
+const bomVisible = ref(false)
+const bomItem = ref(null)
+const bomParent = ref(null)
+const delMode = ref(false)
+const delSel = ref([])
+const catPickVisible = ref(false)
+const catPick = ref('')
+
+// 产成品→材料联动：当前选中产成品（列表页单据流览内点击产成品明细行）
+const selectedProduct = ref(null)
+const selectedBomCodes = ref([])
+
+// 材料下级 BOM（红 * + 弹窗）：存货编码 → _bom 数组
+const subBomMap = ref({})
+const subBomVisible = ref(false)
+const subBomMaterial = ref(null)
+const subBomBom = ref([])
 
 // ---------- 单据浏览器：翻页切单据 ----------
 const curIdx = ref(0)
@@ -157,6 +211,16 @@ const curNo = computed(() => (list.value.length ? Math.min(curIdx.value, list.va
 
 watch(cur, (v) => {
   current.value = v
+  // 产成品→材料联动：默认选中第一个产成品（材料明细只显示其 BOM 子件，不整单全显示）
+  const blk = blocks.value.find((x) => x.id === 'A')
+  const tab = blk ? activeTab(blk) : null
+  if (tab && tab.key === 'products') {
+    const first = detailRows(tab)[0]
+    if (first && first['产品编码'] !== selectedProduct.value) selectProduct(first['产品编码'])
+  } else if (selectedProduct.value) {
+    selectedProduct.value = null
+    selectedBomCodes.value = []
+  }
 })
 
 async function page(delta) {
@@ -314,7 +378,16 @@ const FOOT_H = 32
 
 function blockData(b) {
   const t = activeTab(b)
-  const rows = detailRows(t)
+  let rows = detailRows(t)
+  // 产成品→材料联动过滤：点产成品行后，材料明细只显示该产品的 BOM 子件（子件BOM 优先，材料编码兜底）
+  if (t.key === 'materials' && selectedProduct.value) {
+    const byBom = rows.filter((m) => m['子件BOM'] === selectedProduct.value)
+    if (byBom.length) rows = byBom
+    else {
+      const byCode = rows.filter((m) => selectedBomCodes.value.includes(m['材料编码']))
+      if (byCode.length) rows = byCode
+    }
+  }
   return tabView(b, t) === 'summary' ? summaryRows(rows, t) : rows
 }
 
@@ -362,8 +435,13 @@ function sumMethod({ columns, data }) {
   return sums
 }
 
-function rowCls({ row }) {
+// 审批流：当前单据已审批 → 表格左上角「已审批」角标；已审批明细行浅绿底色
+const isApproved = computed(() => cur.value && cur.value['审批状态'] === '已审批')
+
+function rowCls({ row }, b) {
   if (row._placeholder) return 'ph-row'
+  if (b && b.id === 'A' && row['产品编码'] && row['产品编码'] === selectedProduct.value) return 'prod-selected'
+  if (row['审批状态'] === '已审批') return 'row-approved'
   return ['产品编码', '材料编码', '存货编码', '存货名称', '产品名称', '材料名称'].some((k) => row[k] === '合计') ? 'sum-row' : ''
 }
 
@@ -543,7 +621,7 @@ async function loadCrg() {
 function isDisabled(action) {
   const st = current.value?.['单据状态']
   const map = {
-    新增: false,
+    新增: catPickVisible.value, // 存货类别选择弹窗打开时禁用，防止重复触发
     删除: !current.value,
     审核: !current.value || st !== '草稿',
     弃审: !current.value || st !== '已审核',
@@ -555,7 +633,8 @@ function isDisabled(action) {
     审批情况: false,
     提交审批: !current.value || st !== '草稿',
     审批通过: !current.value || st !== '审批中',
-    驳回审批: !current.value || st !== '审批中',
+    审批驳回: !current.value || st !== '审批中',
+   驳回审批: !current.value || st !== '审批中',
     生成生产加工单: !current.value || st !== '已审核',
   }
   return map[action] === true
@@ -567,24 +646,38 @@ function openForm(row) {
   const no = row ? row['单据编号'] || row['锭号'] || row['编号'] : ''
   const title = row ? `${panelName.value}-${no}` : `${panelName.value}-新增`
   router.push({ path: `/panelx/form/${panelCode.value}`, query: q })
-  tabs.open({ path: `/panelx/form/${panelCode.value}`, title })
+  tabs.open({ path: `/panelx/form/${panelCode.value}`, title, query: q })
 }
 
 async function onButton(action) {
-  if (action === '查询') {
+  if (action === '查询' || action === '查找') {
     search()
     return
   }
   if (action === '选单' || action === '选销售订单' || action === '选生产加工单') {
-    if (cfgCache.value?.selectConfig) {
-      router.push({ path: `/panelx/form/${panelCode.value}`, query: { new: 1, select: 1 } })
-      tabs.open({ path: `/panelx/form/${panelCode.value}`, title: `${panelName.value}-新增` })
+    const sc = cfgCache.value?.selectConfig
+    if (sc) {
+      if (sc.generateButton) {
+        // 新版选单：内嵌来源面板弹窗（勾选 + 翻页 + 生单直接生成）
+        selCfg.value = sc
+        selVisible.value = true
+      } else {
+        router.push({ path: `/panelx/form/${panelCode.value}`, query: { new: 1, select: 1 } })
+        tabs.open({ path: `/panelx/form/${panelCode.value}`, title: `${panelName.value}-新增`, query: { new: 1, select: 1 } })
+      }
       return
     }
     ElMessage.info('演示环境暂未实现「选单」，界面与 T+ 保持一致')
     return
   }
   if (action === '新增' || action === '新增流程') {
+    if (panelCode.value === 'INV') {
+      // 存货固定 5 张类别单据：新增物品进入对应类别单据（不新建第 6 张）
+      // 防重复触发：类别选择弹窗已打开时忽略再次点击（避免刷新单据）
+      if (catPickVisible.value) return
+      catPickVisible.value = true
+      return
+    }
     newVisible.value = true
     return
   }
@@ -597,25 +690,138 @@ async function onButton(action) {
     load()
     return
   }
-  if (action === '删除') {
+  if (action === '删除单据') {
     if (!current.value) return ElMessage.warning('请先选择一行数据')
+    const no = current.value['编号'] || current.value['单据编号'] || ''
     try {
-      await engine.deleteForms({ panelCode: panelCode.value, rowCodes: [current.value['编号']] })
-      ElMessage.success('删除成功')
+      await ElMessageBox.confirm('确认删除整张单据 ' + no + '？该操作不可恢复。', '删除单据确认', { type: 'warning' })
+    } catch (e) {
+      return
+    }
+    try {
+      await engine.deleteForms({ panelCode: panelCode.value, rowCodes: [no] })
+      ElMessage.success('单据已删除：' + no)
+      delMode.value = false
+      delSel.value = []
       load()
     } catch (e) {
       ElMessage.error(engine.errMsg(e) || '删除失败')
     }
     return
   }
-  if (['审核', '弃审', '中止执行', '整单中止', '草稿', '取消中止', '提交审批', '审批通过', '驳回审批'].includes(action)) {
+  if (action === '删除') {
+    if (!current.value) return ElMessage.warning('请先选择一行数据')
+    if (!delMode.value) {
+      delMode.value = true
+      ElMessage.info('已进入删除模式：勾选要删除的行，再点「删除」确认；点「刷新」或翻页取消')
+      return
+    }
+    if (!delSel.value.length) return ElMessage.warning('请先勾选要删除的行')
+    try {
+      await ElMessageBox.confirm('确认删除勾选的 ' + delSel.value.length + ' 行明细？', '删除确认', { type: 'warning' })
+    } catch (e) {
+      return
+    }
+    try {
+      // 勾选删除：从当前单据对应明细中移除所选行（按对象引用匹配）
+      const blk = blocks.value.find((x) => x.isMain)
+      const tab = blk ? activeTab(blk) : null
+      const key = tab ? tab.key : 'items'
+      const items = cur.value.detail && Array.isArray(cur.value.detail[key]) ? cur.value.detail[key] : []
+      const remain = items.filter((it) => !delSel.value.includes(it))
+      const head = { ...cur.value }
+      delete head.detail
+      delete head['编号']
+      delete head['单据状态']
+      delete head['创建时间']
+      delete head['更新时间']
+      delete head['发起人编号']
+      await engine.callButton({
+        panelCode: panelCode.value,
+        buttonName: '保存',
+        formData: { ...head, 编号: cur.value['编号'], detail: { ...(cur.value.detail || {}), [key]: remain } },
+        buttonParam: {},
+      })
+      ElMessage.success('已删除 ' + delSel.value.length + ' 行')
+      delMode.value = false
+      delSel.value = []
+      load()
+    } catch (e) {
+      ElMessage.error(engine.errMsg(e) || '删除失败')
+    }
+    return
+  }
+  if (['中止执行', '整单中止', '草稿', '取消中止', '提交审批', '审批通过', '驳回审批'].includes(action)) {
     if (!current.value) return ElMessage.warning('请先选择一行数据')
   }
+  // 人工审核：确认弹窗 + 审核意见（选填）；审核人取当前登录人（后端从 JWT 取）
+  let auditOpinion = ''
+  if (action === '审核') {
+    if (!current.value) return ElMessage.warning('请先选择一行数据')
+    // 已审核过的单据不允许再次审核，也不允许补填审批意见
+    if (current.value['单据状态'] !== '草稿') return ElMessage.warning('仅草稿状态可审核，已审核单据不允许再次审核')
+    const no = current.value['编号'] || current.value['单据编号'] || ''
+    try {
+      const { value } = await ElMessageBox.prompt(
+        '单据：' + no + '（当前状态：' + (current.value['单据状态'] || '') + '）',
+        '人工审核确认',
+        { confirmButtonText: '确认审核', cancelButtonText: '取消', inputType: 'textarea', inputPlaceholder: '审核意见（选填）' }
+      )
+      auditOpinion = value || ''
+    } catch (e) {
+      return
+    }
+  } else if (action === '弃审') {
+    if (!current.value) return ElMessage.warning('请先选择一行数据')
+    if (current.value['单据状态'] !== '已审核') return ElMessage.warning('仅已审核状态可弃审')
+    try {
+      await ElMessageBox.confirm('确认弃审该单据？弃审后需重新审核。', '弃审确认', { type: 'warning' })
+    } catch (e) {
+      return
+    }
+  }
   try {
+    // 审批流：提交审批/审批通过（确认+意见）、审批驳回（意见必填）、审批情况（历史弹窗）
+    let approvalOpinion = ''
+    if (action === '提交审批' || action === '审批通过') {
+      if (!current.value) return ElMessage.warning('请先选择一行数据')
+      const need = action === '提交审批' ? '草稿' : '审批中'
+      if (current.value['单据状态'] !== need) return ElMessage.warning(action === '提交审批' ? '仅草稿状态可提交审批' : '仅审批中状态可审批通过')
+      const no = current.value['编号'] || current.value['单据编号'] || ''
+      try {
+        const { value } = await ElMessageBox.prompt(
+          '单据：' + no + '（当前状态：' + (current.value['单据状态'] || '') + '）',
+          action + '确认',
+          { confirmButtonText: '确认' + action, cancelButtonText: '取消', inputType: 'textarea', inputPlaceholder: action === '审批通过' ? '审批意见（选填）' : '提交说明（选填）' }
+        )
+        approvalOpinion = value || ''
+      } catch (e) {
+        return
+      }
+    } else if (action === '审批驳回') {
+      if (!current.value) return ElMessage.warning('请先选择一行数据')
+      if (current.value['单据状态'] !== '审批中') return ElMessage.warning('仅审批中状态可审批驳回')
+      const no = current.value['编号'] || current.value['单据编号'] || ''
+      try {
+        const { value } = await ElMessageBox.prompt(
+          '单据：' + no + '（当前状态：审批中）\n驳回必须填写审批意见',
+          '审批驳回确认',
+          { confirmButtonText: '确认驳回', cancelButtonText: '取消', inputType: 'textarea', inputPlaceholder: '驳回原因（必填）', inputValidator: (v) => (v && v.trim() ? true : '驳回必须填写审批意见') }
+        )
+        approvalOpinion = value || ''
+      } catch (e) {
+        return
+      }
+    } else if (action === '审批情况') {
+      if (!current.value) return ElMessage.warning('请先选择一行数据')
+      approvalNo.value = current.value['编号'] || current.value['单据编号'] || ''
+      approvalVisible.value = true
+      return
+    }
     const res = await engine.callButton({
       panelCode: panelCode.value,
       buttonName: action,
-      formData: current.value ? { 编号: current.value['编号'] } : {},
+      formData: current.value ? { 编号: current.value['编号'], ...(auditOpinion !== '' ? { 审核意见: auditOpinion } : {}), ...(approvalOpinion !== '' ? { 审批意见: approvalOpinion } : {}) } : {},
       buttonParam: {},
     })
     if (res?.gotoPanel) {
@@ -623,7 +829,7 @@ async function onButton(action) {
       const q = { code: res['编号'] }
       const title = (res.gotoPanel === 'MANU_ORDER' ? '加工单-' : '单据-') + res['编号']
       router.push({ path: `/panelx/form/${res.gotoPanel}`, query: q })
-      tabs.open({ path: `/panelx/form/${res.gotoPanel}`, title })
+      tabs.open({ path: `/panelx/form/${res.gotoPanel}`, title, query: q })
       return
     }
     ElMessage.success(`「${action}」执行成功`)
@@ -636,6 +842,8 @@ async function onButton(action) {
 }
 
 async function load() {
+  delMode.value = false
+  delSel.value = []
   if (invalidPanel.value) {
     ElMessage.error('面板编号无效，请从菜单重新进入')
     return
@@ -680,6 +888,131 @@ function onNewSaved() {
   load()
 }
 
+function onSelGenerated() {
+  load()
+}
+
+// 存货（INV）面板：单击行 → 打开 BOM 管理弹窗（勾选存货添加子件、可多级下钻）
+function onRowClick(row, b) {
+  // 材料明细：点材料行 → 该材料有下级 BOM 则弹窗展示其子件
+  if (b && b.id === 'B' && activeTab(b).key === 'materials' && row && row['材料编码'] && hasSubBom(row['材料编码'])) {
+    openSubBom(row)
+    return
+  }
+  // 产成品→材料联动：MANU_ORDER 等单据点产成品明细行 → 材料明细只显示其 BOM 子件
+  if (b && b.id === 'A' && row && row['产品编码'] && row['产品编码'] !== selectedProduct.value) {
+    selectProduct(row['产品编码'])
+    return
+  }
+  if (panelCode.value !== 'INV') return
+  if (!row || !row['存货编码']) return
+  bomItem.value = row
+  bomParent.value = cur.value // 父类别单据（当前行）
+  bomVisible.value = true
+}
+
+// 捕获阶段监听：点产成品明细行任意单元格（含固定列/控件）都触发联动
+async function onTableClick(b, e) {
+  if (!b || !e || !e.target || !e.target.closest) return
+  const t = activeTab(b)
+  // 材料明细：点材料行 → 该材料有下级 BOM 则弹窗展示其子件
+  if (b.id === 'B' && t.key === 'materials') {
+    const tr = e.target.closest('tr')
+    if (!tr) return
+    const body = tr.closest('.el-table__body-wrapper') || tr.closest('.el-table__fixed-body-wrapper')
+    const rows = body ? [...body.querySelectorAll('tbody tr')] : []
+    const idx = rows.indexOf(tr)
+    const row = detailRows(t)[idx]
+    if (row && row['材料编码'] && hasSubBom(row['材料编码'])) openSubBom(row)
+    return
+  }
+  if (b.id !== 'A') return
+  if (t.key !== 'products') return
+  const tr = e.target.closest('tr')
+  if (!tr) return
+  const body = tr.closest('.el-table__body-wrapper') || tr.closest('.el-table__fixed-body-wrapper')
+  const rows = body ? [...body.querySelectorAll('tbody tr')] : []
+  const idx = rows.indexOf(tr)
+  const row = detailRows(t)[idx]
+  if (!row || !row['产品编码']) return
+  selectProduct(row['产品编码'])
+}
+
+// 材料下级 BOM 映射（INV 全量 _bom → 编码索引）；材料编码行右上角显示红 *，点击行弹窗查看
+async function loadSubBomMap() {
+  try {
+    const res = await engine.queryFormDataList({ panelCode: 'INV', condition: {}, pageNo: 1, pageSize: 100 })
+    const map = {}
+    for (const d of res.list || []) {
+      for (const it of (d.detail && d.detail.items) || []) {
+        let bom = it['_bom']
+        if (typeof bom === 'string') { try { bom = JSON.parse(bom) } catch (err) { bom = [] } }
+        map[it['存货编码']] = Array.isArray(bom) ? bom : []
+      }
+    }
+    subBomMap.value = map
+  } catch (err) {}
+}
+
+function hasSubBom(code) {
+  const b = subBomMap.value[code]
+  return Array.isArray(b) && b.length > 0
+}
+
+function openSubBom(row) {
+  const code = row['材料编码']
+  subBomMaterial.value = row
+  subBomBom.value = (subBomMap.value[code] || []).map((r) => ({ ...r }))
+  subBomVisible.value = true
+}
+
+// 选中产成品：行高亮 + 材料明细联动（异步读该产品存货 BOM → 材料编码集合）
+async function selectProduct(code) {
+  selectedProduct.value = code
+  selectedBomCodes.value = []
+  try {
+    const res = await engine.queryFormDataList({ panelCode: 'INV', condition: {}, pageNo: 1, pageSize: 100 })
+    for (const d of res.list || []) {
+      const it = ((d.detail && d.detail.items) || []).find((i) => i['存货编码'] === code)
+      if (it && it['_bom']) {
+        let bom = []
+        try { bom = typeof it['_bom'] === 'string' ? JSON.parse(it['_bom']) : it['_bom'] } catch (err) {}
+        selectedBomCodes.value = (Array.isArray(bom) ? bom : []).map((b) => b['材料编码']).filter(Boolean)
+        break
+      }
+    }
+  } catch (err) {
+    // 查询失败按 子件BOM 标记兜底
+  }
+}
+
+function onBomSaved() {
+  load()
+}
+
+// 打开所选类别对应的存货单据（5 类固定）；单据被删后自动补建
+async function gotoCategory() {
+  const docMap = { 产成品: 'CP-001', 原材料: 'YL-001', 辅助材料: 'FZ-001', 包装物: 'BZ-001', 半成品: 'BC-001' }
+  const doc = docMap[catPick.value]
+  if (!doc) return
+  catPickVisible.value = false
+  catPick.value = ''
+  // 检查该类别单据是否存在，缺失则自动补建（保持 5 张）
+  try {
+    const res = await engine.queryFormDataList({ panelCode: 'INV', condition: { 类别: catPick.value }, pageNo: 1, pageSize: 10 })
+    const exists = (res.list || []).some((r) => r['编号'] === doc)
+    if (!exists) {
+      await engine.callButton({ panelCode: 'INV', buttonName: '保存', formData: { 类别: catPick.value, detail: { items: [] } }, buttonParam: {} })
+      ElMessage.success('已自动补建类别单据 ' + doc)
+    }
+  } catch (e) {
+    // 补建失败不阻塞跳转
+  }
+  const q = { code: doc }
+  router.push({ path: `/panelx/form/${panelCode.value}`, query: q })
+  tabs.open({ path: `/panelx/form/${panelCode.value}`, title: '存货-' + doc, query: q })
+}
+
 watch(
   () => [panelCode.value, operationName.value],
   () => {
@@ -695,6 +1028,7 @@ watch(
 onMounted(() => {
   document.addEventListener('click', closeCtx)
   document.addEventListener('contextmenu', closeCtx)
+  loadSubBomMap() // 材料下级 BOM 映射（红 * 标记 + 点击行弹窗）
   if (invalidPanel.value) {
     router.replace('/panelx/list/MANU_ORDER')
     return
@@ -808,13 +1142,23 @@ watch(
   border-radius: 10px;
   margin-right: 6px;
 }
+.doc-cat {
+  font-size: 12px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  margin-right: 6px;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+  background: #f5f3ff;
+}
 .doc-status.已审核,
 .doc-status.已完工 {
   color: #16a34a;
   border: 1px solid #bbe6c4;
   background: #f0fdf4;
 }
-.doc-status.生产中 {
+.doc-status.生产中,
+.doc-status.审批中 {
   color: #0d5bd3;
   border: 1px solid #bcd2f5;
   background: #f0f6ff;
@@ -896,6 +1240,24 @@ watch(
   border: 1px solid #d7dce5;
   margin-bottom: 8px;
   background: #fff;
+  position: relative;
+}
+.approved-stamp {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  z-index: 9;
+  transform: rotate(-12deg);
+  color: #16a34a;
+  border: 2px solid #16a34a;
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  background: rgba(240, 253, 244, 0.92);
+  pointer-events: none;
+  letter-spacing: 3px;
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.25);
 }
 .dt-head {
   display: flex;
@@ -941,6 +1303,30 @@ watch(
 }
 .dt-ic:hover {
   color: #0d5bd3;
+}
+.mat-cell {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+.mat-star {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  color: #e60000;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+.filter-hint {
+  font-size: 12px;
+  color: #0d5bd3;
+  margin-right: 8px;
+}
+:deep(.prod-selected > td.el-table__cell) {
+  background: #e8f1ff !important;
 }
 :deep(.el-table th.el-table__cell) {
   background: #f7f9fc;
@@ -1029,4 +1415,5 @@ watch(
   background: #f0f5ff;
   color: #0d5bd3;
 }
+:deep(.el-table .row-approved td) { background: #f0fdf4 !important; }
 </style>

@@ -3,9 +3,9 @@ import { apiLogin, apiGetUserInfo, USE_MOCK } from '@/business/api'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
-    token: localStorage.getItem('mes_token') || '',
-    userInfo: JSON.parse(localStorage.getItem('mes_user') || 'null'),
-    factory: JSON.parse(localStorage.getItem('mes_factory') || 'null'),
+    token: (() => { const t = localStorage.getItem('mes_token'); return t && t !== 'undefined' ? t : '' })(),
+    userInfo: (() => { try { return JSON.parse(localStorage.getItem('mes_user') || 'null') } catch { return null } })(),
+    factory: (() => { try { return JSON.parse(localStorage.getItem('mes_factory') || 'null') } catch { return null } })(),
     factories: [],
     loginDate: '',
   }),

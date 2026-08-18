@@ -16,24 +16,28 @@ export async function apiLogin(payload) {
     }
     throw { response: { data: { message: '用户名或密码错误（演示账号 admin / 123456）' } } }
   }
-  return request.post('/auth/login', payload)
+  const res = await request.post('/auth/login', payload)
+  return res?.data ?? res
 }
 
 export async function apiGetUserInfo() {
   if (USE_PORTAL_MOCK) {
     return { userName: 'admin', realName: '管理员', factoryCode: 'F01', factoryName: '一号工厂', roles: ['admin'] }
   }
-  return request.get('/auth/userinfo')
+  const res = await request.get('/auth/userinfo')
+  return res?.data ?? res
 }
 
 export async function apiGetMenus() {
   if (USE_PORTAL_MOCK) return menuTree
-  return request.get('/sys/menu/tree')
+  const res = await request.get('/sys/menu/tree')
+  return res?.data ?? res
 }
 
 export async function apiGetFactories() {
   if (USE_PORTAL_MOCK) return [{ code: 'F01', name: '一号工厂' }, { code: 'F02', name: '二号工厂' }]
-  return request.get('/base/factory/list')
+  const res = await request.get('/base/factory/list')
+  return res?.data ?? res
 }
 
 export async function apiGetBadge() {

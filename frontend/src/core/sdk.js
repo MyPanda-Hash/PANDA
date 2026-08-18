@@ -2,10 +2,12 @@ import { ref } from 'vue'
 import request from './request'
 import { USE_PANELX_PROXY } from './env'
 
+// PanelX 测试模式（2026-08-14 切换）：业务域 GroupChat_Inst_17867095995605 @ GPF 服务器
+// 登录账号 admin / 123456（该域登录已验证成功，token 有效期 30 天）
 export const PANELX_CONFIG = {
-  busDomainCode: 'SdkTest',
-  appCode: 'SdkTest',
-  baseUrl: 'https://demo.kwaidoo.com/VF_DEV/',
+  busDomainCode: 'GroupChat_Inst_17867095995605',
+  appCode: 'GroupChat_Inst_17867095995605',
+  baseUrl: 'http://203.132.49.57:6612/hscx/',
 }
 
 export const sdkState = ref('idle')

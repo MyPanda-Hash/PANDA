@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>轻MES · 生产制造执行系统</title>
-  <!-- PanelX SDK 加载器：localhost 开发环境用 devSdkUrl 拉取；生产环境自动向上 ping 探测 baseURL -->
-  <script src="/panelx/preload.js" devSdkUrl="https://demo.kwaidoo.com/VF_DEV/wp-core/api/getPanelXSdk"></script>
+  <!-- 路线①（完全自建）不加载 PanelX SDK：前端 /api 直连自己服务器后端。
+       如需恢复平台直连模式（路线②），在此恢复以下两行：
+  <script src="/panelx/preload.js" devSdkUrl="http://203.132.49.57:6612/hscx/wp-core/api/getPanelXSdk"></script> -->
 </head>
 <body>
   <div id="app"></div>

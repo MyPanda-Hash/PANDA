@@ -55,6 +55,12 @@ public class PxController {
         return ApiResult.ok(service.queryFormDataList(panelCode, keyword, condition, pageNo, pageSize));
     }
 
+    @GetMapping("/getApprovalHistory")
+    public ApiResult<List<Map<String, Object>>> getApprovalHistory(@RequestParam String panelCode,
+                                                                   @RequestParam String code) {
+        return ApiResult.ok(service.getApprovalHistory(panelCode, code));
+    }
+
     @PostMapping("/callButton")
     public ApiResult<Map<String, Object>> callButton(@RequestBody Map<String, Object> body) {
         String panelCode = String.valueOf(body.getOrDefault("panelCode", ""));

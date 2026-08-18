@@ -1,0 +1,37 @@
+[
+ {
+  "step": "SALE_OUT 角标",
+  "stamp": "",
+  "docChip": "",
+  "status": "",
+  "groups": "",
+  "rows": 0
+ },
+ {
+  "step": "生产加工单明细表",
+  "panel": "",
+  "rows": 0,
+  "head": "轻MES|生产制造执行系统|登录工厂|登 录|演示环境：任意输入或 admin / 123456"
+ },
+ {
+  "step": "MR 初始",
+  "docChip": "",
+  "status": "",
+  "stamp": "",
+  "groups": ""
+ },
+ {
+  "step": "提交审批",
+  "click": "no-group",
+  "status": "",
+  "stamp": ""
+ },
+ {
+  "step": "审批通过",
+  "menu": "no-group",
+  "item": "no-item",
+  "status": "",
+  "stamp": "",
+  "approvedRows": 0
+ }
+]

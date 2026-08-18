@@ -7,10 +7,21 @@ export const useTabsStore = defineStore('tabs', {
   }),
   actions: {
     open(menu) {
-      if (!this.tabs.find((t) => t.path === menu.path)) {
-        this.tabs.push({ title: menu.title, path: menu.path, affix: false })
+      const ex = this.tabs.find((t) => t.path === menu.path)
+      if (ex) {
+        // 同一路径再次打开：更新标题与查询参数（如单据表单的 ?code=）
+        if (menu.title) ex.title = menu.title
+        if (menu.query) ex.query = { ...menu.query }
+      } else {
+        this.tabs.push({ title: menu.title, path: menu.path, query: menu.query ? { ...menu.query } : {}, affix: false })
       }
       this.active = menu.path
+    },
+    // 路由变化时同步活动页签的 query/标题——保证切换页签回来能恢复（含 ?code= 单据参数，修复「生单后切换单据数据丢失」）
+    sync(route) {
+      // 只同步查询参数（如 ?code=单据号），不覆盖标题——标题由打开方设置（如 生产加工单-MO-xxx）
+      const t = this.tabs.find((x) => x.path === route.path)
+      if (t) t.query = { ...route.query }
     },
     setActive(path) {
       this.active = path

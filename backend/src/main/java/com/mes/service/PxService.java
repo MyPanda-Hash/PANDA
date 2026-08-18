@@ -1,12 +1,16 @@
 package com.mes.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mes.entity.FormApproval;
 import com.mes.entity.FormData;
 import com.mes.entity.PanelConfig;
+import com.mes.mapper.FormApprovalMapper;
 import com.mes.mapper.FormDataMapper;
 import com.mes.mapper.PanelConfigMapper;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +19,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 
@@ -23,11 +29,13 @@ public class PxService {
 
     private final PanelConfigMapper panelMapper;
     private final FormDataMapper formMapper;
+    private final FormApprovalMapper approvalMapper;
     private final ObjectMapper json = new ObjectMapper();
 
-    public PxService(PanelConfigMapper panelMapper, FormDataMapper formMapper) {
+    public PxService(PanelConfigMapper panelMapper, FormDataMapper formMapper, FormApprovalMapper approvalMapper) {
         this.panelMapper = panelMapper;
         this.formMapper = formMapper;
+        this.approvalMapper = approvalMapper;
     }
 
     // ---------- 配置 ----------
@@ -203,7 +211,8 @@ public class PxService {
                 .orderByDesc(FormData::getCreateTime)
                 .orderByDesc(FormData::getId);
         List<FormData> all = formMapper.selectList(qw);
-        // T+ 形态：列表按产成品明细行展平
+        // 单据级行（一单一行，单号不重复）：明细挂在 detail 对象，key 与 detail.tabs 一致。
+        // 对齐 docs/页面开发规范.md 数据契约；前端渲染器/选单弹窗按此结构消费。
         List<Map<String, Object>> flat = new ArrayList<>();
         for (FormData fd : all) {
             Map<String, Object> head = parseData(fd.getData());
@@ -213,18 +222,10 @@ public class PxService {
             head.put("更新时间", fd.getUpdateTime());
             head.put("发起人编号", fd.getCreateBy());
             Map<String, Object> detail = parseData(fd.getDetailData());
-            List<Map<String, Object>> products = (List<Map<String, Object>>) detail.get("products");
-            if (products == null || products.isEmpty()) {
-                flat.add(head);
-                continue;
-            }
-            for (Map<String, Object> p : products) {
-                Map<String, Object> row = new HashMap<>(head);
-                row.putAll(p);
-                flat.add(row);
-            }
+            if (!detail.isEmpty()) head.put("detail", detail);
+            flat.add(head);
         }
-        // 条件过滤
+        // 条件过滤（仅标量字段参与比较，detail 对象跳过）
         List<Map<String, Object>> rows = new ArrayList<>();
         for (Map<String, Object> row : flat) {
             boolean hit = true;
@@ -233,13 +234,15 @@ public class PxService {
                     Object v = e.getValue();
                     if (v == null || "".equals(String.valueOf(v))) continue;
                     Object rv = row.get(e.getKey());
-                    if (rv == null || !String.valueOf(rv).contains(String.valueOf(v))) { hit = false; break; }
+                    if (rv == null || rv instanceof Map || rv instanceof List) continue;
+                    if (!String.valueOf(rv).contains(String.valueOf(v))) { hit = false; break; }
                 }
             }
             if (hit && keyword != null && !keyword.isBlank()) {
                 hit = false;
                 for (Object v : row.values()) {
-                    if (v != null && String.valueOf(v).contains(keyword)) { hit = true; break; }
+                    if (v != null && !(v instanceof Map) && !(v instanceof List)
+                            && String.valueOf(v).contains(keyword)) { hit = true; break; }
                 }
             }
             if (hit) rows.add(row);
@@ -263,6 +266,9 @@ public class PxService {
                 return new HashMap<>();
             case "新增流程":
                 return create(panelCode, formData, null);
+            case "保存":
+            case "保存新增":
+            case "保存为草稿":
             case "提交":
                 return save(panelCode, formData, null);
             case "删除": {
@@ -287,6 +293,15 @@ public class PxService {
                 return changeStatus(panelCode, formData, "取消中止");
             case "生成生产加工单":   // 推式生单：销售订单 → 生产加工单（对齐真实 T+「生单-生成生产加工单」）
                 return createMoFromSo(panelCode, formData);
+            // 审批流
+            case "提交审批":
+                return submitApproval(panelCode, formData);
+            case "审批通过":
+                return approveApproval(panelCode, formData);
+            case "审批驳回":
+                return rejectApproval(panelCode, formData);
+            case "审批情况":
+                return approvalHistory(panelCode, formData);
             default:
                 throw new IllegalStateException("未定义按钮规则：" + buttonName + "（可在 PxService 扩展）");
         }
@@ -365,9 +380,65 @@ public class PxService {
             p.put("需求令号", head.getOrDefault("单据编号", ""));
             products.add(p);
         }
+        // 生成材料明细：按产成品的存货 BOM（INV 类别单据物品 _bom）自动带出
+        List<Map<String, Object>> materials = new ArrayList<>();
+        Map<String, List<Map<String, Object>>> bomByItem = new HashMap<>();
+        for (FormData idoc : formMapper.selectList(new LambdaQueryWrapper<FormData>().eq(FormData::getPanelCode, "INV"))) {
+            Map<String, Object> idetail = parseData(idoc.getDetailData());
+            Object iitems = idetail.get("items");
+            if (iitems instanceof List) {
+                for (Object o : (List<?>) iitems) {
+                    if (!(o instanceof Map)) continue;
+                    Map<String, Object> it = (Map<String, Object>) o;
+                    Object bomObj = it.get("_bom");
+                    if (bomObj == null || String.valueOf(bomObj).isBlank()) continue;
+                    try {
+                        List<Map<String, Object>> bom = json.readValue(String.valueOf(bomObj),
+                                new TypeReference<List<Map<String, Object>>>() {});
+                        bomByItem.put(String.valueOf(it.get("存货编码")), bom);
+                    } catch (Exception ignore) {}
+                }
+            }
+        }
+        Set<String> matKeys = new HashSet<>();
+        for (Map<String, Object> p : products) {
+            String pcode = String.valueOf(p.getOrDefault("产品编码", ""));
+            List<Map<String, Object>> bom = bomByItem.get(pcode);
+            if (bom == null) continue;
+            for (Map<String, Object> b : bom) {
+                String mcode = String.valueOf(b.getOrDefault("材料编码", ""));
+                if (mcode.isEmpty() || !matKeys.add(pcode + "|" + mcode)) continue;
+                Map<String, Object> m = new HashMap<>();
+                m.put("材料编码", mcode);
+                m.put("材料名称", b.getOrDefault("材料名称", ""));
+                m.put("规格型号", b.getOrDefault("规格型号", ""));
+                m.put("计量单位", b.getOrDefault("计量单位", "kg"));
+                m.put("定额需用数量", b.getOrDefault("定额需用数量", 0));
+                m.put("损耗率%", b.getOrDefault("损耗率%", 0));
+                m.put("子件BOM", pcode);
+                m.put("预出仓库", "原料仓");
+                m.put("材料倒冲方式", "按定额倒冲");
+                m.put("领料工序", "下料");
+                m.put("允许循环", false);
+                m.put("行中止", false);
+                m.put("定额生产数量", 1);
+                m.put("需用数量", 0);
+                m.put("损耗数量", 0);
+                m.put("计划数量", 0);
+                m.put("累计领用数量", 0);
+                m.put("可用量", 0);
+                m.put("可用量说明", "");
+                m.put("现存量", 0);
+                m.put("现存量说明", "");
+                m.put("单重", 0);
+                m.put("总重", 0);
+                m.put("存货图片", "");
+                materials.add(m);
+            }
+        }
         Map<String, Object> detail = new HashMap<>();
         detail.put("products", products);
-        detail.put("materials", new ArrayList<>());
+        detail.put("materials", materials);
         detail.put("processes", new ArrayList<>());
 
         FormData mo = new FormData();
@@ -407,7 +478,11 @@ public class PxService {
                     .eq(FormData::getPanelCode, panelCode)
                     .eq(FormData::getFormNo, String.valueOf(no)));
             if (fd == null) throw new IllegalArgumentException("表单数据不存在：" + no);
-            if (!"草稿".equals(fd.getStatus())) throw new IllegalStateException("仅草稿状态可保存");
+            // 单据=草稿可保存；基础档案（存货/部门等）状态为 启用/停用 同样允许保存
+            String st0 = fd.getStatus() == null ? "" : fd.getStatus();
+            if (!"草稿".equals(st0) && !"启用".equals(st0) && !"停用".equals(st0)) {
+                throw new IllegalStateException("仅草稿状态可保存");
+            }
             fd.setData(toJson(formData));
             fd.setDetailData(toJson(detail));
             fd.setUpdateTime(LocalDateTime.now());
@@ -415,10 +490,13 @@ public class PxService {
         } else {
             fd = new FormData();
             fd.setPanelCode(panelCode);
-            fd.setFormNo(generateFormNo(panelCode));
+            // 存货新单：按类别前缀编号（产成品 CP-、原材料 YL-、辅助材料 FZ-、包装物 BZ-、半成品 BC-）
+            fd.setFormNo("INV".equals(panelCode)
+                    ? invNo(formData.get("类别") == null ? "" : String.valueOf(formData.get("类别")))
+                    : generateFormNo(panelCode));
             fd.setData(toJson(formData));
             fd.setDetailData(toJson(detail));
-            fd.setStatus("草稿");
+            fd.setStatus("INV".equals(panelCode) ? "启用" : "草稿"); // 存货类别单据初始状态=启用
             fd.setCreateBy(userName == null ? "admin" : userName);
             fd.setCreateTime(LocalDateTime.now());
             fd.setUpdateTime(LocalDateTime.now());
@@ -432,6 +510,13 @@ public class PxService {
     }
 
     @SuppressWarnings("unchecked")
+    /** 当前登录用户（JwtAuthFilter 写入 SecurityContext；未认证时兜底 system） */
+    private String currentUserName() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getName() != null && !auth.getName().isBlank()) return auth.getName();
+        return "system";
+    }
+
     private Map<String, Object> changeStatus(String panelCode, Map<String, Object> formData, String action) {
         Object no = formData.get("编号");
         if (no == null) throw new IllegalArgumentException("缺少表单编号");
@@ -441,14 +526,37 @@ public class PxService {
         if (fd == null) throw new IllegalArgumentException("表单数据不存在：" + no);
         if ("审核".equals(action)) {
             if (!"草稿".equals(fd.getStatus())) throw new IllegalStateException("仅草稿状态可审核");
+            // 人工审核：审核人 = 当前登录人（不再硬编码 admin）
+            String operator = currentUserName();
             fd.setStatus("已审核");
-            fd.setAuditBy("admin");
+            fd.setAuditBy(operator);
             fd.setAuditTime(LocalDateTime.now());
+            // 审核人/审核时间/审核意见 写入表头 JSON（前端表尾/列表直接展示）
+            Map<String, Object> head = parseData(fd.getData());
+            head.put("审核人", operator);
+            head.put("审核时间", fd.getAuditTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            Object opinion = formData.get("审核意见");
+            if (opinion != null && !String.valueOf(opinion).isBlank()) head.put("审核意见", String.valueOf(opinion));
+            fd.setData(toJson(head));
         } else if ("弃审".equals(action)) {
             if (!"已审核".equals(fd.getStatus())) throw new IllegalStateException("仅已审核状态可弃审");
-            fd.setStatus("草稿");
-            fd.setAuditBy(null);
-            fd.setAuditTime(null);
+            Map<String, Object> head = parseData(fd.getData());
+            head.remove("审核人");
+            head.remove("审核时间");
+            head.remove("审核意见");
+            // 显式 set(null)：MyBatis-Plus 默认 NOT_NULL 策略不会把 null 字段写进 UPDATE，
+            // 必须用 LambdaUpdateWrapper.set 强制清空 audit_by/audit_time
+            formMapper.update(null, new LambdaUpdateWrapper<FormData>()
+                    .eq(FormData::getId, fd.getId())
+                    .set(FormData::getStatus, "草稿")
+                    .set(FormData::getAuditBy, null)
+                    .set(FormData::getAuditTime, null)
+                    .set(FormData::getData, toJson(head))
+                    .set(FormData::getUpdateTime, LocalDateTime.now()));
+            return new HashMap<String, Object>() {{
+                put("编号", fd.getFormNo());
+                put("单据状态", "草稿");
+            }};
         } else if ("关闭".equals(action)) {
             if (!"已审核".equals(fd.getStatus()) && !"生产中".equals(fd.getStatus())) {
                 throw new IllegalStateException("仅已审核/生产中状态可关闭");
@@ -479,6 +587,129 @@ public class PxService {
         return out;
     }
 
+    // ---------- 审批流：提交审批 → 审批中 → 审批通过/审批驳回（全留痕，可扩展多级） ----------
+
+    private FormData formOf(String panelCode, Object no) {
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData fd = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, panelCode)
+                .eq(FormData::getFormNo, String.valueOf(no)));
+        if (fd == null) throw new IllegalArgumentException("表单数据不存在：" + no);
+        return fd;
+    }
+
+    private String opinionOf(Map<String, Object> formData) {
+        Object v = formData == null ? null : formData.get("审批意见");
+        return v == null ? "" : String.valueOf(v).trim();
+    }
+
+    private void recordApproval(String panelCode, String formNo, String action, String result, String opinion) {
+        FormApproval rec = new FormApproval();
+        rec.setPanelCode(panelCode);
+        rec.setFormNo(formNo);
+        rec.setAction(action);
+        rec.setResult(result);
+        rec.setNodeNo(1);
+        rec.setOperator(currentUserName());
+        rec.setOpinion(opinion.isEmpty() ? null : opinion);
+        rec.setCreateTime(LocalDateTime.now());
+        approvalMapper.insert(rec);
+    }
+
+    /** 提交审批：仅草稿 → 审批中 */
+    private Map<String, Object> submitApproval(String panelCode, Map<String, Object> formData) {
+        FormData fd = formOf(panelCode, formData.get("编号"));
+        if (!"草稿".equals(fd.getStatus())) throw new IllegalStateException("仅草稿状态可提交审批");
+        String operator = currentUserName();
+        String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        fd.setStatus("审批中");
+        fd.setUpdateTime(LocalDateTime.now());
+        Map<String, Object> head = parseData(fd.getData());
+        head.put("审批状态", "审批中");
+        head.put("提交人", operator);
+        head.put("提交时间", now);
+        fd.setData(toJson(head));
+        formMapper.updateById(fd);
+        recordApproval(panelCode, fd.getFormNo(), "SUBMIT", "PENDING", opinionOf(formData));
+        Map<String, Object> out = new HashMap<>();
+        out.put("编号", fd.getFormNo());
+        out.put("单据状态", "审批中");
+        return out;
+    }
+
+    /** 审批通过：仅审批中 → 已审核（审核人=当前登录人，写审核人/时间/意见） */
+    private Map<String, Object> approveApproval(String panelCode, Map<String, Object> formData) {
+        FormData fd = formOf(panelCode, formData.get("编号"));
+        if (!"审批中".equals(fd.getStatus())) throw new IllegalStateException("仅审批中状态可审批通过");
+        String operator = currentUserName();
+        String opinion = opinionOf(formData);
+        fd.setStatus("已审核");
+        fd.setAuditBy(operator);
+        fd.setAuditTime(LocalDateTime.now());
+        Map<String, Object> head = parseData(fd.getData());
+        head.put("审批状态", "已通过");
+        head.put("审核人", operator);
+        head.put("审核时间", fd.getAuditTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        if (!opinion.isEmpty()) head.put("审核意见", opinion);
+        fd.setData(toJson(head));
+        formMapper.updateById(fd);
+        recordApproval(panelCode, fd.getFormNo(), "APPROVE", "APPROVED", opinion);
+        Map<String, Object> out = new HashMap<>();
+        out.put("编号", fd.getFormNo());
+        out.put("单据状态", "已审核");
+        return out;
+    }
+
+    /** 审批驳回：仅审批中 → 草稿（意见必填，驳回后修改可重新提交） */
+    private Map<String, Object> rejectApproval(String panelCode, Map<String, Object> formData) {
+        FormData fd = formOf(panelCode, formData.get("编号"));
+        if (!"审批中".equals(fd.getStatus())) throw new IllegalStateException("仅审批中状态可审批驳回");
+        String opinion = opinionOf(formData);
+        if (opinion.isEmpty()) throw new IllegalStateException("审批驳回必须填写审批意见");
+        fd.setStatus("草稿");
+        fd.setUpdateTime(LocalDateTime.now());
+        Map<String, Object> head = parseData(fd.getData());
+        head.put("审批状态", "已驳回");
+        head.remove("提交人");
+        head.remove("提交时间");
+        fd.setData(toJson(head));
+        formMapper.updateById(fd);
+        recordApproval(panelCode, fd.getFormNo(), "REJECT", "REJECTED", opinion);
+        Map<String, Object> out = new HashMap<>();
+        out.put("编号", fd.getFormNo());
+        out.put("单据状态", "草稿");
+        return out;
+    }
+
+    /** 审批情况：返回该单据全部审批记录（按时间升序） */
+    private Map<String, Object> approvalHistory(String panelCode, Map<String, Object> formData) {
+        FormData fd = formOf(panelCode, formData.get("编号"));
+        Map<String, Object> out = new HashMap<>();
+        out.put("编号", fd.getFormNo());
+        out.put("list", getApprovalHistory(panelCode, fd.getFormNo()));
+        return out;
+    }
+
+    public List<Map<String, Object>> getApprovalHistory(String panelCode, String formNo) {
+        List<FormApproval> recs = approvalMapper.selectList(new LambdaQueryWrapper<FormApproval>()
+                .eq(FormApproval::getPanelCode, panelCode)
+                .eq(FormApproval::getFormNo, formNo)
+                .orderByAsc(FormApproval::getId));
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (FormApproval r : recs) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("action", r.getAction());
+            m.put("result", r.getResult());
+            m.put("operator", r.getOperator());
+            m.put("opinion", r.getOpinion());
+            m.put("nodeNo", r.getNodeNo());
+            m.put("createTime", r.getCreateTime() == null ? ""
+                    : r.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            out.add(m);
+        }
+        return out;
+    }
+
     @Transactional
     public void deleteForms(String panelCode, List<String> rowCodes) {
         for (String code : rowCodes) delete(panelCode, code);
@@ -489,20 +720,51 @@ public class PxService {
                 .eq(FormData::getPanelCode, panelCode)
                 .eq(FormData::getFormNo, code));
         if (fd == null) throw new IllegalArgumentException("表单数据不存在：" + code);
-        if (!"草稿".equals(fd.getStatus())) throw new IllegalStateException("仅草稿状态可删除");
+        // 单据=草稿可删；基础档案（存货/部门等）状态为 启用/停用 同样允许删除
+        String st1 = fd.getStatus() == null ? "" : fd.getStatus();
+        if (!"草稿".equals(st1) && !"启用".equals(st1) && !"停用".equals(st1)) {
+            throw new IllegalStateException("仅草稿状态可删除");
+        }
         formMapper.deleteById(fd.getId());
     }
 
     // ---------- 工具 ----------
 
-    private String generateFormNo(String panelCode) {
-        // 每张单据独立编号前缀：生产加工单 MO-…、销售订单 SO-…（对齐 T+ 单据独立存在）
-        String biz = "SO_ORDER".equals(panelCode) ? "SO-" : "MO-";
-        String prefix = biz + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + "-";
+    // 存货类别 → 单据编号前缀（5 类别缩写）
+    private static final Map<String, String> INV_PRE = new HashMap<>();
+    static {
+        INV_PRE.put("产成品", "CP");
+        INV_PRE.put("原材料", "YL");
+        INV_PRE.put("辅助材料", "FZ");
+        INV_PRE.put("包装物", "BZ");
+        INV_PRE.put("半成品", "BC");
+    }
+
+    /** 存货新类别单据编号：类别前缀-3位序号（如 CP-002 / BC-001） */
+    private String invNo(String cat) {
+        String pre = INV_PRE.getOrDefault(cat == null ? "" : cat, "INV");
         long count = formMapper.selectCount(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "INV")
+                .likeRight(FormData::getFormNo, pre + "-"));
+        return pre + "-" + String.format("%03d", count + 1);
+    }
+
+    private String generateFormNo(String panelCode) {
+        // 单据编号：前缀-yyyy-MM-dd+2位当日序号（如 MO-2026-08-1701 / SO-2026-08-1701）
+        // 每天从 01 顺序排；精确查重确保单据号不允许重复（全局唯一）
+        String biz;
+        if ("SO_ORDER".equals(panelCode)) biz = "SO-";
+        else if ("INV".equals(panelCode)) biz = "INV-"; // 存货类别单据
+        else biz = "MO-";
+        String base = biz + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        int seq = 1;
+        String no;
+        do {
+            no = base + String.format("%02d", seq++);
+        } while (formMapper.selectCount(new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, panelCode)
-                .likeRight(FormData::getFormNo, prefix));
-        return prefix + String.format("%04d", count + 1);
+                .eq(FormData::getFormNo, no)) > 0);
+        return no;
     }
 
     private Map<String, Object> parseData(String s) {

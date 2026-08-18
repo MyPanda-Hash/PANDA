@@ -76,7 +76,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useTabsStore } from '@/stores/tabs'
 import { useAppStore } from '@/stores/app'
@@ -87,13 +87,21 @@ const tabs = useTabsStore()
 const app = useAppStore()
 const router = useRouter()
 const route = useRoute()
+
+// 路由变化时同步活动页签的 query/标题（含 生单跳转 ?code= 等），保证切回页签数据不丢
+watch(
+  () => route.fullPath,
+  () => tabs.sync(route),
+  { immediate: true }
+)
 const ctx = ref({ tab: null, x: 0, y: 0 })
 const findPop = ref(false)
 const findNo = ref('')
 
 function go(t) {
   tabs.setActive(t.path)
-  router.push(t.path)
+  // 恢复页签携带的 query（如 ?code=单据号），修复切换单据回来数据丢失
+  router.push({ path: t.path, query: t.query || {} })
 }
 
 function refresh() {
@@ -115,7 +123,10 @@ function doCtx(cmd) {
 
 function closeAndGo(path) {
   tabs.close(path)
-  if (route.path === path) router.replace(tabs.active)
+  if (route.path === path) {
+    const act = tabs.tabs.find((t) => t.path === tabs.active)
+    router.replace(act ? { path: act.path, query: act.query || {} } : tabs.active)
+  }
 }
 
 function closeAll() {
@@ -128,7 +139,8 @@ function onMore(cmd) {
   if (cmd.startsWith('go:')) {
     const p = cmd.slice(3)
     tabs.setActive(p)
-    router.push(p)
+    const t = tabs.tabs.find((x) => x.path === p)
+    router.push({ path: p, query: t ? t.query || {} : {} })
   } else if (cmd === 'others') {
     tabs.closeOthers(tabs.active)
   } else if (cmd === 'all') {
@@ -150,7 +162,7 @@ async function quickFind() {
       return
     }
     const path = `/panelx/form/MANU_ORDER?id=${hit.id}`
-    tabs.open({ title: `加工单 ${hit.orderNo}`, path: '/panelx/form/MANU_ORDER' })
+    tabs.open({ title: `加工单 ${hit.orderNo}`, path: '/panelx/form/MANU_ORDER', query: { id: hit.id } })
     router.push(path)
     findPop.value = false
     findNo.value = ''
