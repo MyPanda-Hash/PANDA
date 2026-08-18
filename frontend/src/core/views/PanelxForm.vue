@@ -33,7 +33,7 @@
       </div>
 
       <!-- 表头（3 列） -->
-      <div v-loading="loading" class="fields">
+      <div v-loading="loading" class="fields udl-fields">
         <div v-for="r in visibleMeta" :key="r.code" class="field">
           <label :title="r.name">{{ r.name }}<span v-if="r.isNotNull" class="req">*</span></label>
           <el-input v-if="isText(r)" v-model="form[r.code]" :disabled="!editable || fieldLocked(r)" :placeholder="r.name" />

@@ -83,3 +83,40 @@ body,
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* ===== 下划线输入框（T+ 风格）：所有单据面板表头填写框统一 ===== */
+.udl-fields .el-input__wrapper,
+.udl-fields .el-select__wrapper,
+.udl-fields .el-textarea__inner {
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0;
+  border: none !important;
+  border-bottom: 1px solid #b9c2cf !important;
+  padding-left: 2px;
+  padding-right: 2px;
+  transition: border-color 0.15s;
+}
+.udl-fields .el-input__wrapper:hover,
+.udl-fields .el-select__wrapper:hover {
+  border-bottom-color: #0d5bd3;
+}
+.udl-fields .el-input__wrapper.is-focus,
+.udl-fields .el-select__wrapper.is-focused {
+  border-bottom-color: #0d5bd3;
+  box-shadow: none !important;
+}
+.udl-fields .el-input__inner {
+  font-size: 13px;
+  color: #222;
+}
+.udl-fields .el-input__inner::placeholder {
+  color: #aab3bf;
+}
+.udl-fields .el-input-number .el-input__wrapper {
+  border-bottom: 1px solid #b9c2cf;
+}
+/* 日期控件（el-date-picker 内部也是 el-input） */
+.udl-fields .el-date-editor.el-input {
+  width: 100%;
+}

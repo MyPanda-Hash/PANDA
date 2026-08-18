@@ -24,7 +24,7 @@
     </div>
 
     <!-- ══════════ ② 表头字段区（label 在上、输入在下）══════════ -->
-    <div class="fields">
+    <div class="fields udl-fields">
       <div class="field" v-for="qr in queryFields" :key="qr.dataName">
         <label :class="{ req: qr.isRequired }">{{ qr.label || qr.dataName }}</label>
         <el-select
