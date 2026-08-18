@@ -601,7 +601,8 @@ public class PxService {
                 throw new IllegalStateException("仅草稿状态可保存");
             }
             fd.setData(toJson(formData));
-            fd.setDetailData(toJson(detail));
+            // 明细兜底：未传 detail（如列表页仅保存表头）时保留原明细，禁止用 null 覆盖清空
+            fd.setDetailData(detail == null || "null".equals(String.valueOf(detail)) ? fd.getDetailData() : toJson(detail));
             fd.setUpdateTime(LocalDateTime.now());
             formMapper.updateById(fd);
         } else {
@@ -612,7 +613,7 @@ public class PxService {
                     ? invNo(formData.get("类别") == null ? "" : String.valueOf(formData.get("类别")))
                     : generateFormNo(panelCode));
             fd.setData(toJson(formData));
-            fd.setDetailData(toJson(detail));
+            fd.setDetailData(detail == null ? "{}" : toJson(detail));
             fd.setStatus("INV".equals(panelCode) ? "启用" : "草稿"); // 存货类别单据初始状态=启用
             fd.setCreateBy(userName == null ? "admin" : userName);
             fd.setCreateTime(LocalDateTime.now());
