@@ -9,8 +9,8 @@
     @open="onOpen"
   >
     <div v-loading="loading" class="nvd">
-      <!-- 表头字段（3 列网格） -->
-      <div class="fields">
+      <!-- 表头字段（fieldCols 列 × N 行，默认 2 列） -->
+      <div class="fields" :style="{ gridTemplateColumns: 'repeat(' + fieldCols + ', 1fr)' }">
         <div v-for="r in visibleMeta" :key="r.code" class="field">
           <label :title="r.name">{{ r.name }}<span v-if="r.isNotNull" class="req">*</span></label>
           <el-input v-if="isText(r)" v-model="form[r.code]" :placeholder="r.name" />
@@ -120,6 +120,8 @@ const props = defineProps({
   visible: { type: Boolean, default: false },
   panelCode: { type: String, default: '' },
   panelName: { type: String, default: '单据' },
+  // 表头字段列数（2列×N行；FINISH_IN 等单据按需传 2）
+  fieldCols: { type: Number, default: 2 },
 })
 const emit = defineEmits(['update:visible', 'saved'])
 
@@ -348,7 +350,7 @@ async function onSave() {
 <style scoped>
 .nvd .fields {
   display: grid;
-  grid-template-columns: repeat(3, 1rr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px 18px;
   padding: 4px 0 10px;
 }
