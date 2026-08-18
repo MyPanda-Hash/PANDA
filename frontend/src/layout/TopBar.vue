@@ -125,6 +125,7 @@
         </span>
         <template #dropdown>
           <el-dropdown-menu>
+            <el-dropdown-item v-if="user.isAdmin" command="org"><el-icon><OfficeBuilding /></el-icon>组织架构</el-dropdown-item>
             <el-dropdown-item command="account"><el-icon><User /></el-icon>账号管理</el-dropdown-item>
             <el-dropdown-item command="pwd"><el-icon><Key /></el-icon>修改密码</el-dropdown-item>
             <el-dropdown-item command="ui"><el-icon><Setting /></el-icon>界面设置</el-dropdown-item>
@@ -201,7 +202,7 @@ import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
 import { useTabsStore } from '@/stores/tabs'
-import { flatMenus } from '@/business/menus'
+import { flatMenus, menuTree as rawMenuTree, filterMenuTree } from '@/business/menus'
 import { apiGetNotices } from '@/business/api'
 import { ElMessage } from 'element-plus'
 import NoticeCenter from './NoticeCenter.vue'
@@ -221,7 +222,7 @@ const searchWrapRef = ref(null)
 const matched = computed(() => {
   const k = keyword.value.trim().toLowerCase()
   if (!k) return []
-  return flatMenus()
+  return flatMenus(filterMenuTree(rawMenuTree, user.visiblePanels, user.isAdmin))
     .filter((m) => m.path && (m.title.toLowerCase().includes(k) || m.path.toLowerCase().includes(k)))
     .slice(0, 10)
 })
@@ -293,6 +294,7 @@ const pwdForm = ref({ old: '', next: '', confirm: '' })
 
 function onUserCommand(cmd) {
   if (cmd === 'account') accountVisible.value = true
+  else if (cmd === 'org') router.push('/sys/org')
   else if (cmd === 'pwd') pwdVisible.value = true
   else if (cmd === 'ui') uiSettingVisible.value = true
   else if (cmd === 'dark') app.toggleDark()

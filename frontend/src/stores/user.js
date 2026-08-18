@@ -2,13 +2,21 @@ import { defineStore } from 'pinia'
 import { apiLogin, apiGetUserInfo, USE_MOCK } from '@/business/api'
 
 export const useUserStore = defineStore('user', {
-  state: () => ({
-    token: (() => { const t = localStorage.getItem('mes_token'); return t && t !== 'undefined' ? t : '' })(),
-    userInfo: (() => { try { return JSON.parse(localStorage.getItem('mes_user') || 'null') } catch { return null } })(),
-    factory: (() => { try { return JSON.parse(localStorage.getItem('mes_factory') || 'null') } catch { return null } })(),
-    factories: [],
-    loginDate: '',
-  }),
+  state: () => {
+    let ui = null
+    try { ui = JSON.parse(localStorage.getItem('mes_user') || 'null') } catch {}
+    return {
+      token: (() => { const t = localStorage.getItem('mes_token'); return t && t !== 'undefined' ? t : '' })(),
+      userInfo: ui,
+      factory: (() => { try { return JSON.parse(localStorage.getItem('mes_factory') || 'null') } catch { return null } })(),
+      factories: [],
+      loginDate: '',
+      roleCode: ui?.roleCode || '',
+      isAdmin: !!ui?.isAdmin,
+      visiblePanels: Array.isArray(ui?.visiblePanels) ? ui.visiblePanels : [],
+      approvePanels: Array.isArray(ui?.approvePanels) ? ui.approvePanels : [],
+    }
+  },
   getters: {
     isLogin: (s) => !!s.token,
     realName: (s) => s.userInfo?.realName || s.userInfo?.userName || '',
@@ -24,12 +32,34 @@ export const useUserStore = defineStore('user', {
       const res = await apiLogin(payload)
       this.token = res.token
       this.userInfo = res.user
+      this.applyPerms(res.user)
       const today = new Date().toISOString().slice(0, 10)
       this.loginDate = today
       localStorage.setItem('mes_token', res.token)
       localStorage.setItem('mes_user', JSON.stringify(res.user))
       localStorage.setItem('mes_login_date', today)
       return res
+    },
+    // 从登录/用户信息中提取角色权限
+    applyPerms(u) {
+      this.roleCode = u?.roleCode || ''
+      this.isAdmin = !!u?.isAdmin
+      this.visiblePanels = Array.isArray(u?.visiblePanels) ? u.visiblePanels : []
+      this.approvePanels = Array.isArray(u?.approvePanels) ? u.approvePanels : []
+    },
+    // 刷新权限（角色/面板配置变更后调用）
+    async fetchPerms() {
+      const { apiGetPerms } = await import('@/business/api')
+      const p = await apiGetPerms()
+      if (!p) return
+      this.roleCode = p.roleCode || ''
+      this.isAdmin = !!p.isAdmin
+      this.visiblePanels = Array.isArray(p.visiblePanels) ? p.visiblePanels : []
+      this.approvePanels = Array.isArray(p.approvePanels) ? p.approvePanels : []
+      if (this.userInfo) {
+        this.userInfo = { ...this.userInfo, roleCode: this.roleCode, isAdmin: this.isAdmin, visiblePanels: this.visiblePanels, approvePanels: this.approvePanels }
+        localStorage.setItem('mes_user', JSON.stringify(this.userInfo))
+      }
     },
     async fetchUserInfo() {
       const info = await apiGetUserInfo()
@@ -51,6 +81,10 @@ export const useUserStore = defineStore('user', {
     logout() {
       this.token = ''
       this.userInfo = null
+      this.roleCode = ''
+      this.isAdmin = false
+      this.visiblePanels = []
+      this.approvePanels = []
       localStorage.removeItem('mes_token')
       localStorage.removeItem('mes_user')
     },

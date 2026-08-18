@@ -85,15 +85,20 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { menuTree } from '@/business/menus'
+import { menuTree as rawMenuTree, filterMenuTree } from '@/business/menus'
 import { useTabsStore } from '@/stores/tabs'
 import { useAppStore } from '@/stores/app'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
 const tabs = useTabsStore()
 const app = useAppStore()
+const user = useUserStore()
 const navRef = ref(null)
+
+// 角色权限过滤后的菜单树（操作员仅见被授权面板）
+const menuTree = computed(() => filterMenuTree(rawMenuTree, user.visiblePanels, user.isAdmin))
 
 const expandedGroup = ref('')
 const cardModule = ref(null)
@@ -104,7 +109,7 @@ const billKeyword = ref('')
 
 const bills = computed(() => {
   const out = []
-  for (const g of menuTree) {
+  for (const g of menuTree.value) {
     for (const m of g.children || []) {
       const walk = (n) => {
         if (n.path) out.push({ ...n, module: m.title })
@@ -175,7 +180,7 @@ function goBill(b, isNew) {
 }
 
 function groupOrPath(path) {
-  for (const g of menuTree) {
+  for (const g of menuTree.value) {
     const walk = (n) => {
       if (n.path === path) return true
       if (n.children) return n.children.some(walk)

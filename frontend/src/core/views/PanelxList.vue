@@ -144,6 +144,7 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useTabsStore } from '@/stores/tabs'
+import { useUserStore } from '@/stores/user'
 import * as engine from '@/business/engine'
 import PanelxLogin from './PanelxLogin.vue'
 import NewVoucherDialog from './NewVoucherDialog.vue'
@@ -161,6 +162,7 @@ function onPanelxLogin() {
 const route = useRoute()
 const router = useRouter()
 const tabs = useTabsStore()
+const user = useUserStore()
 
 const panelCode = computed(() => route.params.panelCode)
 const operationName = computed(() => route.meta.operationName || route.query.operationName || '新增流程')
@@ -482,6 +484,16 @@ function closeCtx() {
   openGroup.value = -1
 }
 
+// ---------- 审批按钮权限（提交审批/审批情况公开；审批通过/驳回需角色审批权限） ----------
+const APPROVE_ACTIONS = ['审批通过', '审批驳回']
+function filterGroups(raw) {
+  const canApprove = user.isAdmin || user.approvePanels.includes(panelCode.value)
+  if (canApprove) return raw
+  return (raw || [])
+    .map((g) => ({ ...g, actions: (g.actions || g.items || []).filter((a) => !APPROVE_ACTIONS.includes(a)) }))
+    .filter((g) => (g.actions || []).length > 0)
+}
+
 // ---------- 工具栏分组（配置 {name, actions}：主按钮=第一个 action，actions>1 显示 ▼ 下拉） ----------
 const openGroup = ref(-1)
 function actsOf(g) {
@@ -614,7 +626,7 @@ async function loadCrg() {
   panelName.value = cfg?.metadata?.panelName || panelCode.value
   queryFields.value = tp?.queryFields || []
   gridTabs.value = tp?.gridTabs || []
-  groups.value = cfg?.metadata?.buttonGroups || []
+  groups.value = filterGroups(cfg?.metadata?.buttonGroups || [])
   return cfg
 }
 
@@ -650,6 +662,9 @@ function openForm(row) {
 }
 
 async function onButton(action) {
+  if (APPROVE_ACTIONS.includes(action) && !user.isAdmin && !user.approvePanels.includes(panelCode.value)) {
+    return ElMessage.warning('当前角色无审批权限')
+  }
   if (action === '查询' || action === '查找') {
     search()
     return

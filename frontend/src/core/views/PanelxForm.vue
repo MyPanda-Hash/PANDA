@@ -280,6 +280,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTabsStore } from '@/stores/tabs'
+import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Back, Plus, Delete, ArrowDown, Search } from '@element-plus/icons-vue'
 import * as engine from '@/business/engine'
@@ -300,6 +301,7 @@ function onPanelxLogin() {
 const route = useRoute()
 const router = useRouter()
 const tabsStore = useTabsStore()
+const user = useUserStore()
 
 const panelCode = computed(() => route.params.panelCode)
 const operationName = computed(() => route.query.operationName || '新增流程')
@@ -322,6 +324,16 @@ const subBomVisible = ref(false)
 const subBomMaterial = ref(null)
 const subBomBom = ref([])
 const groups = ref([])
+// 审批按钮权限（提交审批/审批情况公开；审批通过/驳回需角色审批权限）
+const APPROVE_ACTIONS = ['审批通过', '审批驳回']
+function filterGroups(raw) {
+  const canApprove = user.isAdmin || user.approvePanels.includes(panelCode.value)
+  if (canApprove) return raw
+  return (raw || [])
+    .map((g) => ({ ...g, actions: (g.actions || g.items || []).filter((a) => !APPROVE_ACTIONS.includes(a)) }))
+    .filter((g) => (g.actions || []).length > 0)
+}
+
 const loading = ref(false)
 const saving = ref(false)
 const payloadCache = ref(null)
@@ -907,7 +919,7 @@ async function load() {
     Object.assign(form, payload.data || {})
     meta.value = payload.meta || []
     detailDef.value = payload.detail || null
-    groups.value = payload.buttonGroups || []
+    groups.value = filterGroups(payload.buttonGroups || [])
     payloadCache.value = payload
     const firstTab = tabs.value.find((t) => t.type !== 'summary')
     if (firstTab && !activeTab.value) activeTab.value = firstTab.key
@@ -934,6 +946,9 @@ async function load() {
 }
 
 async function onButton(action) {
+  if (APPROVE_ACTIONS.includes(action) && !user.isAdmin && !user.approvePanels.includes(panelCode.value)) {
+    return ElMessage.warning('当前角色无审批权限')
+  }
   if (action === '修改') {
     ElMessage.info(isEdit.value ? '当前单据已处于编辑状态' : '请先打开单据后再修改')
     return

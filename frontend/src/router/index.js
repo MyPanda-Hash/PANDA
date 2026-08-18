@@ -19,6 +19,7 @@ const routes = [
       { path: 'prod/manufacture/board', component: () => import('@/views/modules/board/ManufactureBoard.vue'), meta: { title: '生产看板', code: 'manufactureBoard' } },
       { path: 'prod/shop/reworkDesk', component: () => import('@/views/modules/rework/ReworkDesk.vue'), meta: { title: '返修工作台', code: 'reworkDesk' } },
       { path: 'top/solution', component: () => import('@/views/modules/solution/SolutionCenter.vue'), meta: { title: '方案中心', code: 'solutionCenter' } },
+      { path: 'sys/org', component: () => import('@/views/sys/OrgAdmin.vue'), meta: { title: '组织架构', requireAdmin: true } },
       { path: 'panelx/list/:panelCode', component: PanelxList, meta: { title: '生产加工单', code: 'manufactureOrder', operationName: '新增流程' } },
       { path: 'panelx/form/:panelCode', component: PanelxForm, meta: { title: 'PanelX 表单' } },
       ...flatMenus()
@@ -42,6 +43,7 @@ router.beforeEach((to) => {
   document.title = `${to.meta.title || ''} · 轻MES`
   const user = useUserStore()
   if (to.path !== '/login' && !user.isLogin) return '/login'
+  if (to.meta.requireAdmin && !user.isAdmin) return '/dashboard'
   if (to.path === '/login' && user.isLogin) return '/dashboard'
   return true
 })
