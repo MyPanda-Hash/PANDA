@@ -172,6 +172,7 @@ public class PxService {
         out.put("privilege", privilege);
         out.put("detail", stateField.get("detail"));
         out.put("buttonGroups", buttonGroupsOf(panelCode));
+        out.put("panelName", panelNameOf(panelCode));
         return out;
     }
 
@@ -198,7 +199,14 @@ public class PxService {
         out.put("detail", fieldsOf(panelCode).get("detail"));
         out.put("detailData", parseData(fd.getDetailData()));
         out.put("buttonGroups", buttonGroupsOf(panelCode));
+        out.put("panelName", panelNameOf(panelCode));
         return out;
+    }
+
+    private String panelNameOf(String panelCode) {
+        Map<String, Object> cfg = loadConfig(panelCode);
+        Object name = ((Map<String, Object>) cfg.get("metadata")).get("panelName");
+        return name == null ? "表单" : String.valueOf(name);
     }
 
     // ---------- 列表 ----------
