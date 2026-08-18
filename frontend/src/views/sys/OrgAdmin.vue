@@ -368,14 +368,19 @@ async function loadRolePanels(row) {
     const d = r?.data || {}
     const all = d.allPanels || []
     const granted = d.granted || []
+    // 授权标记与审批标记分开：canApprove=false 的面板（可见但无审批）也必须回显为「已勾选可见」
     const grantedMap = {}
-    for (const g of granted) grantedMap[g.panelCode] = !!g.canApprove
+    const approveMap = {}
+    for (const g of granted) {
+      grantedMap[g.panelCode] = true
+      approveMap[g.panelCode] = !!g.canApprove
+    }
     panelRows.value = all.map((p) => ({
       panelCode: p.panelCode,
       panelName: p.panelName,
       hasApproval: !!p.hasApproval,
       checked: !!grantedMap[p.panelCode],
-      canApprove: !!grantedMap[p.panelCode],
+      canApprove: !!approveMap[p.panelCode],
     }))
   } catch (e) {
     ElMessage.error('面板权限加载失败')
