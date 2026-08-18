@@ -10,8 +10,14 @@ import {
 export { unwrap, errMsg }
 
 // ==================== 业务层：PanelX 平台直连/代理模式 ====================
-// 本地菜单/路由使用自有面板码（MANU_ORDER），平台侧对应真实面板 SdkTest_IML_00002
-const PANEL_MAP = { MANU_ORDER: 'SdkTest_IML_00002' }
+// 本地菜单/路由使用自有面板码（MANU_ORDER…），平台侧映射真实面板码。
+// 测试模式（2026-08-14 起）：业务域 GroupChat_Inst_17867095995605 @ http://203.132.49.57:6612/hscx
+// 该域当前仅有群聊实例默认面板：IML_00001_v_工作台 / IML_00002_v_组织架构，
+// 下方映射为「链路验证占位」；在平台创建好 MES 面板后，把值替换为真实面板码即可。
+const PANEL_MAP = {
+  MANU_ORDER: 'IML_00001_v_工作台',
+  SO_ORDER: 'IML_00002_v_组织架构',
+}
 
 export function resolvePanelCode(panelCode) {
   if (!USE_PANELX) return panelCode
@@ -109,8 +115,8 @@ const MOCK_CONFIG = {
       { name: '选单', actions: ['选单', '选销售订单'] },
       { name: '修改', actions: ['修改'] },
       { name: '保存', actions: ['保存', '保存新增', '保存为草稿', '保存为常用单据', '保存打印'] },
-      { name: '删除', actions: ['删除'] },
-      { name: '审核', actions: ['审核', '弃审', '审批情况'] },
+      { name: '删除', actions: ['删除', '删除单据'] },
+      { name: '审核', actions: ['提交审批', '审批通过', '审批驳回', '审批情况', '弃审'] },
       {
         name: '生单', actions: [
           '生成材料出库单', '生成材料出库单(分单)', '生成材料出库单(退料)',
@@ -322,6 +328,7 @@ const MOCK_CONFIG = {
   },
 
   selectConfig: {
+    generateButton: '生成生产加工单',
     source: 'SO_ORDER',
     title: '选销售订单（生单）',
     tip: '仅显示已审核且未中止的销售订单，选中的单据明细将带入生产加工单（对齐 T+ 选单前提）',
@@ -410,8 +417,8 @@ const SO_CONFIG = {
       { name: '新增', actions: ['新增', '引入常用单据', '设置默认功能'] },
       { name: '选单', actions: ['选单'] },
       { name: '保存', actions: ['保存', '保存新增', '保存为草稿', '保存为常用单据', '保存打印'] },
-      { name: '删除', actions: ['删除'] },
-      { name: '审核', actions: ['审核', '弃审'] },
+      { name: '删除', actions: ['删除', '删除单据'] },
+      { name: '审核', actions: ['提交审批', '审批通过', '审批驳回', '审批情况', '弃审'] },
       {
         name: '生单', actions: [
           '生成销售出库单(普通销售)', '生成销售出库单(销售退货)', '生成生产加工单', '生成销售订单(销售退货)',
@@ -507,8 +514,8 @@ function invCommonGroups(extraMore = []) {
   return [
     { name: '新增', actions: ['新增', '引入常用单据', '设置默认功能'] },
     { name: '保存', actions: ['保存', '保存新增', '保存为草稿', '保存为常用单据', '保存打印'] },
-    { name: '删除', actions: ['删除'] },
-    { name: '审核', actions: ['审核'] },
+    { name: '删除', actions: ['删除', '删除单据'] },
+    { name: '审核', actions: ['提交审批', '审批通过', '审批驳回', '审批情况', '弃审'] },
     { name: '变更', actions: ['变更'] },
     { name: '设置', actions: ['单据设置', '移动控件位置', '调整控件宽度', '工具栏设置'] },
     { name: '打印', actions: ['直接打印', '打印', '预览', '打印模板设置', '导出', '明细标签打印', '打印情况'] },
@@ -795,6 +802,7 @@ const OTHER_IN_CONFIG = invPanel({
 const SALE_OUT_CONFIG = invPanel({
   panelCode: 'SALE_OUT', panelName: '销售出库单', bizType: '销售出库',
   selectConfig: {
+    generateButton: '生成生产加工单',
     source: 'SO_ORDER',
     title: '选销售订单',
     tip: '仅显示已审核且未中止的销售订单，选中后明细带入销售出库单（对齐 T+ 选单前提）',
@@ -1060,8 +1068,8 @@ const PROCESS_REPORT_CONFIG = {
       { name: '选单', actions: ['选单', '选生产加工单', '智能选单'] },
       { name: '修改', actions: ['修改'] },
       { name: '保存', actions: ['保存', '保存新增', '保存为草稿', '保存打印'] },
-      { name: '删除', actions: ['删除'] },
-      { name: '审核', actions: ['审核', '弃审', '审批情况'] },
+      { name: '删除', actions: ['删除', '删除单据'] },
+      { name: '审核', actions: ['提交审批', '审批通过', '审批驳回', '审批情况', '弃审'] },
       { name: '生单', actions: ['生成产成品入库单', '生成产成品入库单（废品）', '生成补投生产加工单', '生成返工生产加工单'] },
       { name: '变更', actions: ['变更'] },
       { name: '工具', actions: ['变更历史', '联查', '生产加工情况', '材料出库情况', '产成品入库情况', '生单流程联查'] },
@@ -1313,6 +1321,7 @@ const INV_CONFIGS = {
   OTHER_OUT: OTHER_OUT_CONFIG,
 
   selectConfig: {
+    generateButton: '生成生产加工单',
     source: 'SO_ORDER',
     title: '选销售订单',
     tip: '销售订单选单（对齐 T+ 选单前提：已审核且未中止）',

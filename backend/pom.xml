@@ -19,6 +19,10 @@
 
   <properties>
     <java.version>17</java.version>
+    <!-- 显式声明编译目标：Spring Boot parent 不把 java.version 接到编译参数上，
+        缺省时 maven-compiler-plugin 用 1.8（配合旧 JDK 会编译失败 instanceof 模式匹配等新语法） -->
+    <maven.compiler.release>${java.version}</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <mybatis-plus.version>3.5.9</mybatis-plus.version>
     <jjwt.version>0.12.6</jjwt.version>
   </properties>

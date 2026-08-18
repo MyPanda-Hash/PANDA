@@ -24,3 +24,5 @@ tools/tplus-grab/profile/
 Thumbs.db
 Desktop.ini
 .DS_Store
+# === 临时还原文件 ===
+.vision-restore/

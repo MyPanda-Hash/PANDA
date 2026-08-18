@@ -87,7 +87,7 @@
               >{{ tab.label }}汇总</span>
             </div>
             <div class="dt-actions">
-              <el-button v-if="editable" size="small" :icon="Plus" @click="addDetailRow(tab)">增行</el-button>
+              <el-button v-if="editable" type="primary" :icon="Plus" @click="addDetailRow(tab)" class="add-data-btn">新增数据</el-button>
               <span class="dt-ic" v-if="ti === 0">Ctrl+V列粘贴</span>
               <span class="dt-ic">定位</span>
               <span class="dt-ic">复制到剪贴板</span>
@@ -98,6 +98,7 @@
               <span class="dt-ic">存货中心</span>
               <span class="dt-ic" v-if="ti === 1">现存量提取</span>
               <span class="dt-ic">更多</span>
+              <span v-if="tab.key === 'materials' && selectedProduct" class="filter-hint">当前产品：{{ selectedProduct }} 的 BOM 子件</span>
               <span class="tab-hint">{{ tabHint(tab) }}</span>
             </div>
           </div>
@@ -105,12 +106,15 @@
           <!-- 明细视图 -->
           <template v-if="(subActive[tab.key] || 'detail') === 'detail'">
             <el-table
-              :data="detailData[tab.key] || []"
+              :data="tabData(tab)"
               size="small"
               border
               :show-summary="true"
               :summary-method="(p) => summarize(p, tab)"
               height="380"
+              :row-class-name="(o) => (tab.key === 'products' ? prodRowCls(o) : '')"
+              @click.capture="(e) => onTableClickCapture(tab, e)"
+              @row-click="(row) => onRowClickDetail(tab, row)"
             >
               <el-table-column v-if="tab.subTable" type="expand" width="40">
                 <template #default="{ row }">
@@ -153,9 +157,13 @@
               >
                 <template #default="{ row }">
                   <template v-if="dr.dataType === '参照'">
-                    <span class="ref-cell" :class="{ disabled: !editable || dr.computed }" @click="openDetailRef(dr, row, tab)">{{ drRefText(dr, row) }}</span>
+                    <span v-if="dr.dataName === '材料编码' && tab.key === 'materials'" class="mat-cell">
+                      <span class="ref-cell" :class="{ disabled: !editable || dr.computed }" @click="openDetailRef(dr, row, tab)">{{ drRefText(dr, row) }}</span>
+                      <span v-if="hasSubBom(row[dr.dataName])" class="mat-star" title="该材料有下级子件 BOM，点击行查看">*</span>
+                    </span>
+                    <span v-else class="ref-cell" :class="{ disabled: !editable || dr.computed }" @click="openDetailRef(dr, row, tab)">{{ drRefText(dr, row) }}</span>
                   </template>
-                  <el-select v-else-if="dr.dataType === '下拉框'" v-model="row[dr.dataName]" :disabled="!editable || dr.computed" filterable allow-create style="width: 100%">
+                  <el-select v-else-if="dr.dataType === '下拉框'" v-model="row[dr.dataName]" :disabled="!editable || dr.computed" filterable allow-create style="width: 100%" @change="onDetailChange(dr, row, tab)">
                     <el-option v-for="o in dr.options || []" :key="o" :label="o.label ?? o" :value="o.value ?? o" />
                   </el-select>
                   <el-switch v-else-if="dr.dataType === '是否'" v-model="row[dr.dataName]" :disabled="!editable || dr.computed" />
@@ -173,6 +181,14 @@
                     v-else-if="dr.dataType === '小数' || dr.dataType === '整数'"
                     v-model="row[dr.dataName]"
                     :controls="false"
+                    :disabled="!editable || dr.computed"
+                    style="width: 100%"
+                  />
+                  <el-date-picker
+                    v-else-if="dr.dataType === '日期'"
+                    v-model="row[dr.dataName]"
+                    type="date"
+                    value-format="YYYY-MM-DD"
                     :disabled="!editable || dr.computed"
                     style="width: 100%"
                   />
@@ -215,6 +231,7 @@
         <span>变更人：{{ form['变更人'] || '-' }}</span>
         <span>变更日期：{{ rmtTime(form['变更日期']) }}</span>
         <span>审核机器人：{{ form['审核机器人'] || '-' }}</span>
+        <span>审核意见：{{ form['审核意见'] || '-' }}</span>
       </div>
 
       <!-- 拉式选单（配置驱动：selectConfig 定义来源面板/列/字段映射，对齐 T+ 选单前提：已生效且未中止） -->
@@ -253,17 +270,24 @@
     </div>
     <PanelxLogin v-model="loginVisible" @success="onPanelxLogin" />
     <RefPickDialog v-model="refVisible" :field="refPick?.field" :mode="refPick?.mode" @confirm="onRefConfirm" />
+    <ApprovalHistoryDialog v-model="approvalVisible" :panelCode="panelCode" :formNo="approvalNo" />
+    <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
+    <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useTabsStore } from '@/stores/tabs'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Back, Plus, Delete, ArrowDown, Search } from '@element-plus/icons-vue'
 import * as engine from '@/business/engine'
 import PanelxLogin from './PanelxLogin.vue'
 import RefPickDialog from './RefPickDialog.vue'
+import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
+import SelectVoucherDialog from './SelectVoucherDialog.vue'
+import SubBomDialog from './SubBomDialog.vue'
 const { SHORTCUTS } = engine
 
 const loginVisible = ref(false)
@@ -275,6 +299,7 @@ function onPanelxLogin() {
 
 const route = useRoute()
 const router = useRouter()
+const tabsStore = useTabsStore()
 
 const panelCode = computed(() => route.params.panelCode)
 const operationName = computed(() => route.query.operationName || '新增流程')
@@ -287,10 +312,23 @@ const detailDef = ref(null)
 const detailData = reactive({})
 const activeTab = ref('')
 const subActive = reactive({})
+// 产成品明细选中行 → 材料明细联动过滤（显示该产品的 BOM 子件）
+const selectedProduct = ref(null)
+const selectedBomCodes = ref([])
+
+// 材料下级 BOM（红 * + 弹窗）：存货编码 → _bom 数组
+const subBomMap = ref({})
+const subBomVisible = ref(false)
+const subBomMaterial = ref(null)
+const subBomBom = ref([])
 const groups = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const payloadCache = ref(null)
+const approvalVisible = ref(false)
+const approvalNo = ref('')
+const selVisible = ref(false)
+const selCfg = ref(null)
 
 // ---------- 拉式选单（配置驱动：selectConfig 定义来源面板/列/字段映射） ----------
 const selectVisible = ref(false)
@@ -383,7 +421,8 @@ function confirmSelect() {
   applyCalc()
 }
 const status = computed(() => form['单据状态'] || '草稿')
-const editable = computed(() => !isEdit.value || status.value === '草稿')
+// 单据=草稿可编辑；基础档案（存货/部门等）状态为 启用/停用 同样可编辑（增行/改字段/保存）
+const editable = computed(() => !isEdit.value || status.value === '草稿' || status.value === '启用' || status.value === '停用')
 
 const STATUS_TAG = { 草稿: 'info', 已审核: 'primary', 生产中: 'warning', 已完工: 'success', 已中止: 'danger', 已关闭: 'info' }
 function statusTag(s) {
@@ -406,6 +445,8 @@ const visibleMeta = computed(() => (meta.value || []).filter((r) => !r.hidden))
 function fieldLocked(r) {
   // 锭号：自动编码；仅勾选「是否手工修改单据编码」时草稿可改
   if (r.autoCode) return !(status.value === '草稿' && form['是否手工修改单据编码'])
+  // 存货类别：创建后固定，不允许修改
+  if (r.code === '类别' && isEdit.value) return true
   return false
 }
 
@@ -424,6 +465,9 @@ function isDisabled(action) {
     取消中止: s !== '已中止',
     修改: !['已审核', '生产中', '已完工'].includes(s) || !isEdit.value,
     审批情况: false,
+    提交审批: s !== '草稿' || !isEdit.value,
+    审批通过: s !== '审批中' || !isEdit.value,
+    审批驳回: s !== '审批中' || !isEdit.value,
     生成生产加工单: s !== '已审核' || !isEdit.value,
   }
   return map[action] === true
@@ -527,6 +571,104 @@ function rmtTime(t) {
   return s.length > 10 ? s.slice(0, 19).replace('T', ' ') : s
 }
 
+// 明细数据：材料明细在选中产成品时只显示其 BOM 子件（子件BOM=产品编码）
+function tabData(tab) {
+  const rows = detailData[tab.key] || []
+  if (tab.key === 'materials' && selectedProduct.value) {
+    // 优先按 子件BOM 标记精确过滤（回填/自动带出的材料行带 子件BOM=产品编码）；
+    // 兜底按该产品存货 BOM 的材料编码过滤（旧手工行无标记时）
+    const byBom = rows.filter((m) => m['子件BOM'] === selectedProduct.value)
+    if (byBom.length) return byBom
+    const byCode = rows.filter((m) => selectedBomCodes.value.includes(m['材料编码']))
+    if (byCode.length) return byCode
+    return rows
+  }
+  return rows
+}
+
+function prodRowCls({ row }) {
+  return selectedProduct.value && row['产品编码'] === selectedProduct.value ? 'prod-selected' : ''
+}
+
+// 捕获阶段监听：点产成品明细行触发联动；点材料明细行（该材料有下级 BOM）弹出子件 BOM
+async function onTableClickCapture(tab, e) {
+  if (!e || !e.target || !e.target.closest) return
+  const tr = e.target.closest('tr')
+  if (!tr) return
+  // 主表与固定列（序号列 fixed=left）都可能触发：两种 body 容器都支持
+  const body = tr.closest('.el-table__body-wrapper') || tr.closest('.el-table__fixed-body-wrapper')
+  const rows = body ? [...body.querySelectorAll('tbody tr')] : []
+  const idx = rows.indexOf(tr)
+  // 材料明细：点材料行 → 该材料有下级 BOM 则弹窗展示（拦截参照/其他点击），无下级放行
+  if (tab.key === 'materials') {
+    const row = (detailData['materials'] || [])[idx]
+    if (row && row['材料编码'] && hasSubBom(row['材料编码'])) {
+      openSubBom(row)
+      if (e.stopPropagation) e.stopPropagation()
+    }
+    return
+  }
+  if (tab.key !== 'products') return
+  const row = (detailData['products'] || [])[idx]
+  if (!row || !row['产品编码']) return
+  selectProduct(row['产品编码'])
+}
+
+// 材料下级 BOM 映射（INV 全量 _bom → 编码索引）；加载后材料编码行右上角显示红 *，点击行弹窗查看
+async function loadSubBomMap() {
+  try {
+    const res = await engine.queryFormDataList({ panelCode: 'INV', condition: {}, pageNo: 1, pageSize: 100 })
+    const map = {}
+    for (const d of res.list || []) {
+      for (const it of (d.detail && d.detail.items) || []) {
+        let bom = it['_bom']
+        if (typeof bom === 'string') { try { bom = JSON.parse(bom) } catch (err) { bom = [] } }
+        map[it['存货编码']] = Array.isArray(bom) ? bom : []
+      }
+    }
+    subBomMap.value = map
+  } catch (err) {}
+}
+
+function hasSubBom(code) {
+  const b = subBomMap.value[code]
+  return Array.isArray(b) && b.length > 0
+}
+
+function openSubBom(row) {
+  const code = row['材料编码']
+  subBomMaterial.value = row
+  subBomBom.value = (subBomMap.value[code] || []).map((r) => ({ ...r }))
+  subBomVisible.value = true
+}
+
+// row-click 兜底：普通单元格点击走此路径（控件内点击被 el-select 等吞掉时由捕获阶段补上）
+function onRowClickDetail(tab, row) {
+  if (tab.key === 'products' && row && row['产品编码'] && row['产品编码'] !== selectedProduct.value) {
+    selectProduct(row['产品编码'])
+  }
+}
+
+// 选中产成品：行高亮 + 材料明细只显示该产品的 BOM 子件（异步查 INV 物品 _bom → 材料编码集合）
+async function selectProduct(code) {
+  selectedProduct.value = code
+  selectedBomCodes.value = []
+  try {
+    const res = await engine.queryFormDataList({ panelCode: 'INV', condition: {}, pageNo: 1, pageSize: 100 })
+    for (const d of res.list || []) {
+      const it = ((d.detail && d.detail.items) || []).find((i) => i['存货编码'] === code)
+      if (it && it['_bom']) {
+        let bom = []
+        try { bom = typeof it['_bom'] === 'string' ? JSON.parse(it['_bom']) : it['_bom'] } catch (err) {}
+        selectedBomCodes.value = (Array.isArray(bom) ? bom : []).map((b) => b['材料编码']).filter(Boolean)
+        break
+      }
+    }
+  } catch (err) {
+    // 查询失败按 子件BOM 标记兜底
+  }
+}
+
 function tabHint(tab) {
   if (tab.key === 'materials') return '需用数量 = 定额需用数量 × 产品数量 ÷ 定额生产数量；计划数量 = 需用数量 + 损耗数量（损耗数量手工录入）'
   if (tab.key === 'processes') return '金额 = 计划数量 × 工价；行「手工完工」用于工序级完工；展开行维护本工序材料'
@@ -543,6 +685,20 @@ function addDetailRow(tab) {
     else row[dr.dataName] = dr.defaultValue ?? ''
   }
   if (tab.subTable) row['子表材料'] = []
+  // 材料明细：新增行自动归属当前选中的产成品（子件BOM=产品编码），保证联动过滤精确
+  if (tab.key === 'materials' && selectedProduct.value) row['子件BOM'] = selectedProduct.value
+  // 存货：新增物品按类别单据编码自动替补（产成品→CP001、原材料→YL001、辅助材料→FZ001、包装物→BZ001、半成品→BC001…）
+  if (panelCode.value === 'INV' && tab.key === 'items') {
+    const pre = { 产成品: 'CP', 原材料: 'YL', 辅助材料: 'FZ', 包装物: 'BZ', 半成品: 'BC' }[form['类别']] || ''
+    if (pre) {
+      let max = 0
+      for (const r of rows) {
+        const m = String(r['存货编码'] || '').match(new RegExp('^' + pre + '(\\d+)$'))
+        if (m) max = Math.max(max, parseInt(m[1], 10))
+      }
+      row['存货编码'] = pre + String(max + 1).padStart(3, '0')
+    }
+  }
   rows.push(row)
   return row
 }
@@ -629,6 +785,58 @@ function applyCalc() {
 
 watch(detailData, applyCalc, { deep: true })
 
+// ---------- BOM 联动：产成品明细选产品 → 从存货面板（INV）BOM 子表带出材料明细 ----------
+const bomLoaded = new Set()
+
+function onDetailChange(dr, row, tab) {
+  if (tab && tab.key === 'products' && dr.dataName === '产品编码') {
+    loadBomFor(row[dr.dataName])
+  }
+}
+
+function bomRowFrom(b, code) {
+  const matTab = tabs.value.find((t) => t.key === 'materials')
+  const row = {}
+  for (const dr of (matTab ? matTab.fields : [])) {
+    if (dr.dataType === '小数' || dr.dataType === '整数') row[dr.dataName] = dr.defaultValue ?? 0
+    else if (dr.dataType === '是否') row[dr.dataName] = dr.defaultValue ?? false
+    else row[dr.dataName] = dr.defaultValue ?? ''
+  }
+  row['材料编码'] = b['材料编码'] || ''
+  row['材料名称'] = b['材料名称'] || ''
+  row['规格型号'] = b['规格型号'] || ''
+  row['计量单位'] = b['计量单位'] || 'kg'
+  row['定额需用数量'] = b['定额需用数量'] ?? 0
+  row['损耗率%'] = b['损耗率%'] ?? 0
+  row['子件BOM'] = code // BOM 关系：本材料属于哪个产成品
+  return row
+}
+
+async function loadBomFor(code) {
+  if (!code || bomLoaded.has(code)) return
+  bomLoaded.add(code)
+  try {
+    // 新结构：存货按类别分组（一类一单据，物品为明细行），BOM 存物品行 _bom
+    const res = await engine.queryFormDataList({ panelCode: 'INV', condition: {}, pageNo: 1, pageSize: 100 })
+    const docs = res.list || []
+    let item = null
+    for (const d of docs) {
+      const it = ((d.detail && d.detail.items) || []).find((r) => r['存货编码'] === code)
+      if (it) { item = it; break }
+    }
+    let bom = []
+    if (item && item['_bom']) {
+      try { bom = typeof item['_bom'] === 'string' ? JSON.parse(item['_bom']) : item['_bom'] } catch (e) { bom = [] }
+    }
+    if (!Array.isArray(bom) || !bom.length) return
+    const mats = detailData['materials'] || (detailData['materials'] = [])
+    for (const b of bom) mats.push(bomRowFrom(b, code))
+    ElMessage.success('已按 BOM 带入 ' + bom.length + ' 行材料（' + code + '）')
+  } catch (e) {
+    // 无 BOM 或查询失败不阻塞录入
+  }
+}
+
 // ---------- 汇总 ----------
 
 function summaryRows(tab) {
@@ -642,7 +850,7 @@ function summaryRows(tab) {
 
 // 明细网格合计行（对齐 T+ 网格底部合计）
 function summarize({ columns }, tab) {
-  const rows = detailData[tab.key] || []
+  const rows = tabData(tab)
   const sums = ['合计']
   for (let i = 1; i < columns.length; i++) {
     const col = columns[i]
@@ -707,6 +915,16 @@ async function load() {
       if (!subActive[t.key]) subActive[t.key] = 'detail'
     }
     applyCalc()
+    // 默认选中第一个产成品：材料明细只显示其 BOM 子件（不整单全显示），点击其他行再切换
+    if (panelCode.value === 'MANU_ORDER' && !selectedProduct.value) {
+      const first = (detailData['products'] || [])[0]
+      if (first && first['产品编码']) selectProduct(first['产品编码'])
+    }
+    // 页签标题 = 面板名-单据号（新单显示 面板名-新增），便于多单据区分
+    const no = isEdit.value ? (form['单据编号'] || form['锭号'] || form['编号'] || '') : '新增'
+    // 复用顶部 tabsStore
+    const cur = tabsStore.tabs.find((x) => x.path === route.path)
+    if (cur) cur.title = (payload.panelName || '表单') + '-' + no
   } catch (e) {
     ElMessage.error(engine.errMsg(e) || '加载失败')
     back()
@@ -724,10 +942,16 @@ async function onButton(action) {
     back()
     return
   }
-  // 拉式选单（配置驱动：面板配置 selectConfig 存在则弹窗，否则提示）
+  // 拉式选单（配置驱动：selectConfig.generateButton 存在 → 新弹窗直接生单；否则旧带入流程）
   if (action === '选单' || action === '选销售订单' || action === '选生产加工单') {
-    if (payloadCache.value?.selectConfig) {
-      openSelectDialog()
+    const sc = payloadCache.value?.selectConfig
+    if (sc) {
+      if (sc.generateButton) {
+        selCfg.value = sc
+        selVisible.value = true
+      } else {
+        openSelectDialog()
+      }
       return
     }
     ElMessage.info('演示环境暂未实现「选单」，界面与 T+ 保持一致')
@@ -751,6 +975,64 @@ async function onButton(action) {
       return
     }
   }
+  // 人工审核：确认弹窗 + 审核意见（选填）；审核人取当前登录人（后端从 JWT 取）
+  let auditOpinion = ''
+  if (action === '审核') {
+    // 已审核过的单据不允许再次审核，也不允许补填审批意见
+    if (status.value !== '草稿') return ElMessage.warning('仅草稿状态可审核，已审核单据不允许再次审核')
+    const no = form['单据编号'] || form['锭号'] || form['编号'] || ''
+    try {
+      const { value } = await ElMessageBox.prompt(
+        '单据：' + no + '（当前状态：' + status.value + '）',
+        '人工审核确认',
+        { confirmButtonText: '确认审核', cancelButtonText: '取消', inputType: 'textarea', inputPlaceholder: '审核意见（选填）' }
+      )
+      auditOpinion = value || ''
+    } catch (e) {
+      return
+    }
+  } else if (action === '弃审') {
+    if (status.value !== '已审核') return ElMessage.warning('仅已审核状态可弃审')
+    try {
+      await ElMessageBox.confirm('确认弃审该单据？弃审后需重新审核。', '弃审确认', { type: 'warning' })
+    } catch (e) {
+      return
+    }
+  }
+  // 审批流：提交审批/审批通过（确认+意见）、审批驳回（意见必填）、审批情况（历史弹窗）
+  let approvalOpinion = ''
+  if (action === '提交审批' || action === '审批通过') {
+    const need = action === '提交审批' ? '草稿' : '审批中'
+    if (status.value !== need) return ElMessage.warning(action === '提交审批' ? '仅草稿状态可提交审批' : '仅审批中状态可审批通过')
+    const no = form['单据编号'] || form['锭号'] || form['编号'] || ''
+    try {
+      const { value } = await ElMessageBox.prompt(
+        '单据：' + no + '（当前状态：' + status.value + '）',
+        action + '确认',
+        { confirmButtonText: '确认' + action, cancelButtonText: '取消', inputType: 'textarea', inputPlaceholder: action === '审批通过' ? '审批意见（选填）' : '提交说明（选填）' }
+      )
+      approvalOpinion = value || ''
+    } catch (e) {
+      return
+    }
+  } else if (action === '审批驳回') {
+    if (status.value !== '审批中') return ElMessage.warning('仅审批中状态可审批驳回')
+    const no = form['单据编号'] || form['锭号'] || form['编号'] || ''
+    try {
+      const { value } = await ElMessageBox.prompt(
+        '单据：' + no + '（当前状态：审批中）\n驳回必须填写审批意见',
+        '审批驳回确认',
+        { confirmButtonText: '确认驳回', cancelButtonText: '取消', inputType: 'textarea', inputPlaceholder: '驳回原因（必填）', inputValidator: (v) => (v && v.trim() ? true : '驳回必须填写审批意见') }
+      )
+      approvalOpinion = value || ''
+    } catch (e) {
+      return
+    }
+  } else if (action === '审批情况') {
+    approvalNo.value = form['编号'] || form['单据编号'] || form['锭号'] || ''
+    approvalVisible.value = true
+    return
+  }
   if (['保存', '保存为草稿', '保存新增'].includes(action)) {
     const msg = validate()
     if (msg) return ElMessage.warning(msg)
@@ -763,6 +1045,8 @@ async function onButton(action) {
   try {
     const rd = { ...form }
     if (tabs.value.length) rd.detail = { ...detailData }
+    if (auditOpinion !== '') rd['审核意见'] = auditOpinion
+    if (approvalOpinion !== '') rd['审批意见'] = approvalOpinion
     const res = await engine.callButton({
       panelCode: panelCode.value,
       buttonName: action,
@@ -804,8 +1088,21 @@ function back() {
   router.push({ path: `/panelx/list/${panelCode.value}` })
 }
 
+// 新选单弹窗生单完成：跳转到第一张生成的单据表单
+function onSelGenerated(generated) {
+  const first = generated && generated[0]
+  if (first) {
+    const q = { code: first.no }
+    const title = (first.panel === 'MANU_ORDER' ? '加工单-' : '单据-') + first.no
+    router.replace({ path: `/panelx/form/${first.panel}`, query: q })
+    tabsStore.open({ path: `/panelx/form/${first.panel}`, title, query: q })
+  }
+}
+
 onMounted(() => {
   load()
+  // 材料下级 BOM 映射（红 * 标记 + 点击行弹窗）
+  loadSubBomMap()
   // 从列表页「选单」入口跳转而来：加载后自动弹出选单对话框
   if (route.query.select && payloadCache.value?.selectConfig) openSelectDialog()
 })
@@ -944,6 +1241,31 @@ watch(() => [panelCode.value, code.value], load)
   align-items: center;
   gap: 12px;
   margin-bottom: 8px;
+}
+.prod-selected {
+  background: #eef4ff !important;
+}
+.mat-cell {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+.mat-star {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  color: #e60000;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+.filter-hint {
+  font-size: 12px;
+  color: #0d5bd3;
+  font-weight: 600;
+  margin-right: 8px;
 }
 .tab-hint {
   font-size: 12px;

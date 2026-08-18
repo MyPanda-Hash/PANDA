@@ -43,7 +43,7 @@
               <span>{{ tab.label }}<span v-if="tab.isRequired" class="req">*</span></span>
             </template>
             <div class="tab-toolbar">
-              <el-button size="small" type="primary" plain :icon="Plus" @click="addDetailRow(tab)">增行</el-button>
+              <el-button size="small" type="primary" :icon="Plus" @click="addDetailRow(tab)">新增数据</el-button>
             </div>
             <el-table :data="detailData[tab.key] || []" size="small" border height="260">
               <el-table-column label="序号" width="50" align="center">
@@ -275,6 +275,18 @@ function addDetailRow(tab) {
     else row[dr.dataName] = dr.defaultValue ?? ''
   }
   if (tab.subTable) row['子表材料'] = []
+  // 存货：新增物品按类别单据编码自动替补
+  if (props.panelCode === 'INV' && tab.key === 'items') {
+    const pre = { 产成品: 'CP', 原材料: 'YL', 辅助材料: 'FZ', 包装物: 'BZ', 半成品: 'BC' }[form['类别']] || ''
+    if (pre) {
+      let max = 0
+      for (const r of rows) {
+        const m = String(r['存货编码'] || '').match(new RegExp('^' + pre + '(\\d+)$'))
+        if (m) max = Math.max(max, parseInt(m[1], 10))
+      }
+      row['存货编码'] = pre + String(max + 1).padStart(3, '0')
+    }
+  }
   rows.push(row)
   return row
 }
