@@ -238,9 +238,9 @@ function walk(node, fn) {
   if (node.children) node.children.forEach((c) => walk(c, fn))
 }
 
-export function flatMenus() {
+export function flatMenus(tree) {
   const out = []
-  walk({ children: menuTree }, (n) => {
+  walk({ children: tree || menuTree }, (n) => {
     if (n.path) out.push(n)
   })
   return out
@@ -266,4 +266,27 @@ export function filterTree(nodes, keyword) {
       return n.title.includes(k) ? n : null
     })
     .filter(Boolean)
+}
+
+// 角色权限过滤：仅保留 visiblePanels 内的面板叶子；分组节点在子项全不可见时隐藏；admin 返回全量
+export function filterMenuTree(tree, visiblePanels, isAdmin) {
+  if (isAdmin) return tree
+  const vis = Array.isArray(visiblePanels) ? visiblePanels : []
+  const filterNode = (nodes) => {
+    const out = []
+    for (const n of nodes) {
+      if (n.panelCode) {
+        if (vis.includes(n.panelCode)) out.push({ ...n })
+        continue
+      }
+      if (n.children && n.children.length) {
+        const c = filterNode(n.children)
+        if (c.length) out.push({ ...n, children: c })
+        continue
+      }
+      if (n.path) out.push({ ...n }) // 非面板固定路由（生产看板等）默认可见
+    }
+    return out
+  }
+  return filterNode(tree)
 }

@@ -20,6 +20,11 @@ export async function apiLogin(payload) {
   return res?.data ?? res
 }
 
+export async function apiGetPerms() {
+  const res = await request.get('/auth/perms')
+  return res?.data ?? res
+}
+
 export async function apiGetUserInfo() {
   if (USE_PORTAL_MOCK) {
     return { userName: 'admin', realName: '管理员', factoryCode: 'F01', factoryName: '一号工厂', roles: ['admin'] }

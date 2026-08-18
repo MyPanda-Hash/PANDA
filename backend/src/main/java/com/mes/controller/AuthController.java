@@ -7,6 +7,7 @@ import com.mes.dto.LoginRequest;
 import com.mes.dto.LoginResponse;
 import com.mes.entity.SysUser;
 import com.mes.mapper.SysUserMapper;
+import com.mes.service.RoleService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,11 +23,13 @@ public class AuthController {
     private final SysUserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final RoleService roleService;
 
-    public AuthController(SysUserMapper userMapper, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public AuthController(SysUserMapper userMapper, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, RoleService roleService) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.roleService = roleService;
     }
 
     @PostMapping("/login")
@@ -43,6 +46,11 @@ public class AuthController {
         info.put("userName", user.getUserName());
         info.put("realName", user.getRealName());
         info.put("factoryCode", user.getFactoryCode());
+        Map<String, Object> perms = roleService.getPerms(user.getUserName());
+        info.put("isAdmin", perms.get("isAdmin"));
+        info.put("roleCode", perms.get("roleCode"));
+        info.put("visiblePanels", perms.get("visiblePanels"));
+        info.put("approvePanels", perms.get("approvePanels"));
         return ApiResult.ok(new LoginResponse(jwtUtil.generateToken(user.getUserName()), info));
     }
 
@@ -54,6 +62,18 @@ public class AuthController {
         info.put("userName", user.getUserName());
         info.put("realName", user.getRealName());
         info.put("factoryCode", user.getFactoryCode());
+        Map<String, Object> perms = roleService.getPerms(user.getUserName());
+        info.put("isAdmin", perms.get("isAdmin"));
+        info.put("roleCode", perms.get("roleCode"));
+        info.put("visiblePanels", perms.get("visiblePanels"));
+        info.put("approvePanels", perms.get("approvePanels"));
         return ApiResult.ok(info);
+    }
+
+    /** 当前登录用户的权限：isAdmin / visiblePanels（可见面板）/ approvePanels（可审批面板） */
+    @GetMapping("/perms")
+    public ApiResult<Map<String, Object>> perms(Authentication auth) {
+        String name = auth != null ? auth.getName() : "";
+        return ApiResult.ok(roleService.getPerms(name));
     }
 }
