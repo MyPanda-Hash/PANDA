@@ -754,6 +754,11 @@ public class PxService {
         // 每天从 01 顺序排；精确查重确保单据号不允许重复（全局唯一）
         String biz;
         if ("SO_ORDER".equals(panelCode)) biz = "SO-";
+        else if ("MANU_ORDER".equals(panelCode)) biz = "MO-";
+        else if ("FINISH_IN".equals(panelCode)) biz = "FI-";       // 产成品入库单
+        else if ("PURCHASE_IN".equals(panelCode)) biz = "RK-";     // 采购入库单（T+ 入库惯例）
+        else if ("SALE_OUT".equals(panelCode)) biz = "CK-";        // 销售出库单（T+ 出库惯例）
+        else if ("PROCESS_REPORT".equals(panelCode)) biz = "GX-";  // 工序汇报单
         else if ("INV".equals(panelCode)) biz = "INV-"; // 存货类别单据
         else biz = "MO-";
         String base = biz + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));

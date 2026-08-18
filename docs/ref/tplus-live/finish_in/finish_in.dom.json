@@ -1,0 +1,799 @@
+{
+  "url": "https://h2t.chanjet.com/tplus/BAPView/Voucher.aspx?sysId=ST&mId=ST1002&pId=voucherView",
+  "title": "产成品入库单",
+  "body": {
+    "bg": "rgb(255, 255, 255)",
+    "font": "Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, \"sans-serif\"",
+    "fs": "12px"
+  },
+  "cols": [
+    {
+      "t": "ID",
+      "a": "ID",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "BoxBarCodeGuid",
+      "a": "BoxBarCodeGuid",
+      "hidden": true,
+      "w": "0px"
+    },
+    {
+      "t": "<font>*</font>产品名称",
+      "a": "Inventory",
+      "hidden": false,
+      "w": "173px"
+    },
+    {
+      "t": "<font>*</font>仓库",
+      "a": "Warehouse",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "箱码",
+      "a": "BoxBarCodes",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "箱码个数",
+      "a": "BoxBarCodeCount",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "产品类型",
+      "a": "ProductType",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "主产品编码",
+      "a": "MainInventory_Code",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "主产品名称",
+      "a": "MainInventory",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "补联副产品",
+      "a": "IsAdditionalProduct",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "来源生产加工单主产品明细ID",
+      "a": "SourceVoucherMainInventoryDetailId",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "自由项组合",
+      "a": "SKUName",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "存货图片",
+      "a": "Inventory_ImageFile",
+      "hidden": false,
+      "w": "60px"
+    },
+    {
+      "t": "规格型号",
+      "a": "Inventory_Specification",
+      "hidden": false,
+      "w": "97px"
+    },
+    {
+      "t": "BOM版本号",
+      "a": "Bom",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "联副产品组ID",
+      "a": "CoproductGroupID",
+      "hidden": true,
+      "w": "150px"
+    },
+    {
+      "t": "联副产品定额数量",
+      "a": "CoproductRationQuantity",
+      "hidden": true,
+      "w": "150px"
+    },
+    {
+      "t": "材料成本分配权重",
+      "a": "CoproductPartitionDensity",
+      "hidden": true,
+      "w": "120px"
+    },
+    {
+      "t": "智能选单",
+      "a": "RowSelectVoucher",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "<font>*</font>计量单位",
+      "a": "Unit",
+      "hidden": false,
+      "w": "70px"
+    },
+    {
+      "t": "金额",
+      "a": "Amount",
+      "hidden": false,
+      "w": "121px"
+    },
+    {
+      "t": "批号",
+      "a": "Batch",
+      "hidden": true,
+      "w": "154px"
+    },
+    {
+      "t": "生产日期",
+      "a": "ProductionDate",
+      "hidden": true,
+      "w": "70px"
+    },
+    {
+      "t": "失效日期",
+      "a": "ExpiryDate",
+      "hidden": true,
+      "w": "70px"
+    },
+    {
+      "t": "需要追溯",
+      "a": "IsNeedQualityTrace",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "追溯方式",
+      "a": "QualityTraceMethod",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "序列号个数",
+      "a": "SNCount",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "序列号",
+      "a": "SerialNumbers",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "货位",
+      "a": "InventoryLocation",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "单价",
+      "a": "Price",
+      "hidden": false,
+      "w": "89px"
+    },
+    {
+      "t": "<font>*</font>实收数量",
+      "a": "Quantity",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "入库单号",
+      "a": "ReceiveVoucherCode",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "现存量",
+      "a": "ExistingQuantity",
+      "hidden": false,
+      "w": "70px"
+    },
+    {
+      "t": "现存量说明",
+      "a": "ExistingCompositionQuantity",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "SnSeqUpdateToken",
+      "a": "SnSeqUpdateToken",
+      "hidden": true,
+      "w": "0px"
+    },
+    {
+      "t": "SNGuid",
+      "a": "SNGuid",
+      "hidden": true,
+      "w": "0px"
+    },
+    {
+      "t": "图号",
+      "a": "pubuserdefnvc3",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "EditState",
+      "a": "EditState",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "Val_Inventory",
+      "a": "Val_Inventory",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "Code",
+      "a": "Code",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "货位_Val",
+      "a": "Val_InventoryLocation",
+      "hidden": true,
+      "w": "180px"
+    },
+    {
+      "t": "HideValues",
+      "a": "HideValues",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "ID",
+      "a": "ID",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "仓库",
+      "a": "Warehouse",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "产品名称",
+      "a": "Inventory",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "规格型号",
+      "a": "Inventory_Specification",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "BOM版本号",
+      "a": "Bom",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "计量单位",
+      "a": "Unit",
+      "hidden": false,
+      "w": "60px"
+    },
+    {
+      "t": "实收数量",
+      "a": "Quantity",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "单价",
+      "a": "Price",
+      "hidden": false,
+      "w": "70px"
+    },
+    {
+      "t": "单价2",
+      "a": "Price2",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "金额",
+      "a": "Amount",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "EditState",
+      "a": "EditState",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "Val_Inventory",
+      "a": "Val_Inventory",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "Code",
+      "a": "Code",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "HideValues",
+      "a": "HideValues",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "ID",
+      "a": "ID",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "货位编码",
+      "a": "InvLocation_Code",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "<font>*</font>计量单位",
+      "a": "Unit",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "<font>*</font>数量",
+      "a": "Quantity",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "结存数量说明",
+      "a": "ExistingCompositionQuantity",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "EditState",
+      "a": "EditState",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "Code",
+      "a": "Code",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "HideValues",
+      "a": "HideValues",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "编码",
+      "a": "Code",
+      "hidden": true,
+      "w": "94px"
+    },
+    {
+      "t": "名称",
+      "a": "Name",
+      "hidden": true,
+      "w": "94px"
+    },
+    {
+      "t": "IsHasSameFuncAuth",
+      "a": "IsHasSameFuncAuth",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Shorthand",
+      "a": "Shorthand",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Department_Name",
+      "a": "Department_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "IsSalesman",
+      "a": "IsSalesman",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "CreditDate",
+      "a": "CreditDate",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "CreditQuantity",
+      "a": "CreditQuantity",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "PositionTitle_Name",
+      "a": "PositionTitle_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Memo",
+      "a": "Memo",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Specification",
+      "a": "Specification",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "IsMadeSelf",
+      "a": "IsMadeSelf",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "InventoryPriceDTOs_RetailPriceNew",
+      "a": "InventoryPriceDTOs_RetailPriceNew",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "InvoiceSpecification",
+      "a": "InvoiceSpecification",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "InvoiceUnit_Name",
+      "a": "InvoiceUnit_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "AutoAddFigureNo",
+      "a": "AutoAddFigureNo",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "SKUCode",
+      "a": "SKUCode",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "SKUName",
+      "a": "SKUName",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "SKUInvSCost",
+      "a": "SKUInvSCost",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "SKULatestCost",
+      "a": "SKULatestCost",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "SKUAvagCost",
+      "a": "SKUAvagCost",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Inventory_Code",
+      "a": "Inventory_Code",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Inventory_Specification",
+      "a": "Inventory_Specification",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Inventory_Name",
+      "a": "Inventory_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Version",
+      "a": "Version",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Manufactureplant_Name",
+      "a": "Manufactureplant_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Warehouse_Name",
+      "a": "Warehouse_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "详细",
+      "a": "ID",
+      "hidden": true,
+      "w": "54px"
+    }
+  ],
+  "ths": [],
+  "rowH": 0,
+  "rowCount": 242,
+  "toolbar": [
+    "新增",
+    "选单",
+    "智能选单",
+    "修改",
+    "保存",
+    "删除",
+    "|",
+    "审核",
+    "弃审",
+    "弃审",
+    "审批情况",
+    "|",
+    "生单",
+    "转换",
+    "协同",
+    "|",
+    "变更",
+    "|",
+    "工具",
+    "联查",
+    "设置",
+    "|",
+    "打印",
+    "更多",
+    "更多"
+  ],
+  "tabs": [
+    {
+      "text": "明细",
+      "color": "rgb(55, 136, 255)"
+    }
+  ],
+  "query": [
+    {
+      "label": "*单据日期",
+      "x": 24,
+      "y": 42,
+      "w": 100,
+      "h": 22,
+      "inW": 93,
+      "inH": 22
+    },
+    {
+      "label": "*单据编号",
+      "x": 244,
+      "y": 42,
+      "w": 100,
+      "h": 22,
+      "inW": 113,
+      "inH": 21
+    },
+    {
+      "label": "*业务类型",
+      "x": 464,
+      "y": 42,
+      "w": 100,
+      "h": 22,
+      "inW": 0,
+      "inH": 0
+    },
+    {
+      "label": "入库类别",
+      "x": 684,
+      "y": 42,
+      "w": 100,
+      "h": 22,
+      "inW": 0,
+      "inH": 0
+    },
+    {
+      "label": "生产车间",
+      "x": 904,
+      "y": 42,
+      "w": 100,
+      "h": 22,
+      "inW": 0,
+      "inH": 0
+    },
+    {
+      "label": "加工单号",
+      "x": 1124,
+      "y": 42,
+      "w": 100,
+      "h": 22,
+      "inW": 113,
+      "inH": 21
+    },
+    {
+      "label": "仓库",
+      "x": 24,
+      "y": 70,
+      "w": 100,
+      "h": 22,
+      "inW": 0,
+      "inH": 0
+    }
+  ],
+  "strips": [
+    {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1570,
+        "h": 905
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "clearfix"
+    },
+    {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1570,
+        "h": 905
+      },
+      "bg": "rgb(249, 249, 249)",
+      "tag": "DIV",
+      "cls": "mask"
+    },
+    {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1570,
+        "h": 30
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "t-page-tb"
+    },
+    {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1570,
+        "h": 31
+      },
+      "bg": "rgb(255, 255, 255)",
+      "tag": "DIV",
+      "cls": "tb-bg"
+    },
+    {
+      "rect": {
+        "x": 0,
+        "y": 30,
+        "w": 1563,
+        "h": 880
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "t-v-line"
+    },
+    {
+      "rect": {
+        "x": 24,
+        "y": 36,
+        "w": 1539,
+        "h": 874
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": ""
+    },
+    {
+      "rect": {
+        "x": 24,
+        "y": 36,
+        "w": 1539,
+        "h": 874
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "TABLE",
+      "cls": ""
+    },
+    {
+      "rect": {
+        "x": 24,
+        "y": 36,
+        "w": 1539,
+        "h": 61
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "TD",
+      "cls": ""
+    },
+    {
+      "rect": {
+        "x": 24,
+        "y": 36,
+        "w": 1539,
+        "h": 61
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": ""
+    },
+    {
+      "rect": {
+        "x": 24,
+        "y": 41,
+        "w": 220,
+        "h": 28
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "vch-ctldiv t-vch-ctl-editor hvr-underlin"
+    },
+    {
+      "rect": {
+        "x": 244,
+        "y": 41,
+        "w": 220,
+        "h": 28
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "vch-ctldiv t-vch-ctl-editor hvr-underlin"
+    },
+    {
+      "rect": {
+        "x": 464,
+        "y": 41,
+        "w": 220,
+        "h": 28
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "vch-ctldiv t-vch-ctl-editor hvr-underlin"
+    }
+  ],
+  "topText": "新增\n新增\n引入常用单据\n设置默认功能\n新增\n引入常用单据\n选单\n选产成品入库单（自制加工）\n选生产加工单\n设置默认功能\n选产成品入库单（自制加工）\n选生产加工单\n智能选单\n修改\n保存\n保存\nAlt+S\n保存新增\nAlt+\\\n保存为草稿\n保存为常用单据\n保存打印\nAlt+G\n设置默认功能\n保存\n保存新增\n保存为草稿\n保存为常用单据\n保存打印\n删除\n|\n审核\n弃审\n弃审\n审批情况\n|\n生单\n生成产成品入库单（自制退库）\n生成补投生产加工单\n生成返工生产加工单\n设置默认功能\n生成产成品入库单（自制退库）\n生成补投生产加工单\n生成返工生产加工单\n转换\n转成销售出库单\n设置默认功能\n转成销售出库单\n协同\n协同本机构销货单\n协同本机构销售出库单\n设置默认功能\n协同本机构销货单\n协同本机构销售出库单\n|\n变更\n|\n工具\n现存量查询\n变更历史\n联查\n生产加工情况\n退库情况\n入库情况\n材料出库情况\n生单流"
+}
