@@ -1118,8 +1118,11 @@ onMounted(() => {
   load()
   // 材料下级 BOM 映射（红 * 标记 + 点击行弹窗）
   loadSubBomMap()
-  // 从列表页「选单」入口跳转而来：加载后自动弹出选单对话框
-  if (route.query.select && payloadCache.value?.selectConfig) openSelectDialog()
+})
+
+// 从列表页「选单」入口（?select=1）跳转而来：load 完成后自动弹出选单对话框（payloadCache 异步赋值）
+watch(payloadCache, (v) => {
+  if (route.query.select && v && v.selectConfig && !selVisible.value) openSelectDialog()
 })
 
 watch(() => [panelCode.value, code.value], load)
