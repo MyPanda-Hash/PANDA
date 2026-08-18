@@ -22,7 +22,7 @@
     </div>
     <template #footer>
       <el-button @click="close">取消</el-button>
-      <el-button type="primary" :disabled="!rows.length" @click="doImport">导入 {{ rows.length }} 行</el-button>
+      <el-button type="primary" :disabled="!rows.length || !matchedCols.length" @click="doImport">导入 {{ rows.length }} 行</el-button>
     </template>
   </el-dialog>
 </template>
@@ -107,6 +107,7 @@ function onFile(e) {
         out.push(obj)
       }
       if (!out.length) throw new Error('没有可导入的数据行')
+      if (!matched.length) throw new Error('未识别任何列：Excel 表头需与明细/档案字段名一致（如 员工编码、员工名称）')
       rows.value = out
       previewRows.value = out.slice(0, 20)
       ElMessage.success('已解析 ' + out.length + ' 行，识别 ' + matchedCols.value.length + ' 列')
