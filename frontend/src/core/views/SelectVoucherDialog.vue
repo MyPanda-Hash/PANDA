@@ -10,11 +10,12 @@
       <el-table-column
         v-for="c in columns"
         :key="c"
-        :prop="c"
         :label="c"
         :width="['单据编号', '单据日期', '预完工日', '预计交货日期'].includes(c) ? 120 : undefined"
         :min-width="['存货名称', '产品名称'].includes(c) ? 180 : undefined"
-      />
+      >
+        <template #default="{ row }">{{ cellText(c, row) }}</template>
+      </el-table-column>
       <el-table-column label="明细行" min-width="220">
         <template #default="{ row }">
           <span class="sel-item">{{ itemsText(row) }}</span>
@@ -65,6 +66,13 @@ const generateLabel = computed(() => props.config?.generateLabel || '生单')
 
 function close() {
   emit('update:modelValue', false)
+}
+
+// 列值兼容：加工单等单据编号存于「锭号」，来源行统一回退到 编号/锭号
+function cellText(c, row) {
+  if (row[c] !== undefined && row[c] !== null && row[c] !== '') return row[c]
+  if (c === '单据编号') return row['锭号'] || row['编号'] || ''
+  return row[c] ?? ''
 }
 
 function itemsText(row) {
@@ -129,7 +137,8 @@ async function generate() {
       if (res?.gotoPanel) generated.push({ panel: res.gotoPanel, no: res['编号'], sourceNo: no })
     }
     if (generated.length) {
-      ElMessage.success('已生成 ' + generated.length + ' 张' + (generated[0].panel === 'MANU_ORDER' ? '生产加工单' : generated[0].panel))
+      const panelNames = { MANU_ORDER: '生产加工单', PROCESS_REPORT: '工序汇报单', FINISH_IN: '产成品入库单' }
+      ElMessage.success('已生成 ' + generated.length + ' 张' + (panelNames[generated[0].panel] || generated[0].panel))
       emit('generated', generated)
       close()
     } else {

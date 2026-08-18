@@ -301,6 +301,8 @@ public class PxService {
                 return changeStatus(panelCode, formData, "取消中止");
             case "生成生产加工单":   // 推式生单：销售订单 → 生产加工单（对齐真实 T+「生单-生成生产加工单」）
                 return createMoFromSo(panelCode, formData);
+            case "生成工序汇报单（自制汇报）":   // 推式生单：生产加工单 → 工序汇报单（拉取加工单工序明细）
+                return createProcReportFromMo(panelCode, formData);
             // 审批流
             case "提交审批":
                 return submitApproval(panelCode, formData);
@@ -464,6 +466,113 @@ public class PxService {
         out.put("编号", newNo);
         out.put("单据状态", "草稿");
         out.put("gotoPanel", "MANU_ORDER");
+        return out;
+    }
+    /**
+     * 推式生单：生产加工单（MANU_ORDER）→ 工序汇报单（PROCESS_REPORT）
+     * 表头：加工单号/生产车间/产品/客户/销售订单号；明细 = 加工单工序明细（工序编码/车间/工作中心/设备/班组/工人/计划数量→报工数量/工价）
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createProcReportFromMo(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER")
+                .eq(FormData::getFormNo, String.valueOf(no)));
+        if (mo == null) throw new IllegalArgumentException("生产加工单不存在：" + no);
+        String moStatus = mo.getStatus();
+        if (!"已审核".equals(moStatus) && !"生产中".equals(moStatus)) {
+            throw new IllegalStateException("仅已审核/生产中的生产加工单可生成工序汇报单");
+        }
+
+        Map<String, Object> head = parseData(mo.getData());
+        Map<String, Object> detailMap = parseData(mo.getDetailData());
+        List<Map<String, Object>> products = detailMap.get("products") instanceof List
+                ? (List<Map<String, Object>>) detailMap.get("products") : new ArrayList<>();
+        List<Map<String, Object>> procs = detailMap.get("processes") instanceof List
+                ? (List<Map<String, Object>>) detailMap.get("processes") : new ArrayList<>();
+        if (products.isEmpty()) throw new IllegalStateException("生产加工单无产成品明细：" + no);
+        Map<String, Object> p0 = products.get(0);
+
+        String newNo = generateFormNo("PROCESS_REPORT");
+        Map<String, Object> prData = new HashMap<>();
+        prData.put("单据日期", LocalDate.now().toString());
+        prData.put("业务类型", "工序汇报");
+        prData.put("加工单号", String.valueOf(no));
+        prData.put("生产车间", head.getOrDefault("生产车间", ""));
+        prData.put("产品编码", p0.getOrDefault("产品编码", ""));
+        prData.put("产品名称", p0.getOrDefault("产品名称", ""));
+        prData.put("规格型号", p0.getOrDefault("规格型号", ""));
+        prData.put("销售订单号", head.getOrDefault("销售订单号", ""));
+        prData.put("客户", head.getOrDefault("客户", ""));
+        prData.put("匹配来源单号", String.valueOf(no));
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (Map<String, Object> pr : procs) {
+            Map<String, Object> it = new HashMap<>();
+            it.put("加工单号", String.valueOf(no));
+            it.put("产品编码", p0.getOrDefault("产品编码", ""));
+            it.put("产品名称", p0.getOrDefault("产品名称", ""));
+            it.put("规格型号", p0.getOrDefault("规格型号", ""));
+            it.put("工艺类型", pr.getOrDefault("工艺类型", "自制"));
+            it.put("工艺序号", pr.getOrDefault("工艺序号", 0));
+            it.put("加工顺序", pr.getOrDefault("加工顺序", 0));
+            it.put("工艺路线", "");
+            it.put("工序编码", pr.getOrDefault("工序编码", ""));
+            it.put("工序名称", pr.getOrDefault("工序名称", ""));
+            it.put("工序备注", pr.getOrDefault("工序备注", ""));
+            it.put("生产车间", pr.getOrDefault("生产车间", ""));
+            it.put("工作中心", pr.getOrDefault("工作中心", ""));
+            it.put("设备", pr.getOrDefault("设备", ""));
+            it.put("班组名称", pr.getOrDefault("班组", ""));
+            it.put("工人名称", pr.getOrDefault("工人", ""));
+            it.put("工序单位", pr.getOrDefault("工序单位", "件"));
+            it.put("报工数量", pr.getOrDefault("计划数量", 0));
+            it.put("可报工数量", pr.getOrDefault("计划数量", 0));
+            it.put("合格数量", 0);
+            it.put("不合格数量", 0);
+            it.put("工资类型", pr.getOrDefault("工资类型", "计件"));
+            it.put("工价", pr.getOrDefault("工价", 0));
+            it.put("计时/计件金额", 0);
+            it.put("调整工资", 0);
+            it.put("金额", 0);
+            it.put("单位标准工时", pr.getOrDefault("单位标准工时", 0));
+            it.put("实际工时", 0);
+            it.put("计划时间", pr.getOrDefault("计划时间", ""));
+            it.put("完成时间", pr.getOrDefault("完成时间", ""));
+            it.put("手工完工", false);
+            it.put("委外供应商", pr.getOrDefault("委外供应商", ""));
+            it.put("委外单价", pr.getOrDefault("委外单价", 0));
+            it.put("税率%", pr.getOrDefault("税率%", 13));
+            it.put("委外含税单价", 0);
+            it.put("委外金额", 0);
+            it.put("委外税额", 0);
+            it.put("委外含税金额", 0);
+            it.put("累计汇报数量", 0);
+            it.put("需求令号", pr.getOrDefault("需求令号", p0.getOrDefault("需求令号", "")));
+            it.put("图号", p0.getOrDefault("图号", ""));
+            it.put("备注", "");
+            items.add(it);
+        }
+        if (items.isEmpty()) throw new IllegalStateException("生产加工单无工序明细：" + no);
+
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", items);
+
+        FormData pr = new FormData();
+        pr.setPanelCode("PROCESS_REPORT");
+        pr.setFormNo(newNo);
+        pr.setData(toJson(prData));
+        pr.setDetailData(toJson(detail));
+        pr.setStatus("草稿");
+        pr.setCreateBy("admin");
+        pr.setCreateTime(LocalDateTime.now());
+        formMapper.insert(pr);
+
+        Map<String, Object> out = new HashMap<>();
+        out.put("单据状态", "草稿");
+        out.put("gotoPanel", "PROCESS_REPORT");
+        out.put("编号", newNo);
         return out;
     }
 
