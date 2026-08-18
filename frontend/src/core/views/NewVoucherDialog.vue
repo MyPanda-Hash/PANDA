@@ -10,7 +10,7 @@
   >
     <div v-loading="loading" class="nvd">
       <!-- 表头字段（fieldCols 列 × N 行，默认 2 列） -->
-      <div class="fields" :style="{ gridTemplateColumns: 'repeat(' + fieldCols + ', 1fr)' }">
+      <div class="fields udl-fields" :style="{ gridTemplateColumns: 'repeat(' + fieldCols + ', 1fr)' }">
         <div v-for="r in visibleMeta" :key="r.code" class="field">
           <label :title="r.name">{{ r.name }}<span v-if="r.isNotNull" class="req">*</span></label>
           <el-input v-if="isText(r)" v-model="form[r.code]" :placeholder="r.name" />
