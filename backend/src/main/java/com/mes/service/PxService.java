@@ -173,6 +173,7 @@ public class PxService {
         out.put("detail", stateField.get("detail"));
         out.put("buttonGroups", buttonGroupsOf(panelCode));
         out.put("panelName", panelNameOf(panelCode));
+        out.put("selectConfig", selectConfigOf(panelCode));
         return out;
     }
 
@@ -200,6 +201,7 @@ public class PxService {
         out.put("detailData", parseData(fd.getDetailData()));
         out.put("buttonGroups", buttonGroupsOf(panelCode));
         out.put("panelName", panelNameOf(panelCode));
+        out.put("selectConfig", selectConfigOf(panelCode));
         return out;
     }
 
@@ -207,6 +209,13 @@ public class PxService {
         Map<String, Object> cfg = loadConfig(panelCode);
         Object name = ((Map<String, Object>) cfg.get("metadata")).get("panelName");
         return name == null ? "表单" : String.valueOf(name);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object selectConfigOf(String panelCode) {
+        Map<String, Object> cfg = loadConfig(panelCode);
+        Object sc = cfg.get("selectConfig");
+        return sc == null ? new HashMap<>() : sc;
     }
 
     // ---------- 列表 ----------
