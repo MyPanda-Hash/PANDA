@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="panelx-list" @click="closeCtx">
     <!-- ══════════ ① 顶部工具栏（T+ 灰条 + 单据翻页）══════════ -->
     <div class="tools">
@@ -121,7 +121,7 @@
     </div>
 
     <PanelxLogin v-model="loginVisible" @success="onPanelxLogin" />
-    <NewVoucherDialog v-model:visible="newVisible" :panelCode="panelCode" @saved="onNewSaved" />
+    <NewVoucherDialog v-model:visible="newVisible" :panelCode="panelCode" :panel-name="panelName" @saved="onNewSaved" />
     <BomDialog v-model="bomVisible" :item="bomItem" :parentDoc="bomParent" @saved="onBomSaved" />
     <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
     <ApprovalHistoryDialog v-model="approvalVisible" :panelCode="panelCode" :formNo="approvalNo" />
