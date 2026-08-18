@@ -684,6 +684,8 @@ public class PxService {
             fd.setData(toJson(formData));
             // 明细兜底：未传 detail（如列表页仅保存表头）时保留原明细，禁止用 null 覆盖清空
             fd.setDetailData(detail == null || "null".equals(String.valueOf(detail)) ? fd.getDetailData() : toJson(detail));
+            // 档案面板：保存即生效（草稿/停用保存后置「启用」）
+            if (isArchivePanel(panelCode)) fd.setStatus("启用");
             fd.setUpdateTime(LocalDateTime.now());
             formMapper.updateById(fd);
         } else {
@@ -692,19 +694,19 @@ public class PxService {
             // 存货新单：按类别前缀编号（产成品 CP-、原材料 YL-、辅助材料 FZ-、包装物 BZ-、半成品 BC-）
             // 编号规则：基础档案 / 自编码面板（autoCodeField 非「单据编号」，如 工艺路线编码/物料清单编码/期初*号）→ 面板代码-3位序号；
             //          标准单据（单据编号 或 无 autoCodeField）→ 日期序号（SO-/MO-/FI-/RK-/CK-/GX-）
-            String autoField = autoCodeFieldOf(panelCode);
             String newNo;
             if ("INV".equals(panelCode)) {
                 newNo = invNo(formData.get("类别") == null ? "" : String.valueOf(formData.get("类别")));
-            } else if (autoField == null || autoField.isBlank() || "单据编号".equals(autoField)) {
-                newNo = generateFormNo(panelCode);
-            } else {
+            } else if (isArchivePanel(panelCode)) {
                 newNo = archNo(panelCode);
+            } else {
+                newNo = generateFormNo(panelCode);
             }
             fd.setFormNo(newNo);
             fd.setData(toJson(formData));
             fd.setDetailData(detail == null ? "{}" : toJson(detail));
-            fd.setStatus("INV".equals(panelCode) ? "启用" : "草稿"); // 存货类别单据初始状态=启用
+            // 档案/自编码面板（EMP/DEPT/ROUTE/BOM…）新建即「启用」（保存即生效）；单据类初始「草稿」
+            fd.setStatus("INV".equals(panelCode) || isArchivePanel(panelCode) ? "启用" : "草稿");
             fd.setCreateBy(userName == null ? "admin" : userName);
             fd.setCreateTime(LocalDateTime.now());
             fd.setUpdateTime(LocalDateTime.now());
@@ -990,6 +992,15 @@ public class PxService {
         Map<String, Object> cfg = loadConfig(panelCode);
         Object f = cfg.get("metadata") == null ? null : ((Map<String, Object>) cfg.get("metadata")).get("autoCodeField");
         return f == null ? "" : String.valueOf(f);
+    }
+
+    /** 档案/自编码面板（基础档案类别 或 自编码字段）：EMP/DEPT/WH/ROUTE/BOM/INIT_* 等——保存即生效（状态=启用） */
+    private boolean isArchivePanel(String panelCode) {
+        if ("INV".equals(panelCode)) return true;
+        if ("基础档案".equals(categoryOf(panelCode))) return true;
+        String autoField = autoCodeFieldOf(panelCode);
+        if (autoField == null || autoField.isBlank() || "单据编号".equals(autoField)) return false;
+        return true; // 自编码面板（工艺路线编码/物料清单编码/期初*号）
     }
 
     /** 基础档案编号：面板代码-3位序号（如 EMP-009 / DEPT-011），与种子数据格式一致 */
