@@ -1,11 +1,11 @@
 <template>
   <el-dialog
-    :model-value="visible"
+    :model-value="modelValue"
     :title="title"
     width="880px"
     append-to-body
     destroy-on-close
-    @update:model-value="(v) => emit('update:visible', v)"
+    @update:model-value="(v) => emit('update:modelValue', v)"
     @open="open"
   >
     <div class="rpd">
@@ -28,7 +28,7 @@
       </el-table>
     </div>
     <template #footer>
-      <el-button @click="emit('update:visible', false)">取消</el-button>
+      <el-button @click="emit('update:modelValue', false)">取消</el-button>
       <el-button type="primary" :disabled="!selected.length" @click="confirm">确定导入（{{ selected.length }} 行）</el-button>
     </template>
   </el-dialog>
@@ -41,13 +41,14 @@ import { Search } from '@element-plus/icons-vue'
 import * as engine from '@/business/engine'
 
 const props = defineProps({
-  visible: { type: Boolean, default: false },
+  modelValue: { type: Boolean, default: false },
+  // 兼容旧调用方（v-model:visible）
   // 参照字段定义（原始配置字段或 buildMeta 输出的 meta.ref 均可）
   field: { type: Object, default: null },
   // 'header' 表头单值字段（多选仅导入第一行）/ 'detail' 明细行（多选每行生成一条明细）
   mode: { type: String, default: 'header' },
 })
-const emit = defineEmits(['update:visible', 'confirm'])
+const emit = defineEmits(['update:modelValue', 'update:visible', 'confirm'])
 
 const keyword = ref('')
 const rows = ref([])
@@ -84,7 +85,7 @@ async function open() {
 function confirm() {
   if (!selected.value.length) return
   emit('confirm', selected.value)
-  emit('update:visible', false)
+  emit('update:modelValue', false)
 }
 </script>
 

@@ -160,6 +160,9 @@ public class PxService {
         }
         // T+ 单据：单据日期默认系统登录日期
         if (!data.containsKey("单据日期")) data.put("单据日期", LocalDate.now().toString());
+        // 自动编码字段（autoCodeField，如工序汇报单「单据编号」）预填单号，表单页可显示
+        String af = autoCodeFieldOf(panelCode);
+        if (af != null && !af.isBlank() && !data.containsKey(af)) data.put(af, generateFormNo(panelCode));
         // T+ 锭号 = 单据编号（自动预览单号）
         if (!data.containsKey("锭号")) data.put("锭号", generateFormNo(panelCode));
         Map<String, Object> privilege = new HashMap<>();
@@ -519,6 +522,13 @@ public class PxService {
         prData.put("销售订单号", head.getOrDefault("销售订单号", ""));
         prData.put("客户", head.getOrDefault("客户", ""));
         prData.put("匹配来源单号", String.valueOf(no));
+        // 表头补齐（2026-08-19 修复选单生成表单空白）：
+        // 单据编号 = autoCodeField 同步写表头 JSON（对齐 createMoFromSo 的 锭号 写法，表单页可显示）
+        // 部门 = 加工单无部门字段，车间即部门（DEPT 档案同名：熔铸/轧制/精整/测试车间）
+        // 测试程序 = 加工单表头带出
+        prData.put("单据编号", newNo);
+        prData.put("部门", head.getOrDefault("生产车间", ""));
+        prData.put("测试程序", head.getOrDefault("测试程序", ""));
 
         List<Map<String, Object>> items = new ArrayList<>();
         for (Map<String, Object> pr : procs) {
@@ -950,13 +960,18 @@ public class PxService {
         INV_PRE.put("半成品", "BC");
     }
 
-    /** 存货新类别单据编号：类别前缀-3位序号（如 CP-002 / BC-001） */
+    /** 存货新类别单据编号：类别前缀-最大序号+1（如 CP-002 / BC-001），按最大序号递增并查重 */
     private String invNo(String cat) {
         String pre = INV_PRE.getOrDefault(cat == null ? "" : cat, "INV");
-        long count = formMapper.selectCount(new LambdaQueryWrapper<FormData>()
+        long max = maxSeq("INV", pre + "-");
+        String no;
+        do {
+            max++;
+            no = pre + "-" + String.format("%03d", max);
+        } while (formMapper.selectCount(new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, "INV")
-                .likeRight(FormData::getFormNo, pre + "-"));
-        return pre + "-" + String.format("%03d", count + 1);
+                .eq(FormData::getFormNo, no)) > 0);
+        return no;
     }
 
     private String generateFormNo(String panelCode) {
@@ -1003,12 +1018,37 @@ public class PxService {
         return true; // 自编码面板（工艺路线编码/物料清单编码/期初*号）
     }
 
-    /** 基础档案编号：面板代码-3位序号（如 EMP-009 / DEPT-011），与种子数据格式一致 */
+    /** 基础档案编号：面板代码-最大序号+1（如 EMP-011），COUNT 法在删除/断号后会产生重复编号，改为按最大序号递增并查重 */
     private String archNo(String panelCode) {
-        long count = formMapper.selectCount(new LambdaQueryWrapper<FormData>()
+        long max = maxSeq(panelCode, panelCode + "-");
+        String no;
+        do {
+            max++;
+            no = panelCode + "-" + String.format("%03d", max);
+        } while (formMapper.selectCount(new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, panelCode)
-                .likeRight(FormData::getFormNo, panelCode + "-"));
-        return panelCode + "-" + String.format("%03d", count + 1);
+                .eq(FormData::getFormNo, no)) > 0);
+        return no;
+    }
+
+    /** 取面板已有编号中的最大数字序号（解析「前缀-序号」末尾的数字），无则 0 */
+    private long maxSeq(String panelCode, String prefix) {
+        List<FormData> rows = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, panelCode)
+                .likeRight(FormData::getFormNo, prefix)
+                .select(FormData::getFormNo));
+        long max = 0;
+        for (FormData fd : rows) {
+            String no = fd.getFormNo();
+            if (no == null) continue;
+            int idx = no.lastIndexOf('-');
+            String suffix = idx >= 0 ? no.substring(idx + 1) : no;
+            try {
+                max = Math.max(max, Long.parseLong(suffix.trim()));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return max;
     }
 
     private Map<String, Object> parseData(String s) {

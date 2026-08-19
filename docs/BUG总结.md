@@ -71,3 +71,34 @@
 - **根因**：`summaryRows()` 分组时 `group.set(k, { ...r })` 复制首行（已含汇总字段原值），随后 `g[it.field] = (g[it.field] || 0) + num(r[it.field])` 又把首行原值加了一遍
 - **修复**：复制首行前先把待汇总字段 `delete` 掉，再逐行累加
 - **教训**：聚合逻辑里「先复制再累加」的写法，复制源与累加源相同字段时会翻倍；聚合前先清空待聚合字段
+
+## 2026-08-19
+
+### 11. 员工导入 500：Duplicate entry 'EMP-EMP-010'（编号 COUNT 法撞号）
+- **现象**：员工 Excel 导入报 500，`SQLIntegrityConstraintViolationException: Duplicate entry 'EMP-EMP-010' for key 'uk_panel_formno'`，整批回滚；昨天导入成功后今天再导必失败
+- **根因**：`archNo()` 用 `COUNT(form_no LIKE 'EMP-%') + 1` 生成编号。库里 EMP-001~008 + EMP-010 = 9 行 → 新编号算出 EMP-010 → 与已有编号重复 → 唯一索引拒绝
+- **修复**：`archNo/invNo` 改为「取已有最大序号 + 1 并查重循环」（与 `generateFormNo` 同款安全算法）
+- **教训**：编号生成禁止用行数 COUNT（删除/断号/并发都会撞号），一律按最大序号递增 + 存在性查重
+
+### 12. EMP 面板「业务员」字段类型配成「是否」
+- **现象**：导入员工后业务员值全部变成 false（姓名丢失）
+- **根因**：`panel_config` 里 业务员 dataType=是否（布尔），导入按布尔解析，非「是/true/1」一律 false
+- **修复**：dataType 改为 文本
+- **教训**：配置字段类型要与语义一致；导入/表单/预览都按 dataType 渲染，配错会静默损坏数据
+
+### 13. 单单据面板 gridTabs 列配错 → 明细预览全空 → 保存覆盖明细（数据丢失）
+- **现象**：员工改为单单据面板后，列表 A 区/表单明细显示为空；用户在空明细上点保存，整张单据明细被覆盖成 1 行（原 10 人丢失）
+- **根因**：`gridTabs[0].columns` 误配成单据头字段（备注/单据状态），而 A 区预览/表单明细展示的是明细行（员工字段）→ 列错位全空
+- **修复**：columns 改为明细行字段（员工编码…停用）；明细数据从种子（engine.js seed）+ 残留行恢复
+- **教训**：a) gridTabs[0].columns 必须 = 明细行字段；b) 表单保存是整张明细覆盖写回，渲染异常时禁止保存；c) 重要数据改动前先备份/导出
+
+### 14. PowerShell 中文经管道/HTTP 编码污染（诊断与测试数据坑）
+- **现象**：pwsh 内联中文拼 JSON/SQL/请求体，经 harness→pwsh→mysql/fetch 多跳转后出现多重编码乱码（键名损坏），且控制台显示本身也会乱码，极易误判数据损坏
+- **规避**：涉及中文数据的自动化写操作与诊断一律用 Node 脚本（文件 UTF-8、fetch 原生 UTF-8、中文用 \uXXXX 转义）+ 十六进制校验键名；mysql 命令行加 `--default-character-set=utf8mb4`
+- **教训**：PowerShell 中文内联不可靠；先 hex 校验字节再判断数据是否损坏，不要被控制台乱码误导
+
+### 15. 参照弹窗永不弹出：RefPickDialog prop 名与 v-model 契约不匹配（2026-08-19）
+- **现象**：表单/新增弹窗点参照字段（工序编码等）参照弹窗不弹出；点击事件、refVisible、props 链路全通（DOM 反查：RefPickDialog/ElDialog modelValue=true、ElDialog exposed visible=true），但 el-dialog overlay display:none
+- **根因**：RefPickDialog 声明 prop `visible`，但调用方（PanelxForm/NewVoucherDialog）用 `v-model="refVisible"`——Vue 3 无参数 v-model 契约是 `modelValue` prop + `update:modelValue` 事件；`visible` 永远收不到值，且模板显式 `:model-value="visible"` 覆盖了 attrs 继承 → el-dialog model-value 恒为默认 false → 弹窗永不显示
+- **修复**：RefPickDialog 改为标准契约：prop `modelValue` + `:model-value="modelValue"` + `emit('update:modelValue')`（defineEmits 保留 update:visible 兼容）；调用方零改动
+- **教训**：a) 自定义组件的 v-model 必须用 modelValue/update:modelValue 契约（或显式 v-model:xxx 并两边一致）；b) 弹窗类"点击无反应"先反查 DOM→Vue 实例链（`el.__vueParentComponent` 逐级读 props/exposed）确认状态真值，别只看 DOM 可见性（headless 下 transition 时序会误报）；c) 历史 E2E 通过不代表代码对——当时验证路径与当前入口不同

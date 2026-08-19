@@ -1231,6 +1231,10 @@ const PROCESS_REPORT_CONFIG = {
       { from: '单据编号', to: '匹配来源单号' },
       { from: '客户', to: '客户' },
       { from: '销售订单号', to: '销售订单号' },
+      // 2026-08-19 补齐（对齐后端 createProcReportFromMo）：加工单无部门字段，车间即部门
+      { from: '生产车间', to: '生产车间' },
+      { from: '生产车间', to: '部门' },
+      { from: '测试程序', to: '测试程序' },
     ],
     detailMap: [
       { from: '工序编码', to: '工序编码' },
@@ -1872,6 +1876,7 @@ const BASE_CONFIGS = {
         "panelCode": "EMP",
         "panelName": "员工",
         "panelCategory": "基础档案",
+        "singleDoc": true,
         "panelState": {
             "dataName": "状态",
             "dataType": "STRING",
@@ -1884,19 +1889,10 @@ const BASE_CONFIGS = {
             "tablePages": [
                 {
                     "tableName": "员工列表",
-                    "queryFields": [
-                        {
-                            "dataName": "员工编码",
-                            "dataType": "文本"
-                        },
-                        {
-                            "dataName": "员工名称",
-                            "dataType": "文本"
-                        }
-                    ],
+                    "queryFields": [],
                     "gridTabs": [
                         {
-                            "label": "列表",
+                            "label": "员工明细",
                             "rowSource": "rows",
                             "columns": [
                                 "员工编码",
@@ -1931,7 +1927,7 @@ const BASE_CONFIGS = {
             "formPages": [
                 {
                     "formName": "员工",
-                    "fieldNames": "员工编码,员工名称,所属部门,业务员,证件类型,证件号码,职务,职称,办公电话,手机,停用",
+                    "fieldNames": "备注",
                     "bottomOperationBarBtn": [
                         {
                             "buttonName": "保存"
@@ -1978,9 +1974,17 @@ const BASE_CONFIGS = {
                 ]
             },
             {
+                "name": "保存",
+                "actions": [
+                    "保存",
+                    "保存新增"
+                ]
+            },
+            {
                 "name": "删除",
                 "actions": [
-                    "删除"
+                    "删除",
+                    "删除单据"
                 ]
             },
             {
@@ -2019,69 +2023,80 @@ const BASE_CONFIGS = {
         "type": "object",
         "fields": [
             {
-                "dataName": "员工编码",
-                "dataType": "文本",
-                "isRequired": true
-            },
-            {
-                "dataName": "员工名称",
-                "dataType": "文本",
-                "isRequired": true
-            },
-            {
-                "dataName": "所属部门",
-                "dataType": "下拉框",
-                "options": [
-                    "总经办",
-                    "销售一部",
-                    "销售二部",
-                    "国际部",
-                    "熔铸车间",
-                    "轧制车间",
-                    "精整车间",
-                    "测试车间",
-                    "质检部",
-                    "仓储部"
-                ]
-            },
-            {
-                "dataName": "业务员",
-                "dataType": "是否",
-                "defaultValue": false
-            },
-            {
-                "dataName": "证件类型",
+                "dataName": "备注",
                 "dataType": "文本"
-            },
-            {
-                "dataName": "证件号码",
-                "dataType": "文本"
-            },
-            {
-                "dataName": "职务",
-                "dataType": "文本"
-            },
-            {
-                "dataName": "职称",
-                "dataType": "文本"
-            },
-            {
-                "dataName": "办公电话",
-                "dataType": "文本"
-            },
-            {
-                "dataName": "手机",
-                "dataType": "文本"
-            },
-            {
-                "dataName": "停用",
-                "dataType": "是否",
-                "defaultValue": false
             }
         ]
     },
     "detail": {
-        "tabs": []
+        "tabs": [
+            {
+                "key": "employees",
+                "label": "员工明细",
+                "fields": [
+                    {
+                        "dataName": "员工编码",
+                        "dataType": "文本",
+                        "isRequired": true
+                    },
+                    {
+                        "dataName": "员工名称",
+                        "dataType": "文本",
+                        "isRequired": true
+                    },
+                    {
+                        "dataName": "所属部门",
+                        "dataType": "下拉框",
+                        "options": [
+                            "总经办",
+                            "销售一部",
+                            "销售二部",
+                            "国际部",
+                            "熔铸车间",
+                            "轧制车间",
+                            "精整车间",
+                            "测试车间",
+                            "质检部",
+                            "仓储部"
+                        ]
+                    },
+                    {
+                        "dataName": "业务员",
+                        "dataType": "文本"
+                    },
+                    {
+                        "dataName": "证件类型",
+                        "dataType": "文本"
+                    },
+                    {
+                        "dataName": "证件号码",
+                        "dataType": "文本"
+                    },
+                    {
+                        "dataName": "职务",
+                        "dataType": "文本"
+                    },
+                    {
+                        "dataName": "职称",
+                        "dataType": "文本"
+                    },
+                    {
+                        "dataName": "办公电话",
+                        "dataType": "文本"
+                    },
+                    {
+                        "dataName": "手机",
+                        "dataType": "文本"
+                    },
+                    {
+                        "dataName": "停用",
+                        "dataType": "是否",
+                        "defaultValue": false
+                    }
+                ],
+                "isRequired": false
+            }
+        ]
     }
 },
     seed: [
@@ -8461,7 +8476,7 @@ Object.assign(BASE_CONFIGS, {
   },
 })
 
-// ROUTE 工艺路线（DoubleList：表头 + 工序明细，对齐 AA1055）
+// ROUTE 工艺路线（DoubleList：表头 + 工序明细，对齐 AA1055 实测 2026-08-19）
 const ROUTE_CONFIG = {
   "metadata": {
     "panelCode": "ROUTE",
@@ -8481,6 +8496,10 @@ const ROUTE_CONFIG = {
       "tablePages": [
         {
           "tableName": "工艺路线列表",
+          "mainTable": {
+            "label": "工艺路线",
+            "columns": ["序号", "工艺路线编码", "工艺路线名称", "单据状态", "停用", "制单人", "审核人", "审核日期"]
+          },
           "queryFields": [
             {
               "dataName": "工艺路线编码",
@@ -8496,13 +8515,20 @@ const ROUTE_CONFIG = {
               "label": "列表",
               "rowSource": "rows",
               "columns": [
-                "工艺路线编码",
-                "工艺路线名称",
-                "单据状态",
-                "停用",
-                "制单人",
-                "审核人",
-                "审核日期"
+                "加工顺序",
+                "工序编码",
+                "工序名称",
+                "加工方式",
+                "生产车间",
+                "工资类型",
+                "计件依据",
+                "委外供应商",
+                "按辅单位计价",
+                "辅单位",
+                "换算率",
+                "默认报工数量",
+                "关键工序",
+                "标准合格率%"
               ]
             }
           ],
@@ -8524,7 +8550,7 @@ const ROUTE_CONFIG = {
       "formPages": [
         {
           "formName": "工艺路线",
-          "fieldNames": "工艺路线编码,工艺路线名称,停用",
+          "fieldNames": "工艺路线编码,工艺路线名称,停用,制单人,审核人,审核日期",
           "bottomOperationBarBtn": [
             {
               "buttonName": "保存"
@@ -8600,6 +8626,12 @@ const ROUTE_CONFIG = {
         ]
       },
       {
+        "name": "栏目",
+        "actions": [
+          "栏目"
+        ]
+      },
+      {
         "name": "打印",
         "actions": [
           "打印",
@@ -8622,7 +8654,7 @@ const ROUTE_CONFIG = {
         ]
       }
     ],
-    "version": "1.0"
+    "version": "1.1"
   },
   "dataSchema": {
     "type": "object",
@@ -8642,6 +8674,18 @@ const ROUTE_CONFIG = {
         "dataName": "停用",
         "dataType": "是否",
         "defaultValue": false
+      },
+      {
+        "dataName": "制单人",
+        "dataType": "文本"
+      },
+      {
+        "dataName": "审核人",
+        "dataType": "文本"
+      },
+      {
+        "dataName": "审核日期",
+        "dataType": "日期"
       }
     ]
   },
@@ -8665,64 +8709,105 @@ const ROUTE_CONFIG = {
           },
           {
             "dataName": "工序编码",
-            "dataType": "下拉框",
-            "options": [
-              "PX001",
-              "PX002",
-              "PX003",
-              "PX005",
-              "PX007"
-            ]
+            "dataType": "参照",
+            "isRequired": true,
+            "refPanel": "OP",
+            "refField": "工序编码",
+            "displayField": "工序名称",
+            "filter": { "是否停用": false },
+            "refMap": [
+              { "from": "工序名称", "to": "工序名称" },
+              { "from": "默认车间", "to": "生产车间" },
+              { "from": "加工方式", "to": "加工方式" },
+              { "from": "默认工资类型", "to": "工资类型" },
+              { "from": "计件依据", "to": "计件依据" },
+              { "from": "按辅单位计价", "to": "按辅单位计价" },
+              { "from": "辅单位", "to": "辅单位" },
+              { "from": "换算率", "to": "换算率" },
+              { "from": "关键工序", "to": "关键工序" },
+              { "from": "标准合格率%", "to": "标准合格率%" }
+            ],
+            "refColumns": ["工序编码", "工序名称", "默认车间", "加工方式", "标准合格率%", "备注", "是否停用"]
           },
           {
             "dataName": "工序名称",
-            "dataType": "下拉框",
-            "options": [
-              "下料",
-              "车削",
-              "铣削",
-              "热处理",
-              "检验"
-            ]
-          },
-          {
-            "dataName": "工作中心",
-            "dataType": "下拉框",
-            "options": [
-              "WC-01 熔铸中心",
-              "WC-02 轧制中心",
-              "WC-03 机加中心",
-              "WC-04 检测中心"
-            ]
-          },
-          {
-            "dataName": "设备",
             "dataType": "文本"
           },
           {
-            "dataName": "班组",
+            "dataName": "加工方式",
             "dataType": "下拉框",
             "options": [
-              "下料班",
-              "车工班",
-              "铣工班",
-              "热处理班",
-              "质检班"
-            ]
+              "自制",
+              "委外"
+            ],
+            "defaultValue": "自制"
           },
           {
-            "dataName": "单位标准工时",
+            "dataName": "生产车间",
+            "dataType": "下拉框",
+            "options": WORKSHOP_OPTIONS
+          },
+          {
+            "dataName": "工资类型",
+            "dataType": "下拉框",
+            "options": [
+              "计件",
+              "计时"
+            ],
+            "defaultValue": "计件"
+          },
+          {
+            "dataName": "计件依据",
+            "dataType": "下拉框",
+            "options": [
+              "合格数量",
+              "完工数量"
+            ],
+            "defaultValue": "合格数量"
+          },
+          {
+            "dataName": "委外供应商",
+            "dataType": "参照",
+            "isRequired": false,
+            "defaultValue": "",
+            "refPanel": "PARTNER",
+            "refField": "往来单位名称",
+            "displayField": "往来单位名称",
+            "filter": { "停用": false }
+          },
+          {
+            "dataName": "按辅单位计价",
+            "dataType": "是否",
+            "defaultValue": false
+          },
+          {
+            "dataName": "辅单位",
+            "dataType": "下拉框",
+            "options": [
+              "件",
+              "kg"
+            ],
+            "defaultValue": "件"
+          },
+          {
+            "dataName": "换算率",
+            "dataType": "小数",
+            "defaultValue": 1
+          },
+          {
+            "dataName": "默认报工数量",
             "dataType": "小数",
             "defaultValue": 0
           },
           {
-            "dataName": "工价",
-            "dataType": "小数",
-            "defaultValue": 0
+            "dataName": "关键工序",
+            "dataType": "是否",
+            "defaultValue": false
           },
           {
-            "dataName": "备注",
-            "dataType": "文本"
+            "dataName": "标准合格率%",
+            "dataType": "小数",
+            "defaultValue": 100
           }
         ]
       }
@@ -8744,39 +8829,9 @@ let ROUTE_ROWS = [
     "发起人编号": "tplusdemo12853",
     "detail": {
       "processes": [
-        {
-          "加工顺序": 1,
-          "工序编码": "PX001",
-          "工序名称": "下料",
-          "工作中心": "WC-01 熔铸中心",
-          "设备": "锯床-01",
-          "班组": "下料班",
-          "单位标准工时": 0.05,
-          "工价": 2.5,
-          "备注": ""
-        },
-        {
-          "加工顺序": 2,
-          "工序编码": "PX002",
-          "工序名称": "车削",
-          "工作中心": "WC-03 机加中心",
-          "设备": "数控车床-03",
-          "班组": "车工班",
-          "单位标准工时": 0.12,
-          "工价": 5.8,
-          "备注": ""
-        },
-        {
-          "加工顺序": 3,
-          "工序编码": "PX007",
-          "工序名称": "检验",
-          "工作中心": "WC-04 检测中心",
-          "设备": "检测台-01",
-          "班组": "质检班",
-          "单位标准工时": 0.03,
-          "工价": 1.2,
-          "备注": ""
-        }
+        { "加工顺序": 1, "工序编码": "PX001", "工序名称": "下料", "加工方式": "自制", "生产车间": "熔铸车间", "工资类型": "计件", "计件依据": "合格数量", "委外供应商": "", "按辅单位计价": false, "辅单位": "件", "换算率": 1, "默认报工数量": 0, "关键工序": false, "标准合格率%": 100 },
+        { "加工顺序": 2, "工序编码": "PX002", "工序名称": "车削", "加工方式": "自制", "生产车间": "熔铸车间", "工资类型": "计件", "计件依据": "合格数量", "委外供应商": "", "按辅单位计价": false, "辅单位": "件", "换算率": 1, "默认报工数量": 0, "关键工序": true, "标准合格率%": 98 },
+        { "加工顺序": 3, "工序编码": "PX007", "工序名称": "检验", "加工方式": "自制", "生产车间": "测试车间", "工资类型": "计时", "计件依据": "完工数量", "委外供应商": "", "按辅单位计价": false, "辅单位": "件", "换算率": 1, "默认报工数量": 0, "关键工序": false, "标准合格率%": 100 }
       ]
     }
   },
@@ -8794,55 +8849,34 @@ let ROUTE_ROWS = [
     "发起人编号": "tplusdemo12853",
     "detail": {
       "processes": [
-        {
-          "加工顺序": 1,
-          "工序编码": "PX001",
-          "工序名称": "下料",
-          "工作中心": "WC-01 熔铸中心",
-          "设备": "锯床-01",
-          "班组": "下料班",
-          "单位标准工时": 0.08,
-          "工价": 3,
-          "备注": ""
-        },
-        {
-          "加工顺序": 2,
-          "工序编码": "PX003",
-          "工序名称": "铣削",
-          "工作中心": "WC-03 机加中心",
-          "设备": "加工中心-02",
-          "班组": "铣工班",
-          "单位标准工时": 0.2,
-          "工价": 8.5,
-          "备注": ""
-        },
-        {
-          "加工顺序": 3,
-          "工序编码": "PX005",
-          "工序名称": "热处理",
-          "工作中心": "WC-02 轧制中心",
-          "设备": "",
-          "班组": "热处理班",
-          "单位标准工时": 0.5,
-          "工价": 0,
-          "备注": "委外"
-        },
-        {
-          "加工顺序": 4,
-          "工序编码": "PX007",
-          "工序名称": "检验",
-          "工作中心": "WC-04 检测中心",
-          "设备": "检测台-02",
-          "班组": "质检班",
-          "单位标准工时": 0.05,
-          "工价": 1.5,
-          "备注": ""
-        }
+        { "加工顺序": 1, "工序编码": "PX001", "工序名称": "下料", "加工方式": "自制", "生产车间": "熔铸车间", "工资类型": "计件", "计件依据": "合格数量", "委外供应商": "", "按辅单位计价": false, "辅单位": "件", "换算率": 1, "默认报工数量": 0, "关键工序": false, "标准合格率%": 100 },
+        { "加工顺序": 2, "工序编码": "PX003", "工序名称": "铣削", "加工方式": "自制", "生产车间": "精整车间", "工资类型": "计件", "计件依据": "合格数量", "委外供应商": "", "按辅单位计价": false, "辅单位": "件", "换算率": 1, "默认报工数量": 0, "关键工序": true, "标准合格率%": 97 },
+        { "加工顺序": 3, "工序编码": "PX005", "工序名称": "热处理", "加工方式": "委外", "生产车间": "轧制车间", "工资类型": "计时", "计件依据": "完工数量", "委外供应商": "华东热处理厂", "按辅单位计价": true, "辅单位": "kg", "换算率": 1, "默认报工数量": 0, "关键工序": true, "标准合格率%": 100 },
+        { "加工顺序": 4, "工序编码": "PX007", "工序名称": "检验", "加工方式": "自制", "生产车间": "测试车间", "工资类型": "计时", "计件依据": "完工数量", "委外供应商": "", "按辅单位计价": false, "辅单位": "件", "换算率": 1, "默认报工数量": 0, "关键工序": false, "标准合格率%": 100 }
+      ]
+    }
+  },
+  {
+    "编号": "ROUTE-003",
+    "工艺路线编码": "GY-003",
+    "工艺路线名称": "制门加工路线",
+    "单据状态": "草稿",
+    "停用": false,
+    "制单人": "admin",
+    "审核人": "",
+    "审核日期": "",
+    "创建时间": "2026-08-19 09:00",
+    "更新时间": "2026-08-19 09:00",
+    "发起人编号": "tplusdemo12860",
+    "detail": {
+      "processes": [
+        { "加工顺序": 1, "工序编码": "PX001", "工序名称": "下料", "加工方式": "自制", "生产车间": "熔铸车间", "工资类型": "计件", "计件依据": "合格数量", "委外供应商": "", "按辅单位计价": false, "辅单位": "件", "换算率": 1, "默认报工数量": 0, "关键工序": false, "标准合格率%": 100 },
+        { "加工顺序": 2, "工序编码": "PX002", "工序名称": "车削", "加工方式": "自制", "生产车间": "熔铸车间", "工资类型": "计件", "计件依据": "合格数量", "委外供应商": "", "按辅单位计价": false, "辅单位": "件", "换算率": 1, "默认报工数量": 0, "关键工序": true, "标准合格率%": 98 },
+        { "加工顺序": 3, "工序编码": "PX007", "工序名称": "检验", "加工方式": "自制", "生产车间": "测试车间", "工资类型": "计时", "计件依据": "完工数量", "委外供应商": "", "按辅单位计价": false, "辅单位": "件", "换算率": 1, "默认报工数量": 0, "关键工序": false, "标准合格率%": 100 }
       ]
     }
   }
 ]
-
 // BOM 物料清单（表头父件 + 子件明细，对齐 AA1041）
 const BOM_CONFIG = {
   "metadata": {
@@ -10403,7 +10437,13 @@ export async function queryRefRows(field, { keyword = '', pageSize = 200 } = {})
     return rows.slice(0, pageSize)
   }
   const res = await queryFormDataList({ panelCode: r.refPanel, condition: r.filter || {}, keyword, pageNo: 1, pageSize })
-  return res.list || []
+  let list = res.list || []
+  // 单单据面板（如员工档案）：参照弹窗需要平铺明细行（queryFormDataList 返回的是 1 张单据行）
+  if (SINGLE_DOC_CODES.has(r.refPanel) && list.length && list[0] && list[0].detail) {
+    const tabKey = BASE_CONFIGS[r.refPanel]?.config?.detail?.tabs?.[0]?.key || 'items'
+    list = list[0].detail[tabKey] || []
+  }
+  return list
 }
 
 // 参照显示文本：mock 下从 refPanel seed 解析（返回 label）；真实模式下返回 null（调用方回退显示原值）
@@ -10498,6 +10538,7 @@ export async function getNewFormPermMatrix({ panelCode, operationName }) {
     if (_af) data[_af] = nextNoFor(panelCode)
     else data['编号'] = ''
     data['编号'] = ''
+    if (SINGLE_DOC_CODES.has(panelCode)) data['编号'] = singleDocRow(panelCode)['编号']
     return { data, meta: buildMeta(p.config), privilege: privilege(p.config), detail: p.config.detail, buttonGroups: p.config.metadata.buttonGroups, selectConfig: p.config.selectConfig }
   }
   if (USE_PANELX) {
@@ -10520,7 +10561,8 @@ export async function getFormDescriptor({ panelCode, code }) {
   if (USE_MOCK) {
     await mockDelay()
     const p = panelOf(panelCode)
-    const row = p.rows.find((r) => r['编号'] === code)
+    // 单单据面板（员工档案）：按单据名返回聚合行（seed 为平铺明细，聚合为 detail）
+    const row = SINGLE_DOC_CODES.has(panelCode) ? singleDocRow(panelCode) : p.rows.find((r) => r['编号'] === code)
     if (!row) throw { response: { data: { message: '表单数据不存在：' + code } } }
     const { detail, ...rest } = row
     return { data: { ...rest }, meta: buildMeta(p.config), privilege: privilege(p.config), detail: p.config.detail, detailData: detail || [], buttonGroups: p.config.metadata.buttonGroups, selectConfig: p.config.selectConfig }
@@ -10544,13 +10586,33 @@ export async function getFormDescriptor({ panelCode, code }) {
 // 单据类面板：列表查询返回单据级行（带 detail）
 const VOUCHER_CODES = new Set(['MANU_ORDER', 'SO_ORDER', 'PROCESS_REPORT', ...Object.keys(INV_CONFIGS)])
 
+// 单单据面板（metadata.singleDoc，如员工档案）：seed 保持平铺明细行（兼作参照数据源），
+// 列表/表单查询聚合为 1 张单据行（编号=面板名+「档案」，对齐后端 form_no='员工档案' 语义）
+const SINGLE_DOC_CODES = new Set(['EMP'])
+
+function singleDocRow(panelCode) {
+  const cfg = BASE_CONFIGS[panelCode]?.config
+  const tabKey = cfg?.detail?.tabs?.[0]?.key || 'items'
+  const docNo = (cfg?.metadata?.panelName || panelCode) + '档案'
+  return {
+    编号: docNo,
+    备注: docNo,
+    单据状态: '启用',
+    detail: {
+      [tabKey]: (BASE_CONFIGS[panelCode]?.seed || []).map((r) => ({ ...r })),
+    },
+  }
+}
+
 export async function queryFormDataList(params) {
   if (USE_MOCK) {
     await mockDelay()
     // 单据类面板（生产加工单/销售订单/库存6单/工序汇报单）：返回单据级行（带 detail），
     // 供列表页按单据翻页展示明细（见 docs/页面开发规范.md 数据契约）；档案/报表类保持平铺行
     let rows
-    if (VOUCHER_CODES.has(params.panelCode)) {
+    if (SINGLE_DOC_CODES.has(params.panelCode)) {
+      rows = [singleDocRow(params.panelCode)]
+    } else if (VOUCHER_CODES.has(params.panelCode)) {
       rows = panelOf(params.panelCode).rows.map((r) => ({
         ...r,
         detail: r.detail ? Object.fromEntries(Object.entries(r.detail).map(([k, v]) => [k, [...v]])) : r.detail,
@@ -10663,6 +10725,13 @@ export async function callButton({ panelCode, buttonName, formData, buttonParam 
       delete rest['更新时间']
       delete rest['发起人编号']
       if (no) {
+        if (SINGLE_DOC_CODES.has(panelCode)) {
+          // 单单据（员工档案）：保存 = 整张明细覆盖写回 seed（对齐后端 detail_data 覆盖语义，不新建第二张单据）
+          const tabKey = p.config?.detail?.tabs?.[0]?.key || 'items'
+          const arr = detail?.[tabKey]
+          if (Array.isArray(arr)) rows.splice(0, rows.length, ...arr.map((r) => ({ ...r })))
+          return { 编号: no, 单据状态: '启用' }
+        }
         const row = rows.find((r) => r['编号'] === no)
         if (!row) throw { response: { data: { message: '表单数据不存在：' + no } } }
         if (row['单据状态'] !== '草稿') throw { response: { data: { message: '仅草稿状态可保存' } } }
@@ -10676,6 +10745,11 @@ export async function callButton({ panelCode, buttonName, formData, buttonParam 
       return { 编号: newNo, 单据状态: '草稿' }
     }
     if (buttonName === '删除') {
+      if (SINGLE_DOC_CODES.has(panelCode)) {
+        // 单单据（员工档案）：删除整张单据 = 清空明细（对齐后端删除 form_data 行语义）
+        rows.splice(0, rows.length)
+        return {}
+      }
       const idx = rows.findIndex((r) => r['编号'] === no)
       if (idx < 0) throw { response: { data: { message: '表单数据不存在：' + no } } }
       if (rows[idx]['单据状态'] !== '草稿') throw { response: { data: { message: '仅草稿状态可删除' } } }
@@ -10736,6 +10810,11 @@ export async function deleteForms({ panelCode, rowCodes }) {
   if (USE_MOCK) {
     await mockDelay()
     const rows = panelOf(panelCode).rows
+    if (SINGLE_DOC_CODES.has(panelCode)) {
+      // 单单据（员工档案）：删除整张单据 = 清空明细（对齐后端删除 form_data 行语义）
+      rows.splice(0, rows.length)
+      return true
+    }
     for (const code of rowCodes) {
       const idx = rows.findIndex((r) => r['编号'] === code)
       if (idx >= 0) {

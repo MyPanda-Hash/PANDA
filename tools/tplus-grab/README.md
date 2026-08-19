@@ -2,6 +2,11 @@
 
 把「登录 T+ 演示环境 → 抓真实 DOM（列定义/字段/样式）→ 生成骨架 HTML → 像素对比」打包成可复用管线。
 
+## 登录目标（2026-08-19 起：机械行业）
+
+- 登录页「立即体验 → 选择角色」默认点击 **机械行业**（找不到时回退 轻MES，向后兼容）
+- 实现位置：`grab.cjs --login` 的 loginFlow（expBtn → selectRoles iframe 内文本匹配「机械行业」）
+
 ## 前置条件
 
 - Windows + Edge（Chrome 系）

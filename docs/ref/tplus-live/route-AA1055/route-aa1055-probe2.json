@@ -1,0 +1,3364 @@
+{
+  "url": "https://h2t.chanjet.com/tplus/BAPView/DoubleList.aspx?mId=aa1055&pId=doubleListView&&sysId=aa",
+  "title": "工艺路线",
+  "tables": [
+    {
+      "idx": 2,
+      "cls": "",
+      "rect": {
+        "x": 9,
+        "y": 45,
+        "w": 75,
+        "h": 30
+      },
+      "cols": [
+        {
+          "t": "",
+          "a": "",
+          "flag": "",
+          "w": "35px"
+        },
+        {
+          "t": "",
+          "a": "MultiSelect",
+          "flag": "",
+          "w": "40px"
+        }
+      ],
+      "ths": [],
+      "rowCount": 1,
+      "sample": [
+        [
+          "序号",
+          ""
+        ]
+      ]
+    },
+    {
+      "idx": 3,
+      "cls": "",
+      "rect": {
+        "x": 84,
+        "y": 45,
+        "w": 850,
+        "h": 30
+      },
+      "cols": [
+        {
+          "t": "工艺路线ID",
+          "a": "ID",
+          "flag": "myhidden",
+          "w": "200px"
+        },
+        {
+          "t": "工艺路线编码",
+          "a": "Code",
+          "flag": "",
+          "w": "200px"
+        },
+        {
+          "t": "工艺路线名称",
+          "a": "Name",
+          "flag": "",
+          "w": "200px"
+        },
+        {
+          "t": "单据状态",
+          "a": "VoucherState_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "停用",
+          "a": "Disabled",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "制单人",
+          "a": "Maker",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "审核人",
+          "a": "Auditor",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "审核日期",
+          "a": "AuditedDate",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "时间戳",
+          "a": "Ts",
+          "flag": "myhidden",
+          "w": "90px"
+        }
+      ],
+      "ths": [],
+      "rowCount": 1,
+      "sample": [
+        [
+          "工艺路线ID",
+          "工艺路线编码",
+          "工艺路线名称",
+          "单据状态",
+          "停用",
+          "制单人",
+          "审核人",
+          "审核日期",
+          "时间戳"
+        ]
+      ]
+    },
+    {
+      "idx": 4,
+      "cls": "",
+      "rect": {
+        "x": 9,
+        "y": 75,
+        "w": 75,
+        "h": 210
+      },
+      "cols": [
+        {
+          "t": "",
+          "a": "",
+          "flag": "",
+          "w": "35px"
+        },
+        {
+          "t": "",
+          "a": "MultiSelect",
+          "flag": "",
+          "w": "40px"
+        }
+      ],
+      "ths": [],
+      "rowCount": 7,
+      "sample": [
+        [
+          "1",
+          ""
+        ],
+        [
+          "2",
+          ""
+        ],
+        [
+          "3",
+          ""
+        ]
+      ]
+    },
+    {
+      "idx": 5,
+      "cls": "",
+      "rect": {
+        "x": 9,
+        "y": 285,
+        "w": 75,
+        "h": 0
+      },
+      "cols": [
+        {
+          "t": "",
+          "a": "",
+          "flag": "",
+          "w": "35px"
+        },
+        {
+          "t": "",
+          "a": "MultiSelect",
+          "flag": "",
+          "w": "40px"
+        }
+      ],
+      "ths": [],
+      "rowCount": 0,
+      "sample": []
+    },
+    {
+      "idx": 6,
+      "cls": "fixstyle",
+      "rect": {
+        "x": 84,
+        "y": 75,
+        "w": 850,
+        "h": 210
+      },
+      "cols": [
+        {
+          "t": "",
+          "a": "ID",
+          "flag": "myhidden",
+          "w": "200px"
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "flag": "",
+          "w": "200px"
+        },
+        {
+          "t": "",
+          "a": "Name",
+          "flag": "",
+          "w": "200px"
+        },
+        {
+          "t": "",
+          "a": "VoucherState_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Disabled",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Maker",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Auditor",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "yyyy-MM-dd",
+          "a": "AuditedDate",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Ts",
+          "flag": "myhidden",
+          "w": "90px"
+        }
+      ],
+      "ths": [],
+      "rowCount": 7,
+      "sample": [
+        [
+          "37",
+          "002",
+          "制门",
+          "生效",
+          "否",
+          "tplusdemo12851",
+          "tplusdemo12851",
+          "2026-03-23",
+          "00000000012f7b14"
+        ],
+        [
+          "39",
+          "0023",
+          "2323",
+          "生效",
+          "否",
+          "tplusdemo12855",
+          "tplusdemo12852",
+          "2026-07-21",
+          "000000000147310e"
+        ],
+        [
+          "42",
+          "0803",
+          "测试",
+          "未审",
+          "否",
+          "tplusdemo12860",
+          "",
+          "",
+          "00000000014838fe"
+        ]
+      ]
+    },
+    {
+      "idx": 7,
+      "cls": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "cols": [
+        {
+          "t": "",
+          "a": "ID",
+          "flag": "myhidden",
+          "w": "200px"
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "flag": "",
+          "w": "200px"
+        },
+        {
+          "t": "",
+          "a": "Name",
+          "flag": "",
+          "w": "200px"
+        },
+        {
+          "t": "",
+          "a": "VoucherState_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Disabled",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Maker",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Auditor",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "yyyy-MM-dd",
+          "a": "AuditedDate",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Ts",
+          "flag": "myhidden",
+          "w": "90px"
+        }
+      ],
+      "ths": [],
+      "rowCount": 1,
+      "sample": [
+        [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ]
+      ]
+    },
+    {
+      "idx": 8,
+      "cls": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "cols": [
+        {
+          "t": "",
+          "a": "ID",
+          "flag": "myhidden",
+          "w": "200px"
+        },
+        {
+          "t": "",
+          "a": "Code",
+          "flag": "",
+          "w": "200px"
+        },
+        {
+          "t": "",
+          "a": "Name",
+          "flag": "",
+          "w": "200px"
+        },
+        {
+          "t": "",
+          "a": "VoucherState_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Disabled",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Maker",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Auditor",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "yyyy-MM-dd",
+          "a": "AuditedDate",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Ts",
+          "flag": "myhidden",
+          "w": "90px"
+        }
+      ],
+      "ths": [],
+      "rowCount": 1,
+      "sample": [
+        [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ]
+      ]
+    },
+    {
+      "idx": 12,
+      "cls": "",
+      "rect": {
+        "x": 9,
+        "y": 539,
+        "w": 35,
+        "h": 30
+      },
+      "cols": [
+        {
+          "t": "",
+          "a": "",
+          "flag": "",
+          "w": "35px"
+        }
+      ],
+      "ths": [],
+      "rowCount": 1,
+      "sample": [
+        [
+          "序号"
+        ]
+      ]
+    },
+    {
+      "idx": 13,
+      "cls": "",
+      "rect": {
+        "x": 44,
+        "y": 539,
+        "w": 1270,
+        "h": 30
+      },
+      "cols": [
+        {
+          "t": "加工顺序",
+          "a": "JobSequence",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "工序编码",
+          "a": "Process_Code",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "工序名称",
+          "a": "Process_Name",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "加工方式",
+          "a": "ProcessMode_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "生产车间",
+          "a": "WorkShop_Name",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "工资类型",
+          "a": "RoutingDetailDTO_Process_SalaryType_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "计件依据",
+          "a": "RoutingDetailDTO_Process_PieceworkBasis_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "委外供应商",
+          "a": "Partner_Name",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "按辅单位计价",
+          "a": "RoutingDetailDTO_isUseProcessSubunit",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "辅单位",
+          "a": "RoutingDetailDTO_Process_ProcessSubUnit_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "换算率",
+          "a": "RoutingDetailDTO_ProcessSubUnitChangeRate",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "默认报工数量",
+          "a": "RoutingDetailDTO_DefaultReportQuantity",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "关键工序",
+          "a": "RoutingDetailDTO_KeyProcess",
+          "flag": "",
+          "w": "60px"
+        },
+        {
+          "t": "标准合格率%",
+          "a": "RoutingDetailDTO_StandardQualificationrate",
+          "flag": "",
+          "w": "90px"
+        }
+      ],
+      "ths": [],
+      "rowCount": 1,
+      "sample": [
+        [
+          "加工顺序",
+          "工序编码",
+          "工序名称",
+          "加工方式",
+          "生产车间",
+          "工资类型",
+          "计件依据",
+          "委外供应商",
+          "按辅单位计价",
+          "辅单位",
+          "换算率",
+          "默认报工数量",
+          "关键工序",
+          "标准合格率%"
+        ]
+      ]
+    },
+    {
+      "idx": 14,
+      "cls": "",
+      "rect": {
+        "x": 9,
+        "y": 569,
+        "w": 35,
+        "h": 0
+      },
+      "cols": [
+        {
+          "t": "",
+          "a": "",
+          "flag": "",
+          "w": "35px"
+        }
+      ],
+      "ths": [],
+      "rowCount": 0,
+      "sample": []
+    },
+    {
+      "idx": 15,
+      "cls": "",
+      "rect": {
+        "x": 9,
+        "y": 569,
+        "w": 35,
+        "h": 0
+      },
+      "cols": [
+        {
+          "t": "",
+          "a": "",
+          "flag": "",
+          "w": "35px"
+        }
+      ],
+      "ths": [],
+      "rowCount": 0,
+      "sample": []
+    },
+    {
+      "idx": 16,
+      "cls": "fixstyle",
+      "rect": {
+        "x": 44,
+        "y": 569,
+        "w": 1270,
+        "h": 1
+      },
+      "cols": [
+        {
+          "t": "",
+          "a": "JobSequence",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Process_Code",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "",
+          "a": "Process_Name",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "",
+          "a": "ProcessMode_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "WorkShop_Name",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_Process_SalaryType_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_Process_PieceworkBasis_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Partner_Name",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_isUseProcessSubunit",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_Process_ProcessSubUnit_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_ProcessSubUnitChangeRate",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_DefaultReportQuantity",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_KeyProcess",
+          "flag": "",
+          "w": "60px"
+        },
+        {
+          "t": "Percent",
+          "a": "RoutingDetailDTO_StandardQualificationrate",
+          "flag": "",
+          "w": "90px"
+        }
+      ],
+      "ths": [],
+      "rowCount": 0,
+      "sample": []
+    },
+    {
+      "idx": 17,
+      "cls": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "cols": [
+        {
+          "t": "",
+          "a": "JobSequence",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Process_Code",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "",
+          "a": "Process_Name",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "",
+          "a": "ProcessMode_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "WorkShop_Name",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_Process_SalaryType_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_Process_PieceworkBasis_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Partner_Name",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_isUseProcessSubunit",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_Process_ProcessSubUnit_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_ProcessSubUnitChangeRate",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_DefaultReportQuantity",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_KeyProcess",
+          "flag": "",
+          "w": "60px"
+        },
+        {
+          "t": "Percent",
+          "a": "RoutingDetailDTO_StandardQualificationrate",
+          "flag": "",
+          "w": "90px"
+        }
+      ],
+      "ths": [],
+      "rowCount": 1,
+      "sample": [
+        [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ]
+      ]
+    },
+    {
+      "idx": 18,
+      "cls": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "cols": [
+        {
+          "t": "",
+          "a": "JobSequence",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Process_Code",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "",
+          "a": "Process_Name",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "",
+          "a": "ProcessMode_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "WorkShop_Name",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_Process_SalaryType_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_Process_PieceworkBasis_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "Partner_Name",
+          "flag": "",
+          "w": "100px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_isUseProcessSubunit",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_Process_ProcessSubUnit_Name",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_ProcessSubUnitChangeRate",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_DefaultReportQuantity",
+          "flag": "",
+          "w": "90px"
+        },
+        {
+          "t": "",
+          "a": "RoutingDetailDTO_KeyProcess",
+          "flag": "",
+          "w": "60px"
+        },
+        {
+          "t": "Percent",
+          "a": "RoutingDetailDTO_StandardQualificationrate",
+          "flag": "",
+          "w": "90px"
+        }
+      ],
+      "ths": [],
+      "rowCount": 1,
+      "sample": [
+        [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ]
+      ]
+    }
+  ],
+  "toolbar": [
+    "新增",
+    "修改",
+    "删除",
+    "审核",
+    "弃审",
+    "查找",
+    "栏目",
+    "打印",
+    "打印",
+    "预览",
+    "导入",
+    "下载工艺路线模板",
+    "导入工艺路线",
+    "导出",
+    "刷新",
+    "退出"
+  ],
+  "toolbarAll": [
+    {
+      "t": "|",
+      "cls": "",
+      "id": ""
+    },
+    {
+      "t": "当前机器日期：2026年8月19日",
+      "cls": "",
+      "id": ""
+    },
+    {
+      "t": "新增",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "修改",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "删除",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "审核",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "弃审",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "查找",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "栏目",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "打印",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "打印",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "预览",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "Alt+/",
+      "cls": "",
+      "id": ""
+    },
+    {
+      "t": "导入",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "下载工艺路线模板",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "导入工艺路线",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "导出",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "刷新",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "退出",
+      "cls": "tb-text",
+      "id": ""
+    },
+    {
+      "t": "工艺路线ID",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "工艺路线编码",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "工艺路线名称",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "单据状态",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "停用",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "制单人",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "审核人",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "审核日期",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "时间戳",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "1",
+      "cls": "",
+      "id": ""
+    },
+    {
+      "t": "2",
+      "cls": "",
+      "id": ""
+    },
+    {
+      "t": "3",
+      "cls": "",
+      "id": ""
+    },
+    {
+      "t": "4",
+      "cls": "",
+      "id": ""
+    },
+    {
+      "t": "5",
+      "cls": "",
+      "id": ""
+    },
+    {
+      "t": "6",
+      "cls": "",
+      "id": ""
+    },
+    {
+      "t": "7",
+      "cls": "",
+      "id": ""
+    },
+    {
+      "t": "37",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "002",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "制门",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "生效",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "否",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "tplusdemo12851",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "tplusdemo12851",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "2026-03-23",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "00000000012f7b14",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "39",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "0023",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "2323",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "生效",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "否",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "tplusdemo12855",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "tplusdemo12852",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "2026-07-21",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "000000000147310e",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "42",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "0803",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "测试",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "未审",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "否",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "tplusdemo12860",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "00000000014838fe",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "40",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "1",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "壹号线",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "生效",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "否",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "tplusdemo12852",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "tplusdemo12852",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "2026-05-26",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "000000000141a601",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "12",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "1002",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "测试",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "生效",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "否",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "10000000101",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "tplusdemo12857",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "2026-08-02",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "000000000148243d",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "41",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "666",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "钣金",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "生效",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "否",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "tplusdemo12860",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "tplusdemo12862",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "2026-06-11",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "00000000014343ee",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "38",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "JG01",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "精工加工",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "生效",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "否",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "tplusdemo12864",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "tplusdemo12857",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "2026-08-02",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "000000000148243e",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "确定",
+      "cls": "",
+      "id": "btnUpdate0"
+    },
+    {
+      "t": "当前第1页, 共1页, 总共7条记录",
+      "cls": "",
+      "id": "PageTotalInformation0"
+    },
+    {
+      "t": "加工顺序",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "工序编码",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "工序名称",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "加工方式",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "生产车间",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "工资类型",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "计件依据",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "委外供应商",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "按辅单位计价",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "辅单位",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "换算率",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "默认报工数量",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "关键工序",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    },
+    {
+      "t": "标准合格率%",
+      "cls": "ui-equal-cell-inner",
+      "id": ""
+    }
+  ],
+  "query": [],
+  "tabs": [],
+  "containers": [],
+  "bodyHead": "新增\n修改\n删除\n审核\n弃审\n查找\n栏目\n打印\n打印\n预览\nAlt+/\n导入\n下载工艺路线模板\n导入工艺路线\n导出\n刷新\n退出\n序号\t\n工艺路线编码\n\t\n工艺路线名称\n\t\n单据状态\n\t\n停用\n\t\n制单人\n\t\n审核人\n\t\n审核日期\n1\n\t\n\n\n2\n\t\n\n\n3\n\t\n\n\n4\n\t\n\n\n5\n\t\n\n\n6\n\t\n\n\n7\n\t\n002\n\t\n制门\n\t\n生效\n\t\n否\n\t\ntplusdemo12851\n\t\ntplusdemo12851\n\t\n2026-03-23\n\n\n0023\n\t\n2323\n\t\n生效\n\t\n否\n\t\ntplusdemo12855\n\t\ntplusdemo12852\n\t\n2026-07-21\n\n\n0803\n\t\n测试\n\t\n未审\n\t\n否\n\t\ntplusdemo12860\n\t\n \n\t\n \n\n\n1\n\t\n壹号线\n\t\n生效\n\t\n否\n\t\ntplusdemo12852\n\t\ntplusdemo12852\n\t\n2026-05-26\n\n\n1002\n\t\n测试\n\t\n生效\n\t\n否\n\t\n10000000101\n\t\ntplusdemo12857\n\t\n2026-08-02\n\n\n666\n\t\n钣金\n\t\n生效\n\t\n否\n\t\ntplusdemo12860\n\t\ntplusdemo12862\n\t\n2026-06-11\n\n\nJG01\n\t\n精工加工\n\t\n生效\n\t\n否\n\t\ntplusdemo12864\n\t\ntplusdemo12857\n\t\n2026-08-02\n每页记录数\t\t 跳转到页\t\t确定\t|\t\t\t\t\t|\t当前第1页, 共1页, 总共7条记录\n序号\n加工顺序\n\t\n工序编码\n\t\n工序名称\n\t\n加工方式\n\t\n生产车间\n\t\n工资类型\n\t\n计件依据\n\t\n委外供应商\n\t\n按辅单位计价\n\t\n辅单位\n\t\n换算率\n\t\n默认报工数量\n\t\n关键工序\n\t\n标准合格率%",
+  "bodyTail": "新增\n修改\n删除\n审核\n弃审\n查找\n栏目\n打印\n打印\n预览\nAlt+/\n导入\n下载工艺路线模板\n导入工艺路线\n导出\n刷新\n退出\n序号\t\n工艺路线编码\n\t\n工艺路线名称\n\t\n单据状态\n\t\n停用\n\t\n制单人\n\t\n审核人\n\t\n审核日期\n1\n\t\n\n\n2\n\t\n\n\n3\n\t\n\n\n4\n\t\n\n\n5\n\t\n\n\n6\n\t\n\n\n7\n\t\n002\n\t\n制门\n\t\n生效\n\t\n否\n\t\ntplusdemo12851\n\t\ntplusdemo12851\n\t\n2026-03-23\n\n\n0023\n\t\n2323\n\t\n生效\n\t\n否\n\t\ntplusdemo12855\n\t\ntplusdemo12852\n\t\n2026-07-21\n\n\n0803\n\t\n测试\n\t\n未审\n\t\n否\n\t\ntplusdemo12860\n\t\n \n\t\n \n\n\n1\n\t\n壹号线\n\t\n生效\n\t\n否\n\t\ntplusdemo12852\n\t\ntplusdemo12852\n\t\n2026-05-26\n\n\n1002\n\t\n测试\n\t\n生效\n\t\n否\n\t\n10000000101\n\t\ntplusdemo12857\n\t\n2026-08-02\n\n\n666\n\t\n钣金\n\t\n生效\n\t\n否\n\t\ntplusdemo12860\n\t\ntplusdemo12862\n\t\n2026-06-11\n\n\nJG01\n\t\n精工加工\n\t\n生效\n\t\n否\n\t\ntplusdemo12864\n\t\ntplusdemo12857\n\t\n2026-08-02\n每页记录数\t\t 跳转到页\t\t确定\t|\t\t\t\t\t|\t当前第1页, 共1页, 总共7条记录\n序号\n加工顺序\n\t\n工序编码\n\t\n工序名称\n\t\n加工方式\n\t\n生产车间\n\t\n工资类型\n\t\n计件依据\n\t\n委外供应商\n\t\n按辅单位计价\n\t\n辅单位\n\t\n换算率\n\t\n默认报工数量\n\t\n关键工序\n\t\n标准合格率%",
+  "afterClick": {
+    "url": "https://h2t.chanjet.com/tplus/BAPView/DoubleList.aspx?mId=aa1055&pId=doubleListView&&sysId=aa",
+    "title": "工艺路线",
+    "tables": [
+      {
+        "idx": 2,
+        "cls": "",
+        "rect": {
+          "x": 9,
+          "y": 45,
+          "w": 75,
+          "h": 30
+        },
+        "cols": [
+          {
+            "t": "",
+            "a": "",
+            "flag": "",
+            "w": "35px"
+          },
+          {
+            "t": "",
+            "a": "MultiSelect",
+            "flag": "",
+            "w": "40px"
+          }
+        ],
+        "ths": [],
+        "rowCount": 1,
+        "sample": [
+          [
+            "序号",
+            ""
+          ]
+        ]
+      },
+      {
+        "idx": 3,
+        "cls": "",
+        "rect": {
+          "x": 84,
+          "y": 45,
+          "w": 850,
+          "h": 30
+        },
+        "cols": [
+          {
+            "t": "工艺路线ID",
+            "a": "ID",
+            "flag": "myhidden",
+            "w": "200px"
+          },
+          {
+            "t": "工艺路线编码",
+            "a": "Code",
+            "flag": "",
+            "w": "200px"
+          },
+          {
+            "t": "工艺路线名称",
+            "a": "Name",
+            "flag": "",
+            "w": "200px"
+          },
+          {
+            "t": "单据状态",
+            "a": "VoucherState_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "停用",
+            "a": "Disabled",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "制单人",
+            "a": "Maker",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "审核人",
+            "a": "Auditor",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "审核日期",
+            "a": "AuditedDate",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "时间戳",
+            "a": "Ts",
+            "flag": "myhidden",
+            "w": "90px"
+          }
+        ],
+        "ths": [],
+        "rowCount": 1,
+        "sample": [
+          [
+            "工艺路线ID",
+            "工艺路线编码",
+            "工艺路线名称",
+            "单据状态",
+            "停用",
+            "制单人",
+            "审核人",
+            "审核日期",
+            "时间戳"
+          ]
+        ]
+      },
+      {
+        "idx": 4,
+        "cls": "",
+        "rect": {
+          "x": 9,
+          "y": 75,
+          "w": 75,
+          "h": 210
+        },
+        "cols": [
+          {
+            "t": "",
+            "a": "",
+            "flag": "",
+            "w": "35px"
+          },
+          {
+            "t": "",
+            "a": "MultiSelect",
+            "flag": "",
+            "w": "40px"
+          }
+        ],
+        "ths": [],
+        "rowCount": 7,
+        "sample": [
+          [
+            "1",
+            ""
+          ],
+          [
+            "2",
+            ""
+          ],
+          [
+            "3",
+            ""
+          ]
+        ]
+      },
+      {
+        "idx": 5,
+        "cls": "",
+        "rect": {
+          "x": 9,
+          "y": 285,
+          "w": 75,
+          "h": 0
+        },
+        "cols": [
+          {
+            "t": "",
+            "a": "",
+            "flag": "",
+            "w": "35px"
+          },
+          {
+            "t": "",
+            "a": "MultiSelect",
+            "flag": "",
+            "w": "40px"
+          }
+        ],
+        "ths": [],
+        "rowCount": 0,
+        "sample": []
+      },
+      {
+        "idx": 6,
+        "cls": "fixstyle",
+        "rect": {
+          "x": 84,
+          "y": 75,
+          "w": 850,
+          "h": 210
+        },
+        "cols": [
+          {
+            "t": "",
+            "a": "ID",
+            "flag": "myhidden",
+            "w": "200px"
+          },
+          {
+            "t": "",
+            "a": "Code",
+            "flag": "",
+            "w": "200px"
+          },
+          {
+            "t": "",
+            "a": "Name",
+            "flag": "",
+            "w": "200px"
+          },
+          {
+            "t": "",
+            "a": "VoucherState_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Disabled",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Maker",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Auditor",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "yyyy-MM-dd",
+            "a": "AuditedDate",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Ts",
+            "flag": "myhidden",
+            "w": "90px"
+          }
+        ],
+        "ths": [],
+        "rowCount": 7,
+        "sample": [
+          [
+            "37",
+            "002",
+            "制门",
+            "生效",
+            "否",
+            "tplusdemo12851",
+            "tplusdemo12851",
+            "2026-03-23",
+            "00000000012f7b14"
+          ],
+          [
+            "39",
+            "0023",
+            "2323",
+            "生效",
+            "否",
+            "tplusdemo12855",
+            "tplusdemo12852",
+            "2026-07-21",
+            "000000000147310e"
+          ],
+          [
+            "42",
+            "0803",
+            "测试",
+            "未审",
+            "否",
+            "tplusdemo12860",
+            "",
+            "",
+            "00000000014838fe"
+          ]
+        ]
+      },
+      {
+        "idx": 7,
+        "cls": "",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "cols": [
+          {
+            "t": "",
+            "a": "ID",
+            "flag": "myhidden",
+            "w": "200px"
+          },
+          {
+            "t": "",
+            "a": "Code",
+            "flag": "",
+            "w": "200px"
+          },
+          {
+            "t": "",
+            "a": "Name",
+            "flag": "",
+            "w": "200px"
+          },
+          {
+            "t": "",
+            "a": "VoucherState_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Disabled",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Maker",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Auditor",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "yyyy-MM-dd",
+            "a": "AuditedDate",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Ts",
+            "flag": "myhidden",
+            "w": "90px"
+          }
+        ],
+        "ths": [],
+        "rowCount": 1,
+        "sample": [
+          [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ]
+        ]
+      },
+      {
+        "idx": 8,
+        "cls": "",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "cols": [
+          {
+            "t": "",
+            "a": "ID",
+            "flag": "myhidden",
+            "w": "200px"
+          },
+          {
+            "t": "",
+            "a": "Code",
+            "flag": "",
+            "w": "200px"
+          },
+          {
+            "t": "",
+            "a": "Name",
+            "flag": "",
+            "w": "200px"
+          },
+          {
+            "t": "",
+            "a": "VoucherState_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Disabled",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Maker",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Auditor",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "yyyy-MM-dd",
+            "a": "AuditedDate",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Ts",
+            "flag": "myhidden",
+            "w": "90px"
+          }
+        ],
+        "ths": [],
+        "rowCount": 1,
+        "sample": [
+          [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ]
+        ]
+      },
+      {
+        "idx": 12,
+        "cls": "",
+        "rect": {
+          "x": 9,
+          "y": 539,
+          "w": 35,
+          "h": 30
+        },
+        "cols": [
+          {
+            "t": "",
+            "a": "",
+            "flag": "",
+            "w": "35px"
+          }
+        ],
+        "ths": [],
+        "rowCount": 1,
+        "sample": [
+          [
+            "序号"
+          ]
+        ]
+      },
+      {
+        "idx": 13,
+        "cls": "",
+        "rect": {
+          "x": 44,
+          "y": 539,
+          "w": 1270,
+          "h": 30
+        },
+        "cols": [
+          {
+            "t": "加工顺序",
+            "a": "JobSequence",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "工序编码",
+            "a": "Process_Code",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "工序名称",
+            "a": "Process_Name",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "加工方式",
+            "a": "ProcessMode_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "生产车间",
+            "a": "WorkShop_Name",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "工资类型",
+            "a": "RoutingDetailDTO_Process_SalaryType_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "计件依据",
+            "a": "RoutingDetailDTO_Process_PieceworkBasis_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "委外供应商",
+            "a": "Partner_Name",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "按辅单位计价",
+            "a": "RoutingDetailDTO_isUseProcessSubunit",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "辅单位",
+            "a": "RoutingDetailDTO_Process_ProcessSubUnit_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "换算率",
+            "a": "RoutingDetailDTO_ProcessSubUnitChangeRate",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "默认报工数量",
+            "a": "RoutingDetailDTO_DefaultReportQuantity",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "关键工序",
+            "a": "RoutingDetailDTO_KeyProcess",
+            "flag": "",
+            "w": "60px"
+          },
+          {
+            "t": "标准合格率%",
+            "a": "RoutingDetailDTO_StandardQualificationrate",
+            "flag": "",
+            "w": "90px"
+          }
+        ],
+        "ths": [],
+        "rowCount": 1,
+        "sample": [
+          [
+            "加工顺序",
+            "工序编码",
+            "工序名称",
+            "加工方式",
+            "生产车间",
+            "工资类型",
+            "计件依据",
+            "委外供应商",
+            "按辅单位计价",
+            "辅单位",
+            "换算率",
+            "默认报工数量",
+            "关键工序",
+            "标准合格率%"
+          ]
+        ]
+      },
+      {
+        "idx": 14,
+        "cls": "",
+        "rect": {
+          "x": 9,
+          "y": 569,
+          "w": 35,
+          "h": 120
+        },
+        "cols": [
+          {
+            "t": "",
+            "a": "",
+            "flag": "",
+            "w": "35px"
+          }
+        ],
+        "ths": [],
+        "rowCount": 4,
+        "sample": [
+          [
+            "1"
+          ],
+          [
+            "2"
+          ],
+          [
+            "3"
+          ]
+        ]
+      },
+      {
+        "idx": 15,
+        "cls": "",
+        "rect": {
+          "x": 9,
+          "y": 689,
+          "w": 35,
+          "h": 0
+        },
+        "cols": [
+          {
+            "t": "",
+            "a": "",
+            "flag": "",
+            "w": "35px"
+          }
+        ],
+        "ths": [],
+        "rowCount": 0,
+        "sample": []
+      },
+      {
+        "idx": 16,
+        "cls": "fixstyle",
+        "rect": {
+          "x": 44,
+          "y": 569,
+          "w": 1270,
+          "h": 120
+        },
+        "cols": [
+          {
+            "t": "",
+            "a": "JobSequence",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Process_Code",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "",
+            "a": "Process_Name",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "",
+            "a": "ProcessMode_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "WorkShop_Name",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_Process_SalaryType_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_Process_PieceworkBasis_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Partner_Name",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_isUseProcessSubunit",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_Process_ProcessSubUnit_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_ProcessSubUnitChangeRate",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_DefaultReportQuantity",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_KeyProcess",
+            "flag": "",
+            "w": "60px"
+          },
+          {
+            "t": "Percent",
+            "a": "RoutingDetailDTO_StandardQualificationrate",
+            "flag": "",
+            "w": "90px"
+          }
+        ],
+        "ths": [],
+        "rowCount": 4,
+        "sample": [
+          [
+            "1",
+            "1001",
+            "工序1",
+            "自制",
+            "半成品车间",
+            "计件工资",
+            "合格数量",
+            "",
+            "否",
+            "",
+            "",
+            "",
+            "是",
+            "100.00%"
+          ],
+          [
+            "2",
+            "1001",
+            "工序1",
+            "自制",
+            "",
+            "计件工资",
+            "合格数量",
+            "",
+            "否",
+            "",
+            "",
+            "",
+            "是",
+            "100.00%"
+          ],
+          [
+            "3",
+            "1001",
+            "工序1",
+            "自制",
+            "",
+            "计件工资",
+            "合格数量",
+            "",
+            "否",
+            "",
+            "",
+            "",
+            "是",
+            "100.00%"
+          ]
+        ]
+      },
+      {
+        "idx": 17,
+        "cls": "",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "cols": [
+          {
+            "t": "",
+            "a": "JobSequence",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Process_Code",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "",
+            "a": "Process_Name",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "",
+            "a": "ProcessMode_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "WorkShop_Name",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_Process_SalaryType_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_Process_PieceworkBasis_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Partner_Name",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_isUseProcessSubunit",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_Process_ProcessSubUnit_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_ProcessSubUnitChangeRate",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_DefaultReportQuantity",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_KeyProcess",
+            "flag": "",
+            "w": "60px"
+          },
+          {
+            "t": "Percent",
+            "a": "RoutingDetailDTO_StandardQualificationrate",
+            "flag": "",
+            "w": "90px"
+          }
+        ],
+        "ths": [],
+        "rowCount": 1,
+        "sample": [
+          [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ]
+        ]
+      },
+      {
+        "idx": 18,
+        "cls": "",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "cols": [
+          {
+            "t": "",
+            "a": "JobSequence",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Process_Code",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "",
+            "a": "Process_Name",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "",
+            "a": "ProcessMode_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "WorkShop_Name",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_Process_SalaryType_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_Process_PieceworkBasis_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "Partner_Name",
+            "flag": "",
+            "w": "100px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_isUseProcessSubunit",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_Process_ProcessSubUnit_Name",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_ProcessSubUnitChangeRate",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_DefaultReportQuantity",
+            "flag": "",
+            "w": "90px"
+          },
+          {
+            "t": "",
+            "a": "RoutingDetailDTO_KeyProcess",
+            "flag": "",
+            "w": "60px"
+          },
+          {
+            "t": "Percent",
+            "a": "RoutingDetailDTO_StandardQualificationrate",
+            "flag": "",
+            "w": "90px"
+          }
+        ],
+        "ths": [],
+        "rowCount": 1,
+        "sample": [
+          [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ]
+        ]
+      }
+    ],
+    "toolbar": [
+      "新增",
+      "修改",
+      "删除",
+      "审核",
+      "弃审",
+      "查找",
+      "栏目",
+      "打印",
+      "打印",
+      "预览",
+      "导入",
+      "下载工艺路线模板",
+      "导入工艺路线",
+      "导出",
+      "刷新",
+      "退出"
+    ],
+    "toolbarAll": [
+      {
+        "t": "|",
+        "cls": "",
+        "id": ""
+      },
+      {
+        "t": "当前机器日期：2026年8月19日",
+        "cls": "",
+        "id": ""
+      },
+      {
+        "t": "新增",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "修改",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "删除",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "审核",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "弃审",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "查找",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "栏目",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "打印",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "打印",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "预览",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "Alt+/",
+        "cls": "",
+        "id": ""
+      },
+      {
+        "t": "导入",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "下载工艺路线模板",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "导入工艺路线",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "导出",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "刷新",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "退出",
+        "cls": "tb-text",
+        "id": ""
+      },
+      {
+        "t": "工艺路线ID",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "工艺路线编码",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "工艺路线名称",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "单据状态",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "停用",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "制单人",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "审核人",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "审核日期",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "时间戳",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "1",
+        "cls": "",
+        "id": ""
+      },
+      {
+        "t": "2",
+        "cls": "",
+        "id": ""
+      },
+      {
+        "t": "3",
+        "cls": "",
+        "id": ""
+      },
+      {
+        "t": "4",
+        "cls": "",
+        "id": ""
+      },
+      {
+        "t": "5",
+        "cls": "",
+        "id": ""
+      },
+      {
+        "t": "6",
+        "cls": "",
+        "id": ""
+      },
+      {
+        "t": "7",
+        "cls": "",
+        "id": ""
+      },
+      {
+        "t": "37",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "002",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "制门",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "生效",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "否",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "tplusdemo12851",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "tplusdemo12851",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "2026-03-23",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "00000000012f7b14",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "39",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "0023",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "2323",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "生效",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "否",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "tplusdemo12855",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "tplusdemo12852",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "2026-07-21",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "000000000147310e",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "42",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "0803",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "测试",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "未审",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "否",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "tplusdemo12860",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "00000000014838fe",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "40",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "1",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "壹号线",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "生效",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "否",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "tplusdemo12852",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "tplusdemo12852",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "2026-05-26",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "000000000141a601",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "12",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "1002",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "测试",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "生效",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "否",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "10000000101",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "tplusdemo12857",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "2026-08-02",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "000000000148243d",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "41",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "666",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "钣金",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "生效",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "否",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "tplusdemo12860",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "tplusdemo12862",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "2026-06-11",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "00000000014343ee",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "38",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "JG01",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "精工加工",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "生效",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "否",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "tplusdemo12864",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "tplusdemo12857",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "2026-08-02",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "000000000148243e",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "确定",
+        "cls": "",
+        "id": "btnUpdate0"
+      },
+      {
+        "t": "当前第1页, 共1页, 总共7条记录",
+        "cls": "",
+        "id": "PageTotalInformation0"
+      },
+      {
+        "t": "加工顺序",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "工序编码",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "工序名称",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "加工方式",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "生产车间",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "工资类型",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "计件依据",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "委外供应商",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "按辅单位计价",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "辅单位",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "换算率",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "默认报工数量",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "关键工序",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "标准合格率%",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "1",
+        "cls": "",
+        "id": ""
+      },
+      {
+        "t": "2",
+        "cls": "",
+        "id": ""
+      },
+      {
+        "t": "3",
+        "cls": "",
+        "id": ""
+      },
+      {
+        "t": "4",
+        "cls": "",
+        "id": ""
+      },
+      {
+        "t": "1",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "1001",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "工序1",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "自制",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "半成品车间",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "计件工资",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "合格数量",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "否",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "是",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "100.00%",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "2",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "1001",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "工序1",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "自制",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "计件工资",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "合格数量",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "否",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "是",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "100.00%",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "3",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "1001",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "工序1",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "自制",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "计件工资",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "合格数量",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "否",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "是",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "100.00%",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "4",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "1003",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "工序3",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "委外",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "计件工资",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "合格数量",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "否",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "是",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      },
+      {
+        "t": "100.00%",
+        "cls": "ui-equal-cell-inner",
+        "id": ""
+      }
+    ],
+    "query": [],
+    "tabs": [],
+    "containers": [],
+    "bodyHead": "新增\n修改\n删除\n审核\n弃审\n查找\n栏目\n打印\n打印\n预览\nAlt+/\n导入\n下载工艺路线模板\n导入工艺路线\n导出\n刷新\n退出\n序号\t\n工艺路线编码\n\t\n工艺路线名称\n\t\n单据状态\n\t\n停用\n\t\n制单人\n\t\n审核人\n\t\n审核日期\n1\n\t\n\n\n2\n\t\n\n\n3\n\t\n\n\n4\n\t\n\n\n5\n\t\n\n\n6\n\t\n\n\n7\n\t\n002\n\t\n制门\n\t\n生效\n\t\n否\n\t\ntplusdemo12851\n\t\ntplusdemo12851\n\t\n2026-03-23\n\n\n0023\n\t\n2323\n\t\n生效\n\t\n否\n\t\ntplusdemo12855\n\t\ntplusdemo12852\n\t\n2026-07-21\n\n\n0803\n\t\n测试\n\t\n未审\n\t\n否\n\t\ntplusdemo12860\n\t\n \n\t\n \n\n\n1\n\t\n壹号线\n\t\n生效\n\t\n否\n\t\ntplusdemo12852\n\t\ntplusdemo12852\n\t\n2026-05-26\n\n\n1002\n\t\n测试\n\t\n生效\n\t\n否\n\t\n10000000101\n\t\ntplusdemo12857\n\t\n2026-08-02\n\n\n666\n\t\n钣金\n\t\n生效\n\t\n否\n\t\ntplusdemo12860\n\t\ntplusdemo12862\n\t\n2026-06-11\n\n\nJG01\n\t\n精工加工\n\t\n生效\n\t\n否\n\t\ntplusdemo12864\n\t\ntplusdemo12857\n\t\n2026-08-02\n每页记录数\t\t 跳转到页\t\t确定\t|\t\t\t\t\t|\t当前第1页, 共1页, 总共7条记录\n序号\n加工顺序\n\t\n工序编码\n\t\n工序名称\n\t\n加工方式\n\t\n生产车间\n\t\n工资类型\n\t\n计件依据\n\t\n委外供应商\n\t\n按辅单位计价\n\t\n辅单位\n\t\n换算率\n\t\n默认报工数量\n\t\n关键工序\n\t\n标准合格率%\n1\n\n\n2\n\n\n3\n\n\n4\n1\n\t\n1001\n\t\n工序1\n\t\n自制\n\t\n半成品车间\n\t\n计件工资\n\t\n合格数量\n\t\n \n\t\n否\n\t\n \n\t\n \n\t\n \n\t\n是\n\t\n100.00%\n\n\n2\n\t\n1001\n\t\n工序1\n\t\n自制\n\t\n \n\t\n计件工资\n\t\n合格数量\n\t\n \n\t\n否\n\t\n \n\t\n \n\t\n",
+    "bodyTail": "\n\t\n生效\n\t\n否\n\t\ntplusdemo12851\n\t\ntplusdemo12851\n\t\n2026-03-23\n\n\n0023\n\t\n2323\n\t\n生效\n\t\n否\n\t\ntplusdemo12855\n\t\ntplusdemo12852\n\t\n2026-07-21\n\n\n0803\n\t\n测试\n\t\n未审\n\t\n否\n\t\ntplusdemo12860\n\t\n \n\t\n \n\n\n1\n\t\n壹号线\n\t\n生效\n\t\n否\n\t\ntplusdemo12852\n\t\ntplusdemo12852\n\t\n2026-05-26\n\n\n1002\n\t\n测试\n\t\n生效\n\t\n否\n\t\n10000000101\n\t\ntplusdemo12857\n\t\n2026-08-02\n\n\n666\n\t\n钣金\n\t\n生效\n\t\n否\n\t\ntplusdemo12860\n\t\ntplusdemo12862\n\t\n2026-06-11\n\n\nJG01\n\t\n精工加工\n\t\n生效\n\t\n否\n\t\ntplusdemo12864\n\t\ntplusdemo12857\n\t\n2026-08-02\n每页记录数\t\t 跳转到页\t\t确定\t|\t\t\t\t\t|\t当前第1页, 共1页, 总共7条记录\n序号\n加工顺序\n\t\n工序编码\n\t\n工序名称\n\t\n加工方式\n\t\n生产车间\n\t\n工资类型\n\t\n计件依据\n\t\n委外供应商\n\t\n按辅单位计价\n\t\n辅单位\n\t\n换算率\n\t\n默认报工数量\n\t\n关键工序\n\t\n标准合格率%\n1\n\n\n2\n\n\n3\n\n\n4\n1\n\t\n1001\n\t\n工序1\n\t\n自制\n\t\n半成品车间\n\t\n计件工资\n\t\n合格数量\n\t\n \n\t\n否\n\t\n \n\t\n \n\t\n \n\t\n是\n\t\n100.00%\n\n\n2\n\t\n1001\n\t\n工序1\n\t\n自制\n\t\n \n\t\n计件工资\n\t\n合格数量\n\t\n \n\t\n否\n\t\n \n\t\n \n\t\n \n\t\n是\n\t\n100.00%\n\n\n3\n\t\n1001\n\t\n工序1\n\t\n自制\n\t\n \n\t\n计件工资\n\t\n合格数量\n\t\n \n\t\n否\n\t\n \n\t\n \n\t\n \n\t\n是\n\t\n100.00%\n\n\n4\n\t\n1003\n\t\n工序3\n\t\n委外\n\t\n \n\t\n计件工资\n\t\n合格数量\n\t\n \n\t\n否\n\t\n \n\t\n \n\t\n \n\t\n是\n\t\n100.00%"
+  }
+}

@@ -248,7 +248,7 @@ watch(
 .func-zone {
   display: flex;
   align-items: center;
-  justiry-content: space-around;
+  justify-content: space-around;
   height: 42px;
   border-bottom: 1px solid var(--t-border-light);
 }
@@ -324,7 +324,7 @@ watch(
   display: none;
 }
 .leftnav.collapsed .nav-group {
-  justiry-content: center;
+  justify-content: center;
   padding: 12px 0;
 }
 .nav-modules {
@@ -336,7 +336,7 @@ watch(
 .nav-module {
   display: flex;
   align-items: center;
-  justiry-content: space-between;
+  justify-content: space-between;
   padding: 9px 12px 9px 36px;
   font-size: 13px;
   color: var(--t-text-2);

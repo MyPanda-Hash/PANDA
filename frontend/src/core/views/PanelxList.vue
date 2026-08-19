@@ -50,6 +50,19 @@
     </div>
 
     <div class="body" v-loading="loading">
+      <!-- ══════════ ③b 主表预览表格（配置 mainTable 时显示：主表字段列，点行切换当前单据，明细联动） -->
+      <div v-if="mainGrid" class="main-grid">
+        <div class="dt-head">
+          <span class="dt-tab on">{{ mainGrid.label }}</span>
+          <span class="dt-ics">
+            <span class="dt-ic" title="点行切换当前单据">定位</span>
+          </span>
+        </div>
+        <el-table :data="mainRows" border size="small" :row-class-name="mainRowCls" @row-click="onMainRowClick" @row-dblclick="openMaintain">
+          <el-table-column type="index" label="序号" width="60" align="center" :index="(i) => i + 1" />
+          <el-table-column v-for="c in mainCols" :key="c" :prop="c" :label="c" min-width="110" show-overflow-tooltip />
+        </el-table>
+      </div>
       <!-- ══════════ ③ 表中 · 明细区块（配置驱动：区块内多页签，同 T+）══════════ -->
       <div class="detail" v-for="b in blocks" :key="b.id">
         <div v-if="isApproved" class="approved-stamp">已审批</div>
@@ -137,6 +150,7 @@
       </template>
     </el-dialog>
     <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
+    <DetailMaintainDialog v-model="maintainVisible" :panel-code="panelCode" :row="maintainRow" @saved="onMaintainSaved" />
   </div>
 </template>
 
@@ -154,6 +168,7 @@ import SelectVoucherDialog from './SelectVoucherDialog.vue'
 import BomDialog from './BomDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
 import ImportDialog from './ImportDialog.vue'
+import DetailMaintainDialog from './DetailMaintainDialog.vue'
 
 const loginVisible = ref(false)
 function onPanelxLogin() {
@@ -206,6 +221,18 @@ const subBomMap = ref({})
 const subBomVisible = ref(false)
 const subBomMaterial = ref(null)
 const subBomBom = ref([])
+
+// ---------- 明细维护弹窗（主表双击行打开：在弹窗内维护该单明细，新增/删除/保存） ----------
+const maintainVisible = ref(false)
+const maintainRow = ref(null)
+function openMaintain(row) {
+  if (!row || row._placeholder) return
+  maintainRow.value = row
+  maintainVisible.value = true
+}
+function onMaintainSaved() {
+  load()
+}
 
 // ---------- 单据浏览器：翻页切单据 ----------
 const curIdx = ref(0)
@@ -274,6 +301,29 @@ async function pageLast() {
 // 视图状态：view[blockId + ':tab'] = 当前页签 key；view[blockId + ':' + tabKey + ':view'] = 'detail' | 'summary'
 const view = reactive({})
 const blocks = computed(() => buildBlocks(cfgCache.value))
+
+// ══════════ 主表预览表格（mainTable 配置，如工艺路线主表；点行切换当前单据，下方明细联动）══════════
+const mainGrid = computed(() => {
+  const tp = cfgCache.value?.metadata?.panelPageDto?.tablePages?.[0]
+  return tp?.mainTable || null
+})
+const mainCols = computed(() => (mainGrid.value?.columns || []).filter((c) => c !== '序号'))
+// 主表固定 5 行（不足补占位，与明细区一致）
+const mainRows = computed(() => {
+  const l = list.value
+  if (!l.length) return []
+  const rows = l.slice(0, 5).map((r) => r)
+  while (rows.length < 5) rows.push({ _placeholder: true })
+  return rows
+})
+function onMainRowClick(row) {
+  const i = list.value.indexOf(row)
+  if (i >= 0) curIdx.value = i
+}
+function mainRowCls({ row }) {
+  if (row._placeholder) return 'ph-row'
+  return row === cur.value ? 'row-cur' : ''
+}
 
 function buildBlocks(cfg) {
   if (!cfg) return []
@@ -436,8 +486,11 @@ function sumMethod({ columns, data }) {
       sums[i] = '合计'
       return
     }
+    // 只对「小数/整数」类型的字段求和：纯数字文本（身份证号/手机号/编码）不参与合计
+    const f = fieldDefOf(col.property)
+    const isNumeric = f && (f.dataType === '小数' || f.dataType === '整数')
     const vals = real.map((r) => Number(r[col.property]))
-    sums[i] = vals.length && vals.every((v) => Number.isFinite(v)) ? Math.round(vals.reduce((a, b) => a + b, 0) * 100) / 100 : ''
+    sums[i] = isNumeric && vals.length && vals.every((v) => Number.isFinite(v)) ? Math.round(vals.reduce((a, b) => a + b, 0) * 100) / 100 : ''
   })
   return sums
 }
@@ -629,7 +682,14 @@ async function loadCrg() {
   cfgCache.value = cfg
   const tp = cfg?.metadata?.panelPageDto?.tablePages?.[0]
   panelName.value = cfg?.metadata?.panelName || panelCode.value
+  // 页面标题 = 真实面板名（路由 meta.title 是通用占位，配置加载后覆盖）
+  document.title = panelName.value + ' · 轻MES'
   queryFields.value = tp?.queryFields || []
+  // 面板可配置每页条数（如档案类大列表 pageSize=100），未配置时保持默认 20
+  if (tp?.pageSize && query.pageSize !== tp.pageSize) {
+    query.pageSize = tp.pageSize
+    query.pageNo = 1
+  }
   gridTabs.value = tp?.gridTabs || []
   groups.value = filterGroups(cfg?.metadata?.buttonGroups || [])
   return cfg
@@ -706,6 +766,12 @@ async function onButton(action) {
     return
   }
   if (action === '新增' || action === '新增流程') {
+    if (cfgCache.value?.metadata?.singleDoc) {
+      // 单单据面板（如员工档案）：不新建第二张单据，直接打开已有单据（无单据时新建一张）
+      if (current.value && current.value['编号']) { openForm(current.value); return }
+      newVisible.value = true
+      return
+    }
     if (panelCode.value === 'INV') {
       // 存货固定 5 张类别单据：新增物品进入对应类别单据（不新建第 6 张）
       // 防重复触发：类别选择弹窗已打开时忽略再次点击（避免刷新单据）
@@ -1500,4 +1566,9 @@ watch(
   color: #0d5bd3;
 }
 :deep(.el-table .row-approved td) { background: #f0fdf4 !important; }
+.main-grid { margin-bottom: 10px; }
+.main-grid .dt-head { margin-bottom: 4px; }
+.main-grid .dt-head .dt-tab.on { cursor: default; }
+:deep(.main-grid .el-table .row-cur td) { background: #eaf4fe !important; }
+:deep(.main-grid .el-table .ph-row td) { height: 31px; }
 </style>

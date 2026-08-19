@@ -942,6 +942,8 @@ async function load() {
     // 复用顶部 tabsStore
     const cur = tabsStore.tabs.find((x) => x.path === route.path)
     if (cur) cur.title = (payload.panelName || '表单') + '-' + no
+    // 页面标题 = 真实面板名（路由 meta.title 是通用占位，配置加载后覆盖）
+    document.title = (payload.panelName || '表单') + ' · 轻MES'
   } catch (e) {
     ElMessage.error(engine.errMsg(e) || '加载失败')
     back()
@@ -1336,7 +1338,7 @@ watch(() => [panelCode.value, code.value], load)
 .img-ph {
   display: inline-flex;
   align-items: center;
-  justiry-content: center;
+  justify-content: center;
   width: 30px;
   height: 30px;
   font-size: 11px;
