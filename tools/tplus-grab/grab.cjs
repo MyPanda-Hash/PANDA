@@ -132,7 +132,7 @@ async function loginFlow(cdp, args) {
   await sleep(6000)
   const clicked = await cdp.evalMain(`(() => { const b = document.querySelector('#expBtn') || [...document.querySelectorAll('button,a,div')].find(e => e.textContent.includes('立即体验')); if (b) { b.click(); return true; } return false; })()`)
   console.log('[login] 立即体验: ' + clicked)
-  let mes = false
+  let chosen = false
   for (let i = 0; i < 40; i++) {
     const fr = await cdp.frameWith('selectRoles')
     if (fr) {
@@ -141,16 +141,21 @@ async function loginFlow(cdp, args) {
         const w = await cdp.send('Page.createIsolatedWorld', { frameId: fr.id, worldName: 'tplus-probe', grantUniveralAccess: true })
         ctxId = w.executionContextId
       }
-      const hit = await cdp.evalIn(`(() => { const el = document.querySelector('#mes') || [...document.querySelectorAll('*')].find(e => e.textContent.trim() === '轻MES'); if (el) { el.click(); return true; } return null; })()`, ctxId)
-      if (hit === true) { mes = true; break }
+      // 默认选择「机械行业」；找不到时回退「轻MES」（向后兼容）
+      const hit = await cdp.evalIn(`(() => {
+        const pick = ['机械行业', '轻MES'].map(t => [...document.querySelectorAll('*')].find(e => e.textContent.trim() === t)).find(Boolean)
+        if (pick) { pick.click(); return pick.textContent.trim(); }
+        return null;
+      })()`, ctxId)
+      if (hit) { chosen = true; console.log('[login] 已选「' + hit + '」，等待门户'); break }
     }
     await sleep(1500)
   }
-  if (!mes) throw new Error('登录流程未点到「轻MES」')
-  console.log('[login] 已选轻MES，等待门户')
+  if (!chosen) throw new Error('登录流程未点到目标行业（机械行业/轻MES）')
   for (let i = 0; i < 80; i++) {
     const tree = await cdp.send('Page.getFrameTree')
-    if (tree.frameTree.frame.url.includes('h2t.chanjet.com')) break
+    // 机械行业 → h4t.chanjet.com；轻MES → h2t.chanjet.com；统一按 chanjet.com 门户判定
+    if (tree.frameTree.frame.url.includes('chanjet.com/tplus/view/portal')) break
     await sleep(1500)
   }
   await sleep(4000)

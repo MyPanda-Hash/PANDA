@@ -1,0 +1,339 @@
+{
+  "url": "https://h2t.chanjet.com/tplus/BAPView/DoubleList.aspx?mId=aa1055&pId=doubleListView&&sysId=aa",
+  "title": "工艺路线",
+  "body": {
+    "bg": "rgb(255, 255, 255)",
+    "font": "\"Helvetica Neue\", Helvetica, Arial, \"Microsoft Yahei\", \"Hiragino Sans GB\", \"Heiti SC\", \"WenQuanYi Micro Hei\", sans-serif",
+    "fs": "12px"
+  },
+  "cols": [
+    {
+      "t": "工艺路线ID",
+      "a": "ID",
+      "hidden": true,
+      "w": "200px"
+    },
+    {
+      "t": "工艺路线编码",
+      "a": "Code",
+      "hidden": false,
+      "w": "200px"
+    },
+    {
+      "t": "工艺路线名称",
+      "a": "Name",
+      "hidden": false,
+      "w": "200px"
+    },
+    {
+      "t": "单据状态",
+      "a": "VoucherState_Name",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "停用",
+      "a": "Disabled",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "制单人",
+      "a": "Maker",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "审核人",
+      "a": "Auditor",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "审核日期",
+      "a": "AuditedDate",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "时间戳",
+      "a": "Ts",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "yyyy-MM-dd",
+      "a": "AuditedDate",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "yyyy-MM-dd",
+      "a": "AuditedDate",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "yyyy-MM-dd",
+      "a": "AuditedDate",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "加工顺序",
+      "a": "JobSequence",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "工序编码",
+      "a": "Process_Code",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "工序名称",
+      "a": "Process_Name",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "加工方式",
+      "a": "ProcessMode_Name",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "生产车间",
+      "a": "WorkShop_Name",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "工资类型",
+      "a": "RoutingDetailDTO_Process_SalaryType_Name",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "计件依据",
+      "a": "RoutingDetailDTO_Process_PieceworkBasis_Name",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "委外供应商",
+      "a": "Partner_Name",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "按辅单位计价",
+      "a": "RoutingDetailDTO_isUseProcessSubunit",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "辅单位",
+      "a": "RoutingDetailDTO_Process_ProcessSubUnit_Name",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "换算率",
+      "a": "RoutingDetailDTO_ProcessSubUnitChangeRate",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "默认报工数量",
+      "a": "RoutingDetailDTO_DefaultReportQuantity",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "关键工序",
+      "a": "RoutingDetailDTO_KeyProcess",
+      "hidden": false,
+      "w": "60px"
+    },
+    {
+      "t": "标准合格率%",
+      "a": "RoutingDetailDTO_StandardQualificationrate",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "Percent",
+      "a": "RoutingDetailDTO_StandardQualificationrate",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "Percent",
+      "a": "RoutingDetailDTO_StandardQualificationrate",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "Percent",
+      "a": "RoutingDetailDTO_StandardQualificationrate",
+      "hidden": false,
+      "w": "90px"
+    }
+  ],
+  "ths": [],
+  "rowH": 0,
+  "rowCount": 45,
+  "toolbar": [
+    "新增",
+    "修改",
+    "删除",
+    "审核",
+    "弃审",
+    "查找",
+    "栏目",
+    "打印",
+    "导入",
+    "导出",
+    "刷新",
+    "退出"
+  ],
+  "tabs": [],
+  "query": [],
+  "strips": [
+    {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1578,
+        "h": 851
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": ""
+    },
+    {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1578,
+        "h": 31
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "t-page-tb"
+    },
+    {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1578,
+        "h": 31
+      },
+      "bg": "rgb(255, 255, 255)",
+      "tag": "DIV",
+      "cls": "tb-bg"
+    },
+    {
+      "rect": {
+        "x": 0,
+        "y": 31,
+        "w": 1578,
+        "h": 376
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": ""
+    },
+    {
+      "rect": {
+        "x": 8,
+        "y": 44,
+        "w": 1562,
+        "h": 350
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "smartGrid"
+    },
+    {
+      "rect": {
+        "x": 9,
+        "y": 45,
+        "w": 1560,
+        "h": 348
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "ui-equal"
+    },
+    {
+      "rect": {
+        "x": 9,
+        "y": 45,
+        "w": 1560,
+        "h": 30
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "ui-equal-row"
+    },
+    {
+      "rect": {
+        "x": 9,
+        "y": 45,
+        "w": 1560,
+        "h": 30
+      },
+      "bg": "rgb(255, 255, 255)",
+      "tag": "DIV",
+      "cls": "ui-equal-td ui-equal-content ui-equal-he"
+    },
+    {
+      "rect": {
+        "x": 84,
+        "y": 45,
+        "w": 1485,
+        "h": 30
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "SPAN",
+      "cls": ""
+    },
+    {
+      "rect": {
+        "x": 84,
+        "y": 45,
+        "w": 850,
+        "h": 30
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "TABLE",
+      "cls": ""
+    },
+    {
+      "rect": {
+        "x": 84,
+        "y": 50,
+        "w": 202,
+        "h": 21
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "ui-equal-cell-inner"
+    },
+    {
+      "rect": {
+        "x": 284,
+        "y": 50,
+        "w": 202,
+        "h": 21
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "ui-equal-cell-inner"
+    }
+  ],
+  "topText": "新增\n修改\n删除\n审核\n弃审\n查找\n栏目\n打印\n打印\n预览\nAlt+/\n导入\n下载工艺路线模板\n导入工艺路线\n导出\n刷新\n退出\n序号\t\n工艺路线编码\n\t\n工艺路线名称\n\t\n单据状态\n\t\n停用\n\t\n制单人\n\t\n审核人\n\t\n审核日期\n1\n\t\n\n\n2\n\t\n\n\n3\n\t\n\n\n4\n\t\n\n\n5\n\t\n\n\n6\n\t\n\n\n7\n\t\n002\n\t\n制门\n\t\n生效\n\t\n否\n\t\ntplusdemo12851\n\t\ntplusdemo12851\n\t\n2026-03-23\n\n\n0023\n\t\n2323\n\t\n生效\n\t\n否\n\t\ntplusdemo12855\n\t\ntplusdemo12852\n\t\n2026-07-21\n\n\n0803\n\t\n测试\n\t\n未审\n\t\n否\n\t\ntplusdemo12860\n\t\n \n\t\n \n\n\n1\n\t\n壹号线\n\t\n生效\n\t\n否\n\t\ntplusdemo12852\n\t\ntplusdemo12852\n\t\n2026-05-2"
+}

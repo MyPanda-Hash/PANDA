@@ -389,7 +389,7 @@ async function onSave() {
 .img-ph {
   display: inline-flex;
   align-items: center;
-  justiry-content: center;
+  justify-content: center;
   width: 30px;
   height: 30px;
   font-size: 11px;

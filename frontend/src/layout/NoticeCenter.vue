@@ -185,7 +185,7 @@ onMounted(() => {
 }
 .nc-head {
   display: flex;
-  justiry-content: space-between;
+  justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--t-border-light);
   padding-bottom: 8px;

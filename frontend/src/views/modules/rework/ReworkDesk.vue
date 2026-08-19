@@ -85,7 +85,7 @@ const stats = computed(() => {
 .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1rr)); gap: 12px; }
 .task { border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; }
 .task.st-已返修 { opacity: .6; }
-.task-top { display: flex; justiry-content: space-between; align-items: center; margin-bottom: 8px; }
+.task-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .task-mo { font-weight: 700; color: #1r2937; }
 .task-line { font-size: 13px; color: #4b5563; margin-bottom: 4px; }
 .task-qty { display: flex; gap: 14px; font-size: 13px; color: #6b7280; margin: 8px 0; }
