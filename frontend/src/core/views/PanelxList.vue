@@ -8,7 +8,8 @@
         </span>
         <span v-if="actsOf(g).length > 1" class="tb-caret" @click.stop="toggleGroup(gi)">▼</span>
         <div v-if="openGroup === gi" class="tb-menu">
-          <div class="ctx-item" v-for="a in actsOf(g)" :key="a" @click="onGroupAction(a)">{{ a }}</div>
+          <!-- 下拉排除主按钮（组按钮=第一个 action，下拉只列其余动作，避免「审核」重复） -->
+          <div class="ctx-item" v-for="a in dropItems(g)" :key="a" @click="onGroupAction(a)">{{ a }}</div>
         </div>
       </div>
       <div class="tools-right">
@@ -151,11 +152,12 @@
     </el-dialog>
     <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
     <DetailMaintainDialog v-model="maintainVisible" :panel-code="panelCode" :row="maintainRow" @saved="onMaintainSaved" />
+    <VoucherFormDialog v-model="formVisible" :panel-code="formPanel || panelCode" :code="formCode" @saved="onFormSaved" />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, onDeactivated, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useTabsStore } from '@/stores/tabs'
@@ -169,6 +171,7 @@ import BomDialog from './BomDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
 import ImportDialog from './ImportDialog.vue'
 import DetailMaintainDialog from './DetailMaintainDialog.vue'
+import VoucherFormDialog from './VoucherFormDialog.vue'
 
 const loginVisible = ref(false)
 function onPanelxLogin() {
@@ -557,6 +560,10 @@ const openGroup = ref(-1)
 function actsOf(g) {
   return g.actions || g.items || []
 }
+// 下拉项 = 除主按钮（第一个 action）外的其余动作（2026-08-20：避免下拉与组按钮重复）
+function dropItems(g) {
+  return actsOf(g).slice(1)
+}
 function btnName(g) {
   return actsOf(g)[0] || g.name
 }
@@ -717,13 +724,28 @@ function isDisabled(action) {
   return map[action] === true
 }
 
+// 2026-08-20：双击明细行/修改按钮改为面板弹窗打开表单（不再跳新页签）；无编号（新增兜底）仍走页签
+const formVisible = ref(false)
+const formCode = ref('')
+// 弹窗面板：双击=当前面板；选单生成=生成的目标面板（可跨面板）
+const formPanel = ref('')
 function openForm(row) {
+  if (row && row['编号']) {
+    formCode.value = row['编号']
+    formVisible.value = true
+    return
+  }
   const q = { operationName: operationName.value }
   if (row && row['编号']) q.code = row['编号']
   const no = row ? row['单据编号'] || row['锭号'] || row['编号'] : ''
   const title = row ? `${panelName.value}-${no}` : `${panelName.value}-新增`
   router.push({ path: `/panelx/form/${panelCode.value}`, query: q })
   tabs.open({ path: `/panelx/form/${panelCode.value}`, title, query: q })
+}
+function onFormSaved() {
+  formVisible.value = false
+  formPanel.value = ''
+  load()
 }
 
 async function onButton(action) {
@@ -749,17 +771,13 @@ async function onButton(action) {
     impVisible.value = true
     return
   }
-  if (action === '选单' || action === '选销售订单' || action === '选生产加工单') {
+  // 选单通用化：任意 选X 动作且配置有 selectConfig 即走选单（对齐 PanelxForm 的通用分支）
+  if (action === '选单' || (action.startsWith('选') && cfgCache.value?.selectConfig)) {
     const sc = cfgCache.value?.selectConfig
     if (sc) {
-      if (sc.generateButton) {
-        // 新版选单：内嵌来源面板弹窗（勾选 + 翻页 + 生单直接生成）
-        selCfg.value = sc
-        selVisible.value = true
-      } else {
-        router.push({ path: `/panelx/form/${panelCode.value}`, query: { new: 1, select: 1 } })
-        tabs.open({ path: `/panelx/form/${panelCode.value}`, title: `${panelName.value}-新增`, query: { new: 1, select: 1 } })
-      }
+      // 选单通用化：列表页内嵌小弹窗勾选已审核源单据，确定后生成目标单据并打开表单（对齐 T+ 选单生单语义，不再跳转「新增」页面）
+      selCfg.value = sc
+      selVisible.value = true
       return
     }
     ElMessage.info('演示环境暂未实现「选单」，界面与 T+ 保持一致')
@@ -989,7 +1007,14 @@ function onNewSaved() {
   load()
 }
 
-function onSelGenerated() {
+function onSelGenerated(generated) {
+  const first = generated && generated[0]
+  if (first) {
+    // 2026-08-20：选单生成的新单用面板弹窗显示（不再跳新页签）
+    formPanel.value = first.panel
+    formCode.value = first.no
+    formVisible.value = true
+  }
   load()
 }
 
@@ -1166,6 +1191,8 @@ async function gotoCategory() {
 watch(
   () => [panelCode.value, operationName.value],
   () => {
+    // 2026-08-20：关闭页签/切走时 panelCode 变 undefined——不触发加载（避免「面板编号无效」误报）
+    if (!panelCode.value || panelCode.value === 'undefined') return
     cfgCache.value = null
     qOptCache.clear()
     queryFields.value = []
@@ -1185,6 +1212,15 @@ onMounted(() => {
   }
   if (route.query.new) newVisible.value = true
   load()
+})
+
+onDeactivated(() => {
+  // keep-alive 切离时关闭弹窗（防止 append-to-body 弹窗残留）
+  newVisible.value = false
+  impVisible.value = false
+  loginVisible.value = false
+  maintainVisible.value = false
+  selVisible.value = false
 })
 
 onUnmounted(() => {

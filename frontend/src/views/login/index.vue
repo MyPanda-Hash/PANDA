@@ -19,7 +19,6 @@
         </el-form-item>
         <el-button type="primary" size="large" style="width: 100%" :loading="loading" @click="doLogin">登 录</el-button>
       </el-form>
-      <div class="tip" v-if="user.isMock()">演示环境：任意输入或 admin / 123456</div>
     </div>
   </div>
 </template>

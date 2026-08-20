@@ -1,0 +1,2162 @@
+[
+  {
+    "d": 0,
+    "tag": "A",
+    "cls": "menu-first-content",
+    "text": "智能供应链new",
+    "code": "",
+    "idx": "[3]",
+    "display": ""
+  },
+  {
+    "d": 1,
+    "tag": "SPAN",
+    "cls": "menu-text",
+    "text": "智能供应链",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 3,
+    "tag": "A",
+    "cls": "newMA t-gio-TOPCMM",
+    "text": "合同管理",
+    "code": "",
+    "idx": "[3,0]",
+    "display": ""
+  },
+  {
+    "d": 4,
+    "tag": "SPAN",
+    "cls": "menu-text",
+    "text": "合同管理",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "单据",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "合同",
+    "code": "#TOPVchGT",
+    "idx": "[3,0,0,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "报表",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "合同销售订单执行表",
+    "code": "#TOPRptGTXSDCZHB",
+    "idx": "[3,0,1,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "档案",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "合同类型",
+    "code": "#TOPArchGTLX",
+    "idx": "[3,0,2,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "合同收支方向",
+    "code": "#TOPArchGTSZFX",
+    "idx": "[3,0,2,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "合同性质",
+    "code": "#TOPArchGTXZ",
+    "idx": "[3,0,2,2]",
+    "display": ""
+  },
+  {
+    "d": 3,
+    "tag": "A",
+    "cls": "newMA t-gio-PU",
+    "text": "采购管理",
+    "code": "",
+    "idx": "[3,1]",
+    "display": ""
+  },
+  {
+    "d": 4,
+    "tag": "SPAN",
+    "cls": "menu-text",
+    "text": "采购管理",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "单据",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "采购订单",
+    "code": "#PU02",
+    "idx": "[3,1,0,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#PU6002",
+    "idx": "[3,1,0,0,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#PU4001",
+    "idx": "[3,1,0,0,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "Test单据",
+    "code": "#TOPVchTestCJ",
+    "idx": "[3,1,0,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "采购订单001",
+    "code": "#PU02002",
+    "idx": "[3,1,0,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "采购订单002",
+    "code": "#PU02001",
+    "idx": "[3,1,0,3]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "进货单",
+    "code": "#PU03",
+    "idx": "[3,1,0,4]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#PU6003",
+    "idx": "[3,1,0,4,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#PU4002",
+    "idx": "[3,1,0,4,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "采购发票",
+    "code": "#PU04",
+    "idx": "[3,1,0,5]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#PU6010",
+    "idx": "[3,1,0,5,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#PU4003",
+    "idx": "[3,1,0,5,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "请购单",
+    "code": "#PU01",
+    "idx": "[3,1,0,7]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#PU6015",
+    "idx": "[3,1,0,7,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#PU4000",
+    "idx": "[3,1,0,7,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "采购需求分析",
+    "code": "#PU05",
+    "idx": "[3,1,0,8]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "工作台",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "采购订单工作台",
+    "code": "#PU10001",
+    "idx": "[3,1,1,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "进货单工作台",
+    "code": "#PU10002",
+    "idx": "[3,1,1,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "批量生单",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "请购单批量生采购订单",
+    "code": "#TOPBGVPU01toPU02",
+    "idx": "[3,1,2,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "中标单批量生采购订单",
+    "code": "#TOPBGVXT90toPU02",
+    "idx": "[3,1,2,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "采购订单批量生进货单",
+    "code": "#TOPBGVPU02toPU03",
+    "idx": "[3,1,2,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "进货单批量生采购发票",
+    "code": "#TOPBGVPU03toPU04",
+    "idx": "[3,1,2,3]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "采购入库单批量生进货单",
+    "code": "#PU11",
+    "idx": "[3,1,2,4]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "报表",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "采购订单执行表",
+    "code": "#PU8007",
+    "idx": "[3,1,3,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "进货单执行表",
+    "code": "#PU8008",
+    "idx": "[3,1,3,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "采购综合统计分析表",
+    "code": "#PU6001",
+    "idx": "[3,1,3,3]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "请购单执行表",
+    "code": "#PU8003",
+    "idx": "[3,1,3,4]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "默认名称",
+    "code": "#NewBoardRpt42",
+    "idx": "[3,1,3,5]",
+    "display": ""
+  },
+  {
+    "d": 3,
+    "tag": "A",
+    "cls": "newMA t-gio-SA",
+    "text": "销售管理new",
+    "code": "",
+    "idx": "[3,2]",
+    "display": ""
+  },
+  {
+    "d": 4,
+    "tag": "SPAN",
+    "cls": "menu-text",
+    "text": "销售管理",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "单据",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售订单",
+    "code": "#SA03",
+    "idx": "[3,2,0,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#SA6001",
+    "idx": "[3,2,0,0,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#SA4001",
+    "idx": "[3,2,0,0,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售计划",
+    "code": "#TOPXSJH",
+    "idx": "[3,2,0,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表new",
+    "code": "#XIAOSHOUJIHUATONGJIBIAO",
+    "idx": "[3,2,0,1,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#XIAOSHOUJIHUAMINGXIBIAO",
+    "idx": "[3,2,0,1,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售订单常规",
+    "code": "#SA03001",
+    "idx": "[3,2,0,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销货单001",
+    "code": "#SA04001",
+    "idx": "[3,2,0,3]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销货单",
+    "code": "#SA04",
+    "idx": "[3,2,0,4]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#SA6002",
+    "idx": "[3,2,0,4,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#SA4002",
+    "idx": "[3,2,0,4,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售发票",
+    "code": "#SA05",
+    "idx": "[3,2,0,5]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#SA6010",
+    "idx": "[3,2,0,5,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#SA4010",
+    "idx": "[3,2,0,5,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售费用分摊单",
+    "code": "#SA08",
+    "idx": "[3,2,0,6]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "报价单",
+    "code": "#SA01",
+    "idx": "[3,2,0,8]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#SA6000",
+    "idx": "[3,2,0,8,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#SA4000",
+    "idx": "[3,2,0,8,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "预测单",
+    "code": "#SA02",
+    "idx": "[3,2,0,9]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#SA6003",
+    "idx": "[3,2,0,9,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#SA4003",
+    "idx": "[3,2,0,9,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "防伪税控接口",
+    "code": "#SA10",
+    "idx": "[3,2,0,10]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售毛利分析表-本月订单毛利分析",
+    "code": "#RMenu0006",
+    "idx": "[3,2,0,11]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销货单明细表-系统方案",
+    "code": "#RMenu0008",
+    "idx": "[3,2,0,12]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "工作台",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售订单工作台",
+    "code": "#SA10001",
+    "idx": "[3,2,1,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销货单工作台",
+    "code": "#SA10002",
+    "idx": "[3,2,1,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "批量生单",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售订单批量生采购订单",
+    "code": "#TOPBGVSA03toPU02",
+    "idx": "[3,2,2,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售订单批量生销货单",
+    "code": "#TOPBGVSA03toSA04",
+    "idx": "[3,2,2,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售订单批量生配货单",
+    "code": "#TOPBGVSA03toDI20",
+    "idx": "[3,2,2,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销货单批量生销售发票",
+    "code": "#TOPBGVSA04toSA05",
+    "idx": "[3,2,2,3]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售出库单批量生销货单",
+    "code": "#SA11",
+    "idx": "[3,2,2,4]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "执行表",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售订单执行表",
+    "code": "#SA8006",
+    "idx": "[3,2,3,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销货单执行表",
+    "code": "#SA8007",
+    "idx": "[3,2,3,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售订单跟踪工具",
+    "code": "#SA8016",
+    "idx": "[3,2,3,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "分期收款执行明细表",
+    "code": "#SA8017",
+    "idx": "[3,2,3,3]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销货单统计表-88888888",
+    "code": "#RMenu0005",
+    "idx": "[3,2,3,4]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "综合报表",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售毛利分析表",
+    "code": "#SA6031",
+    "idx": "[3,2,4,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "进销存统计表",
+    "code": "#SA6051",
+    "idx": "[3,2,4,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售排行榜",
+    "code": "#SA6061",
+    "idx": "[3,2,4,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "更多",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "预测单执行表",
+    "code": "#SA8012",
+    "idx": "[3,2,5,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售订单采购生产执行统计表",
+    "code": "#SA8015",
+    "idx": "[3,2,5,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售订单生产进度表",
+    "code": "#SA8018",
+    "idx": "[3,2,5,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售出库开单执行表",
+    "code": "#SA8001",
+    "idx": "[3,2,5,3]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "信用查询",
+    "code": "#SA15",
+    "idx": "[3,2,5,5]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "进销项税对比查询表",
+    "code": "#SA8088",
+    "idx": "[3,2,5,6]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售综合统计分析表",
+    "code": "#SA6041",
+    "idx": "[3,2,5,7]",
+    "display": ""
+  },
+  {
+    "d": 3,
+    "tag": "A",
+    "cls": "newMA t-gio-LM",
+    "text": "物流配送",
+    "code": "",
+    "idx": "[3,3]",
+    "display": ""
+  },
+  {
+    "d": 4,
+    "tag": "SPAN",
+    "cls": "menu-text",
+    "text": "物流配送",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "三方物流",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "单据处理",
+    "code": "#LM1001",
+    "idx": "[3,3,0,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "运费维护",
+    "code": "#LM4001",
+    "idx": "[3,3,0,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "物流发货执行统计表",
+    "code": "#LM2001",
+    "idx": "[3,3,0,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "单据处理总览",
+    "code": "#LM2002",
+    "idx": "[3,3,0,3]",
+    "display": ""
+  },
+  {
+    "d": 3,
+    "tag": "A",
+    "cls": "newMA t-gio-ST",
+    "text": "库存核算",
+    "code": "",
+    "idx": "[3,4]",
+    "display": ""
+  },
+  {
+    "d": 4,
+    "tag": "SPAN",
+    "cls": "menu-text",
+    "text": "库存核算",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "单据",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "设备投放单",
+    "code": "#TOPSBTFC",
+    "idx": "[3,4,0,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#SHEBEITOUFANGTONGJIBIAO",
+    "idx": "[3,4,0,0,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#SHEBEITOUFANGMINGXIBIAO",
+    "idx": "[3,4,0,0,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "采购入库单",
+    "code": "#ST1001",
+    "idx": "[3,4,0,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6001",
+    "idx": "[3,4,0,1,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4001",
+    "idx": "[3,4,0,1,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "产成品入库单",
+    "code": "#ST1002",
+    "idx": "[3,4,0,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6002",
+    "idx": "[3,4,0,2,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4002",
+    "idx": "[3,4,0,2,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "委外入库单",
+    "code": "#ST1003",
+    "idx": "[3,4,0,3]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6003",
+    "idx": "[3,4,0,3,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4003",
+    "idx": "[3,4,0,3,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "其他入库单",
+    "code": "#ST1004",
+    "idx": "[3,4,0,4]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6004",
+    "idx": "[3,4,0,4,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4004",
+    "idx": "[3,4,0,4,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "其他入库单001",
+    "code": "#ST1004001",
+    "idx": "[3,4,0,5]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "其他入库单002",
+    "code": "#ST1004002",
+    "idx": "[3,4,0,6]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "销售出库单",
+    "code": "#ST1021",
+    "idx": "[3,4,0,8]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6011",
+    "idx": "[3,4,0,8,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4005",
+    "idx": "[3,4,0,8,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "材料出库单",
+    "code": "#ST1022",
+    "idx": "[3,4,0,9]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6012",
+    "idx": "[3,4,0,9,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4006",
+    "idx": "[3,4,0,9,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "材料出库单001",
+    "code": "#ST1022002",
+    "idx": "[3,4,0,10]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "材料领用单",
+    "code": "#ST1022001",
+    "idx": "[3,4,0,11]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "委外发料单",
+    "code": "#ST1023",
+    "idx": "[3,4,0,12]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6023",
+    "idx": "[3,4,0,12,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4023",
+    "idx": "[3,4,0,12,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "其他出库单",
+    "code": "#ST1024",
+    "idx": "[3,4,0,13]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6014",
+    "idx": "[3,4,0,13,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4008",
+    "idx": "[3,4,0,13,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "领料申请单",
+    "code": "#ST1039",
+    "idx": "[3,4,0,14]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6039",
+    "idx": "[3,4,0,14,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4039",
+    "idx": "[3,4,0,14,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "要货单",
+    "code": "#ST1030",
+    "idx": "[3,4,0,16]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6034",
+    "idx": "[3,4,0,16,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4025",
+    "idx": "[3,4,0,16,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "调拨单",
+    "code": "#ST1031",
+    "idx": "[3,4,0,17]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6033",
+    "idx": "[3,4,0,17,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4030",
+    "idx": "[3,4,0,17,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "形态转换单",
+    "code": "#ST1033",
+    "idx": "[3,4,0,18]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6032",
+    "idx": "[3,4,0,18,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4020",
+    "idx": "[3,4,0,18,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "组装拆卸单",
+    "code": "#ST1034",
+    "idx": "[3,4,0,19]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6031",
+    "idx": "[3,4,0,19,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4009",
+    "idx": "[3,4,0,19,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "分量盘点单",
+    "code": "#ST1036",
+    "idx": "[3,4,0,20]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "盘点向导",
+    "code": "#ST103202",
+    "idx": "[3,4,0,20,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "盘点单",
+    "code": "#ST1032",
+    "idx": "[3,4,0,20,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "装箱单",
+    "code": "#ST1038",
+    "idx": "[3,4,0,21]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6038",
+    "idx": "[3,4,0,21,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4038",
+    "idx": "[3,4,0,21,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "现存量查询-OpenAPI",
+    "code": "#RMenu0003",
+    "idx": "[3,4,0,22]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "成本核算",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "采购核算单",
+    "code": "#ST2002",
+    "idx": "[3,4,1,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "委外核算单",
+    "code": "#ST2010",
+    "idx": "[3,4,1,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "采购费用分摊单",
+    "code": "#ST2003",
+    "idx": "[3,4,1,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "委外费用分摊单",
+    "code": "#ST2022",
+    "idx": "[3,4,1,3]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "入库调整单",
+    "code": "#ST2004",
+    "idx": "[3,4,1,4]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "出库调整单",
+    "code": "#ST2005",
+    "idx": "[3,4,1,5]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "红蓝回冲单列表",
+    "code": "#ST2006",
+    "idx": "[3,4,1,6]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "重新计价",
+    "code": "#ST3001",
+    "idx": "[3,4,1,8]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "产品成本分配",
+    "code": "#ST3013",
+    "idx": "[3,4,1,9]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST2012",
+    "idx": "[3,4,1,9,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "直接材料分配明细表",
+    "code": "#ST3019",
+    "idx": "[3,4,1,10]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "计件工资分配明细表",
+    "code": "#ST2011",
+    "idx": "[3,4,1,11]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "产品成本录入工具",
+    "code": "#ST3006",
+    "idx": "[3,4,1,12]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "成本手工维护",
+    "code": "#ST3030",
+    "idx": "[3,4,1,13]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "成本出入库跟踪",
+    "code": "#ST7020",
+    "idx": "[3,4,1,15]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "成本异常查询",
+    "code": "#ST3010",
+    "idx": "[3,4,1,16]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "存货明细账",
+    "code": "#ST9021",
+    "idx": "[3,4,1,17]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "存货总账",
+    "code": "#ST9020",
+    "idx": "[3,4,1,18]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "库存工具",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "拣货装箱",
+    "code": "#ST3007",
+    "idx": "[3,4,2,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "按存量补货",
+    "code": "#ST3008",
+    "idx": "[3,4,2,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "货位调整单",
+    "code": "#ST1035",
+    "idx": "[3,4,2,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "货位补录",
+    "code": "#ST3005",
+    "idx": "[3,4,2,3]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "有效期维护",
+    "code": "#ST3004",
+    "idx": "[3,4,2,4]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "齐套分析",
+    "code": "#ST3015",
+    "idx": "[3,4,2,5]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "库存上下限设置",
+    "code": "#ST3009",
+    "idx": "[3,4,2,7]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "库龄预警设置",
+    "code": "#ST3022",
+    "idx": "[3,4,2,8]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "序列号",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "序列号预生成",
+    "code": "#ST1078",
+    "idx": "[3,4,3,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "序列号拆分",
+    "code": "#ST1079",
+    "idx": "[3,4,3,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "序列号列表",
+    "code": "#ST3520",
+    "idx": "[3,4,3,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "序列号状况表",
+    "code": "#ST3020",
+    "idx": "[3,4,3,4]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "序列号跟踪表",
+    "code": "#ST3021",
+    "idx": "[3,4,3,5]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "序列号补录",
+    "code": "#ST1077",
+    "idx": "[3,4,3,7]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "库存账表",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "现存量查询",
+    "code": "#ST3011",
+    "idx": "[3,4,4,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "可用量整理工具",
+    "code": "#ST3012",
+    "idx": "[3,4,4,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "库存状况表",
+    "code": "#ST9001",
+    "idx": "[3,4,4,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "出入库流水",
+    "code": "#ST9081",
+    "idx": "[3,4,4,3]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "出入库汇总",
+    "code": "#ST6081",
+    "idx": "[3,4,4,4]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "收发存汇总表",
+    "code": "#ST6061",
+    "idx": "[3,4,4,5]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "库存台账",
+    "code": "#ST9002",
+    "idx": "[3,4,4,6]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "货位明细账",
+    "code": "#ST9042",
+    "idx": "[3,4,4,7]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "货位总账",
+    "code": "#ST9041",
+    "idx": "[3,4,4,8]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "批次现存量",
+    "code": "#ST8001",
+    "idx": "[3,4,4,9]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "批次台账",
+    "code": "#ST8020",
+    "idx": "[3,4,4,10]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "批次汇总表",
+    "code": "#ST8030",
+    "idx": "[3,4,4,11]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "保质期查询",
+    "code": "#ST3014",
+    "idx": "[3,4,4,12]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "箱码扫描明细表",
+    "code": "#ST4040",
+    "idx": "[3,4,4,13]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "库存看板",
+    "code": "#NewBoardRpt94",
+    "idx": "[3,4,4,14]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "综合报表",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "采购入库单执行表",
+    "code": "#ST7010",
+    "idx": "[3,4,5,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "要货单执行表",
+    "code": "#ST7018",
+    "idx": "[3,4,5,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "领料申请单执行表",
+    "code": "#ST7036",
+    "idx": "[3,4,5,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "呆滞存货分析表",
+    "code": "#ST6063",
+    "idx": "[3,4,5,3]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "库存周转率分析表",
+    "code": "#ST6065",
+    "idx": "[3,4,5,4]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "库龄分析表",
+    "code": "#ST6075",
+    "idx": "[3,4,5,5]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "库存资金占用分析表",
+    "code": "#ST6067",
+    "idx": "[3,4,5,6]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "库存存货毛利预估表",
+    "code": "#AA5040",
+    "idx": "[3,4,5,7]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "暂估入库余额表",
+    "code": "#ST6070",
+    "idx": "[3,4,5,8]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "虚拟成本表",
+    "code": "#ST7023",
+    "idx": "[3,4,5,9]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "发出商品表",
+    "code": "#ST7024",
+    "idx": "[3,4,5,10]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "工序委外加工费用分配明细表",
+    "code": "#ST7035",
+    "idx": "[3,4,5,11]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "库存与总账对账",
+    "code": "#ST7040",
+    "idx": "[3,4,5,12]",
+    "display": ""
+  },
+  {
+    "d": 3,
+    "tag": "A",
+    "cls": "newMA t-gio-DIM",
+    "text": "配货管理",
+    "code": "",
+    "idx": "[3,5]",
+    "display": ""
+  },
+  {
+    "d": 4,
+    "tag": "SPAN",
+    "cls": "menu-text",
+    "text": "配货管理",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "补货配货",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "配货单",
+    "code": "#DI20",
+    "idx": "[3,5,0,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#DI3515",
+    "idx": "[3,5,0,0,1]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#DI3505",
+    "idx": "[3,5,0,0,0]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "补货需求分析",
+    "code": "#DI1015",
+    "idx": "[3,5,0,2]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "仓库补货规则",
+    "code": "#DI1001",
+    "idx": "[3,5,0,3]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "客户补货规则",
+    "code": "#DI1003",
+    "idx": "[3,5,0,4]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "补货优先级",
+    "code": "#DI1010",
+    "idx": "[3,5,0,5]",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "",
+    "text": "报表",
+    "code": "",
+    "idx": "",
+    "display": ""
+  },
+  {
+    "d": 7,
+    "tag": "A",
+    "cls": "thrMenuFirst",
+    "text": "配货综合统计表",
+    "code": "#DI3520",
+    "idx": "[3,5,1,0]",
+    "display": ""
+  }
+]

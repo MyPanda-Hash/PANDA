@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { apiLogin, apiGetUserInfo, USE_MOCK } from '@/business/api'
+import { apiLogin, apiGetUserInfo } from '@/business/api'
 
 export const useUserStore = defineStore('user', {
   state: () => {
@@ -88,8 +88,6 @@ export const useUserStore = defineStore('user', {
       localStorage.removeItem('mes_token')
       localStorage.removeItem('mes_user')
     },
-    isMock() {
-      return USE_MOCK
-    },
+
   },
 })

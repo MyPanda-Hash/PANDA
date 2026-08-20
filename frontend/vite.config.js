@@ -20,17 +20,6 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
-      // PanelX 平台反代：SDK/数据接口与页面同源。
-      // preload 生产模式（非 localhost）会向上 ping /wp-core/api/ping 探测 baseURL，
-      // 命中后 SDK 从本域同源加载 —— 局域网直连 / 内网穿透 / 正式部署 全靠这段代理。
-      '/wp-core': {
-        target: 'http://203.132.49.57:6612/hscx',
-        changeOrigin: true,
-      },
-      '/wp-file': {
-        target: 'http://203.132.49.57:6612/hscx',
-        changeOrigin: true,
-      },
     },
   },
   // vite preview（构建产物本地预览/共享时同样代理平台）
@@ -38,17 +27,8 @@ export default defineConfig({
     host: true,
     port: 4173,
     proxy: {
-      // 路线①（完全自建）本地验证：/api -> 本机 Spring Boot
       '/api': {
         target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-      '/wp-core': {
-        target: 'http://203.132.49.57:6612/hscx',
-        changeOrigin: true,
-      },
-      '/wp-file': {
-        target: 'http://203.132.49.57:6612/hscx',
         changeOrigin: true,
       },
     },

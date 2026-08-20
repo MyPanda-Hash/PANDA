@@ -150,6 +150,7 @@ public class PxService {
     public Map<String, Object> getNewFormPermMatrix(String panelCode, String operationName) {
         Map<String, Object> stateField = fieldsOf(panelCode);
         String stateName = (String) stateField.get("stateFieldName");
+        String af = autoCodeFieldOf(panelCode);
         Map<String, Object> data = new HashMap<>();
         data.put(stateName, "草稿");
         for (Map<String, Object> f : (List<Map<String, Object>>) stateField.get("fields")) {
@@ -158,10 +159,9 @@ public class PxService {
                 data.putIfAbsent(String.valueOf(f.get("dataName")), dv);
             }
         }
-        // T+ 单据：单据日期默认系统登录日期
+        // T+ 单据：单据日期默认系统登录日期（所有面板新建即填，保证草稿数据完整可见）
         if (!data.containsKey("单据日期")) data.put("单据日期", LocalDate.now().toString());
         // 自动编码字段（autoCodeField，如工序汇报单「单据编号」）预填单号，表单页可显示
-        String af = autoCodeFieldOf(panelCode);
         if (af != null && !af.isBlank() && !data.containsKey(af)) data.put(af, generateFormNo(panelCode));
         // T+ 锭号 = 单据编号（自动预览单号）
         if (!data.containsKey("锭号")) data.put("锭号", generateFormNo(panelCode));
@@ -254,7 +254,9 @@ public class PxService {
                     Object v = e.getValue();
                     if (v == null || "".equals(String.valueOf(v))) continue;
                     Object rv = row.get(e.getKey());
-                    if (rv == null || rv instanceof Map || rv instanceof List) continue;
+                    // 缺键（null）：该行不匹配条件（修复：缺 单据日期/单据编号 的行不再被查询条件漏过）
+                    if (rv == null) { hit = false; break; }
+                    if (rv instanceof Map || rv instanceof List) continue;
                     if (!String.valueOf(rv).contains(String.valueOf(v))) { hit = false; break; }
                 }
             }
@@ -353,7 +355,7 @@ public class PxService {
         String newNo = generateFormNo("MANU_ORDER");
         Map<String, Object> moData = new HashMap<>();
         moData.put("合同号", head.getOrDefault("单据日期", ""));
-        moData.put("锭号", newNo);
+        // 锭号=单据编号：审批面板草稿不预填，提交审核时自动填写（ensureAuditStamp）
         moData.put("批号", "正常");
         moData.put("生产车间", "熔铸车间");
         moData.put("预开工日", LocalDate.now().toString());
@@ -512,7 +514,7 @@ public class PxService {
 
         String newNo = generateFormNo("PROCESS_REPORT");
         Map<String, Object> prData = new HashMap<>();
-        prData.put("单据日期", LocalDate.now().toString());
+        // 单据日期/单据编号：审批面板草稿不填，提交审核时自动填写（ensureAuditStamp）
         prData.put("业务类型", "工序汇报");
         prData.put("加工单号", String.valueOf(no));
         prData.put("生产车间", head.getOrDefault("生产车间", ""));
@@ -522,11 +524,8 @@ public class PxService {
         prData.put("销售订单号", head.getOrDefault("销售订单号", ""));
         prData.put("客户", head.getOrDefault("客户", ""));
         prData.put("匹配来源单号", String.valueOf(no));
-        // 表头补齐（2026-08-19 修复选单生成表单空白）：
-        // 单据编号 = autoCodeField 同步写表头 JSON（对齐 createMoFromSo 的 锭号 写法，表单页可显示）
-        // 部门 = 加工单无部门字段，车间即部门（DEPT 档案同名：熔铸/轧制/精整/测试车间）
-        // 测试程序 = 加工单表头带出
-        prData.put("单据编号", newNo);
+        // 表头带出（部门=加工单车间即部门，测试程序=加工单表头）；
+        // 单据编号/单据日期：审批面板草稿不填，提交审核时自动填写（ensureAuditStamp）
         prData.put("部门", head.getOrDefault("生产车间", ""));
         prData.put("测试程序", head.getOrDefault("测试程序", ""));
 
@@ -713,6 +712,9 @@ public class PxService {
                 newNo = generateFormNo(panelCode);
             }
             fd.setFormNo(newNo);
+            // 新建保存兜底（2026-08-20 定稿）：所有面板补 字段默认值 + 单据日期=当天 + 单据编号/锭号=form_no
+            // （缺才填）——手动新增/选单生成/推式生单的草稿表头数据完整可见；ensureAuditStamp 审核时幂等兜底
+            fillNewDefaults(panelCode, formData, newNo);
             fd.setData(toJson(formData));
             fd.setDetailData(detail == null ? "{}" : toJson(detail));
             // 档案/自编码面板（EMP/DEPT/ROUTE/BOM…）新建即「启用」（保存即生效）；单据类初始「草稿」
@@ -757,6 +759,8 @@ public class PxService {
             head.put("审核时间", fd.getAuditTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             Object opinion = formData.get("审核意见");
             if (opinion != null && !String.valueOf(opinion).isBlank()) head.put("审核意见", String.valueOf(opinion));
+            // 审批面板：审核时自动填写 单据日期 + 单据编号（缺才填，见 ensureAuditStamp）
+            ensureAuditStamp(head, fd.getFormNo(), panelCode);
             fd.setData(toJson(head));
         } else if ("弃审".equals(action)) {
             if (!"已审核".equals(fd.getStatus())) throw new IllegalStateException("仅已审核状态可弃审");
@@ -848,6 +852,8 @@ public class PxService {
         head.put("审批状态", "审批中");
         head.put("提交人", operator);
         head.put("提交时间", now);
+        // 审批面板：提交审批时自动填写 单据日期 + 单据编号（缺才填）
+        ensureAuditStamp(head, fd.getFormNo(), panelCode);
         fd.setData(toJson(head));
         formMapper.updateById(fd);
         recordApproval(panelCode, fd.getFormNo(), "SUBMIT", "PENDING", opinionOf(formData));
@@ -871,6 +877,8 @@ public class PxService {
         head.put("审核人", operator);
         head.put("审核时间", fd.getAuditTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         if (!opinion.isEmpty()) head.put("审核意见", opinion);
+        // 审批面板：审批通过时自动填写 单据日期 + 单据编号（缺才填，幂等）
+        ensureAuditStamp(head, fd.getFormNo(), panelCode);
         fd.setData(toJson(head));
         formMapper.updateById(fd);
         recordApproval(panelCode, fd.getFormNo(), "APPROVE", "APPROVED", opinion);
@@ -984,6 +992,14 @@ public class PxService {
         else if ("PURCHASE_IN".equals(panelCode)) biz = "RK-";     // 采购入库单（T+ 入库惯例）
         else if ("SALE_OUT".equals(panelCode)) biz = "CK-";        // 销售出库单（T+ 出库惯例）
         else if ("PROCESS_REPORT".equals(panelCode)) biz = "GX-";  // 工序汇报单
+        else if ("PU_IN".equals(panelCode)) biz = "PU-";           // 进货单
+        else if ("SALE_INV".equals(panelCode)) biz = "XS-";        // 销货单
+        else if ("PICK_ORDER".equals(panelCode)) biz = "PH-";      // 配货单
+        else if ("MATERIAL_REQ".equals(panelCode)) biz = "LL-";    // 领料申请单
+        else if ("ARRIVAL_IN".equals(panelCode)) biz = "DH-";        // 到货单
+        else if ("FINISH_INSPECT".equals(panelCode)) biz = "BJ-";   // 成品报检单
+        else if ("INSPECTION".equals(panelCode)) biz = "JY-";       // 来料成品检验单
+        else if ("DISPATCH".equals(panelCode)) biz = "PG-";         // 工序派工单
         else if ("INV".equals(panelCode)) biz = "INV-"; // 存货类别单据
         else biz = "MO-";
         String base = biz + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
@@ -1009,9 +1025,55 @@ public class PxService {
         return f == null ? "" : String.valueOf(f);
     }
 
+    /** 启用审批流的面板（与前端 APPROVAL_PANELS 一致）：单据日期/单据编号不在新建时预填，提交审核时自动填写 */
+    private static final Set<String> APPROVAL_PANELS = Set.of(
+            "SO_ORDER", "PURCHASE_IN", "FINISH_IN", "OTHER_IN", "SALE_OUT", "MATERIAL_OUT", "OTHER_OUT",
+            "MANU_ORDER", "PROCESS_REPORT", "INIT_AP", "INIT_AR", "INIT_BALANCE", "BOM", "ROUTE");
+
+    /**
+     * 审批面板审核类动作（审核/提交审批/审批通过）时自动补表头：
+     * 单据日期 = 当天；单据编号（autoCodeField，无则 MANU 的 锭号）= form_no。缺才填（幂等，驳回再提交不覆盖）。
+     */
+    private void ensureAuditStamp(Map<String, Object> head, String formNo, String panelCode) {
+        if (!APPROVAL_PANELS.contains(panelCode)) return;
+        Object d = head.get("单据日期");
+        if (d == null || String.valueOf(d).isBlank()) head.put("单据日期", LocalDate.now().toString());
+        String af = autoCodeFieldOf(panelCode);
+        if (af == null || af.isBlank()) {
+            Object v = head.get("锭号");
+            if (v == null || String.valueOf(v).isBlank()) head.put("锭号", formNo);
+        } else {
+            Object v = head.get(af);
+            if (v == null || String.valueOf(v).isBlank()) head.put(af, formNo);
+        }
+    }
+
+    /** 新建保存兜底：字段默认值（与 getNewFormPermMatrix 一致）+ 单据日期=当天 + 单据编号/锭号=form_no（缺才填） */
+    @SuppressWarnings("unchecked")
+    private void fillNewDefaults(String panelCode, Map<String, Object> formData, String newNo) {
+        List<String> names = new ArrayList<>();
+        for (Map<String, Object> f : (List<Map<String, Object>>) fieldsOf(panelCode).get("fields")) {
+            String dn = String.valueOf(f.get("dataName"));
+            names.add(dn);
+            Object dv = f.get("defaultValue");
+            if (dv != null && !"".equals(String.valueOf(dv))) formData.putIfAbsent(dn, dv);
+        }
+        if (names.contains("单据日期")) {
+            Object dv = formData.get("单据日期");
+            if (dv == null || String.valueOf(dv).isBlank()) formData.put("单据日期", LocalDate.now().toString());
+        }
+        String codeKey = names.contains("单据编号") ? "单据编号" : (names.contains("锭号") ? "锭号" : null);
+        if (codeKey != null) {
+            Object cv = formData.get(codeKey);
+            if (cv == null || String.valueOf(cv).isBlank()) formData.put(codeKey, newNo);
+        }
+    }
+
     /** 档案/自编码面板（基础档案类别 或 自编码字段）：EMP/DEPT/WH/ROUTE/BOM/INIT_* 等——保存即生效（状态=启用） */
     private boolean isArchivePanel(String panelCode) {
         if ("INV".equals(panelCode)) return true;
+        // 审批面板（BOM/ROUTE/INIT_* 等）：保存保留草稿，走 草稿→审核 链路（2026-08-20 单单据改造连带修复）
+        if (APPROVAL_PANELS.contains(panelCode)) return false;
         if ("基础档案".equals(categoryOf(panelCode))) return true;
         String autoField = autoCodeFieldOf(panelCode);
         if (autoField == null || autoField.isBlank() || "单据编号".equals(autoField)) return false;

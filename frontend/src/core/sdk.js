@@ -2,13 +2,10 @@ import { ref } from 'vue'
 import request from './request'
 import { USE_PANELX_PROXY } from './env'
 
-// PanelX 测试模式（2026-08-14 切换）：业务域 GroupChat_Inst_17867095995605 @ GPF 服务器
-// 登录账号 admin / 123456（该域登录已验证成功，token 有效期 30 天）
-export const PANELX_CONFIG = {
-  busDomainCode: 'GroupChat_Inst_17867095995605',
-  appCode: 'GroupChat_Inst_17867095995605',
-  baseUrl: 'http://203.132.49.57:6612/hscx/',
-}
+// PanelX 后端代理模式伪 SDK（2026-08-20 起仅代理模式；PanelX 直连 SDK 与 preload 已移除）：
+// 与真实 PanelXSdk 暴露相同的 user/api 子集，引擎里的 platformCall / adapters 无需改动，
+// 请求改走本地网关 /api/panelx/*（后端 PanelxService 以服务端身份调平台）。
+// 平台：业务域 GroupChat_Inst_17867095995605 @ http://203.132.49.57:6612/hscx
 
 export const sdkState = ref('idle')
 
@@ -53,38 +50,15 @@ export function isSdkLoaded() {
 
 export function initSdk() {
   if (sdk) return sdk
-  if (USE_PANELX_PROXY) {
-    sdk = buildProxySdk()
-    sdkState.value = 'authed'
-    return sdk
-  }
-  if (!window.PanelXSdk) {
-    sdkState.value = 'error'
-    return null
-  }
-  try {
-    sdk = new window.PanelXSdk({
-      busDomainCode: PANELX_CONFIG.busDomainCode,
-      appCode: PANELX_CONFIG.appCode,
-      devDefaultBaseUrl: PANELX_CONFIG.baseUrl,
-      sessionType: 'login',
-    })
-    sdkState.value = sdk.user.isAuthenticated() ? 'authed' : 'ready'
-    try {
-      sdk.addEventListener('auth-state-change', () => {
-        sdkState.value = sdk.user.isAuthenticated() ? 'authed' : 'ready'
-      })
-    } catch (e) {}
-    return sdk
-  } catch (e) {
-    sdkState.value = 'error'
-    return null
-  }
+  if (!USE_PANELX_PROXY) return null
+  sdk = buildProxySdk()
+  sdkState.value = 'authed'
+  return sdk
 }
 
 export async function sdkLogin(userName, password) {
   const inst = initSdk()
-  if (!inst) throw new Error('PanelX SDK 未加载（preload.js 拉取失败）')
+  if (!inst) throw new Error('PanelX 后端代理未启用（VITE_PANELX_PROXY=true）')
   if (inst.user.isAuthenticated()) {
     sdkState.value = 'authed'
     return true
@@ -116,7 +90,7 @@ export function sdkError(e) {
 
 export async function requireAuthed() {
   const inst = initSdk()
-  if (!inst) throw new Error('PanelX SDK 未加载（preload.js 拉取失败，请检查网络）')
+  if (!inst) throw new Error('PanelX 后端代理未启用（VITE_PANELX_PROXY=true）')
   if (!inst.user.isAuthenticated()) throw new Error('PanelX 平台未登录')
   return inst
 }

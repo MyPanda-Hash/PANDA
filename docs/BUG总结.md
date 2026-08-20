@@ -102,3 +102,35 @@
 - **根因**：RefPickDialog 声明 prop `visible`，但调用方（PanelxForm/NewVoucherDialog）用 `v-model="refVisible"`——Vue 3 无参数 v-model 契约是 `modelValue` prop + `update:modelValue` 事件；`visible` 永远收不到值，且模板显式 `:model-value="visible"` 覆盖了 attrs 继承 → el-dialog model-value 恒为默认 false → 弹窗永不显示
 - **修复**：RefPickDialog 改为标准契约：prop `modelValue` + `:model-value="modelValue"` + `emit('update:modelValue')`（defineEmits 保留 update:visible 兼容）；调用方零改动
 - **教训**：a) 自定义组件的 v-model 必须用 modelValue/update:modelValue 契约（或显式 v-model:xxx 并两边一致）；b) 弹窗类"点击无反应"先反查 DOM→Vue 实例链（`el.__vueParentComponent` 逐级读 props/exposed）确认状态真值，别只看 DOM 可见性（headless 下 transition 时序会误报）；c) 历史 E2E 通过不代表代码对——当时验证路径与当前入口不同
+
+## 2026-08-20
+
+### 16. 查询区填条件后列表异常 + 选单生成的单据缺单据日期/单据编号
+- **现象**：进货单（PU_IN）列表页查询区填写 单据日期/单据编号 后，列表"所有单据"都显示/保留（像全被改成填的值）；且选单生成的进货单表头 单据日期/单据编号 为空白
+- **根因**（两条叠加）：
+  a) 后端 `queryFormDataList` 条件过滤 `if (rv == null) continue`——**缺键行跳过过滤**（新建/选单生成缺 单据日期/单据编号 键的行在填查询条件后全部保留，看起来"所有单据都变成我填写的"）
+  b) 普通选单生成路径（SelectVoucherDialog 无 generateButton 分支）formData 只含 headerMap 映射字段，且 `save` 新建不补默认值——非审批面板"建单据时填写 单据日期/单据编号"规则未覆盖选单生成
+- **修复**：a) 过滤缺键 → `hit=false`（不匹配，不再漏过）；b) `save` 新建分支对**非审批面板**按字段存在性补 单据日期=当天、单据编号（或锭号）=form_no（缺才填）；mock 同步；c) 存量回填（PU_IN 2002-2006 按创建日期补 单据日期、form_no 补 单据编号）
+- **验证**：填条件后 total=1（只匹配真正符合的行）✅；模拟选单生成（formData 仅映射字段）保存后自动补 日期/编号 ✅
+- **教训**：a) 条件过滤对**缺失字段**必须判不匹配，不能 continue 跳过（否则缺字段的数据绕过滤）；b) 新规则（填写时机）必须覆盖**所有创建路径**（手动新增/选单生成/推式生单），并做存量回填；c) 用户报告的"所有单据都变了"先查**数据是否真被污染**（DB 直查）→ 再查过滤/展示层，两者往往叠加
+
+### 17. 产成品入库单选生产加工单生成空表头单据（"没有数据"）
+- **现象**：FINISH_IN 选单（选生产加工单）生成的新单表头全空（data={}），看起来"没有生单成功、没有数据"；历史还产生过明细也为空的废单（FI-2001~2003，data={} + detail={products:[]}）
+- **根因**：`SelectVoucherDialog.generate()` 普通选单分支 `head[m.to] = r[m.from]`——FINISH_IN selectConfig headerMap `from:'单据编号'`，而 **MO 行的编号字段是「锭号」**（行内无「单据编号」键）→ 取到 undefined → JS `{a: undefined}` 被 `JSON.stringify` **丢弃该键** → 新单 data 为空对象 → 表头全空；弹窗列渲染早有 cellText 兼容（单据编号→锭号回退）但生单映射没有
+- **修复**：generate() 新增 `selVal(row, f)`（与 cellText 同规则：单据编号回退 锭号/编号，空值不写入）；清理历史废单（FI-2001~2003 + 测试单）
+- **验证**：UI 全流程（弹窗勾选→生成→跳转表单）→ 新单 data={加工单号:MO-…, 匹配来源单号:MO-…} + detail.products 2 行完整 ✅
+- **教训**：a) 选单/生单的**字段映射取值必须与列渲染用同一套兼容规则**（单据编号↔锭号），一处兼容一处不兼容必然产生半空数据；b) 排查"生成无数据"先查**新单的 data 与 detail_data 原文**（区分表头空 vs 明细空），再回溯映射链路；c) 弹窗勾选的行对象与列表行同源，可直接复用渲染层的取值规则
+
+### 18. 选单生成的单据明细表格不显示（detail 键与 tabs key 不匹配）
+- **现象**：产成品入库单选生产加工单生成的新单，**列表/弹窗的明细表格"暂无数据"**；DB 里 detail_data={"products":[...]} 有数据
+- **根因**：`SelectVoucherDialog.generate()` 用 `cfg.detailKey`（FINISH_IN='products'、MATERIAL_OUT='materials'）作为**写入目标单据的 detail 键**——但目标面板 `detail.tabs[0].key` 是 **'items'** → 表格读 `detail['items']` 为空。detailKey 的语义是「从来源单据取明细的键」（MO 的 products），**不能直接作为目标写入键**
+- **修复**：generate() 生成前查目标面板配置，**写入键 = 目标面板 `detail.tabs[0].key`**（来源键只用于取源明细）；清理键不匹配的存量测试单
+- **验证**：选单生成 → 弹窗/列表明细表格正常显示 2 行（铝型材-散热片/轴套 C）✅
+- **教训**：a) **来源明细键与目标明细键必须分开**（detailKey=来源键，目标键取目标面板 tabs key），混用必现"有数据不显示"；b) "表格没数据"先查 **detail_data 键 vs detail.tabs key** 是否一致；c) 生成/保存的 detail 键契约：`detail.tabs[].key` 是唯一权威
+
+### 19. 关闭全部页签后误报「面板编号无效」
+- **现象**：叉掉所有面板页签只剩「我的桌面」时，弹出"面板编号无效，请从菜单重新进入"
+- **根因**：`PanelxList` 的 `watch([panelCode, operationName])` 在关闭页签跳转 `/dashboard` 时 panelCode 变为 undefined → watch 触发 `search()` → `load()` → `invalidPanel`（panelCode 空）→ 误报；`PanelxForm` 的 `watch([panelCode, code])` 同源（切走时会 load 无效参数）
+- **修复**：两处 watch 开头加守卫——`panelCode` 为空/'undefined' 时直接 return（组件即将失活/卸载，不触发加载）
+- **验证**：打开面板 → 关闭全部 → 跳 `/dashboard`、无错误提示 ✅
+- **教训**：**路由参数驱动的 watch 必须防御"参数失效"场景**（路由切走/页签关闭时 params 变 undefined），否则触发无意义加载并误报；keep-alive 组件在失活后仍可能被 watch 触发

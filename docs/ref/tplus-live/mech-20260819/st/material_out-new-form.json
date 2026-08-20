@@ -1,0 +1,120 @@
+{
+  "title": "新增\n新增\n引入常用单据",
+  "header": "新增 / 新增 / 引入常用单据 / 设置默认功能 / 新增 / 引入常用单据 / 选单 / 选材料出库单（直接领料） / 选材料出库单（自制领料） / 选生产加工单 / 选生产加工单(新增材料) / 选工序派工单 / 选领料申请单 / 选材料出库单（共耗领料） / 设置默认功能 / 选材料出库单（直接领料） / 选材料出库单（自制领料） / 选生产加工单 / 选生产加工单(新增材料) / 选工序派工单 / 选领料申请单 / 选材料出库单（共耗领料） / 智能选单 / 选单转换 / 选材料出库单（自制领料） / 选生产加工单 / 选工序派工单 / 选领料申请单 / 设置默认功能 / 选材料出库单（自制领料） / 选生产加工单 / 选工序",
+  "ctrls": [
+    {
+      "label": "生产车间",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "*单据日期",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "*单据编号",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "*业务类型",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "出库类别",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "领用人",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "项目",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "仓库",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 69
+    },
+    {
+      "label": "来源单号",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 69
+    },
+    {
+      "label": "加工单号",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 69
+    },
+    {
+      "label": "采购类型",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 69
+    },
+    {
+      "label": "凭证字号",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 69
+    },
+    {
+      "label": "产成品",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 69
+    },
+    {
+      "label": "制单人",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 980
+    },
+    {
+      "label": "审核人",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 980
+    },
+    {
+      "label": "审核日期",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 980
+    },
+    {
+      "label": "审核时间",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 980
+    },
+    {
+      "label": "打印次数",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 980
+    },
+    {
+      "label": "创建时间",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 980
+    }
+  ]
+}

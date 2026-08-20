@@ -1,0 +1,1228 @@
+{
+  "url": "https://h4t.chanjet.com/tplus/BAPView/Voucher.aspx?sysId=PU&mId=PU02&pId=voucherView",
+  "title": "采购订单",
+  "body": {
+    "bg": "rgb(255, 255, 255)",
+    "font": "Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, \"sans-serif\"",
+    "fs": "12px"
+  },
+  "cols": [
+    {
+      "t": "ID",
+      "a": "ID",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "预计到货日期",
+      "a": "AcceptDate",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "零售价",
+      "a": "RetailPrice",
+      "hidden": false,
+      "w": "70px"
+    },
+    {
+      "t": "项目",
+      "a": "Project",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "<font>*</font>物料编码",
+      "a": "Inventory_Code",
+      "hidden": false,
+      "w": "149px"
+    },
+    {
+      "t": "<font>*</font>物料名称",
+      "a": "Inventory",
+      "hidden": false,
+      "w": "113px"
+    },
+    {
+      "t": "<font>*</font>单位",
+      "a": "Unit",
+      "hidden": false,
+      "w": "97px"
+    },
+    {
+      "t": "规格型号",
+      "a": "Inventory_Specification",
+      "hidden": false,
+      "w": "105px"
+    },
+    {
+      "t": "<font>*</font>数量",
+      "a": "Quantity",
+      "hidden": false,
+      "w": "116px"
+    },
+    {
+      "t": "<font>*</font>单价",
+      "a": "OrigDiscountPrice",
+      "hidden": false,
+      "w": "74px"
+    },
+    {
+      "t": "<font>*</font>金额",
+      "a": "OrigDiscountAmount",
+      "hidden": false,
+      "w": "107px"
+    },
+    {
+      "t": "<font>*</font>税率%",
+      "a": "TaxRate",
+      "hidden": false,
+      "w": "85px"
+    },
+    {
+      "t": "<font>*</font>含税单价",
+      "a": "OrigTaxPrice",
+      "hidden": false,
+      "w": "165px"
+    },
+    {
+      "t": "批号",
+      "a": "Batch",
+      "hidden": true,
+      "w": "140px"
+    },
+    {
+      "t": "<font>*</font>含税金额",
+      "a": "OrigTaxAmount",
+      "hidden": false,
+      "w": "119px"
+    },
+    {
+      "t": "数量2",
+      "a": "Quantity2",
+      "hidden": false,
+      "w": "98px"
+    },
+    {
+      "t": "仓库",
+      "a": "Warehouse",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "自由项组合",
+      "a": "SKUName",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "自由项5",
+      "a": "freeitem4",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "地块",
+      "a": "freeitem5",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "颜色",
+      "a": "freeitem6",
+      "hidden": true,
+      "w": "43px"
+    },
+    {
+      "t": "尺码",
+      "a": "freeitem7",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "BOM版本号",
+      "a": "Bom",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "版本号",
+      "a": "freeitem0",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "生产日期",
+      "a": "ProductionDate",
+      "hidden": true,
+      "w": "110px"
+    },
+    {
+      "t": "保质期",
+      "a": "Inventory_Expired",
+      "hidden": true,
+      "w": "76px"
+    },
+    {
+      "t": "保质期单位",
+      "a": "Inventory_ExpiredUnit",
+      "hidden": true,
+      "w": "137px"
+    },
+    {
+      "t": "失效日期",
+      "a": "ExpiryDate",
+      "hidden": true,
+      "w": "58px"
+    },
+    {
+      "t": "计量单位2",
+      "a": "Unit2",
+      "hidden": false,
+      "w": "73px"
+    },
+    {
+      "t": "原含税单价",
+      "a": "PreTaxPrice",
+      "hidden": true,
+      "w": "70px"
+    },
+    {
+      "t": "项目库存编码",
+      "a": "freeitem1",
+      "hidden": true,
+      "w": "49px"
+    },
+    {
+      "t": "DM",
+      "a": "freeitem2",
+      "hidden": true,
+      "w": "41px"
+    },
+    {
+      "t": "XT",
+      "a": "freeitem3",
+      "hidden": true,
+      "w": "55px"
+    },
+    {
+      "t": "<font>*</font>本币含税金额",
+      "a": "TaxAmount",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "<font>*</font>折扣%",
+      "a": "DiscountRate",
+      "hidden": false,
+      "w": "74px"
+    },
+    {
+      "t": "折扣金额",
+      "a": "OrigDiscount",
+      "hidden": false,
+      "w": "90px"
+    },
+    {
+      "t": "<font>*</font>本币单价",
+      "a": "DiscountPrice",
+      "hidden": false,
+      "w": "102px"
+    },
+    {
+      "t": "<font>*</font>本币含税单价",
+      "a": "TaxPrice",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "<font>*</font>本币金额",
+      "a": "DiscountAmount",
+      "hidden": false,
+      "w": "110px"
+    },
+    {
+      "t": "<font>*</font>本币税额",
+      "a": "Tax",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "本币折扣金额",
+      "a": "Discount",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "<font>*</font>税额",
+      "a": "OrigTax",
+      "hidden": false,
+      "w": "73px"
+    },
+    {
+      "t": "赠品",
+      "a": "IsPresent",
+      "hidden": false,
+      "w": "40px"
+    },
+    {
+      "t": "原单价",
+      "a": "PreDiscountPrice",
+      "hidden": true,
+      "w": "150px"
+    },
+    {
+      "t": "行中止",
+      "a": "IsClose",
+      "hidden": false,
+      "w": "135px"
+    },
+    {
+      "t": "中止人",
+      "a": "ClosedBy",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "中止时间",
+      "a": "ClosedTime",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "累计执行数量",
+      "a": "CountQuantity",
+      "hidden": false,
+      "w": "121px"
+    },
+    {
+      "t": "累计损耗数量",
+      "a": "cumInstockShrinkageQuantity",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "已勾稽数量",
+      "a": "CumInvoiceCrossCheckQuantity",
+      "hidden": false,
+      "w": "103px"
+    },
+    {
+      "t": "未执行数量",
+      "a": "ExecutableQuantity",
+      "hidden": false,
+      "w": "124px"
+    },
+    {
+      "t": "已勾稽金额",
+      "a": "CumInvoiceCrossCheckAmount",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "价格策略取值维度",
+      "a": "PriceDimension",
+      "hidden": true,
+      "w": "120px"
+    },
+    {
+      "t": "编号",
+      "a": "Code",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "Mrp来源ID集合",
+      "a": "MrpSourceIds",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "备注",
+      "a": "DetailMemo",
+      "hidden": false,
+      "w": "255px"
+    },
+    {
+      "t": "EditState",
+      "a": "EditState",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "Val_Inventory",
+      "a": "Val_Inventory",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "HideValues",
+      "a": "HideValues",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "Percent",
+      "a": "TaxRate",
+      "hidden": false,
+      "w": "85px"
+    },
+    {
+      "t": "Percent",
+      "a": "DiscountRate",
+      "hidden": false,
+      "w": "74px"
+    },
+    {
+      "t": "Percent",
+      "a": "TaxRate",
+      "hidden": false,
+      "w": "85px"
+    },
+    {
+      "t": "Percent",
+      "a": "DiscountRate",
+      "hidden": false,
+      "w": "74px"
+    },
+    {
+      "t": "Percent",
+      "a": "TaxRate",
+      "hidden": false,
+      "w": "85px"
+    },
+    {
+      "t": "Percent",
+      "a": "DiscountRate",
+      "hidden": false,
+      "w": "74px"
+    },
+    {
+      "t": "Percent",
+      "a": "TaxRate",
+      "hidden": false,
+      "w": "85px"
+    },
+    {
+      "t": "Percent",
+      "a": "DiscountRate",
+      "hidden": false,
+      "w": "74px"
+    },
+    {
+      "t": "ID",
+      "a": "ID",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "物料名称",
+      "a": "Inventory",
+      "hidden": false,
+      "w": "235px"
+    },
+    {
+      "t": "版本号",
+      "a": "freeitem0",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "项目库存编码",
+      "a": "freeitem1",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "DM",
+      "a": "freeitem2",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "XT",
+      "a": "freeitem3",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "自由项5",
+      "a": "freeitem4",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "地块",
+      "a": "freeitem5",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "颜色",
+      "a": "freeitem6",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "尺码",
+      "a": "freeitem7",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "BOM版本号",
+      "a": "Bom",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "单位",
+      "a": "Unit",
+      "hidden": false,
+      "w": "125px"
+    },
+    {
+      "t": "数量",
+      "a": "Quantity",
+      "hidden": false,
+      "w": "300px"
+    },
+    {
+      "t": "单价",
+      "a": "OrigDiscountPrice",
+      "hidden": true,
+      "w": "70px"
+    },
+    {
+      "t": "含税单价",
+      "a": "OrigTaxPrice",
+      "hidden": true,
+      "w": "70px"
+    },
+    {
+      "t": "本币单价",
+      "a": "DiscountPrice",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "本币含税单价",
+      "a": "TaxPrice",
+      "hidden": true,
+      "w": "100px"
+    },
+    {
+      "t": "已勾稽数量",
+      "a": "CumInvoiceCrossCheckQuantity",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "已勾稽金额",
+      "a": "CumInvoiceCrossCheckAmount",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "EditState",
+      "a": "EditState",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "Val_Inventory",
+      "a": "Val_Inventory",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "Code",
+      "a": "Code",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "HideValues",
+      "a": "HideValues",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "ID",
+      "a": "ID",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "结算方式",
+      "a": "SettleStyle",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "账号名称",
+      "a": "BankAccount",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "<font>*</font>订金金额",
+      "a": "OrigAmount",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "票据号",
+      "a": "BillNo",
+      "hidden": false,
+      "w": "100px"
+    },
+    {
+      "t": "EditState",
+      "a": "EditState",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "Code",
+      "a": "Code",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "HideValues",
+      "a": "HideValues",
+      "hidden": true,
+      "w": "90px"
+    },
+    {
+      "t": "编码",
+      "a": "Code",
+      "hidden": true,
+      "w": "94px"
+    },
+    {
+      "t": "名称",
+      "a": "Name",
+      "hidden": true,
+      "w": "94px"
+    },
+    {
+      "t": "priuserdefnvc1",
+      "a": "priuserdefnvc1",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "IsHasSameFuncAuth",
+      "a": "IsHasSameFuncAuth",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "PartnerAbbName",
+      "a": "PartnerAbbName",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "HeadQuarterCode",
+      "a": "HeadQuarterCode",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "PartnerType_Name",
+      "a": "PartnerType_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "SettlementPartner_Name",
+      "a": "SettlementPartner_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Partnerclass_Name",
+      "a": "Partnerclass_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "ARBalance",
+      "a": "ARBalance",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "APBalance",
+      "a": "APBalance",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "AdvRBalance",
+      "a": "AdvRBalance",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "AdvPBalance",
+      "a": "AdvPBalance",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "MarketingOrgan_Name",
+      "a": "MarketingOrgan_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Shorthand",
+      "a": "Shorthand",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "CreditDate",
+      "a": "CreditDate",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "CreditQuantity",
+      "a": "CreditQuantity",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "PositionTitle_Name",
+      "a": "PositionTitle_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "AccountBank_Name",
+      "a": "AccountBank_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "BankAccountNo",
+      "a": "BankAccountNo",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "UnAccounted",
+      "a": "UnAccounted",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "WithBatchAutoOut",
+      "a": "WithBatchAutoOut",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Memo",
+      "a": "Memo",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "rdStyleIn_Name",
+      "a": "rdStyleIn_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "DefaultBarCode",
+      "a": "DefaultBarCode",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Specification",
+      "a": "Specification",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Partner_Name",
+      "a": "Partner_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "IsSerialNumber",
+      "a": "IsSerialNumber",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "SnSolution_Name",
+      "a": "SnSolution_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "SerialNumberParseGenerateRule_Name",
+      "a": "SerialNumberParseGenerateRule_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "OrderPolicy_Name",
+      "a": "OrderPolicy_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "PurchaseLeadTime",
+      "a": "PurchaseLeadTime",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "ManufactureLeadTime",
+      "a": "ManufactureLeadTime",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "InventoryPriceDTOs_RetailPriceNew",
+      "a": "InventoryPriceDTOs_RetailPriceNew",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "AutoAddModel",
+      "a": "AutoAddModel",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "SKUCode",
+      "a": "SKUCode",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "SKUName",
+      "a": "SKUName",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "CurrentStockATPQuantity",
+      "a": "CurrentStockATPQuantity",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "CurrentStockQuantity",
+      "a": "CurrentStockQuantity",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "SKUInvSCost",
+      "a": "SKUInvSCost",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "SKULatestCost",
+      "a": "SKULatestCost",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "SKUAvagCost",
+      "a": "SKUAvagCost",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Inventory_Code",
+      "a": "Inventory_Code",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Inventory_Specification",
+      "a": "Inventory_Specification",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Inventory_Name",
+      "a": "Inventory_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Version",
+      "a": "Version",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Manufactureplant_Name",
+      "a": "Manufactureplant_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Warehouse_Name",
+      "a": "Warehouse_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "freeitem0",
+      "a": "freeitem0",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "freeitem1",
+      "a": "freeitem1",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "freeitem2",
+      "a": "freeitem2",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "freeitem3",
+      "a": "freeitem3",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "freeitem4",
+      "a": "freeitem4",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "freeitem5",
+      "a": "freeitem5",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "freeitem6",
+      "a": "freeitem6",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "freeitem7",
+      "a": "freeitem7",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "BankNoType_Name",
+      "a": "BankNoType_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "BankName_Name",
+      "a": "BankName_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "BankNO",
+      "a": "BankNO",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "IsUsingDeficitControl",
+      "a": "IsUsingDeficitControl",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "IsUsingBankCheck",
+      "a": "IsUsingBankCheck",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "DateOfUsingBankCheck",
+      "a": "DateOfUsingBankCheck",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "BalanceDirection_Name",
+      "a": "BalanceDirection_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Currency_Name",
+      "a": "Currency_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Department_Name",
+      "a": "Department_Name",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "NewBalance",
+      "a": "NewBalance",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "Disabled",
+      "a": "Disabled",
+      "hidden": false,
+      "w": "94px"
+    },
+    {
+      "t": "详细",
+      "a": "ID",
+      "hidden": true,
+      "w": "54px"
+    }
+  ],
+  "ths": [],
+  "rowH": 0,
+  "rowCount": 314,
+  "toolbar": [
+    "新增",
+    "选单",
+    "选模板",
+    "修改",
+    "保存",
+    "删除",
+    "|",
+    "审核",
+    "弃审",
+    "弃审",
+    "审批情况",
+    "|",
+    "生单",
+    "转换",
+    "|",
+    "变更",
+    "|",
+    "生成批号",
+    "|",
+    "工具",
+    "联查",
+    "设置",
+    "|",
+    "打印",
+    "智能",
+    "单据分享",
+    "更多",
+    "更多"
+  ],
+  "tabs": [
+    {
+      "text": "明细",
+      "color": "rgb(55, 136, 255)"
+    }
+  ],
+  "query": [
+    {
+      "label": "项目",
+      "x": 24,
+      "y": 42,
+      "w": 100,
+      "h": 20,
+      "inW": 0,
+      "inH": 0
+    },
+    {
+      "label": "*单据日期",
+      "x": 244,
+      "y": 42,
+      "w": 100,
+      "h": 20,
+      "inW": 93,
+      "inH": 22
+    },
+    {
+      "label": "*NO.",
+      "x": 464,
+      "y": 42,
+      "w": 100,
+      "h": 20,
+      "inW": 113,
+      "inH": 27
+    },
+    {
+      "label": "*供应商",
+      "x": 684,
+      "y": 42,
+      "w": 320,
+      "h": 20,
+      "inW": 0,
+      "inH": 0
+    },
+    {
+      "label": "*币种",
+      "x": 24,
+      "y": 70,
+      "w": 100,
+      "h": 20,
+      "inW": 0,
+      "inH": 0
+    }
+  ],
+  "strips": [
+    {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1600,
+        "h": 1000
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "clearfix"
+    },
+    {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1600,
+        "h": 1000
+      },
+      "bg": "rgb(249, 249, 249)",
+      "tag": "DIV",
+      "cls": "mask"
+    },
+    {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1600,
+        "h": 30
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "t-page-tb"
+    },
+    {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1600,
+        "h": 31
+      },
+      "bg": "rgb(255, 255, 255)",
+      "tag": "DIV",
+      "cls": "tb-bg"
+    },
+    {
+      "rect": {
+        "x": 0,
+        "y": 30,
+        "w": 1592,
+        "h": 975
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "t-v-line"
+    },
+    {
+      "rect": {
+        "x": 24,
+        "y": 36,
+        "w": 1568,
+        "h": 969
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": ""
+    },
+    {
+      "rect": {
+        "x": 24,
+        "y": 36,
+        "w": 1568,
+        "h": 969
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "TABLE",
+      "cls": ""
+    },
+    {
+      "rect": {
+        "x": 24,
+        "y": 36,
+        "w": 1568,
+        "h": 89
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "TD",
+      "cls": ""
+    },
+    {
+      "rect": {
+        "x": 24,
+        "y": 36,
+        "w": 1568,
+        "h": 89
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": ""
+    },
+    {
+      "rect": {
+        "x": 24,
+        "y": 41,
+        "w": 220,
+        "h": 28
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "vch-ctldiv t-vch-ctl-editor hvr-underlin"
+    },
+    {
+      "rect": {
+        "x": 244,
+        "y": 41,
+        "w": 220,
+        "h": 28
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "vch-ctldiv t-vch-ctl-editor hvr-underlin"
+    },
+    {
+      "rect": {
+        "x": 464,
+        "y": 41,
+        "w": 220,
+        "h": 28
+      },
+      "bg": "rgba(0, 0, 0, 0)",
+      "tag": "DIV",
+      "cls": "vch-ctldiv t-vch-ctl-editor hvr-underlin"
+    }
+  ],
+  "topText": "新增\n新增\n引入常用单据\n设置默认功能\n新增\n引入常用单据\n选单\n选销售订单\n选预测单\n选请购单\n选要货单\n选中标单\n选采购计划\n设置默认功能\n选销售订单\n选预测单\n选请购单\n选要货单\n选中标单\n选采购计划\n选模板\n系统模板\n采购订单003\n设置默认功能\n系统模板\n采购订单003\n修改\n保存\n保存\nAlt+S\n保存新增\nAlt+\\\n保存为草稿\n保存为常用单据\n保存打印\nAlt+G\n分单保存\nAlt+O\n设置默认功能\n保存\n保存新增\n保存为草稿\n保存为常用单据\n保存打印\n分单保存\n删除\n|\n审核\n弃审\n弃审\n审批情况\n|\n生单\n生成到货单\n生成进货单\n生成采购入库单(普通采购)\n生成采购入库单(采购退货)\n生成付款申请单\n设置默认功能\n生成到货单\n生成进货单\n生成采购入库单(普通采购)\n生成采购入库单(采购退货)\n生成付款申请单\n转换\n转成销货单\n转成销售出库单\n转成销售订单\n设置默认功能\n"
+}

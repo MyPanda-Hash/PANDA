@@ -15,11 +15,37 @@ export const menuTree = [
         title: '销售管理',
         icon: 'ShoppingCart',
         children: [
-          { code: 'cat', title: '单据', children: [{ code: 'salesOrder', title: '销售订单', path: '/panelx/list/SO_ORDER', icon: 'Tickets', panelCode: 'SO_ORDER', operationName: '新增流程' }] },
+          { code: 'cat', title: '单据', children: [{ code: 'salesOrder', title: '销售订单', path: '/panelx/list/SO_ORDER', icon: 'Tickets', panelCode: 'SO_ORDER', operationName: '新增流程' },
+          { code: 'saleInv', title: '销货单', path: '/panelx/list/SALE_INV', icon: 'Tickets', panelCode: 'SALE_INV', operationName: '新增流程' }] },
           { code: 'detail', title: '明细表', children: [{ code: 'salesOrderDetail', title: '销售订单明细表', path: '/panelx/list/SALES_ORDER_DETAIL', panelCode: 'SALES_ORDER_DETAIL', icon: 'List' }] },
           { code: 'stats', title: '统计表', children: [{ code: 'salesOrderStats', title: '销售订单统计表', path: '/panelx/list/SALES_ORDER_STATS', panelCode: 'SALES_ORDER_STATS', icon: 'Histogram' }] },
           { code: 'exec', title: '执行表', children: [{ code: 'salesOrderExec', title: '销售订单执行表', path: '/panelx/list/SALES_ORDER_EXEC', panelCode: 'SALES_ORDER_EXEC', icon: 'Operation' }] },
           { code: 'more', title: '更多', children: [{ code: 'salesOrderProgress', title: '销售订单生产进度表', path: '/panelx/list/SALES_ORDER_PROGRESS', panelCode: 'SALES_ORDER_PROGRESS', icon: 'TrendCharts' }] },
+        ],
+      },
+      {
+        code: 'purchase',
+        title: '采购管理',
+        icon: 'ShoppingCart',
+        children: [
+          {
+            code: 'doc', title: '单据', children: [
+              { code: 'puOrder', title: '采购订单', path: '/panelx/list/PU_ORDER', icon: 'Tickets', panelCode: 'PU_ORDER', operationName: '新增流程' },
+              { code: 'puIn', title: '进货单', path: '/panelx/list/PU_IN', icon: 'Tickets', panelCode: 'PU_IN', operationName: '新增流程' },
+            ],
+          },
+        ],
+      },
+      {
+        code: 'distribution',
+        title: '配货管理',
+        icon: 'Box',
+        children: [
+          {
+            code: 'doc', title: '单据', children: [
+              { code: 'pickOrder', title: '配货单', path: '/panelx/list/PICK_ORDER', icon: 'Tickets', panelCode: 'PICK_ORDER', operationName: '新增流程' },
+            ],
+          },
         ],
       },
       {
@@ -35,6 +61,7 @@ export const menuTree = [
               { code: 'saleOut', title: '销售出库单', path: '/panelx/list/SALE_OUT', icon: 'Upload', panelCode: 'SALE_OUT', operationName: '新增流程' },
               { code: 'materialOut', title: '材料出库单', path: '/panelx/list/MATERIAL_OUT', icon: 'Upload', panelCode: 'MATERIAL_OUT', operationName: '新增流程' },
               { code: 'otherOut', title: '其他出库单', path: '/panelx/list/OTHER_OUT', icon: 'Upload', panelCode: 'OTHER_OUT', operationName: '新增流程' },
+              { code: 'materialReq', title: '领料申请单', path: '/panelx/list/MATERIAL_REQ', icon: 'Upload', panelCode: 'MATERIAL_REQ', operationName: '新增流程' },
             ],
           },
           {
@@ -74,6 +101,23 @@ export const menuTree = [
     ],
   },
   {
+    code: 'qc',
+    title: '质量管理',
+    icon: 'Aim',
+    children: [
+      {
+        code: 'qcDoc',
+        title: '单据',
+        icon: 'Document',
+        children: [
+          { code: 'arrivalIn', title: '到货单', path: '/panelx/list/ARRIVAL_IN', icon: 'Van', panelCode: 'ARRIVAL_IN', operationName: '新增流程' },
+          { code: 'finishInspect', title: '成品报检单', path: '/panelx/list/FINISH_INSPECT', icon: 'Checked', panelCode: 'FINISH_INSPECT', operationName: '新增流程' },
+          { code: 'inspection', title: '来料/成品检验单', path: '/panelx/list/INSPECTION', icon: 'View', panelCode: 'INSPECTION', operationName: '新增流程' },
+        ],
+      },
+    ],
+  },
+  {
     code: 'mfg',
     title: '新生产',
     icon: 'Odometer',
@@ -86,6 +130,7 @@ export const menuTree = [
           {
             code: 'doc', title: '单据', children: [
               { code: 'manufactureOrder', title: '生产加工单', path: '/panelx/list/MANU_ORDER', icon: 'Document', panelCode: 'MANU_ORDER', operationName: '新增流程' },
+              { code: 'dispatch', title: '工序派工单', path: '/panelx/list/DISPATCH', icon: 'AlarmClock', panelCode: 'DISPATCH', operationName: '新增流程' },
               { code: 'manufactureOrderProc', title: '生产加工单工序统计表', path: '/panelx/list/MANU_PROC_STATS', panelCode: 'MANU_PROC_STATS', icon: 'Histogram' },
             ],
           },

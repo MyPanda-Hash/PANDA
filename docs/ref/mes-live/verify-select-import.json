@@ -1,0 +1,5 @@
+{
+  "OTHER_IN_select": "{\"title\":\"选其他出库单\",\"rows\":1}",
+  "SALE_OUT_select": "{\"title\":\"选销售订单\",\"rows\":0,\"ths\":[\"序号\",\"单据编号\",\"单据日期\",\"客户\",\"业务员\"]}",
+  "import": "no-import-dlg"
+}

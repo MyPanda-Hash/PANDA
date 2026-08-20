@@ -9,7 +9,7 @@
             <span class="tb-caret"><el-icon><ArrowDown /></el-icon></span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item v-for="a in g.actions" :key="a" :command="a" :disabled="isDisabled(a)">
+                <el-dropdown-item v-for="a in g.actions.slice(1)" :key="a" :command="a" :disabled="isDisabled(a)">
                   <span class="act-name">{{ a }}</span><span v-if="SHORTCUTS[a]" class="act-sc">{{ SHORTCUTS[a] }}</span>
                 </el-dropdown-item>
               </el-dropdown-menu>
@@ -17,7 +17,7 @@
           </el-dropdown>
         </span>
         <span class="tb-group">
-          <span class="tb-main back" @click="back">返回</span>
+          <span v-if="!embedded" class="tb-main back" @click="back">返回</span>
         </span>
         <div class="tools-right">
           <span class="pg">◁</span><span class="pg">◀</span><span class="pg">▶</span><span class="pg">▷</span>
@@ -274,12 +274,21 @@
     <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
     <ImportDialog v-model="impVisible" :fields="impFields" :target-label="impLabel" @imported="onImported" />
     <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
+    <VoucherFormDialog v-model="genVisible" :panel-code="genPanel" :code="genNo" @saved="onGenSaved" />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onDeactivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+
+// 2026-08-20：支持弹窗嵌入（列表页双击打开表单弹窗）——panelCodeProp/codeProp 优先于路由；embedded 时保存/返回改为 emit
+const props = defineProps({
+  panelCodeProp: { type: String, default: '' },
+  codeProp: { type: String, default: '' },
+  embedded: { type: Boolean, default: false },
+})
+const emit = defineEmits(['saved'])
 import { useTabsStore } from '@/stores/tabs'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -291,6 +300,7 @@ import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
 import ImportDialog from './ImportDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
+import VoucherFormDialog from './VoucherFormDialog.vue'
 const { SHORTCUTS } = engine
 
 const loginVisible = ref(false)
@@ -305,9 +315,9 @@ const router = useRouter()
 const tabsStore = useTabsStore()
 const user = useUserStore()
 
-const panelCode = computed(() => route.params.panelCode)
+const panelCode = computed(() => props.panelCodeProp || route.params.panelCode)
 const operationName = computed(() => route.query.operationName || '新增流程')
-const code = computed(() => route.query.code)
+const code = computed(() => props.codeProp || route.query.code)
 const isEdit = computed(() => !!code.value)
 
 const form = reactive({})
@@ -374,7 +384,7 @@ async function openSelectDialog() {
       const flat = []
       for (const r of rows) {
         const d = r.detail
-        const key = d ? Object.keys(d)[0] : null
+        const key = cfg.detailKey || (d ? Object.keys(d)[0] : null)
         if (key && Array.isArray(d[key])) for (const it of d[key]) flat.push({ ...r, ...it })
       }
       if (flat.length) rows = flat
@@ -937,13 +947,15 @@ async function load() {
       const first = (detailData['products'] || [])[0]
       if (first && first['产品编码']) selectProduct(first['产品编码'])
     }
-    // 页签标题 = 面板名-单据号（新单显示 面板名-新增），便于多单据区分
-    const no = isEdit.value ? (form['单据编号'] || form['锭号'] || form['编号'] || '') : '新增'
-    // 复用顶部 tabsStore
-    const cur = tabsStore.tabs.find((x) => x.path === route.path)
-    if (cur) cur.title = (payload.panelName || '表单') + '-' + no
-    // 页面标题 = 真实面板名（路由 meta.title 是通用占位，配置加载后覆盖）
-    document.title = (payload.panelName || '表单') + ' · 轻MES'
+    // 页签标题 = 面板名-单据号（新单显示 面板名-新增），便于多单据区分（弹窗嵌入模式跳过）
+    if (!props.embedded) {
+      const no = isEdit.value ? (form['单据编号'] || form['锭号'] || form['编号'] || '') : '新增'
+      // 复用顶部 tabsStore
+      const cur = tabsStore.tabs.find((x) => x.path === route.path)
+      if (cur) cur.title = (payload.panelName || '表单') + '-' + no
+      // 页面标题 = 真实面板名（路由 meta.title 是通用占位，配置加载后覆盖）
+      document.title = (payload.panelName || '表单') + ' · 轻MES'
+    }
   } catch (e) {
     ElMessage.error(engine.errMsg(e) || '加载失败')
     back()
@@ -974,7 +986,7 @@ async function onButton(action) {
     return
   }
   // 拉式选单（配置驱动：selectConfig.generateButton 存在 → 新弹窗直接生单；否则旧带入流程）
-  if (action === '选单' || action === '选销售订单' || action === '选生产加工单') {
+  if (action === '选单' || (action.startsWith('选') && payloadCache.value?.selectConfig)) {
     const sc = payloadCache.value?.selectConfig
     if (sc) {
       if (sc.generateButton) {
@@ -1084,10 +1096,16 @@ async function onButton(action) {
       formData: rd,
       buttonParam: isEdit.value ? { code: form['编号'] } : {},
     })
-    // 推式生单结果：跳转到生成的新单据（如 销售订单→生产加工单）
+    // 推式生单结果：用面板弹窗显示生成的新单据（2026-08-20 不再跳新页签；弹窗嵌入模式由父组件刷新）
     if (res?.gotoPanel) {
       ElMessage.success(`已生成${res.gotoPanel === 'MANU_ORDER' ? '生产加工单' : res.gotoPanel}：${res['编号']}`)
-      router.push({ path: `/panelx/form/${res.gotoPanel}`, query: { code: res['编号'] } })
+      if (props.embedded) {
+        emit('saved', res)
+      } else {
+        genPanel.value = res.gotoPanel
+        genNo.value = res['编号']
+        genVisible.value = true
+      }
       return
     }
     ElMessage.success(`「${action}」成功`)
@@ -1116,6 +1134,10 @@ async function onButton(action) {
 }
 
 function back() {
+  if (props.embedded) {
+    emit('saved')
+    return
+  }
   router.push({ path: `/panelx/list/${panelCode.value}` })
 }
 
@@ -1128,15 +1150,20 @@ function onImported(rows) {
   ElMessage.success('已导入 ' + rows.length + ' 行到「' + (tab.label || tab.key) + '」，请点击保存落库')
 }
 
-// 新选单弹窗生单完成：跳转到第一张生成的单据表单
+// 新选单弹窗生单完成：用面板弹窗显示第一张生成的单据（2026-08-20 不再跳新页签）
+const genVisible = ref(false)
+const genPanel = ref('')
+const genNo = ref('')
 function onSelGenerated(generated) {
   const first = generated && generated[0]
   if (first) {
-    const q = { code: first.no }
-    const title = (first.panel === 'MANU_ORDER' ? '加工单-' : '单据-') + first.no
-    router.replace({ path: `/panelx/form/${first.panel}`, query: q })
-    tabsStore.open({ path: `/panelx/form/${first.panel}`, title, query: q })
+    genPanel.value = first.panel
+    genNo.value = first.no
+    genVisible.value = true
   }
+}
+function onGenSaved() {
+  genVisible.value = false
 }
 
 onMounted(() => {
@@ -1145,12 +1172,31 @@ onMounted(() => {
   loadSubBomMap()
 })
 
+// keep-alive 切离时关闭所有弹窗（防止 append-to-body 弹窗在路由切换后残留）
+onDeactivated(() => {
+  selectVisible.value = false
+  selVisible.value = false
+  refVisible.value = false
+  impVisible.value = false
+  loginVisible.value = false
+})
+
 // 从列表页「选单」入口（?select=1）跳转而来：load 完成后自动弹出选单对话框（payloadCache 异步赋值）
 watch(payloadCache, (v) => {
   if (route.query.select && v && v.selectConfig && !selVisible.value) openSelectDialog()
 })
 
-watch(() => [panelCode.value, code.value], load)
+watch(() => [panelCode.value, code.value], () => {
+  // 2026-08-20：关闭页签/切走时 panelCode 变 undefined——不触发加载
+  if (!panelCode.value || panelCode.value === 'undefined') return
+  // 路由参数变化（同组件切换面板）时关闭所有弹窗，防止 append-to-body 弹窗残留
+  selectVisible.value = false
+  selVisible.value = false
+  refVisible.value = false
+  impVisible.value = false
+  loginVisible.value = false
+  load()
+})
 </script>
 
 <style scoped>

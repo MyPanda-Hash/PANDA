@@ -1,0 +1,102 @@
+{
+  "title": "新增\n新增\n引入常用单据",
+  "header": "新增 / 新增 / 引入常用单据 / 设置默认功能 / 新增 / 引入常用单据 / 选单 / 选产成品入库单（自制加工） / 选生产加工单 / 选生产加工单-增加联副产品 / 选成品报检单 / 选检验单 / 设置默认功能 / 选产成品入库单（自制加工） / 选生产加工单 / 选生产加工单-增加联副产品 / 选成品报检单 / 选检验单 / 智能选单 / 修改 / 保存 / 保存 / Alt+S / 保存新增 / Alt+\\ / 保存为草稿 / 保存为常用单据 / 保存打印 / Alt+G / 设置默认功能 / 保存 / 保存新增 / 保存为草稿 / 保存为常用单据 / 保存打印 / 删除 / | / 审核 / 弃审 / 弃审 / 审批情况 / | / 生单 / 生成产成品入库单（自制退",
+  "ctrls": [
+    {
+      "label": "*单据日期",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "*单据编号",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "*业务类型",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "入库类别",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "生产车间",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "加工单号",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 41
+    },
+    {
+      "label": "经手人",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "项目",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 69
+    },
+    {
+      "label": "仓库",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 69
+    },
+    {
+      "label": "销售订单号",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 69
+    },
+    {
+      "label": "匹配来源单号",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 69
+    },
+    {
+      "label": "凭证字号",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 69
+    },
+    {
+      "label": "制单人",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 980
+    },
+    {
+      "label": "审核人",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 980
+    },
+    {
+      "label": "审核日期",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 980
+    },
+    {
+      "label": "打印次数",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 980
+    }
+  ]
+}

@@ -4,9 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>轻MES · 生产制造执行系统</title>
-  <!-- 路线①（完全自建）不加载 PanelX SDK：前端 /api 直连自己服务器后端。
-       如需恢复平台直连模式（路线②），在此恢复以下两行：
-  <script src="/panelx/preload.js" devSdkUrl="http://203.132.49.57:6612/hscx/wp-core/api/getPanelXSdk"></script> -->
+  <!-- 自建模式不加载 PanelX SDK：前端 /api 走本地后端（PanelX 代理模式由后端 PanelxService 调平台，前端同样无需 SDK） -->
 </head>
 <body>
   <div id="app"></div>

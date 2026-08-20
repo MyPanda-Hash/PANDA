@@ -1,0 +1,75 @@
+{
+  "head": "新增 / 新增 / 引入常用单据 / 设置默认功能 / 新增 / 引入常用单据 / 选单 / 选销售订单 / 选预测单 / 选请购单 / 选要货单 / 选中标单 / 选采购计划 / 设置默认功能 / 选销售订单 / 选预测单 / 选请购单 / 选要货单 / 选中标单 / 选采购计划 / 选模板 / 系统模板 / 采购订单003 / 设置默认功能 / 系统模板 / 采购订单003 / 修改 / 保存 / 保存 / Alt+S / 保存新增 / Alt+\\ / 保存为草稿 / 保存为常用单据 / 保存打印 / Alt+G / 分单保存 / Alt",
+  "ctrls": [
+    {
+      "label": "项目",
+      "type": "INPUT:hidden",
+      "y": 41
+    },
+    {
+      "label": "*单据日期",
+      "type": "INPUT:text",
+      "y": 41
+    },
+    {
+      "label": "*NO.",
+      "type": "INPUT:text",
+      "y": 41
+    },
+    {
+      "label": "*供应商",
+      "type": "INPUT:hidden",
+      "y": 41
+    },
+    {
+      "label": "*币种",
+      "type": "INPUT:hidden",
+      "y": 69
+    },
+    {
+      "label": "*汇率",
+      "type": "INPUT:hidden",
+      "y": 69
+    },
+    {
+      "label": "到货地址",
+      "type": "INPUT:text",
+      "y": 69
+    },
+    {
+      "label": "交货日期",
+      "type": "INPUT:text",
+      "y": 69
+    },
+    {
+      "label": "发货状态",
+      "type": "INPUT:hidden",
+      "y": 69
+    },
+    {
+      "label": "合同号",
+      "type": "INPUT:text",
+      "y": 69
+    },
+    {
+      "label": "勾稽状态",
+      "type": "INPUT:hidden",
+      "y": 69
+    },
+    {
+      "label": "订金金额",
+      "type": "INPUT:text",
+      "y": 97
+    },
+    {
+      "label": "付款方式",
+      "type": "INPUT:hidden",
+      "y": 97
+    },
+    {
+      "label": "数据来源",
+      "type": "INPUT:hidden",
+      "y": 97
+    }
+  ]
+}

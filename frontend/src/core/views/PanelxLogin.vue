@@ -19,7 +19,7 @@
 <script setup>
 import { reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { sdkLogin, PANELX_CONFIG } from '@core/sdk'
+import { sdkLogin } from '@core/sdk'
 
 defineProps({ modelValue: Boolean })
 const emit = defineEmits(['update:modelValue', 'success'])
@@ -42,10 +42,6 @@ async function doLogin() {
   }
 }
 
-watch(
-  () => PANELX_CONFIG,
-  () => {}
-)
 </script>
 
 <style scoped>

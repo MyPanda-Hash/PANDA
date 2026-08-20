@@ -10,6 +10,13 @@ export const useTabsStore = defineStore('tabs', {
       const ex = this.tabs.find((t) => t.path === menu.path)
       if (ex) {
         // 同一路径再次打开：更新标题与查询参数（如单据表单的 ?code=）
+        // 防污染：已打开具体单据标签时，忽略「X-新增」标签请求（避免标题/查询被覆盖）
+        const isNewReq = typeof menu.title === 'string' && menu.title.endsWith('-新增')
+        const exIsNew = typeof ex.title === 'string' && ex.title.endsWith('-新增')
+        if (isNewReq && !exIsNew) {
+          this.active = menu.path
+          return
+        }
         if (menu.title) ex.title = menu.title
         if (menu.query) ex.query = { ...menu.query }
       } else {

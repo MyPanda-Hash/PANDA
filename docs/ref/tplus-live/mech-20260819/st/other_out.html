@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1600px; height: 1000px; overflow: hidden; background: #fff; font-family: Arial, "Microsoft YaHei", "Pingfang SC", sans-serif; font-size: 12px; }
+.toolbar { display: flex; align-items: center; height: 31px; padding: 0 20px; background: #fff; border-bottom: 1px solid #eee; }
+.toolbar .g { font-size: 14px; color: #333; margin: 0 5px; }
+.toolbar .sep { color: #ccc; margin: 0 6px; }
+.qrow { display: flex; align-items: center; height: 30px; padding: 0 24px; gap: 14px; background: #fff; }
+.qf { display: inline-flex; align-items: center; gap: 4px; }
+.ql { color: #333; }
+.qi { display: inline-block; width: 93px; height: 22px; background: #fff; }
+.tabs { display: flex; align-items: center; height: 30px; padding: 0 24px; gap: 18px; background: #fff; }
+.tabs .tab { font-size: 14px; font-weight: 700; color: #333; padding-bottom: 4px; }
+.tabs .tab.on { color: #3788FF; border-bottom: 2px solid #3788FF; }
+.gridwrap { padding: 0 24px; overflow: hidden; background: #fff; }
+table { border-collapse: collapse; table-layout: fixed; width: 2160px; font-size: 12px; }
+thead th { background: #E0E0E0; color: #333; font-weight: 600; height: 27px; border-right: 1px solid #d0d0d0; border-bottom: 1px solid #d0d0d0; white-space: nowrap; overflow: hidden; }
+tbody td { height: 26px; border-right: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0; text-align: center; white-space: nowrap; overflow: hidden; color: #333; }
+tbody td.c { color: #3788FF; }
+</style></head>
+<body>
+  <div class="toolbar"><span class="g">新增</span><span class="sep">|</span><span class="g">选单</span><span class="sep">|</span><span class="g">保存</span><span class="sep">|</span><span class="g">修改</span><span class="sep">|</span><span class="g">删除</span><span class="sep">|</span><span class="g">|</span><span class="sep">|</span><span class="g">审核</span><span class="sep">|</span><span class="g">弃审</span><span class="sep">|</span><span class="g">弃审</span><span class="sep">|</span><span class="g">审批情况</span><span class="sep">|</span><span class="g">|</span><span class="sep">|</span><span class="g">转换</span><span class="sep">|</span><span class="g">生成凭证</span><span class="sep">|</span><span class="g">|</span><span class="sep">|</span><span class="g">变更</span><span class="sep">|</span><span class="g">|</span><span class="sep">|</span><span class="g">工具</span><span class="sep">|</span><span class="g">联查</span><span class="sep">|</span><span class="g">设置</span><span class="sep">|</span><span class="g">|</span><span class="sep">|</span><span class="g">打印</span><span class="sep">|</span><span class="g">更多</span><span class="sep">|</span><span class="g">智能导入</span><span class="sep">|</span><span class="g">更多</span></div>
+  <div class="qrow"><span class="qf"><span class="ql"><span style="color:#FF0033">*</span>单据日期</span><span class="qi" style="width:93px"></span></span><span class="qf"><span class="ql"><span style="color:#FF0033">*</span>单据编号</span><span class="qi" style="width:113px"></span></span><span class="qf"><span class="ql"><span style="color:#FF0033">*</span>业务类型</span><span class="qi"></span></span><span class="qf"><span class="ql">出库类别</span><span class="qi"></span></span><span class="qf"><span class="ql">部门</span><span class="qi"></span></span><span class="qf"><span class="ql">经手人</span><span class="qi"></span></span><span class="qf"><span class="ql">项目</span><span class="qi"></span></span><span class="qf"><span class="ql">往来单位</span><span class="qi"></span></span></div>
+  <div class="tabs"><span class="tab on">明细</span></div>
+  <div class="gridwrap">
+    <table>
+      <thead><tr><th style="width:90px"><span style="color:#FF0033">*</span>*仓库</th><th style="width:100px"><span style="color:#FF0033">*</span>*项目</th><th style="width:151px"><span style="color:#FF0033"></span>合同号</th><th style="width:205px"><span style="color:#FF0033">*</span>*存货名称</th><th style="width:77px"><span style="color:#FF0033"></span>规格型号</th><th style="width:74px"><span style="color:#FF0033">*</span>*计量单位</th><th style="width:113px"><span style="color:#FF0033">*</span>*数量</th><th style="width:159px"><span style="color:#FF0033"></span>换算率</th><th style="width:138px"><span style="color:#FF0033"></span>计量单位2</th><th style="width:118px"><span style="color:#FF0033"></span>数量2</th><th style="width:160px"><span style="color:#FF0033"></span>批号</th><th style="width:134px"><span style="color:#FF0033"></span>单价</th><th style="width:90px"><span style="color:#FF0033"></span>金额</th><th style="width:100px"><span style="color:#FF0033"></span>手工确定成本</th></tr></thead>
+      <tbody><tr><td>自主生产</td><td class="c">CP001</td><td></td><td>演示产品A</td><td>GG-A</td><td>A</td><td>BOM-001</td><td>单阶</td><td>件</td><td>200</td><td>200</td><td>0</td><td>200</td><td></td><td>200</td><td></td></tr><tr><td>来料加工</td><td class="c">CP002</td><td></td><td>演示产品B</td><td>GG-B</td><td>B</td><td>BOM-002</td><td>尾阶</td><td>件</td><td>150</td><td>150</td><td>0</td><td>150</td><td></td><td>150</td><td></td></tr><tr><td>自主生产</td><td class="c">CP003</td><td></td><td>演示产品C</td><td>GG-C</td><td>C</td><td>BOM-003</td><td>单阶</td><td>套</td><td>80</td><td>80</td><td>0</td><td>80</td><td></td><td>80</td><td></td></tr></tbody>
+    </table>
+  </div>
+</body></html>

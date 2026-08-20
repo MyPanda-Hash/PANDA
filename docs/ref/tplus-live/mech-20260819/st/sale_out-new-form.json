@@ -1,0 +1,90 @@
+{
+  "title": "新增\n新增\n引入常用单据",
+  "header": "新增 / 新增 / 引入常用单据 / 设置默认功能 / 新增 / 引入常用单据 / 选单 / 选销售订单 / 选销货单 / 选销售出库单(普通销售) / 选配货单 / 设置默认功能 / 选销售订单 / 选销货单 / 选销售出库单(普通销售) / 选配货单 / 智能选单 / 修改 / 保存 / 保存 / Alt+S / 保存新增 / Alt+\\ / 保存为草稿 / 保存为常用单据 / 保存打印 / Alt+G / 设置默认功能 / 保存 / 保存新增 / 保存为草稿 / 保存为常用单据 / 保存打印 / 删除 / | / 审核 / 弃审 / 弃审 / 审批情况 / | / 生单 / 生成销货单 / 生成销售出库单(销售退货) / 设置默认功能 / 生成销货单 / 生成销售出库单(销售退货) / 生",
+  "ctrls": [
+    {
+      "label": "*单据日期",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "*单据号",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "*业务类型",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "出库类别",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "*客户",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "*结算客户",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "经手人",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 41
+    },
+    {
+      "label": "验货人",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 69
+    },
+    {
+      "label": "项目",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 69
+    },
+    {
+      "label": "仓库",
+      "type": "INPUT:hidden",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 69
+    },
+    {
+      "label": "送货地址",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-editor hv",
+      "y": 69
+    },
+    {
+      "label": "发货单号",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 69
+    },
+    {
+      "label": "发货日期",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 69
+    },
+    {
+      "label": "来源单号",
+      "type": "INPUT:text",
+      "cls": "vch-ctldiv t-vch-ctl-readonly",
+      "y": 69
+    }
+  ]
+}

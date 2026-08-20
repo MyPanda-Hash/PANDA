@@ -1,0 +1,30 @@
+[
+  {
+    "code": "ARRIVAL_IN",
+    "name": "到货单",
+    "newDialog": "{\"title\":\"新增到货单\",\"fields\":0,\"fieldNames\":\"\"}",
+    "select": "no-select-dialog",
+    "err": false
+  },
+  {
+    "code": "FINISH_INSPECT",
+    "name": "成品报检单",
+    "newDialog": "{\"title\":\"新增成品报检单\",\"fields\":0,\"fieldNames\":\"\"}",
+    "select": "{\"title\":\"选生产加工单\",\"rows\":8}",
+    "err": false
+  },
+  {
+    "code": "INSPECTION",
+    "name": "来料成品检验单",
+    "newDialog": "{\"title\":\"新增来料/成品检验单\",\"fields\":0,\"fieldNames\":\"\"}",
+    "select": "no-select-dialog",
+    "err": false
+  },
+  {
+    "code": "DISPATCH",
+    "name": "工序派工单",
+    "newDialog": "{\"title\":\"新增工序派工单\",\"fields\":0,\"fieldNames\":\"\"}",
+    "select": "no-select-dialog",
+    "err": false
+  }
+]

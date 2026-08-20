@@ -1,0 +1,128 @@
+[
+  {
+    "dataName": "单据日期",
+    "dataType": "日期",
+    "isRequired": true,
+    "defaultValue": ""
+  },
+  {
+    "dataName": "单据编号",
+    "dataType": "文本",
+    "isRequired": true,
+    "defaultValue": "",
+    "autoCode": true
+  },
+  {
+    "dataName": "业务类型",
+    "dataType": "下拉框",
+    "isRequired": true,
+    "defaultValue": "其他出库",
+    "options": ["销售出库", "材料出库", "其他出库"]
+  },
+  {
+    "dataName": "出库类别",
+    "dataType": "下拉框",
+    "isRequired": false,
+    "defaultValue": "",
+    "options": ["盘亏出库", "调整出库", "其他"]
+  },
+  {
+    "dataName": "部门",
+    "dataType": "参照",
+    "isRequired": false,
+    "defaultValue": "",
+    "refPanel": "DEPT",
+    "refField": "部门名称",
+    "displayField": "部门名称",
+    "filter": { "停用": false }
+  },
+  {
+    "dataName": "经手人",
+    "dataType": "参照",
+    "isRequired": false,
+    "defaultValue": "",
+    "refPanel": "EMP",
+    "refField": "员工名称",
+    "displayField": "员工名称",
+    "filter": { "停用": false }
+  },
+  {
+    "dataName": "项目",
+    "dataType": "参照",
+    "isRequired": false,
+    "defaultValue": "",
+    "refPanel": "PROJ",
+    "refField": "项目名称",
+    "displayField": "项目名称",
+    "filter": { "停用": false }
+  },
+  {
+    "dataName": "往来单位",
+    "dataType": "参照",
+    "isRequired": false,
+    "defaultValue": "",
+    "refPanel": "PARTNER",
+    "refField": "往来单位名称",
+    "displayField": "往来单位名称",
+    "filter": { "停用": false },
+    "refMap": [
+      { "from": "往来单位编码", "to": "往来单位编码" },
+      { "from": "往来单位简称", "to": "往来单位简称" }
+    ],
+    "refColumns": ["往来单位编码", "往来单位名称", "往来单位简称", "停用"]
+  },
+  {
+    "dataName": "来源单据",
+    "dataType": "文本",
+    "isRequired": false,
+    "defaultValue": "",
+    "readonly": true
+  },
+  {
+    "dataName": "外部单据号",
+    "dataType": "文本",
+    "isRequired": false,
+    "defaultValue": "",
+    "readonly": true
+  },
+  {
+    "dataName": "来源单号",
+    "dataType": "文本",
+    "isRequired": false,
+    "defaultValue": "",
+    "readonly": true
+  },
+  {
+    "dataName": "数据来源",
+    "dataType": "文本",
+    "isRequired": false,
+    "defaultValue": "",
+    "readonly": true
+  },
+  {
+    "dataName": "销售订单号",
+    "dataType": "文本",
+    "isRequired": false,
+    "defaultValue": ""
+  },
+  {
+    "dataName": "自动生入库单",
+    "dataType": "是否",
+    "isRequired": false,
+    "defaultValue": false
+  },
+  {
+    "dataName": "凭证字号",
+    "dataType": "文本",
+    "isRequired": false,
+    "defaultValue": "",
+    "readonly": true
+  },
+  {
+    "dataName": "项目.合同号",
+    "dataType": "文本",
+    "isRequired": false,
+    "defaultValue": "",
+    "readonly": true
+  }
+]

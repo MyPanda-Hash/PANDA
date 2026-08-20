@@ -1,0 +1,9 @@
+[
+  { "dataName": "单据日期", "dataType": "日期", "isRequired": true, "defaultValue": "today" },
+  { "dataName": "单据编号", "dataType": "文本", "isRequired": true, "defaultValue": "", "autoCode": true },
+  { "dataName": "业务类型", "dataType": "下拉框", "isRequired": true, "defaultValue": "其他入库", "options": ["采购入库", "产成品入库", "其他入库"] },
+  { "dataName": "项目", "dataType": "参照", "isRequired": false, "defaultValue": "", "refPanel": "PROJ", "refField": "项目名称", "displayField": "项目名称", "filter": { "停用": false } },
+  { "dataName": "仓库", "dataType": "参照", "isRequired": false, "defaultValue": "", "refPanel": "WH", "refField": "仓库名称", "displayField": "仓库名称", "filter": { "停用": false } },
+  { "dataName": "往来单位", "dataType": "参照", "isRequired": false, "defaultValue": "", "refPanel": "PARTNER", "refField": "往来单位名称", "displayField": "往来单位名称", "filter": { "停用": false } },
+  { "dataName": "匹配来源单号", "dataType": "文本", "isRequired": false, "defaultValue": "" }
+]

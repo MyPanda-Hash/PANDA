@@ -1,6 +1,6 @@
 <!-- ImportDialog.vue — Excel 导入：选择 .xlsx/.xls，自动识别明细字段（表头匹配 dataName），预览后填入明细 -->
 <template>
-  <el-dialog :model-value="visible" title="Excel 导入" width="760px" append-to-body @update:model-value="close">
+  <el-dialog :model-value="modelValue" title="Excel 导入" width="760px" append-to-body @update:model-value="close">
     <div class="imp-tip">
       选择 Excel 文件（.xlsx / .xls），自动识别「{{ targetLabel }}」字段并填入明细；
       Excel 第一行为字段名，需与明细字段名一致（如 产品名称、实收数量、材料编码）。
@@ -34,11 +34,11 @@ import { Upload } from '@element-plus/icons-vue'
 import * as XLSX from 'xlsx'
 
 const props = defineProps({
-  visible: Boolean,
+  modelValue: Boolean,
   fields: { type: Array, default: () => [] }, // 明细字段定义 [{dataName,dataType}]
   targetLabel: { type: String, default: '明细' },
 })
-const emit = defineEmits(['update:visible', 'imported'])
+const emit = defineEmits(['update:modelValue', 'update:visible', 'imported'])
 
 const fileRef = ref(null)
 const fileName = ref('')
@@ -48,7 +48,7 @@ const totalCols = ref(0)
 const rows = ref([])
 const previewRows = ref([])
 
-watch(() => props.visible, (v) => {
+watch(() => props.modelValue, (v) => {
   if (v) {
     fileName.value = ''
     error.value = ''
@@ -59,7 +59,7 @@ watch(() => props.visible, (v) => {
 })
 
 function close() {
-  emit('update:visible', false)
+  emit('update:modelValue', false); emit('update:visible', false)
 }
 
 function pick() {

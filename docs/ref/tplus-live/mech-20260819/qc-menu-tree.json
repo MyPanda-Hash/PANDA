@@ -1,0 +1,6842 @@
+[
+  {
+    "d": 5,
+    "cls": "dropdown-menu",
+    "text": "待审核业务99+",
+    "code": "#AuditTodo"
+  },
+  {
+    "d": 5,
+    "cls": "dropdown-menu",
+    "text": "单据消息3",
+    "code": "#VoucherMessage"
+  },
+  {
+    "d": 5,
+    "cls": "dropdown-menu",
+    "text": "收款预警16",
+    "code": "#GatheringAlarm"
+  },
+  {
+    "d": 5,
+    "cls": "dropdown-menu",
+    "text": "退出服宝",
+    "code": "#"
+  },
+  {
+    "d": 5,
+    "cls": "dropdown-menu",
+    "text": "帮助文档",
+    "code": ""
+  },
+  {
+    "d": 5,
+    "cls": "dropdown-menu",
+    "text": "账号管理",
+    "code": "#"
+  },
+  {
+    "d": 2,
+    "cls": "t-menu",
+    "text": "经营分析",
+    "code": ""
+  },
+  {
+    "d": 9,
+    "cls": "",
+    "text": "经营分析",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "目标管理",
+    "code": "#CPM1004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "盈利分析",
+    "code": "#RCHK1001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资金分析",
+    "code": "#RCHK1002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "货客分析",
+    "code": "#CM9022"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户分析",
+    "code": "#RCHK1004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务员六度模型",
+    "code": "#RCHK1003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "默认名称A",
+    "code": "#NewBoardRpt14"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产库存看板",
+    "code": "#NewBoardRpt32"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "999",
+    "code": "#NewBoardRpt59"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "888",
+    "code": "#NewBoardRpt60"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产质量分析看板",
+    "code": "#NewBoardRpt68"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产在制看板",
+    "code": "#NewBoardRpt77"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "管理全视图",
+    "code": "#SA6071"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务信息总览表",
+    "code": "#SA6072"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "经营毛利统计表",
+    "code": "#SA6081"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户中心",
+    "code": "#AA6040"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户营销中心",
+    "code": "#AA6010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "存货中心",
+    "code": "#AA6050"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "货品营销中心",
+    "code": "#AA6051"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "报表发布菜单管理",
+    "code": "#RT4001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "报表发布移动端管理",
+    "code": "#RT4002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "库存看板33",
+    "code": "#NewBoardRpt141"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "费用自动分摊方案",
+    "code": "#RCHK2001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "订单毛利分析",
+    "code": "#SA6032"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户毛利分析",
+    "code": "#SA6033"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务员毛利分析",
+    "code": "#SA6034"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "品牌毛利分析",
+    "code": "#SA6035"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售毛利趋势分析",
+    "code": "#SA6036"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "数智大屏",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "数智大屏",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "数智大屏",
+    "code": "#NBRPT20"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "商贸库存看板",
+    "code": "#NewBoardRpt55"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售订单生产进度跟踪表",
+    "code": "#NewBoardRpt78"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售订单执行跟踪",
+    "code": "#NewBoardRpt80"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产班组待产任务看板",
+    "code": "#NewBoardRpt81"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "企业经营分析A",
+    "code": "#NewBoardRpt15"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "质量管理周度看板",
+    "code": "#NewBoardRpt140"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序派工看板",
+    "code": "#NewBoardRpt142"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "数智参谋",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "数智参谋",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "财务参谋",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "财务参谋",
+    "code": "#CanMouRPT20"
+  },
+  {
+    "d": 8,
+    "cls": "menu-first",
+    "text": "新商贸",
+    "code": ""
+  },
+  {
+    "d": 9,
+    "cls": "",
+    "text": "跑店管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "跑店管理",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "日常应用",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "拜访计划",
+    "code": "#CM05"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#CM0501"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "轨迹跟踪",
+    "code": "#CM07"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "即时定位",
+    "code": "#CM08"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "拜访照片",
+    "code": "#CM10"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户地图",
+    "code": "#CM0502"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应用导航",
+    "code": "#CM01"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "流程设置",
+    "code": "#CM02"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户",
+    "code": "#CM06"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "路线规划",
+    "code": "#CM04"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "拜访记录明细表",
+    "code": "#CM0901"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "拜访统计分析",
+    "code": "#CM0902"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "拜访达成率分析",
+    "code": "#CM0903"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "拜访成单分析",
+    "code": "#CM0904"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户营销分析",
+    "code": "#CM0907"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务员营销分析",
+    "code": "#CM0908"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户预警分析",
+    "code": "#CM0915"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务员预警分析",
+    "code": "#CM0918"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "营销管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "营销管理",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "基本配置",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户营销参数设置",
+    "code": "#CM11"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "商品营销参数设置",
+    "code": "#CM14"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "跟进类型设置",
+    "code": "#CM12"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户标签设置",
+    "code": "#CM13"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户",
+    "code": "#CM50101"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "跟进记录明细表",
+    "code": "#CM0911"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "跟进统计分析",
+    "code": "#CM0912"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "推广分析明细表",
+    "code": "#CM0910"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "推广统计分析",
+    "code": "#CM0909"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户营销分析",
+    "code": "#CM50201"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务员营销分析",
+    "code": "#CM50202"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户预警分析",
+    "code": "#CM0905"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务员预警分析",
+    "code": "#CM0906"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "商品铺货分析",
+    "code": "#CM0921"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "促销管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "促销管理",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "销售促销",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "促销导航设置",
+    "code": "#PR01"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售单品返现",
+    "code": "#PR0509"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售单品满赠",
+    "code": "#PR0510"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售组合满赠",
+    "code": "#PR0511"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "促销单列表",
+    "code": "#PR4001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "促销方案使用排名",
+    "code": "#PR4005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "促销让利分析",
+    "code": "#PR4010"
+  },
+  {
+    "d": 8,
+    "cls": "menu-first",
+    "text": "供应链协同new",
+    "code": ""
+  },
+  {
+    "d": 10,
+    "cls": "menu-text",
+    "text": "供应链协同",
+    "code": ""
+  },
+  {
+    "d": 10,
+    "cls": "t-newmenu",
+    "text": "new",
+    "code": ""
+  },
+  {
+    "d": 9,
+    "cls": "",
+    "text": "小畅协同",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "小畅协同",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "与下游客户协同",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "引导说明(客户)",
+    "code": "#XT10"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "邀请下游客户",
+    "code": "#XT20"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "小畅协同设置",
+    "code": "#XT30"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "引导说明(供应商)",
+    "code": "#XT40"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "邀请上游供应商",
+    "code": "#XT50"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "小畅协同设置",
+    "code": "#XT60"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "商机广场",
+    "code": "#XT65"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "供应商管理new",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "供应商管理",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "供应商信息",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "供应商档案",
+    "code": "#VM01"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "供应商注册审批",
+    "code": "#VM03"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "供应商注册单",
+    "code": "#VM06"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "供应商注册邀请设置",
+    "code": "#VM02"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "供应商评价标签new",
+    "code": "#VM04"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "智能推荐设置new",
+    "code": "#VM05"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "采购询价",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "采购询价",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "单据",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "询价单",
+    "code": "#XT70"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "供应商报价单",
+    "code": "#XT80"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "询价单工作台",
+    "code": "#XT75"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "供应商报价单工作台",
+    "code": "#XT85"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "中标单工作台",
+    "code": "#XT95"
+  },
+  {
+    "d": 8,
+    "cls": "menu-first",
+    "text": "智能供应链new",
+    "code": ""
+  },
+  {
+    "d": 10,
+    "cls": "menu-text",
+    "text": "智能供应链",
+    "code": ""
+  },
+  {
+    "d": 9,
+    "cls": "",
+    "text": "合同管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "合同管理",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "合同",
+    "code": "#TOPVchGT"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "合同销售订单执行表",
+    "code": "#TOPRptGTXSDCZHB"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "合同类型",
+    "code": "#TOPArchGTLX"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "合同收支方向",
+    "code": "#TOPArchGTSZFX"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "合同性质",
+    "code": "#TOPArchGTXZ"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "采购管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "采购管理",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购订单",
+    "code": "#PU02"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#PU6002"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#PU4001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "Test单据",
+    "code": "#TOPVchTestCJ"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购订单001",
+    "code": "#PU02002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购订单002",
+    "code": "#PU02001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "进货单",
+    "code": "#PU03"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#PU6003"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#PU4002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购发票",
+    "code": "#PU04"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#PU6010"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#PU4003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "请购单",
+    "code": "#PU01"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#PU6015"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#PU4000"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购需求分析",
+    "code": "#PU05"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购订单工作台",
+    "code": "#PU10001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "进货单工作台",
+    "code": "#PU10002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "请购单批量生采购订单",
+    "code": "#TOPBGVPU01toPU02"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "中标单批量生采购订单",
+    "code": "#TOPBGVXT90toPU02"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购订单批量生进货单",
+    "code": "#TOPBGVPU02toPU03"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "进货单批量生采购发票",
+    "code": "#TOPBGVPU03toPU04"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购入库单批量生进货单",
+    "code": "#PU11"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购订单执行表",
+    "code": "#PU8007"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "进货单执行表",
+    "code": "#PU8008"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购综合统计分析表",
+    "code": "#PU6001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "请购单执行表",
+    "code": "#PU8003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "默认名称",
+    "code": "#NewBoardRpt42"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "销售管理new",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "销售管理",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售订单",
+    "code": "#SA03"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#SA6001"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#SA4001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售计划",
+    "code": "#TOPXSJH"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表new",
+    "code": "#XIAOSHOUJIHUATONGJIBIAO"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表new",
+    "code": "#XIAOSHOUJIHUAMINGXIBIAO"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售订单常规",
+    "code": "#SA03001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销货单001",
+    "code": "#SA04001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销货单",
+    "code": "#SA04"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#SA6002"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#SA4002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售发票",
+    "code": "#SA05"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#SA6010"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#SA4010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售费用分摊单",
+    "code": "#SA08"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "报价单",
+    "code": "#SA01"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#SA6000"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#SA4000"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "预测单",
+    "code": "#SA02"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#SA6003"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#SA4003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "防伪税控接口",
+    "code": "#SA10"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售毛利分析表-本月...",
+    "code": "#RMenu0006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销货单明细表-系统方案",
+    "code": "#RMenu0008"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售订单工作台",
+    "code": "#SA10001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销货单工作台",
+    "code": "#SA10002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售订单批量生采购订单",
+    "code": "#TOPBGVSA03toPU02"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售订单批量生销货单",
+    "code": "#TOPBGVSA03toSA04"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售订单批量生配货单",
+    "code": "#TOPBGVSA03toDI20"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销货单批量生销售发票",
+    "code": "#TOPBGVSA04toSA05"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售出库单批量生销货单",
+    "code": "#SA11"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售订单执行表",
+    "code": "#SA8006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销货单执行表",
+    "code": "#SA8007"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售订单跟踪工具",
+    "code": "#SA8016"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "分期收款执行明细表",
+    "code": "#SA8017"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销货单统计表-888...",
+    "code": "#RMenu0005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售毛利分析表",
+    "code": "#SA6031"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "进销存统计表",
+    "code": "#SA6051"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售排行榜",
+    "code": "#SA6061"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "预测单执行表",
+    "code": "#SA8012"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售订单采购生产执行...",
+    "code": "#SA8015"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售订单生产进度表",
+    "code": "#SA8018"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售出库开单执行表",
+    "code": "#SA8001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "信用查询",
+    "code": "#SA15"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "进销项税对比查询表",
+    "code": "#SA8088"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售综合统计分析表",
+    "code": "#SA6041"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "物流配送",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "物流配送",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "三方物流",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "单据处理",
+    "code": "#LM1001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "运费维护",
+    "code": "#LM4001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "物流发货执行统计表",
+    "code": "#LM2001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "单据处理总览",
+    "code": "#LM2002"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "库存核算",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "库存核算",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "设备投放单",
+    "code": "#TOPSBTFC"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#SHEBEITOUFANGTONGJIBIAO"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#SHEBEITOUFANGMINGXIBIAO"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购入库单",
+    "code": "#ST1001"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6001"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "产成品入库单",
+    "code": "#ST1002"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6002"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外入库单",
+    "code": "#ST1003"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6003"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "其他入库单",
+    "code": "#ST1004"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6004"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "其他入库单001",
+    "code": "#ST1004001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "其他入库单002",
+    "code": "#ST1004002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售出库单",
+    "code": "#ST1021"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6011"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "材料出库单",
+    "code": "#ST1022"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6012"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "材料出库单001",
+    "code": "#ST1022002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "材料领用单",
+    "code": "#ST1022001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外发料单",
+    "code": "#ST1023"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6023"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4023"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "其他出库单",
+    "code": "#ST1024"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6014"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4008"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "领料申请单",
+    "code": "#ST1039"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6039"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4039"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "要货单",
+    "code": "#ST1030"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6034"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4025"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "调拨单",
+    "code": "#ST1031"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6033"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "形态转换单",
+    "code": "#ST1033"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6032"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "组装拆卸单",
+    "code": "#ST1034"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6031"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4009"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "分量盘点单",
+    "code": "#ST1036"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "盘点向导",
+    "code": "#ST103202"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "盘点单",
+    "code": "#ST1032"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "装箱单",
+    "code": "#ST1038"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ST6038"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST4038"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现存量查询-Open...",
+    "code": "#RMenu0003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购核算单",
+    "code": "#ST2002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外核算单",
+    "code": "#ST2010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购费用分摊单",
+    "code": "#ST2003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外费用分摊单",
+    "code": "#ST2022"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "入库调整单",
+    "code": "#ST2004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "出库调整单",
+    "code": "#ST2005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "红蓝回冲单列表",
+    "code": "#ST2006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "重新计价",
+    "code": "#ST3001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "产品成本分配",
+    "code": "#ST3013"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ST2012"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "直接材料分配明细表",
+    "code": "#ST3019"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "计件工资分配明细表",
+    "code": "#ST2011"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "产品成本录入工具",
+    "code": "#ST3006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成本手工维护",
+    "code": "#ST3030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成本出入库跟踪",
+    "code": "#ST7020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成本异常查询",
+    "code": "#ST3010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "存货明细账",
+    "code": "#ST9021"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "存货总账",
+    "code": "#ST9020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "拣货装箱",
+    "code": "#ST3007"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "按存量补货",
+    "code": "#ST3008"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "货位调整单",
+    "code": "#ST1035"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "货位补录",
+    "code": "#ST3005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "有效期维护",
+    "code": "#ST3004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "齐套分析",
+    "code": "#ST3015"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "库存上下限设置",
+    "code": "#ST3009"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "库龄预警设置",
+    "code": "#ST3022"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "序列号预生成",
+    "code": "#ST1078"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "序列号拆分",
+    "code": "#ST1079"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "序列号列表",
+    "code": "#ST3520"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "序列号状况表",
+    "code": "#ST3020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "序列号跟踪表",
+    "code": "#ST3021"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "序列号补录",
+    "code": "#ST1077"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现存量查询",
+    "code": "#ST3011"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "可用量整理工具",
+    "code": "#ST3012"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "库存状况表",
+    "code": "#ST9001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "出入库流水",
+    "code": "#ST9081"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "出入库汇总",
+    "code": "#ST6081"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "收发存汇总表",
+    "code": "#ST6061"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "库存台账",
+    "code": "#ST9002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "货位明细账",
+    "code": "#ST9042"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "货位总账",
+    "code": "#ST9041"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "批次现存量",
+    "code": "#ST8001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "批次台账",
+    "code": "#ST8020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "批次汇总表",
+    "code": "#ST8030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "保质期查询",
+    "code": "#ST3014"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "箱码扫描明细表",
+    "code": "#ST4040"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "库存看板",
+    "code": "#NewBoardRpt94"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购入库单执行表",
+    "code": "#ST7010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "要货单执行表",
+    "code": "#ST7018"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "领料申请单执行表",
+    "code": "#ST7036"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "呆滞存货分析表",
+    "code": "#ST6063"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "库存周转率分析表",
+    "code": "#ST6065"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "库龄分析表",
+    "code": "#ST6075"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "库存资金占用分析表",
+    "code": "#ST6067"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "库存存货毛利预估表",
+    "code": "#AA5040"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "暂估入库余额表",
+    "code": "#ST6070"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "虚拟成本表",
+    "code": "#ST7023"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "发出商品表",
+    "code": "#ST7024"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序委外加工费用分配...",
+    "code": "#ST7035"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "库存与总账对账",
+    "code": "#ST7040"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "配货管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "配货管理",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "补货配货",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "配货单",
+    "code": "#DI20"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#DI3515"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#DI3505"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "补货需求分析",
+    "code": "#DI1015"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "仓库补货规则",
+    "code": "#DI1001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户补货规则",
+    "code": "#DI1003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "补货优先级",
+    "code": "#DI1010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "配货综合统计表",
+    "code": "#DI3520"
+  },
+  {
+    "d": 8,
+    "cls": "menu-first",
+    "text": "新生产",
+    "code": ""
+  },
+  {
+    "d": 9,
+    "cls": "",
+    "text": "委外管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "委外管理",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "多阶投产",
+    "code": "#OM04"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "投产运算过程",
+    "code": "#OM0401"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外加工单",
+    "code": "#OM05"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外加工费用单",
+    "code": "#OM09"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外加工单产成品明细表",
+    "code": "#OM3005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外加工单材料明细表",
+    "code": "#OM3010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外加工费用单明细表",
+    "code": "#OM3009"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外加工单产成品统计表",
+    "code": "#OM4005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外加工单材料统计表",
+    "code": "#OM4010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外加工费用单统计表",
+    "code": "#OM4009"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外加工单执行表",
+    "code": "#OM5005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外发料耗用结存表",
+    "code": "#OM5011"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外产品耗料出成分析",
+    "code": "#OM3006"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "工程变更管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "工程变更管理",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工程变更单",
+    "code": "#EC05"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "父件变更明细表",
+    "code": "#EC4006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "材料变更明细表",
+    "code": "#EC4007"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序变更明细表",
+    "code": "#EC4008"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "物料需求计划",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "物料需求计划",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "MRP运算方案",
+    "code": "#MRP01"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "MRP运算",
+    "code": "#MRP05"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "MRP运算列表",
+    "code": "#MRP05List"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购计划",
+    "code": "#MRP10"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产计划",
+    "code": "#MRP15"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外计划",
+    "code": "#MRP20"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "供需正向追溯表",
+    "code": "#MRP30"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "供需反向追溯表",
+    "code": "#MRP35"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "运算过程",
+    "code": "#MRP45"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "生产管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "生产管理",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "多阶投产",
+    "code": "#MP04"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "投产运算过程",
+    "code": "#MP0401"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产加工单",
+    "code": "#MP05"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工业线",
+    "code": "#MP05003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产加工单007",
+    "code": "#MP05002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产加工单001",
+    "code": "#MP05001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产备料分析",
+    "code": "#MP2820"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产加工单产成品明细表",
+    "code": "#MP3005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产加工单材料明细表",
+    "code": "#MP3010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产加工单工序明细表",
+    "code": "#MP3020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产加工单产成品统计表",
+    "code": "#MP4005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产加工单材料统计表",
+    "code": "#MP4010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产加工单工序统计表",
+    "code": "#MP4020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产加工单执行表",
+    "code": "#MP5005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产领用耗用结存表",
+    "code": "#MP5011"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产加工单跟踪工具",
+    "code": "#MP5055"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "自制产品耗料出成分析",
+    "code": "#MP3006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "进度",
+    "code": "#NewBoardRpt52"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "智慧车间",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "智慧车间",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序派工单",
+    "code": "#SW10"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序汇报单",
+    "code": "#MR10"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "返修工序汇报单",
+    "code": "#MR11"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序转移单",
+    "code": "#MR20"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "批量派工",
+    "code": "#SW20"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "派工工作台",
+    "code": "#SW30"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "返修工作台",
+    "code": "#MR30"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序派工单工序明细表",
+    "code": "#SW5010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序派工单材料明细表",
+    "code": "#SW3020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序汇报单明细表",
+    "code": "#MP5060"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序转移单明细表",
+    "code": "#MR2010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序派工单工序统计表",
+    "code": "#SW5020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序派工单材料统计表",
+    "code": "#SW3025"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序汇报单统计表",
+    "code": "#MP5070"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序转移单统计表",
+    "code": "#MR2020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序进度表",
+    "code": "#MP5080"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序状况表",
+    "code": "#MP5090"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "车间产能看板",
+    "code": "#NewBoardRpt53"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "计件工资",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "计件工资",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "计件工资核算单",
+    "code": "#PW01"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "计时工资核算单",
+    "code": "#PW04"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "特殊工资核算单",
+    "code": "#PW05"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "汇报单批量生核算单",
+    "code": "#PW06"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "计件工资核算单明细表",
+    "code": "#PW0201"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "计件工资核算单统计表",
+    "code": "#PW0301"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "综合明细表",
+    "code": "#PW0901"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "综合统计表",
+    "code": "#PW0902"
+  },
+  {
+    "d": 8,
+    "cls": "menu-first",
+    "text": "质量管理",
+    "code": ""
+  },
+  {
+    "d": 9,
+    "cls": "",
+    "text": "质检管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "质检管理",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "报检单",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "到货单",
+    "code": "#QM05"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#QM6005"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#QM4005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成品报检单",
+    "code": "#QM10"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#QM6010"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#QM4010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "首件报检单",
+    "code": "#QM07"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#QM6007"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#QM4007"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序报检单",
+    "code": "#QM09"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#QM6009"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#QM4009"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "质量统计分析表-系统...",
+    "code": "#RMenu0002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "来料/成品检验单",
+    "code": "#QM15"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产过程检验单",
+    "code": "#QM16"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "到货单执行表",
+    "code": "#QM8005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成品报检单执行表",
+    "code": "#QM8010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "首件报检单执行表",
+    "code": "#QM8007"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序报检单执行表",
+    "code": "#QM8009"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "质量统计分析表",
+    "code": "#QM8016"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "检验单综合明细表",
+    "code": "#QM4015"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "检验单综合统计表",
+    "code": "#QM6015"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "检验项目列表",
+    "code": "#QM1501"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "检验项目综合统计表",
+    "code": "#QM6016"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "质量追溯",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "质量追溯",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "基础设置",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "企业移动追溯设置",
+    "code": "#QT0101"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户移动追溯设置",
+    "code": "#QT0102"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "追溯打印模板设置",
+    "code": "#QT0103"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "产品正向追溯报表",
+    "code": "#QT4005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "材料反向追溯报表",
+    "code": "#QT4015"
+  },
+  {
+    "d": 8,
+    "cls": "menu-first",
+    "text": "智能财税",
+    "code": ""
+  },
+  {
+    "d": 9,
+    "cls": "",
+    "text": "往来现金",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "往来现金",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "付款申请单",
+    "code": "#ARAP07"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ARAP6007"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ARAP4007"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "付款申请批量生单",
+    "code": "#ARAP0701"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "收款单",
+    "code": "#ARAP01"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ARAP6001"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ARAP4001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应收单批量生收款单",
+    "code": "#arap0101"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "付款单",
+    "code": "#ARAP02"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#ARAP6002"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#ARAP4002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "银行存取款单",
+    "code": "#CS01"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#CS6001"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#CS4001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "收入单",
+    "code": "#CS03"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#CS6003"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#CS4003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "费用单",
+    "code": "#CS02"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#CS6002"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#CS4002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "其他应收单",
+    "code": "#CS08"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#CS6004"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#CS4004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "其他应付单",
+    "code": "#CS09"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#CS6005"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#CS4005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "汇兑损益调整单",
+    "code": "#ARAP05"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "手工核销",
+    "code": "#ARAP0401"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "取消核销",
+    "code": "#ARAP0403"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应收核销明细表",
+    "code": "#ARAP4005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应付核销明细表",
+    "code": "#ARAP4006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "预收冲应收",
+    "code": "#ARAP0301"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "预付冲应付",
+    "code": "#ARAP0302"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应收冲应收",
+    "code": "#ARAP0303"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应付冲应付",
+    "code": "#ARAP0304"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应收冲应付",
+    "code": "#ARAP0305"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "批量预收冲应收",
+    "code": "#ARAP0306"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "批量预付冲应付",
+    "code": "#ARAP0307"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应收总账",
+    "code": "#ARAP8001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应付总账",
+    "code": "#ARAP8002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应收明细账",
+    "code": "#ARAP8003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应付明细账",
+    "code": "#ARAP8021"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "往来与总账对账",
+    "code": "#ARAP8004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "往来期间对账单",
+    "code": "#ARAP7001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "协同对账单",
+    "code": "#ARAP0901"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "往来资金预测表",
+    "code": "#ARAP6023"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应收账龄分析",
+    "code": "#ARAP6041"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应付账龄分析",
+    "code": "#ARAP6042"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "欠条管理",
+    "code": "#ARAP6505"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售交款",
+    "code": "#ARAP6510"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "收款执行表",
+    "code": "#ARAP6521"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "付款执行表",
+    "code": "#ARAP6522"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "费用分摊查询工具",
+    "code": "#ARAP8022"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "顺丰物流对账单",
+    "code": "#TOPSFWLDZC"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "对账生单规则设置",
+    "code": "#ARAP0601"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "智能对账\\生单",
+    "code": "#ARAP0602"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "费用管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "费用管理",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "费用控制",
+    "code": "#EM07"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "费用方案",
+    "code": "#EM01"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#EM6001"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#EM4001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "费用协议",
+    "code": "#EM02"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#EM6002"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#EM4002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "费用协议批量生单",
+    "code": "#EM03"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "费用分析",
+    "code": "#EM05"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "返货单",
+    "code": "#TOPFHC"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#TOPFHCTJB"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#TOPFHCMXB"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "供应商返利单",
+    "code": "#TOPFLD"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#TOPFLDSumRpt"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#TOPFLDDetailRpt"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "银企云联",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "银企云联",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "日常业务",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "开通",
+    "code": "#BEI01"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "银行流水下载查询",
+    "code": "#BEI1001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "导入记录",
+    "code": "#BEI1002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "智能对账生单",
+    "code": "#BEI06"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "总账",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "总账",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "填制凭证",
+    "code": "#GL0101"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "凭证管理",
+    "code": "#GL0105"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "模板凭证",
+    "code": "#GL0170"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "草稿管理",
+    "code": "#GL0180"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "记账",
+    "code": "#GL0120"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目设置",
+    "code": "#SYS2143"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "摘要设置",
+    "code": "#SYS2153"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "摘要设置（单据明细）",
+    "code": "#SYS2154"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "单据生凭证",
+    "code": "#SYS2163"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "收入成本配比结转",
+    "code": "#SYS2183"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "凭证单据对照表",
+    "code": "#GL0117"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "已生成凭证查询",
+    "code": "#SYS2173"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "未生成凭证检查",
+    "code": "#GL0118"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "自动生凭证",
+    "code": "#SYS2164"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "自动生凭证结果查询",
+    "code": "#GL0119"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目余额表-系统方案",
+    "code": "#RMenu0007"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "自定义结转",
+    "code": "#GL3001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "汇兑损益结转",
+    "code": "#GL3010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "期间损益结转",
+    "code": "#GL3005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "凭证整理",
+    "code": "#GL0110"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "数据扫描仪",
+    "code": "#GL0116"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "经营驾驶舱",
+    "code": "#GL0129"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业财对账项目设置",
+    "code": "#GL0135"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "往来与总账对账",
+    "code": "#GL0136"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "库存与总账对账",
+    "code": "#GL0139"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业财对账差异表",
+    "code": "#GL0137"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业财对账差异明细表",
+    "code": "#GL0138"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目总账",
+    "code": "#GL4015"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细账",
+    "code": "#GL4020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目日记账",
+    "code": "#GL4030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目多栏账",
+    "code": "#GL4025"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目余额表",
+    "code": "#GL4035"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目日报表",
+    "code": "#GL4040"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目汇总表",
+    "code": "#GL4045"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "辅助总账",
+    "code": "#GL6005"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细账",
+    "code": "#GL6010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "辅助多栏账",
+    "code": "#GL6015"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "辅助余额表",
+    "code": "#GL6020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "自定义明细表",
+    "code": "#GL6031"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "自定义账表",
+    "code": "#GL6030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目余额表-往来余额表",
+    "code": "#RMenu0004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金流量录入",
+    "code": "#GL0130"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#GL8005"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#GL8010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "往来核销",
+    "code": "#GL10"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#GL7055"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "往来单位对账单",
+    "code": "#GL7005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应收账龄分析",
+    "code": "#GL7010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应付账龄分析",
+    "code": "#GL7025"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "个人往来对账单",
+    "code": "#GL7035"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "个人往来账龄分析",
+    "code": "#GL7040"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "往来资金预测表",
+    "code": "#GL7050"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目部门明细账",
+    "code": "#GL601002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目存货明细账",
+    "code": "#GL601003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目个人明细账",
+    "code": "#GL601004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目往来单位明细账",
+    "code": "#GL601005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目项目明细账",
+    "code": "#GL601006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "部门发生统计表",
+    "code": "#GL602002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目存货余额表",
+    "code": "#GL602003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目个人余额表",
+    "code": "#GL602004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目往来单位余额表",
+    "code": "#GL602005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "项目往来单位余额表",
+    "code": "#GL602006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "费用明细表",
+    "code": "#GL603003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "部门收支分析",
+    "code": "#GL603002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "项目统计分析",
+    "code": "#GL603004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "辅助项多栏账",
+    "code": "#GL603005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "周期利润对比表",
+    "code": "#GL603006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "发票归档",
+    "code": "#GL1201"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "凭证打印",
+    "code": "#GL0115"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "账簿打印",
+    "code": "#GL9201"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "会计核算接口",
+    "code": "#GL1202"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "原财务报表",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "原财务报表",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "财务报表",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "模板设计",
+    "code": "#FIR01"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "报表数据",
+    "code": "#FIR20"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "测试",
+    "code": "#GLFIR00001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务活动表",
+    "code": "#GLFIR00007"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表〔2019...",
+    "code": "#GLFIR00008"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "所有者权益变动表〔2...",
+    "code": "#GLFIR00005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新模板",
+    "code": "#GLFIR00011"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "最新业务活动表",
+    "code": "#GLFIR00002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "0001资产",
+    "code": "#GLFIR00003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "11",
+    "code": "#GLFIR00004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表",
+    "code": "#GLFIR00006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "费用报表",
+    "code": "#GLFIR00009"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "211",
+    "code": "#GLFIR00010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应收账款",
+    "code": "#GLFIR00012"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "1",
+    "code": "#GLFIR00013"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "csss",
+    "code": "#GLFIR00014"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "收发存汇总表",
+    "code": "#GLFIR00015"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "111",
+    "code": "#GLFIR00016"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "财务报表",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "报表查询",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "报表查询",
+    "code": "#SR2001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "报表设计",
+    "code": "#SR1001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "报送设置",
+    "code": "#SR1020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表110",
+    "code": "#SR4002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表",
+    "code": "#SR4003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务活动表",
+    "code": "#SR4011"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金流量表",
+    "code": "#SR4012"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表1",
+    "code": "#SR4013"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表一般纳税人",
+    "code": "#SR4014"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表3",
+    "code": "#SR4017"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "盈余及盈余分配表",
+    "code": "#SR4018"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表6",
+    "code": "#SR4019"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成员权益变动表",
+    "code": "#SR4020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成员账户",
+    "code": "#SR4021"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表7",
+    "code": "#SR4023"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表8",
+    "code": "#SR4024"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表2",
+    "code": "#SR4025"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表9",
+    "code": "#SR4026"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表10",
+    "code": "#SR4027"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表3",
+    "code": "#SR4028"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表4",
+    "code": "#SR4029"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表一般纳税人1",
+    "code": "#SR4030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表11",
+    "code": "#SR4031"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表季度",
+    "code": "#SR4032"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表季度2",
+    "code": "#SR4033"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金流量表1",
+    "code": "#SR4034"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表一般纳税人2",
+    "code": "#SR4036"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表12",
+    "code": "#SR4038"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表5",
+    "code": "#SR4039"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表6",
+    "code": "#SR4040"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表含附表",
+    "code": "#SR4043"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金流量表含附表",
+    "code": "#SR4044"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表13",
+    "code": "#SR4045"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金流量表新",
+    "code": "#SR4046"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表14",
+    "code": "#SR4047"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "所有者权益变动表〔2...",
+    "code": "#SR4050"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表5",
+    "code": "#SR4051"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表一般纳税人3",
+    "code": "#SR4053"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表9",
+    "code": "#SR4054"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务活动表1",
+    "code": "#SR4056"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表10",
+    "code": "#SR4057"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表一般纳税人4",
+    "code": "#SR4058"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表16",
+    "code": "#SR4059"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表11",
+    "code": "#SR4060"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表一般纳税人5",
+    "code": "#SR4061"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表17",
+    "code": "#SR4062"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表含附表1",
+    "code": "#SR4063"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "所有者权益变动表〔2...",
+    "code": "#SR4064"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表18",
+    "code": "#SR4065"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金流量表2",
+    "code": "#SR4066"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金流量表3",
+    "code": "#SR4067"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表19",
+    "code": "#SR4068"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表一般纳税人",
+    "code": "#SR4069"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表",
+    "code": "#SR4070"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "所有者权益变动表〔2...",
+    "code": "#SR4071"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表20",
+    "code": "#SR4072"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表21",
+    "code": "#SR4073"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表22",
+    "code": "#SR4074"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表23",
+    "code": "#SR4075"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表〔2019〕未...",
+    "code": "#SR4076"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表〔2019〕已...",
+    "code": "#SR4077"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表〔2019〕已...",
+    "code": "#SR4078"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表一般纳税人6",
+    "code": "#SR4079"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表一般纳税人7",
+    "code": "#SR4080"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表〔2019〕已...",
+    "code": "#SR4081"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表24",
+    "code": "#SR4082"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表25",
+    "code": "#SR4083"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "所有者权益变动表〔2...",
+    "code": "#SR4084"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表〔2019...",
+    "code": "#SR4085"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金流量表〔2019...",
+    "code": "#SR4086"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表〔2019...",
+    "code": "#SR4087"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金流量表4",
+    "code": "#SR4088"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "营运能力指标表",
+    "code": "#SR4096"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表12",
+    "code": "#SR4098"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表13",
+    "code": "#SR4099"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表27",
+    "code": "#SR4101"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表28",
+    "code": "#SR4102"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表12",
+    "code": "#SR4103"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表29",
+    "code": "#SR4104"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表13",
+    "code": "#SR4105"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表14",
+    "code": "#SR4106"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表14",
+    "code": "#SR4108"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表15",
+    "code": "#SR4109"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表20",
+    "code": "#SR4110"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "盈利能力指标表基于通用",
+    "code": "#SR4111"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表21",
+    "code": "#SR4112"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表22",
+    "code": "#SR4114"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表23",
+    "code": "#SR4115"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表24",
+    "code": "#SR4116"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "收入支出表",
+    "code": "#SR4117"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "收入支出表1",
+    "code": "#SR4118"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表31",
+    "code": "#SR4119"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表32",
+    "code": "#SR4120"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表15",
+    "code": "#SR4121"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表",
+    "code": "#SR4010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表1",
+    "code": "#SR4015"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表2",
+    "code": "#SR4022"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表7",
+    "code": "#SR4041"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表15",
+    "code": "#SR4052"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表6",
+    "code": "#SR4055"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表7",
+    "code": "#SR4089"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "合并利润表1",
+    "code": "#SR4094"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "营运能力指标表1",
+    "code": "#SR4097"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表11",
+    "code": "#SR4100"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表30",
+    "code": "#SR4107"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务活动表2",
+    "code": "#SR4113"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "2026",
+    "code": "#SR4008"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "利润表1",
+    "code": "#SR4009"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表3",
+    "code": "#SR4048"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表4",
+    "code": "#SR4049"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "发展能力指标表",
+    "code": "#SR4090"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表8",
+    "code": "#SR4091"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表9",
+    "code": "#SR4092"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新建报表10",
+    "code": "#SR4093"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产负债表26",
+    "code": "#SR4095"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "税务管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "税务管理",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "申报",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "税务申报",
+    "code": "#TAX0101"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "税表清册",
+    "code": "#TAX0102"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "设置税务信息",
+    "code": "#TAX0103"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "开通税务管理",
+    "code": "#TAX0201"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "资产管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "资产管理",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "业务处理",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "卡片管理",
+    "code": "#AM1010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "新增资产",
+    "code": "#AM1020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产变动",
+    "code": "#AM1030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产拆分",
+    "code": "#AM1040"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产处置",
+    "code": "#AM1050"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产盘点",
+    "code": "#AM20"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工作量统计",
+    "code": "#AM3020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "计提折旧与摊销",
+    "code": "#AM3010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "与总账对账",
+    "code": "#AM40"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "卡片明细表",
+    "code": "#AM5010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "附属设备明细表",
+    "code": "#AM5020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "维护明细表",
+    "code": "#AM5030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "增减统计表",
+    "code": "#AM6010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "折旧/摊销统计表",
+    "code": "#AM6020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "役龄/逾龄分析表",
+    "code": "#AM6030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "价值占比分析表",
+    "code": "#AM6040"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产总账",
+    "code": "#AM7010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产明细账",
+    "code": "#AM7020"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "薪资管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "薪资管理",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "薪资类别",
+    "code": "#WA01"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "薪资项目",
+    "code": "#WA02"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "税率表",
+    "code": "#WA04"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "薪资统计表-部门汇总",
+    "code": "#RMenu0001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "累计值补录",
+    "code": "#WA05"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "薪资核算单",
+    "code": "#WA08"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "薪资统计表",
+    "code": "#WA0902"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "薪资打印",
+    "code": "#WA0905"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "银行报盘",
+    "code": "#WA0903"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "月度薪资个税申报",
+    "code": "#WA0901"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "年度奖金个税申报",
+    "code": "#WA0904"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "出纳管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "出纳管理",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金盘点单",
+    "code": "#CS07"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金银行日记账编辑",
+    "code": "#CS06"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "查询",
+    "code": "#CS99"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "日记账与总账对账",
+    "code": "#CS29"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "支票本管理",
+    "code": "#CS2501"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "支票管理",
+    "code": "#CS2505"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "银行对账单",
+    "code": "#CS2001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "银行对账",
+    "code": "#CS2005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "余额调节表",
+    "code": "#CS2010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资金统计表",
+    "code": "#CS6050"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金银行余额表",
+    "code": "#CS7003"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "归档管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "归档管理",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "会计资料建档",
+    "code": "#RM0101"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "会计档案中心",
+    "code": "#RM0105"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "业财融合",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "业财融合",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "业财融合市场",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业财融合市场",
+    "code": "#YC0101"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "数据协同日志",
+    "code": "#YC0201"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "协同场景管理",
+    "code": "#YC0202"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "授权管理",
+    "code": "#YC0203"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "成本核算",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "成本核算",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成本核算导航",
+    "code": "#CO1010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成本还原导航",
+    "code": "#CO5010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成本核算期初",
+    "code": "#CO2010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工时统计",
+    "code": "#CO2020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "在产品统计",
+    "code": "#CO2030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "在产品期初调整",
+    "code": "#CO2031"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "层级核算数据",
+    "code": "#CO3010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成本核算单",
+    "code": "#CO3020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成本计算单",
+    "code": "#CO3030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成本计算单-明细",
+    "code": "#CO3040"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "直接材料分配表-自制",
+    "code": "#CO4010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "直接材料分配表-委外",
+    "code": "#CO4020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "共耗料分配表",
+    "code": "#CO4030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序委外加工费分配表",
+    "code": "#CO4040"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "计件工资分配表",
+    "code": "#CO4050"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "费用分配表",
+    "code": "#CO4060"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "期末在产品成本",
+    "code": "#CO4070"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "产成品成本",
+    "code": "#CO4080"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产成本构成明细表",
+    "code": "#CO5015"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "生产成本还原明细表",
+    "code": "#CO5016"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售成本构成明细表",
+    "code": "#CO5025"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售成本还原明细表",
+    "code": "#CO5030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "单据生凭证",
+    "code": "#CO6010"
+  },
+  {
+    "d": 8,
+    "cls": "menu-first",
+    "text": "多组织",
+    "code": ""
+  },
+  {
+    "d": 9,
+    "cls": "",
+    "text": "多组织管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "多组织管理",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "组织机构",
+    "code": "#AA1000"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "协同默认值设置",
+    "code": "#AA1090"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "多组织财务",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "多组织财务",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "机构业务处理",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "凭证管理",
+    "code": "#MultiOrg0101"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "凭证协同",
+    "code": "#MultiOrg0102"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目总账",
+    "code": "#MultiOrg0201"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细账",
+    "code": "#MultiOrg0211"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目余额表",
+    "code": "#MultiOrg0202"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "辅助总账",
+    "code": "#MultiOrg0203"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细账",
+    "code": "#MultiOrg0213"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "辅助余额表",
+    "code": "#MultiOrg0204"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目日记账",
+    "code": "#MultiOrg0205"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "汇总表",
+    "code": "#MultiOrg0207"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "日报表",
+    "code": "#MultiOrg0206"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "自定义账表",
+    "code": "#MultiOrg0208"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "自定义明细表",
+    "code": "#MultiOrg0209"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "机构余额分析",
+    "code": "#MultiOrg0210"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "机构余额占比分析",
+    "code": "#MultiOrg0215"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "机构损益分析",
+    "code": "#MultiOrg0216"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "机构毛利分析",
+    "code": "#MultiOrg0217"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "机构费用分析",
+    "code": "#MultiOrg0218"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "机构发生占比分析",
+    "code": "#MultiOrg0219"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "报表查询",
+    "code": "#MultiOrg0301"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "合并报表查询",
+    "code": "#MultiOrg0302"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "机构建账",
+    "code": "#MultiOrg0400"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目下发",
+    "code": "#MultiOrg0401"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金流量项目同步",
+    "code": "#MultiOrg0402"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "往来单位下发",
+    "code": "#MultiOrg0403"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "部门下发",
+    "code": "#MultiOrg0404"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "项目下发",
+    "code": "#MultiOrg0405"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "员工下发",
+    "code": "#MultiOrg0406"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "存货维护",
+    "code": "#MultiOrg0407"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "多组织财务初始化",
+    "code": "#GL1001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "合并报表初始化",
+    "code": "#GL1002"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "合并报表",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "合并报表",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "合并设置",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "合并任务",
+    "code": "#MM03"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "抵销设置",
+    "code": "#MM04"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "抵销分录",
+    "code": "#MM01"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "列表",
+    "code": "#MM02"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "投资关系",
+    "code": "#MMTZGX"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#MMTZGXSumRpt"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#MMTZGXDetailRpt"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "合并报表查询",
+    "code": "#SR2002"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "多公司管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "多公司管理",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "多公司财务账表",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "多公司科目总账",
+    "code": "#MC4015"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细账",
+    "code": "#MC4020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "多公司科目日记账",
+    "code": "#MC6531"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "多公司科目余额表",
+    "code": "#MC4035"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "多公司辅助总账",
+    "code": "#MC6005"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细账",
+    "code": "#MC6010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "多公司辅助余额表",
+    "code": "#MC6020"
+  },
+  {
+    "d": 8,
+    "cls": "menu-first",
+    "text": "智能体广场",
+    "code": ""
+  },
+  {
+    "d": 9,
+    "cls": "",
+    "text": "智能体广场",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "智能体广场",
+    "code": "#AIAgentPlace"
+  },
+  {
+    "d": 8,
+    "cls": "menu-first",
+    "text": "基础设置new",
+    "code": ""
+  },
+  {
+    "d": 9,
+    "cls": "",
+    "text": "基础设置new",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "基本信息",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "设备投放类型",
+    "code": "#TOPSBTFLX"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售计划类型new",
+    "code": "#TOPXSJHLX"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "部门",
+    "code": "#AA1001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "员工",
+    "code": "#AA1002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "往来单位",
+    "code": "#AA1003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "允销限销设置",
+    "code": "#AA1004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "计量单位",
+    "code": "#AA1021"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "存货",
+    "code": "#AA1022"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "自由项取值组",
+    "code": "#AA102202"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "往来单位存货设置",
+    "code": "#AA1053"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "条码方案",
+    "code": "#AA1051"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "序列号方案",
+    "code": "#AA1052"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "序列号解析生成规则",
+    "code": "#AA1071"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "电商商品",
+    "code": "#AA1056"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工厂日历",
+    "code": "#AA1011"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "设备",
+    "code": "#AA1012"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "班组",
+    "code": "#AA1110"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工作中心",
+    "code": "#AA1013"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序",
+    "code": "#AA1111"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工序辅单位换算率设置",
+    "code": "#AA1112"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工艺路线",
+    "code": "#AA1055"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "替代方案",
+    "code": "#AA1040"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "联副产品组",
+    "code": "#AA1048"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "物料清单",
+    "code": "#AA1041"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "物料清单正向查询",
+    "code": "#AA1046"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "物料清单反向查询",
+    "code": "#AA1047"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "物料清单对比",
+    "code": "#AA1050"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "计件工价设置",
+    "code": "#AA1085"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "仓库",
+    "code": "#AA1023"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "货位",
+    "code": "#AA1024"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "地区",
+    "code": "#AA1028"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "项目",
+    "code": "#AA1027"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "出入库类别",
+    "code": "#AA1025"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务类型",
+    "code": "#AA1026"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "配货仓库关系设置",
+    "code": "#AA1075"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "物流网点",
+    "code": "#AA1031"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "不合格原因",
+    "code": "#AA1201"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "检验项目",
+    "code": "#AA1203"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "检验方案",
+    "code": "#AA1205"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "报价BOM规则设置",
+    "code": "#AA1301"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成本项目",
+    "code": "#AA1501"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "成本中心",
+    "code": "#AA1601"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "产品定额",
+    "code": "#AA1801"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "收入",
+    "code": "#AA3001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "费用",
+    "code": "#AA3002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "账号",
+    "code": "#AA3005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "结算方式",
+    "code": "#AA3004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "币种",
+    "code": "#AA3006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "票据用途",
+    "code": "#aa3010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "券别",
+    "code": "#aa3015"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目",
+    "code": "#AA3505"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "凭证类别",
+    "code": "#AA3510"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "常用凭证",
+    "code": "#AA3515"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "常用摘要",
+    "code": "#AA3520"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金流量项目",
+    "code": "#AA3525"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产属性",
+    "code": "#AAFI8010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资产分类",
+    "code": "#AAFI8020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "增减方式",
+    "code": "#AAFI8040"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "使用状况",
+    "code": "#AAFI8030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "处理原因",
+    "code": "#AAFI8050"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "存放位置",
+    "code": "#AAFI8060"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "经济用途",
+    "code": "#AAFI8070"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "进价设置导航",
+    "code": "#AA4010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "进价带出策略",
+    "code": "#AA4005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "供应商价格本",
+    "code": "#AA4004"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "供应商价格本调价单",
+    "code": "#AD4013"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购价格查询",
+    "code": "#AA5010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "采购价格波动分析表",
+    "code": "#AA5030"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "售价设置导航",
+    "code": "#AA4020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "售价带出策略",
+    "code": "#AA5006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "存货价格本",
+    "code": "#AA4001"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "存货价格本调价单",
+    "code": "#AD4011"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户价格本",
+    "code": "#AA4002"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "客户价格本调价单",
+    "code": "#AD4012"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "存货效期价格本",
+    "code": "#AA4012"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "客户折扣",
+    "code": "#AA4008"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "存货数量档位价格",
+    "code": "#AA5005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "部门价格本",
+    "code": "#AA4003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售价格查询",
+    "code": "#AA5020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "销售价格波动分析表",
+    "code": "#AA5031"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外价设置导航",
+    "code": "#AA5008"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外价带出策略",
+    "code": "#AA5007"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "委外价格本",
+    "code": "#AA4009"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "是",
+    "code": "#AA900001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "否",
+    "code": "#AA900002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "是否带票",
+    "code": "#AA900003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "货车",
+    "code": "#AA900004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "项目自定义档案",
+    "code": "#AA900005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "是否内部核算",
+    "code": "#AA900007"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "归属人档案",
+    "code": "#AA900008"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "合同外部型号",
+    "code": "#AA900009"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "重量",
+    "code": "#AA900010"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "12",
+    "code": "#AA900011"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "固定资产",
+    "code": "#AA900012"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "车辆",
+    "code": "#AA900006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "职位",
+    "code": "#AA900014"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "税码",
+    "code": "#AA900015"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资金来源",
+    "code": "#AA900013"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "2",
+    "code": "#AA900017"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "扩展辅助",
+    "code": "#AA900018"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "123",
+    "code": "#AA900019"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "规格型号",
+    "code": "#AA900020"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "长度M",
+    "code": "#AA900021"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "工资",
+    "code": "#AA900024"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "品牌档案",
+    "code": "#AA900025"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "自定义档案（分公司",
+    "code": "#AA900026"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "产区",
+    "code": "#AA900027"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "税率",
+    "code": "#AA900028"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "课题",
+    "code": "#AA900032"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "资金性质",
+    "code": "#AA900033"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "投入类型",
+    "code": "#AA900034"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "品牌1",
+    "code": "#AA900035"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "系统管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "系统管理",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "基本设置",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "基本信息",
+    "code": "#SYS0401"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "功能启用",
+    "code": "#SYS0400"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "选项设置",
+    "code": "#SYS0404"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "会计期间",
+    "code": "#SYS0402"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务流程",
+    "code": "#SYS0403"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "用户权限",
+    "code": "#SYS05"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "看板授权",
+    "code": "#SYS0601"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "第三方授权",
+    "code": "#SYS0501"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务结账",
+    "code": "#SYS3101"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "财务结账",
+    "code": "#SYS3151"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "单据设计",
+    "code": "#SYS0704"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "单据多模板设置",
+    "code": "#SYS0710"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "移动单据设置",
+    "code": "#SYS0708"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "移动单据多模板设置",
+    "code": "#SYS0711"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "移动模板设置",
+    "code": "#SYS0705"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "单据编码设置",
+    "code": "#SYS0701"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "单据审核设置",
+    "code": "#SYS0702"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "打印管理中心",
+    "code": "#SYS0706"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "打印出厂值设置",
+    "code": "#SYS0707"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "智能选单设置",
+    "code": "#SYS0709"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "基础档案设置",
+    "code": "#SYS0803"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "枚举档案设置",
+    "code": "#SYS0801"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "基础档案编码设置",
+    "code": "#SYS0802"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "自定义档案设置",
+    "code": "#SYS0820"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "智能导入初始化",
+    "code": "#SYS1005"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "智能导入匹配规则",
+    "code": "#SYS1006"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务流程引擎方案",
+    "code": "#SYS1001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "业务流程引擎日志",
+    "code": "#SYS1002"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "审核流程方案",
+    "code": "#SYS1003"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "审核流程日志",
+    "code": "#SYS1004"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "单据消息设置",
+    "code": "#SYS2501"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "预警消息设置",
+    "code": "#SYS2510"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "查询消息设置",
+    "code": "#SYS2515"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "个性化消息设置",
+    "code": "#SYS2520"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "内部消息查询",
+    "code": "#SYS2525"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "消息中心连接设置",
+    "code": "#SYS2530"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "常用模板设置",
+    "code": "#SYS2535"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "预警设置",
+    "code": "#SYS0405"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "数据健康检查",
+    "code": "#SYS0107"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "任务管理",
+    "code": "#SYS0202"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "日志管理",
+    "code": "#SYS0203"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "大屏设备管理",
+    "code": "#SYS0602"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "大屏客户端下载中心",
+    "code": "#SYS0603"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "下载模板",
+    "code": "#SYS9101"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "数据导入",
+    "code": "#SYS9102"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "数据导出",
+    "code": "#SYS9103"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "多账套并账分支机构流程",
+    "code": "#SYS7101"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "云应用",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "云应用",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "商店及应用管理",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "应用商店",
+    "code": "#APPSTORE"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "我的应用",
+    "code": "#MYAPPS"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "云应用管理",
+    "code": "#CloudAppManager"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "移动应用配置",
+    "code": "#MBShow"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "公众号设置",
+    "code": "#WechatSet"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "MCP应用管理",
+    "code": "#MCPVoucherManage"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "开放平台",
+    "code": "#TOP"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "畅云管家",
+    "code": "#ChangYunGuanJia"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "开放接口开发",
+    "code": "#OPENAPIDEV"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "智友",
+    "code": "#YKJOpen1"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "会计家园",
+    "code": "#MYKUAIJI"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "畅捷服务",
+    "code": "#CHANSERVICE"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "开发者社区",
+    "code": "#TPlusDev"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "初始化",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "初始化",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "初始化导航",
+    "code": "#SYS0901"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "期初同步",
+    "code": "#SYS0961"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "期初对账",
+    "code": "#SYS0971"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "库存期初余额",
+    "code": "#SYS0911"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "往来期初余额",
+    "code": "#SYS0912"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金银行期初余额",
+    "code": "#SYS0913"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "科目期初余额",
+    "code": "#SYS09102"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "现金流量期初",
+    "code": "#SYS09104"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "银行对账期初",
+    "code": "#SYS0914"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "期初资产卡片",
+    "code": "#SYS09110"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "薪资期初余额",
+    "code": "#SYS0930"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "期初销货单",
+    "code": "#SYS0921"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "期初进货单001",
+    "code": "#SYS0923001"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "期初进货单",
+    "code": "#SYS0923"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "期初暂估入库单",
+    "code": "#SYS0931"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "期初销售出库单",
+    "code": "#SYS0932"
+  },
+  {
+    "d": 8,
+    "cls": "menu-first",
+    "text": "TOP应用new",
+    "code": ""
+  },
+  {
+    "d": 10,
+    "cls": "menu-text",
+    "text": "TOP应用",
+    "code": ""
+  },
+  {
+    "d": 9,
+    "cls": "",
+    "text": "方案中心",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "方案中心",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "方案中心",
+    "code": "#FACenter"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "假勤管理",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "假勤管理",
+    "code": ""
+  },
+  {
+    "d": 12,
+    "cls": "menu-sub",
+    "text": "基础档案",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "请假类型",
+    "code": "#TOPQJLX"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "请假单",
+    "code": "#TOPQJC"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表",
+    "code": "#QINGJIACHANTONGJIBIAO"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表",
+    "code": "#QINGJIACHANMINGXIBIAO"
+  },
+  {
+    "d": 12,
+    "cls": "newMA",
+    "text": "移动考勤new",
+    "code": "javascript:void(0)"
+  },
+  {
+    "d": 13,
+    "cls": "menu-text",
+    "text": "移动考勤",
+    "code": ""
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "出差申请单",
+    "code": "#TOPVchCCSQC"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表new",
+    "code": "#TOPRptCCTJB"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表new",
+    "code": "#TOPRptCCMXB"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "内勤打卡单",
+    "code": "#TOPVchNQDKC"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表new",
+    "code": "#TOPRptDKTJB"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表new",
+    "code": "#TOPRptDKMXB"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "外勤打卡单",
+    "code": "#TOPVchWQDKC"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表new",
+    "code": "#TOPRptWQDKTJB"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表new",
+    "code": "#TOPRptWQDKMXB"
+  },
+  {
+    "d": 15,
+    "cls": "thrMenu",
+    "text": "外勤申请单",
+    "code": "#TOPVchWQSQC"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "统计表new",
+    "code": "#TOPRptWQTJB"
+  },
+  {
+    "d": 16,
+    "cls": "thrMenuDetail",
+    "text": "明细表new",
+    "code": "#TOPRptWQMXB"
+  }
+]

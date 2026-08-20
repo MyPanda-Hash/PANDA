@@ -62,7 +62,7 @@ const selRows = ref([])
 const generating = ref(false)
 
 const columns = computed(() => props.config?.columns || [])
-const generateLabel = computed(() => props.config?.generateLabel || '生单')
+const generateLabel = computed(() => props.config?.generateLabel || (props.config?.generateButton ? '生单' : '确定'))
 
 function close() {
   emit('update:modelValue', false)
@@ -73,6 +73,14 @@ function cellText(c, row) {
   if (row[c] !== undefined && row[c] !== null && row[c] !== '') return row[c]
   if (c === '单据编号') return row['锭号'] || row['编号'] || ''
   return row[c] ?? ''
+}
+
+// 生单映射取值（2026-08-20 修复：headerMap from='单据编号' 在 MO 行取不到 → 表头全空）：
+// 与 cellText 同规则回退 锭号/编号；空值不写入 head（避免 undefined 键被 JSON 丢弃后表头空白）
+function selVal(row, f) {
+  if (row[f] !== undefined && row[f] !== null && row[f] !== '') return row[f]
+  if (f === '单据编号') return row['锭号'] || row['编号'] || ''
+  return row[f] ?? ''
 }
 
 function itemsText(row) {
@@ -117,10 +125,6 @@ async function load(p) {
 async function generate() {
   const cfg = props.config
   const btn = cfg.generateButton
-  if (!btn) {
-    ElMessage.warning('该面板未配置生单按钮（selectConfig.generateButton）')
-    return
-  }
   if (!selRows.value.length) return
   generating.value = true
   const generated = []
@@ -128,16 +132,46 @@ async function generate() {
     for (const r of selRows.value) {
       const no = r['编号'] || r['单据编号'] || ''
       if (!no) continue
+      if (btn) {
+        // 推式生单：调用源面板的生成按钮（如 销售订单 -> 生成生产加工单）
+        const res = await engine.callButton({
+          panelCode: cfg.source,
+          buttonName: btn,
+          formData: { 编号: no },
+          buttonParam: {},
+        })
+        if (res?.gotoPanel) generated.push({ panel: res.gotoPanel, no: res['编号'], sourceNo: no })
+        continue
+      }
+      // 普通选单：表头/明细映射 -> 目标面板保存生成（对齐 T+ 选单生单语义）
+      const head = {}
+      for (const m of cfg.headerMap || []) head[m.to] = selVal(r, m.from)
+      const srcDetail = r.detail || {}
+      const srcKey = cfg.detailKey || Object.keys(srcDetail)[0] || 'items'
+      const srcArr = Array.isArray(srcDetail[srcKey]) ? srcDetail[srcKey] : []
+      const items = srcArr.map((row) => {
+        const o = {}
+        for (const m of cfg.detailMap || []) o[m.to] = row[m.from]
+        return o
+      })
+      // 目标明细键 = 目标面板 detail.tabs[0].key（2026-08-20 修复：FINISH_IN tabs=items 但 detailKey=products
+      // → 写入键不匹配导致表格不显示；来源键只用于从源单据取明细）
+      let targetKey = srcKey
+      try {
+        const tcfg = await engine.getPanelConfig(props.panelCode)
+        targetKey = tcfg?.detail?.tabs?.[0]?.key || srcKey
+      } catch (e) { /* 目标配置不可用时回退来源键 */ }
+      const formData = { ...head, detail: { [targetKey]: items } }
       const res = await engine.callButton({
-        panelCode: cfg.source,
-        buttonName: btn,
-        formData: { 编号: no },
+        panelCode: props.panelCode,
+        buttonName: '保存',
+        formData,
         buttonParam: {},
       })
-      if (res?.gotoPanel) generated.push({ panel: res.gotoPanel, no: res['编号'], sourceNo: no })
+      if (res && res['编号']) generated.push({ panel: props.panelCode, no: res['编号'], sourceNo: no })
     }
     if (generated.length) {
-      const panelNames = { MANU_ORDER: '生产加工单', PROCESS_REPORT: '工序汇报单', FINISH_IN: '产成品入库单' }
+      const panelNames = { MANU_ORDER: '生产加工单', PROCESS_REPORT: '工序汇报单', FINISH_IN: '产成品入库单', PU_IN: '进货单', ARRIVAL_IN: '到货单', FINISH_INSPECT: '成品报检单', INSPECTION: '检验单', DISPATCH: '工序派工单', PURCHASE_IN: '采购入库单' }
       ElMessage.success('已生成 ' + generated.length + ' 张' + (panelNames[generated[0].panel] || generated[0].panel))
       emit('generated', generated)
       close()
