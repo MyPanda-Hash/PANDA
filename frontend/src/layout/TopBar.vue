@@ -1,7 +1,8 @@
 <template>
   <div class="topbar">
-    <!-- ===== 左：Logo + 分隔线 + 账套（工厂）切换 ===== -->
+    <!-- ===== 左：汉堡（移动端）+ Logo + 分隔线 + 账套（工厂）切换 ===== -->
     <div class="t-left">
+      <el-icon class="hamburger" @click="app.toggleMobileNav()"><Menu /></el-icon>
       <div class="logo">轻<span>MES</span></div>
       <div class="t-split"></div>
       <el-dropdown @command="(f) => user.switchFactory(f)">
@@ -641,5 +642,45 @@ function changePwd() {
 .about-copy {
   margin-top: 8px;
   color: var(--t-text-3);
+}
+
+/* ===== 移动端（≤768px）：汉堡按钮 + 顶栏精简 ===== */
+.hamburger {
+  display: none;
+  font-size: 20px;
+  color: var(--t-text-1);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+}
+.hamburger:hover {
+  background: var(--t-hover-bg);
+  color: var(--t-primary);
+}
+
+@media (max-width: 768px) {
+  .hamburger {
+    display: inline-flex;
+  }
+  /* 中段信息（账号/认证/登录日期/到期）手机隐藏 */
+  .t-center {
+    display: none;
+  }
+  /* 搜索框：手机隐藏（菜单抽屉内含单据查询/新增入口） */
+  .search-wrap {
+    display: none;
+  }
+  /* 次要图标与文字入口隐藏，保留通知/用户 */
+  .refresh-icon,
+  .gonggao,
+  .bar-icon {
+    display: none;
+  }
+  .t-left .factory-name {
+    max-width: 88px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 </style>

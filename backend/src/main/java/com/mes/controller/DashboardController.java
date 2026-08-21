@@ -141,7 +141,231 @@ public class DashboardController {
             latest.add(l);
         }
         out.put("latest", latest);
+
+        // 4) 分模块看板聚合（生产/库存/销售/质量，全部来自真实单据数据）
+        out.put("production", productionStats());
+        out.put("stock", stockStats());
+        out.put("sales", salesStats());
+        out.put("quality", qualityStats());
         return ApiResult.ok(out);
+    }
+
+    // ==================== 分模块看板聚合 ====================
+
+    /** 生产看板：状态/车间分布、近 7 天新增与完工趋势、BOM 树（产品→材料） */
+    private Map<String, Object> productionStats() {
+        Map<String, Integer> statusDist = new LinkedHashMap<>();
+        Map<String, Integer> workshopDist = new LinkedHashMap<>();
+        Map<String, Integer> dayAdded = new LinkedHashMap<>();
+        Map<String, Integer> dayDone = new LinkedHashMap<>();
+        Map<String, Map<String, Object>> bomProducts = new LinkedHashMap<>();
+
+        for (FormData fd : formMapper.selectList(new LambdaQueryWrapper<FormData>().eq(FormData::getPanelCode, "MANU_ORDER"))) {
+            String s = fd.getStatus() == null ? "" : fd.getStatus();
+            statusDist.put(s, statusDist.getOrDefault(s, 0) + 1);
+            Map<String, Object> head = parse(fd.getData());
+            String ws = str(head.get("生产车间"));
+            if (!ws.isEmpty()) workshopDist.put(ws, workshopDist.getOrDefault(ws, 0) + 1);
+            String day = fd.getCreateTime() == null ? "" : String.valueOf(fd.getCreateTime()).substring(0, 10);
+            if (!day.isEmpty()) {
+                dayAdded.put(day, dayAdded.getOrDefault(day, 0) + 1);
+                if ("已完工".equals(s)) dayDone.put(day, dayDone.getOrDefault(day, 0) + 1);
+            }
+            // BOM 树：products（产品）→ materials（材料清单）
+            try {
+                Map<String, Object> d = json.readValue(fd.getDetailData(), new TypeReference<Map<String, Object>>() {});
+                List<?> products = d.get("products") instanceof List ? (List<?>) d.get("products") : null;
+                List<?> materials = d.get("materials") instanceof List ? (List<?>) d.get("materials") : null;
+                if (products != null && materials != null) {
+                    for (Object po : products) {
+                        if (!(po instanceof Map)) continue;
+                        Map<?, ?> pm = (Map<?, ?>) po;
+                        String pn = str(pm.get("产品名称"));
+                        if (pn.isEmpty()) continue;
+                        Map<String, Object> node = bomProducts.computeIfAbsent(pn, k -> {
+                            Map<String, Object> m = new LinkedHashMap<>();
+                            m.put("产品", pn);
+                            m.put("规格型号", "");
+                            m.put("materials", new ArrayList<Map<String, Object>>());
+                            return m;
+                        });
+                        node.put("规格型号", str(pm.get("规格型号")));
+                        @SuppressWarnings("unchecked")
+                        List<Map<String, Object>> mats = (List<Map<String, Object>>) node.get("materials");
+                        for (Object mo : materials) {
+                            if (!(mo instanceof Map)) continue;
+                            Map<?, ?> mm = (Map<?, ?>) mo;
+                            String mn = str(mm.get("材料名称"));
+                            if (mn.isEmpty()) continue;
+                            boolean exists = false;
+                            for (Map<String, Object> ex : mats) {
+                                if (mn.equals(ex.get("名称"))) { exists = true; break; }
+                            }
+                            if (!exists) {
+                                Map<String, Object> mat = new LinkedHashMap<>();
+                                mat.put("名称", mn);
+                                mat.put("数量", mm.get("定额需用数量") == null ? "-" : String.valueOf(mm.get("定额需用数量")));
+                                mat.put("单位", str(mm.get("计量单位")));
+                                mats.add(mat);
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ignore) {}
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("statusDist", toKv(statusDist));
+        out.put("workshopDist", toKv(workshopDist));
+        out.put("trend7", trend7(dayAdded, dayDone));
+        out.put("bomTree", new ArrayList<>(bomProducts.values()));
+        return out;
+    }
+
+    /** 库存看板：出入库单据数 + 明细行数 */
+    private Map<String, Object> stockStats() {
+        String[] codes = {"PURCHASE_IN", "FINISH_IN", "OTHER_IN", "SALE_OUT", "MATERIAL_OUT", "OTHER_OUT"};
+        String[] names = {"采购入库单", "产成品入库单", "其他入库单", "销售出库单", "材料出库单", "其他出库单"};
+        List<Map<String, Object>> panels = new ArrayList<>();
+        int totalIn = 0, totalOut = 0, totalLines = 0;
+        for (int i = 0; i < codes.length; i++) {
+            String code = codes[i];
+            int count = 0, lines = 0;
+            for (FormData fd : formMapper.selectList(new LambdaQueryWrapper<FormData>().eq(FormData::getPanelCode, code))) {
+                count++;
+                lines += detailLines(fd.getDetailData());
+            }
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("panelCode", code);
+            m.put("panelName", names[i]);
+            m.put("count", count);
+            m.put("lines", lines);
+            panels.add(m);
+            if (code.endsWith("_IN")) totalIn += count;
+            else totalOut += count;
+            totalLines += lines;
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("panels", panels);
+        out.put("totalIn", totalIn);
+        out.put("totalOut", totalOut);
+        out.put("totalLines", totalLines);
+        return out;
+    }
+
+    /** 销售看板：客户/状态分布 + 明细金额合计 */
+    private Map<String, Object> salesStats() {
+        Map<String, Integer> byCustomer = new LinkedHashMap<>();
+        Map<String, Integer> byStatus = new LinkedHashMap<>();
+        double amount = 0;
+        for (FormData fd : formMapper.selectList(new LambdaQueryWrapper<FormData>().eq(FormData::getPanelCode, "SO_ORDER"))) {
+            Map<String, Object> head = parse(fd.getData());
+            String c = str(head.get("客户"));
+            if (!c.isEmpty()) byCustomer.put(c, byCustomer.getOrDefault(c, 0) + 1);
+            String s = fd.getStatus() == null ? "" : fd.getStatus();
+            byStatus.put(s, byStatus.getOrDefault(s, 0) + 1);
+            amount += sumAmount(fd.getDetailData(), "金额");
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("byCustomer", toKv(byCustomer));
+        out.put("byStatus", toKv(byStatus));
+        out.put("amount", Math.round(amount * 100) / 100.0);
+        out.put("total", byStatus.values().stream().mapToInt(Integer::intValue).sum());
+        return out;
+    }
+
+    /** 质量看板：检验单结果分布与合格率 */
+    private Map<String, Object> qualityStats() {
+        Map<String, Integer> byResult = new LinkedHashMap<>();
+        int total = 0, pass = 0;
+        for (FormData fd : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .in(FormData::getPanelCode, "INSPECTION", "FINISH_INSPECT"))) {
+            try {
+                Map<String, Object> d = json.readValue(fd.getDetailData(), new TypeReference<Map<String, Object>>() {});
+                Object items = d.get("items");
+                if (items instanceof List) {
+                    for (Object io : (List<?>) items) {
+                        if (!(io instanceof Map)) continue;
+                        String r = str(((Map<?, ?>) io).get("检验结果判定"));
+                        if (r.isEmpty()) r = str(((Map<?, ?>) io).get("检验结果"));
+                        if (r.isEmpty()) r = "待检";
+                        byResult.put(r, byResult.getOrDefault(r, 0) + 1);
+                        total++;
+                        if ("合格".equals(r)) pass++;
+                    }
+                }
+            } catch (Exception ignore) {}
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("byResult", toKv(byResult));
+        out.put("total", total);
+        out.put("pass", pass);
+        out.put("passRate", total == 0 ? 0 : Math.round(pass * 1000.0 / total) / 10.0);
+        return out;
+    }
+
+    // ==================== 工具方法 ====================
+
+    private String str(Object o) {
+        return o == null ? "" : String.valueOf(o);
+    }
+
+    /** 明细行数：取 detail_data 中首个明细数组长度（detail/items/products 任一） */
+    private int detailLines(String detailJson) {
+        try {
+            Map<String, Object> d = json.readValue(detailJson, new TypeReference<Map<String, Object>>() {});
+            for (String k : new String[]{"detail", "items", "products", "materials"}) {
+                Object v = d.get(k);
+                if (v instanceof List) return ((List<?>) v).size();
+            }
+        } catch (Exception ignore) {}
+        return 0;
+    }
+
+    /** 明细金额合计（按指定字段名，如 金额/含税金额） */
+    private double sumAmount(String detailJson, String field) {
+        double sum = 0;
+        try {
+            Map<String, Object> d = json.readValue(detailJson, new TypeReference<Map<String, Object>>() {});
+            Object v = d.get("items");
+            if (v instanceof List) {
+                for (Object io : (List<?>) v) {
+                    if (io instanceof Map) {
+                        Object a = ((Map<?, ?>) io).get(field);
+                        if (a instanceof Number) sum += ((Number) a).doubleValue();
+                    }
+                }
+            }
+        } catch (Exception ignore) {}
+        return sum;
+    }
+
+    /** Map<String,Integer> → List<{name,value}>（保持插入序，按值降序） */
+    private List<Map<String, Object>> toKv(Map<String, Integer> m) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        m.entrySet().stream()
+                .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
+                .forEach(e -> {
+                    Map<String, Object> kv = new LinkedHashMap<>();
+                    kv.put("name", e.getKey());
+                    kv.put("value", e.getValue());
+                    out.add(kv);
+                });
+        return out;
+    }
+
+    /** 近 7 天（含今天）新增/完工数，缺失日期补 0 */
+    private List<Map<String, Object>> trend7(Map<String, Integer> added, Map<String, Integer> done) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        java.time.LocalDate today = java.time.LocalDate.now();
+        for (int i = 6; i >= 0; i--) {
+            String day = today.minusDays(i).toString();
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("date", day.substring(5)); // MM-dd
+            m.put("added", added.getOrDefault(day, 0));
+            m.put("done", done.getOrDefault(day, 0));
+            out.add(m);
+        }
+        return out;
     }
 
     private Map<String, Object> kpis(Map<String, Map<String, Object>> agg, int moTotal, int moActive,

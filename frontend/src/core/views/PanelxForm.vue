@@ -1601,4 +1601,44 @@ watch(() => [panelCode.value, code.value], () => {
   background: #f7f9fc;
   color: #222;
   font-weight: 700;
-}</style>
+}
+
+/* ═══════ 移动端响应式（≤768px）：单列字段、触控尺寸、明细横向滚动 ═══════ */
+@media (max-width: 768px) {
+  .card { padding: 8px; border-radius: 0; }
+
+  .tools { gap: 4px 8px; padding: 8px; }
+  .tools .tb-group { margin-right: 8px; }
+  .tools .tb-main { min-height: 32px; font-size: 13px; }
+  .tools .tb-caret { min-height: 32px; }
+  .tools-right { font-size: 12px; }
+  .tools-right .pg { width: 26px; height: 26px; min-height: 26px; font-size: 11px; }
+
+  .head { margin: 6px 0 2px; }
+  .title .no { font-size: 16px; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .head :deep(.el-tag) { height: 22px; line-height: 20px; font-size: 12px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .fields.udl-fields { padding: 10px 8px; }
+  .fields.udl-fields .field { display: block; width: 100%; margin: 0 0 10px; }
+  .fields.udl-fields .field label { margin-bottom: 6px; }
+  .fields.udl-fields .field .el-input,
+  .fields.udl-fields .field .el-select,
+  .fields.udl-fields .field .el-date-editor,
+  .fields.udl-fields .field .ref-ctl { width: 100% !important; }
+  .fields.udl-fields .field :deep(.el-input__wrapper),
+  .fields.udl-fields .field :deep(.el-select__wrapper) { min-height: 32px; }
+  .fields.udl-fields :deep(.el-date-editor.el-input) { width: 100%; height: 32px; }
+  .fields.udl-fields :deep(.el-date-editor .el-input__wrapper) { height: 32px; }
+  .fields.udl-fields .ref-ctl .ref-btn { min-height: 32px; min-width: 32px; }
+
+  .detail-block { min-width: 0; }
+  .dt-head { overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 8px; padding: 8px 4px; }
+  .dt-head .dt-tabs, .dt-head .dt-actions { flex-shrink: 0; }
+  .dt-head .dt-tab { padding: 6px 10px; font-size: 13px; }
+  .dt-head .dt-actions { gap: 8px; font-size: 12px; }
+  .dt-head .add-data-btn { min-height: 36px; }
+
+  .remark { margin-top: 10px; }
+  .audit-line { gap: 6px 12px; font-size: 12px; line-height: 1.6; }
+}
+</style>

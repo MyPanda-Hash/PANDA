@@ -6,7 +6,7 @@
         -> 兜底补 systemd/nginx 配置 -> 全量验证（服务/登录/前端/数据库）。
   依赖：Posh-SSH 模块（首次自动安装）
 .EXAMPLE
-  .\deploy-auto.ps1 -ServerIp 8.138.18.110 -Password 'Xtf5201314@'
+  .\deploy-auto.ps1 -ServerIp <服务器IP> -Password '<你的服务器root密码>'
   .\deploy-auto.ps1 -ServerIp 1.2.3.4 -Password 'pwd' -Domain mes.example.com
 #>
 param(

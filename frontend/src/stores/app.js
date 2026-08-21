@@ -25,6 +25,8 @@ export const useAppStore = defineStore('app', {
     deskSettings: loadDeskSettings(),
     // T+ 门户形态：内容区最大化（隐藏左侧导航）
     maxContent: false,
+    // 移动端：左侧导航抽屉开关（≤768px 生效）
+    mobileNav: false,
     // 右侧帮助面板
     helpVisible: false,
     helpTab: 'dynamic',
@@ -57,6 +59,9 @@ export const useAppStore = defineStore('app', {
     },
     toggleMaxContent() {
       this.maxContent = !this.maxContent
+    },
+    toggleMobileNav() {
+      this.mobileNav = !this.mobileNav
     },
     openHelp(tab) {
       this.helpVisible = true

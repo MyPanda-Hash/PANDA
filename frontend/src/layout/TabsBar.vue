@@ -260,4 +260,24 @@ async function quickFind() {
   background: var(--t-hover-bg);
   color: var(--t-primary);
 }
+
+/* ===== 移动端（≤768px）：页签横向滑动 + 操作区紧凑 ===== */
+@media (max-width: 768px) {
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab {
+    padding: 0 10px;
+    font-size: 13px;
+  }
+  .tab-actions {
+    gap: 8px;
+    padding: 0 8px;
+  }
+  .action-icon {
+    font-size: 16px;
+    padding: 4px;
+  }
+}
 </style>

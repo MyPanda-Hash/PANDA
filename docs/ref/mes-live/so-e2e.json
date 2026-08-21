@@ -1,0 +1,15 @@
+{
+  "客户": "失败",
+  "artifacts": [
+    "D:\\PANDA-master\\docs\\ref\\mes-live\\so-e2e-03-dialog.png",
+    "D:\\PANDA-master\\docs\\ref\\mes-live\\so-e2e-04-filled.png",
+    "D:\\PANDA-master\\docs\\ref\\mes-live\\so-e2e-04b-detail.png",
+    "D:\\PANDA-master\\docs\\ref\\mes-live\\so-e2e-05-saved.png"
+  ],
+  "订单日期": "2026-08-20",
+  "业务类型": "跳过/失败",
+  "预计交货日期": "2026-08-30",
+  "detail": {
+    "存货名称": "直接输入 铝"
+  }
+}

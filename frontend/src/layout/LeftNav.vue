@@ -1,5 +1,5 @@
 <template>
-  <div ref="navRef" class="leftnav" :class="{ collapsed: app.collapsed }" @mouseleave="closeCard">
+  <div ref="navRef" class="leftnav" :class="{ collapsed: app.collapsed, 'mobile-open': app.mobileNav }" @mouseleave="closeCard">
     <div class="func-zone">
       <el-tooltip :content="app.collapsed ? '展开菜单' : '折叠菜单'" placement="right">
         <el-icon class="rz-icon" @click="app.toggleCollapse()"><Expand /></el-icon>
@@ -43,6 +43,10 @@
     </el-scrollbar>
 
     <div v-if="cardModule" class="fly-card" :style="{ top: cardTop + 'px' }">
+      <div class="fly-head">
+        <span class="fly-back" @click="closeCard">← 返回</span>
+        <span class="fly-title">{{ cardModule.title }}</span>
+      </div>
       <div class="card-body">
         <div v-for="cat in cardColumns" :key="cat.title" class="card-group">
           <div class="card-group-title">{{ cat.title }}</div>
@@ -79,6 +83,30 @@
         <el-empty v-if="!billMatches.length" description="无匹配单据" :image-size="60" />
       </div>
     </el-dialog>
+
+    <!-- ===== 移动端：层级堆叠导航（下钻式，仅抽屉打开时显示） ===== -->
+    <div v-if="app.mobileNav" class="mobile-nav">
+      <div class="mn-head">
+        <span v-if="mStack.length" class="mn-back" @click="mBack">‹ 返回</span>
+        <span v-else class="mn-brand">轻MES</span>
+        <span class="mn-title">{{ mnTitle }}</span>
+        <span class="mn-close" @click="app.toggleMobileNav()">✕</span>
+      </div>
+      <div class="mn-quick">
+        <span class="mn-q" @click="billSearchVisible = true"><el-icon><Search /></el-icon>单据查询</span>
+        <span class="mn-q" @click="billAddVisible = true"><el-icon><Plus /></el-icon>新增单据</span>
+      </div>
+      <div class="mn-list">
+        <template v-if="mnLevel.length">
+          <div v-for="n in mnLevel" :key="n.code" class="mn-item" @click="mnClick(n)">
+            <el-icon class="mn-ic"><component :is="n.icon || 'Folder'" /></el-icon>
+            <span class="mn-label">{{ n.title }}</span>
+            <el-icon v-if="n.children && n.children.length" class="mn-arrow"><ArrowRight /></el-icon>
+          </div>
+        </template>
+        <div v-else class="mn-empty">暂无菜单</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -165,10 +193,39 @@ function closeCard() {
   cardModule.value = null
 }
 
+// ===== 移动端：层级堆叠导航（下钻式） =====
+// mStack 记录当前下钻路径上的分组节点；空 = 顶层（menuTree 全部分组）
+const mStack = ref([])
+const mnLevel = computed(() => {
+  const top = mStack.value.length ? mStack.value[mStack.value.length - 1] : null
+  if (!top) return menuTree.value
+  return top.children || []
+})
+const mnTitle = computed(() => {
+  if (!mStack.value.length) return '全部功能'
+  return mStack.value[mStack.value.length - 1].title
+})
+function mnClick(n) {
+  if (n.children && n.children.length) mStack.value.push(n)
+  else go(n)
+}
+function mBack() {
+  if (mStack.value.length) mStack.value.pop()
+}
+// 每次打开抽屉回到顶层
+watch(
+  () => app.mobileNav,
+  (v) => {
+    if (v) mStack.value = []
+  }
+)
+
 function go(leaf) {
   router.push(leaf.path)
   tabs.open(leaf)
   closeCard()
+  // 移动端：跳转后关闭抽屉
+  if (app.mobileNav) app.toggleMobileNav()
 }
 
 function goBill(b, isNew) {
@@ -177,6 +234,8 @@ function goBill(b, isNew) {
   billSearchVisible.value = false
   billAddVisible.value = false
   billKeyword.value = ''
+  // 移动端：跳转后关闭抽屉
+  if (app.mobileNav) app.toggleMobileNav()
 }
 
 function groupOrPath(path) {
@@ -454,5 +513,144 @@ watch(
 }
 .mt12 {
   margin-top: 12px;
+}
+
+/* 模块卡片返回头：仅移动端显示 */
+.fly-head {
+  display: none;
+}
+
+/* ===== 移动端（≤768px）：侧栏变抽屉 + 层级堆叠导航 ===== */
+@media (max-width: 768px) {
+  .leftnav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(320px, 86vw) !important;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+  }
+  .leftnav.mobile-open {
+    transform: translateX(0);
+  }
+  /* 桌面导航结构（功能区/菜单树/悬浮卡片）移动端隐藏 */
+  .func-zone,
+  .nav-scroll,
+  .fly-card {
+    display: none !important;
+  }
+
+  /* ===== 层级堆叠导航 ===== */
+  .mobile-nav {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .mn-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--t-border);
+    background: var(--t-card-bg);
+    flex-shrink: 0;
+  }
+  .mn-back {
+    font-size: 15px;
+    color: var(--t-primary);
+    cursor: pointer;
+    padding: 6px 8px 6px 0;
+    flex-shrink: 0;
+  }
+  .mn-brand {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--t-primary);
+    flex-shrink: 0;
+  }
+  .mn-title {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--t-text-1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .mn-close {
+    font-size: 16px;
+    color: var(--t-text-2);
+    cursor: pointer;
+    padding: 6px;
+    flex-shrink: 0;
+  }
+  .mn-quick {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--t-border-light);
+    flex-shrink: 0;
+  }
+  .mn-q {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 38px;
+    font-size: 14px;
+    color: var(--t-primary);
+    background: var(--t-hover-bg);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .mn-list {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 8px calc(12px + env(safe-area-inset-bottom));
+  }
+  .mn-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 46px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 15px;
+    color: var(--t-text-1);
+    cursor: pointer;
+  }
+  .mn-item:active {
+    background: var(--t-hover-bg);
+    color: var(--t-primary);
+  }
+  .mn-ic {
+    font-size: 17px;
+    color: var(--t-text-2);
+    flex-shrink: 0;
+  }
+  .mn-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mn-arrow {
+    font-size: 14px;
+    color: var(--t-text-3);
+    flex-shrink: 0;
+  }
+  .mn-empty {
+    padding: 40px 0;
+    text-align: center;
+    color: var(--t-text-3);
+    font-size: 14px;
+  }
 }
 </style>

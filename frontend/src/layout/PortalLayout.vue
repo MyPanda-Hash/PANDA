@@ -15,6 +15,11 @@
       </div>
     </div>
 
+    <!-- 移动端：抽屉遮罩 -->
+    <transition name="fade">
+      <div v-if="app.mobileNav" class="nav-mask" @click="app.toggleMobileNav()"></div>
+    </transition>
+
     <!-- T+ 浮层：右侧帮助面板 / 初始化向导 -->
     <HelpPanel />
     <InitWizard />
@@ -79,5 +84,27 @@ watch(
   overflow: auto;
   background: var(--t-content-bg);
   padding: 12px;
+}
+
+/* 移动端：抽屉遮罩 */
+.nav-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 900;
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+@media (max-width: 768px) {
+  .portal-content {
+    padding: 8px;
+  }
 }
 </style>

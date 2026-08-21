@@ -2589,4 +2589,118 @@ watch(
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════ 移动端适配（≤768px）：触控尺寸 / 单列查询 / 表格横向滚动 ═══════ */
+@media (max-width: 768px) {
+  /* ① 顶部工具栏：允许换行、触控高度 ≥32px、按钮文字不溢出 */
+  .tools {
+    row-gap: 6px;
+    padding: 6px 8px;
+  }
+  .toolbar-query-btn {
+    min-height: 32px;
+    padding: 0 10px;
+  }
+  .tb-group {
+    min-height: 32px;
+  }
+  .tb-main {
+    min-height: 32px;
+    padding: 6px 10px;
+    max-width: 132px;
+  }
+  .tb-main .act-name {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tb-caret {
+    min-height: 32px;
+  }
+  .tb-menu {
+    min-width: 140px;
+    max-height: 300px;
+  }
+
+  /* ② 右上分页区：独占一行、可换行、字号 12px 防挤压 */
+  .tools-right {
+    flex: 1 1 100%;
+    margin-left: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 4px;
+    font-size: 12px;
+  }
+  .page-btn {
+    width: 30px;
+    height: 30px;
+    line-height: 28px;
+  }
+
+  /* ③ 查询弹窗字段：多列变单列、label 在上控件在下、间距 10px */
+  .query-dialog-fields {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .query-dialog-field {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .query-dialog-field > label {
+    text-align: left;
+  }
+
+  /* ④ 表格容器：不裁剪、不压缩，列宽溢出交给 el-table 内部横向滚动 */
+  .report-body,
+  .main-grid,
+  .detail {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .dt-head {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  :deep(.el-table .el-table__body td) {
+    height: 38px;
+  }
+  .detail :deep(.el-table td .el-input__wrapper),
+  .detail :deep(.el-table td .el-select__wrapper) {
+    min-height: 34px;
+  }
+
+  /* ⑤ 表尾审计信息区：字号 12px、允许换行 */
+  .footer {
+    font-size: 12px;
+  }
+  .remark {
+    flex-wrap: wrap;
+  }
+  .remark :deep(.el-input) {
+    min-width: 160px;
+  }
+  .audit-line {
+    gap: 6px 12px;
+    padding: 8px 10px 10px;
+  }
+
+  /* ⑥ 右键菜单：最小宽度与字号适配触屏 */
+  .ctx-menu {
+    min-width: 130px;
+    max-width: 80vw;
+    font-size: 13px;
+  }
+  .ctx-item {
+    padding: 8px 12px;
+    font-size: 13px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
 </style>

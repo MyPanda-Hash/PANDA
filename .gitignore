@@ -27,3 +27,8 @@ Desktop.ini
 .DS_Store
 # === 涓存椂杩樺師鏂囦欢 ===
 .vision-restore/
+
+# === 构建产物压缩包 ===
+dist.rar
+dist.tar.gz
+

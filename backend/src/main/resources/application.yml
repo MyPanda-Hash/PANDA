@@ -5,9 +5,9 @@ spring:
   application:
     name: light-mes-backend
   datasource:
-    url: jdbc:mysql://localhost:3308/light_mes?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/light_mes?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     username: root
-    password: "000518"
+    password: "CHANGE_ME" # 生产环境通过环境变量 SPRING_DATASOURCE_PASSWORD 注入
     driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:
@@ -23,13 +23,14 @@ mybatis-plus:
 
 mes:
   jwt:
-    secret: 04aff72d4a76a807f1e8f9c2114fb51c422b26a4f89c4a019474a22b77af6fd0b89b7b565579799ae0bd80377a9239ffff6770163d0f0990ccd8282dd43f6b41
+    # 生产环境必须通过环境变量 MES_JWT_SECRET 注入随机值（历史版本曾提交真实密钥且已公开，须轮换）
+    secret: "CHANGE_ME_RANDOM_HEX_64"
     expire-hours: 24
   panelx:
     base-url: https://demo.kwaidoo.com/VF_DEV/
     bus-domain-code: SdkTest
     app-code: SdkTest
-    username: admin
-    password: "123456"
+    username: CHANGE_ME
+    password: "CHANGE_ME"
     panel-map:
       MANU_ORDER: SdkTest_IML_00002
