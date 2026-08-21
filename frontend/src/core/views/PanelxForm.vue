@@ -158,10 +158,17 @@
                 <template #default="{ row }">
                   <template v-if="dr.dataType === '参照'">
                     <span v-if="dr.dataName === '材料编码' && tab.key === 'materials'" class="mat-cell">
-                      <span class="ref-cell" :class="{ disabled: !editable || dr.computed }" @click="openDetailRef(dr, row, tab)">{{ drRefText(dr, row) }}</span>
+                      <span class="ref-cell" :class="{ disabled: !detailRefEnabled(dr) }" @click="openDetailRef(dr, row, tab, 'click')">{{ drRefText(dr, row) }}</span>
                       <span v-if="hasSubBom(row[dr.dataName])" class="mat-star" title="该材料有下级子件 BOM，点击行查看">*</span>
                     </span>
-                    <span v-else class="ref-cell" :class="{ disabled: !editable || dr.computed }" @click="openDetailRef(dr, row, tab)">{{ drRefText(dr, row) }}</span>
+                    <span
+                      v-else
+                      class="ref-cell"
+                      :class="{ disabled: !detailRefEnabled(dr), 'dblclick-ref': detailRefTrigger(dr) === 'dblclick' }"
+                      :title="detailRefTrigger(dr) === 'dblclick' && detailRefEnabled(dr) ? '双击选择存货' : ''"
+                      @click="openDetailRef(dr, row, tab, 'click')"
+                      @dblclick.stop="openDetailRef(dr, row, tab, 'dblclick')"
+                    >{{ drRefText(dr, row) }}</span>
                   </template>
                   <el-select v-else-if="dr.dataType === '下拉框'" v-model="row[dr.dataName]" :disabled="!editable || dr.computed" filterable allow-create style="width: 100%" @change="onDetailChange(dr, row, tab)">
                     <el-option v-for="o in dr.options || []" :key="o" :label="o.label ?? o" :value="o.value ?? o" />
@@ -540,13 +547,29 @@ function openRefPick(r) {
   refVisible.value = true
 }
 
-function openDetailRef(dr, row, tab) {
-  if (!editable.value || dr.computed) return
+function detailRefConfig(dr) {
+  return dr.ref || dr
+}
+
+function detailRefTrigger(dr) {
+  const r = detailRefConfig(dr)
+  return r.trigger || r.refTrigger || 'click'
+}
+
+function detailRefEnabled(dr) {
+  if (!editable.value || dr.computed) return false
+  const r = detailRefConfig(dr)
+  const statuses = r.statuses || r.refStatuses
+  return !Array.isArray(statuses) || statuses.length === 0 || statuses.includes(status.value)
+}
+
+function openDetailRef(dr, row, tab, trigger = 'click') {
+  if (!detailRefEnabled(dr) || detailRefTrigger(dr) !== trigger) return
   refPick.value = { field: dr, kind: 'detail', row, tab, mode: 'detail' }
   refVisible.value = true
 }
 
-function onRefConfirm(rows) {
+async function onRefConfirm(rows) {
   const p = refPick.value
   if (!p || !rows.length) return
   const r = p.field
@@ -585,10 +608,13 @@ function onRefConfirm(rows) {
         rillRow(nr, rows[i])
       }
     }
+    if (tab?.key === 'products' && r.dataName === '产品编码') {
+      for (const selected of rows) loadBomFor(selected[refField])
+    }
   }
   refVisible.value = false
   applyCalc()
-  ElMessage.success(`已导入 ${rows.length} 行${engine.refPanelName(r)}数据`)
+  ElMessage.success(`已导入 ${rows.length} 行${await engine.refPanelName(r)}数据`)
 }
 
 function rmtTime(t) {

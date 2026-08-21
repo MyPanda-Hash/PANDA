@@ -175,7 +175,7 @@ function openDetailRef(dr, row, tab) {
   refVisible.value = true
 }
 
-function onRefConfirm(rows) {
+async function onRefConfirm(rows) {
   const p = refPick.value
   if (!p || !rows.length) return
   const r = p.field
@@ -209,7 +209,7 @@ function onRefConfirm(rows) {
     applyMap(form, rows[0] || {})
   }
   applyCalc()
-  ElMessage.success(`已导入 ${rows.length} 行${engine.refPanelName(r)}数据`)
+  ElMessage.success(`已导入 ${rows.length} 行${await engine.refPanelName(r)}数据`)
 }
 function visibleFields(tab) { return (tab.fields || []).filter((r) => !r.hidden) }
 

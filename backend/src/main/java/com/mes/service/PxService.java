@@ -30,12 +30,15 @@ public class PxService {
     private final PanelConfigMapper panelMapper;
     private final FormDataMapper formMapper;
     private final FormApprovalMapper approvalMapper;
+    private final ReportQueryService reportQueryService;
     private final ObjectMapper json = new ObjectMapper();
 
-    public PxService(PanelConfigMapper panelMapper, FormDataMapper formMapper, FormApprovalMapper approvalMapper) {
+    public PxService(PanelConfigMapper panelMapper, FormDataMapper formMapper,
+                     FormApprovalMapper approvalMapper, ReportQueryService reportQueryService) {
         this.panelMapper = panelMapper;
         this.formMapper = formMapper;
         this.approvalMapper = approvalMapper;
+        this.reportQueryService = reportQueryService;
     }
 
     // ---------- 配置 ----------
@@ -46,9 +49,62 @@ public class PxService {
                 .eq(PanelConfig::getPanelCode, panelCode));
         if (pc == null) throw new IllegalArgumentException("面板不存在：" + panelCode);
         try {
-            return json.readValue(pc.getConfig(), new TypeReference<Map<String, Object>>() {});
+            Map<String, Object> config = json.readValue(pc.getConfig(), new TypeReference<Map<String, Object>>() {});
+            applyRuntimeConfigUpgrades(panelCode, config);
+            return config;
         } catch (Exception e) {
             throw new IllegalStateException("面板配置解析失败：" + e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void applyRuntimeConfigUpgrades(String panelCode, Map<String, Object> config) {
+        if ("MANU_ORDER".equals(panelCode)) {
+            upgradeDetailReference(config, "products", "产品编码",
+                    List.of("存货编码", "存货名称", "规格型号", "所属类别", "品牌", "计量单位", "属性", "停用"),
+                    List.of(
+                            Map.of("from", "存货名称", "to", "产品名称"),
+                            Map.of("from", "规格型号", "to", "规格型号"),
+                            Map.of("from", "计量单位", "to", "生产单位")));
+        } else if ("SO_ORDER".equals(panelCode)) {
+            upgradeDetailReference(config, "items", "存货编码",
+                    List.of("存货编码", "存货名称", "规格型号", "品牌", "计量单位", "参考成本", "停用"),
+                    List.of(
+                            Map.of("from", "存货名称", "to", "存货名称"),
+                            Map.of("from", "规格型号", "to", "规格型号"),
+                            Map.of("from", "品牌", "to", "存货名称.品牌"),
+                            Map.of("from", "计量单位", "to", "销售单位"),
+                            Map.of("from", "参考成本", "to", "单价")));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void upgradeDetailReference(Map<String, Object> config, String tabKey, String fieldName,
+                                        List<String> columns, List<Map<String, String>> mappings) {
+        Object detailObj = config.get("detail");
+        if (!(detailObj instanceof Map<?, ?> detail)) return;
+        Object tabsObj = detail.get("tabs");
+        if (!(tabsObj instanceof List<?> tabs)) return;
+
+        for (Object tabObj : tabs) {
+            if (!(tabObj instanceof Map<?, ?> tab) || !tabKey.equals(tab.get("key"))) continue;
+            Object fieldsObj = tab.get("fields");
+            if (!(fieldsObj instanceof List<?> fields)) return;
+            for (Object fieldObj : fields) {
+                if (!(fieldObj instanceof Map<?, ?> rawField) || !fieldName.equals(rawField.get("dataName"))) continue;
+                Map<String, Object> field = (Map<String, Object>) rawField;
+                field.put("dataType", "参照");
+                field.remove("options");
+                field.put("refPanel", "INV");
+                field.put("refField", "存货编码");
+                field.put("displayField", "存货编码");
+                field.put("filter", Map.of("停用", false));
+                field.put("refTrigger", "dblclick");
+                field.put("refStatuses", List.of("草稿"));
+                field.put("refColumns", columns);
+                field.put("refMap", mappings);
+                return;
+            }
         }
     }
 
@@ -105,6 +161,18 @@ public class PxService {
             m.put("isNotNull", Boolean.TRUE.equals(f.get("isRequired")));
             m.put("defaultValue", f.getOrDefault("defaultValue", ""));
             if (f.containsKey("options")) m.put("options", f.get("options"));
+            // 参照字段信息（2026-08-20 补：对齐前端 mock buildMeta 的 ref 结构——弹窗拉取面板数据勾选导入）
+            if ("参照".equals(f.get("dataType")) && f.get("refPanel") != null) {
+                Map<String, Object> ref = new HashMap<>();
+                ref.put("panel", f.get("refPanel"));
+                ref.put("field", f.get("refField"));
+                ref.put("display", f.get("displayField"));
+                ref.put("filter", f.get("filter"));
+                ref.put("map", f.get("refMap"));
+                ref.put("multi", Boolean.TRUE.equals(f.get("refMulti")));
+                ref.put("columns", f.get("refColumns"));
+                m.put("ref", ref);
+            }
             meta.add(m);
         }
         return meta;
@@ -226,6 +294,9 @@ public class PxService {
     @SuppressWarnings("unchecked")
     public Map<String, Object> queryFormDataList(String panelCode, String keyword,
                                                  Map<String, Object> condition, int pageNo, int pageSize) {
+        if (ReportPanelRegistry.isReport(panelCode)) {
+            return reportQueryService.query(panelCode, keyword, condition, pageNo, pageSize);
+        }
         LambdaQueryWrapper<FormData> qw = new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, panelCode)
                 .orderByDesc(FormData::getCreateTime)

@@ -17,6 +17,7 @@ target/
 
 # === 工具运行时 ===
 tools/tplus-grab/profile/
+tools/tplus-grab/profile-*/
 .tplus-grab-out/
 .dsh-vision-toolkit/
 

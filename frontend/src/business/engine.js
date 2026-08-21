@@ -50,7 +50,7 @@ export async function ensurePanelx() {
 // ==================== 单单据面板（metadata.singleDoc）：参照展平 ====================
 // 列表/表单查询返回 1 张单据行（form_no=面板名，明细在 detail.<tabKey>）；
 // 参照弹窗需把明细行展平后在前端应用 filter/keyword（单据行顶层无明细字段，后端过滤不到明细）
-const SINGLE_DOC_CODES = new Set(['EMP', 'DEPT', 'INV_PRICE', 'EQUIP', 'WC', 'OP', 'WH', 'REGION', 'PROJ', 'UOM', 'REJECT', 'ROUTE', 'BOM'])
+const SINGLE_DOC_CODES = new Set(['EMP', 'DEPT', 'INV', 'INV_PRICE', 'EQUIP', 'WC', 'OP', 'WH', 'REGION', 'PROJ', 'UOM', 'REJECT', 'ROUTE', 'BOM'])
 
 // ==================== 参照字段：弹窗拉取面板数据（开发约束十一-1） ====================
 // 字段约定：{ dataType: '参照', refPanel, refField, displayField, filter, refMap, refMulti, refColumns }
@@ -101,23 +101,29 @@ export async function refColumns(field) {
 // 拉取引用面板数据（本地后端 / PanelX 代理）
 export async function queryRefRows(field, { keyword = '', pageSize = 200 } = {}) {
   const r = normRef(field)
+  const filter = r.filter || {}
+  const hasAlternativeFilter = Object.values(filter).some(Array.isArray)
   // 单单据面板：condition 不带 filter——单据行顶层无明细字段，后端过滤不到明细；
   // filter/keyword 在展平后的明细行上应用
-  const cond = SINGLE_DOC_CODES.has(r.refPanel) ? {} : (r.filter || {})
+  const cond = SINGLE_DOC_CODES.has(r.refPanel) || hasAlternativeFilter ? {} : filter
   // 单单据面板：keyword 也不传后端（单据行无明细字段，后端匹配不到），前端展平后过滤
   const res = await queryFormDataList({ panelCode: r.refPanel, condition: cond, keyword: SINGLE_DOC_CODES.has(r.refPanel) ? '' : keyword, pageNo: 1, pageSize })
   let list = res.list || []
-  if (SINGLE_DOC_CODES.has(r.refPanel) && list.length && list[0] && list[0].detail) {
+  if (SINGLE_DOC_CODES.has(r.refPanel) && list.some((row) => row?.detail)) {
     const tabKey = (await getPanelConfig(r.refPanel))?.detail?.tabs?.[0]?.key || 'items'
-    list = list[0].detail[tabKey] || []
-    const flt = r.filter || {}
-    if (Object.keys(flt).length) {
-      list = list.filter((row) => Object.entries(flt).every(([k, v]) => String(row[k]) === String(v)))
-    }
+    list = list.flatMap((doc) => (doc?.detail?.[tabKey] || []).map((row) => (
+      r.refPanel === 'INV' ? { 所属类别: doc['类别'] || '', ...row } : row
+    )))
     if (keyword) {
       const k = String(keyword).toLowerCase()
       list = list.filter((row) => Object.values(row).some((v) => String(v ?? '').toLowerCase().includes(k)))
     }
+  }
+  if (Object.keys(filter).length) {
+    list = list.filter((row) => Object.entries(filter).every(([key, expected]) => {
+      const candidates = Array.isArray(expected) ? expected : [expected]
+      return candidates.some((value) => String(row[key]) === String(value))
+    }))
   }
   return list
 }

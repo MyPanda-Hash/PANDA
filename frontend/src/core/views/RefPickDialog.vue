@@ -57,7 +57,7 @@ const selected = ref([])
 const loading = ref(false)
 const total = ref(0)
 
-const title = computed(() => (props.field ? engine.refPanelName(props.field) + ' · 参照选择' : '参照选择'))
+const title = ref('参照选择')
 const multi = computed(() => !!props.field?.refMulti || !!props.field?.multi)
 const tipText = computed(() => {
   if (props.mode === 'detail') return '可勾选多行，确定后每行生成一条明细'
@@ -67,6 +67,7 @@ const tipText = computed(() => {
 
 async function open() {
   if (!props.field) return
+  title.value = (await engine.refPanelName(props.field)) + ' · 参照选择'
   loading.value = true
   selected.value = []
   rows.value = []

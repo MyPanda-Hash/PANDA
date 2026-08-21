@@ -4,36 +4,18 @@
 
 > 文档导航：开发规范与需求总览见 [`docs/开发规范与需求总览.md`](docs/开发规范与需求总览.md)（规范速查 + 需求清单 + 全部文档索引）
 
-## 数据源三模式
+## 数据源两模式
 
-表单引擎（`src/panelx/engine.js`）支持三种数据源，通过环境变量切换：
+表单引擎（`src/business/engine.js`）支持两种数据源，通过环境变量切换（2026-08-20 起仅两模式，Mock 与 PanelX 直连已移除）：
 
 | 模式 | 环境变量 | 数据来源 | 适用场景 |
 |---|---|---|---|
-| **Mock（默认）** | 无（或 `VITE_MOCK=true`） | 前端内置演示数据 | 纯前端演示、无后端依赖 |
-| **本地后端** | `VITE_MOCK=false` | `/api` 代理 → 本地 Spring Boot（`/px/*` 面板引擎） | 本地全栈开发（需 MySQL + 后端） |
-| **PanelX 平台** | `VITE_PANELX=true` | 浏览器 PanelX SDK 直连 `https://demo.kwaidoo.com/VF_DEV/`（业务域 `SdkTest`） | 对接 PanelX 低代码平台 |
+| **本地后端（默认）** | `VITE_PANELX_PROXY` 空 | `/api` 代理 → 本地 Spring Boot（`/px/*` 面板引擎 + MySQL） | 本地全栈开发 / 生产自建（需 MySQL + 后端） |
 | **PanelX 后端代理** | `VITE_PANELX_PROXY=true` | `/api/panelx/*` → Spring Boot 网关服务端直连平台 | 平台凭据由后端持有，浏览器不加载 SDK |
 
-**PanelX 平台模式说明：**
-- 页面自动加载 `/panelx/preload.js` 拉取 SDK（localhost 走 `devSdkUrl`，生产自动 ping 探测 baseURL）
-- 进入面板页时若未登录 PanelX 平台，自动弹出登录框（`PanelxLogin.vue`，演示账号 `admin / 123456`）
-- 本地面板码 `MANU_ORDER` 映射到平台面板 `SdkTest_IML_00002`（`engine.js` 的 `PANEL_MAP`），平台面板配置变更前端自动跟随
-- 门户（登录/菜单/角标/通知）在平台模式下仍走 mock，仅表单引擎走平台
-
-运行方式：
-
-```bash
-# PanelX 平台模式（Windows PowerShell）
-cd frontend
-$env:VITE_PANELX='true'; npm run dev
-```
-
-**对接实测（2026-08-14 已验证）：**
-- 链路：preload.js 从 `demo.kwaidoo.com/VF_DEV/wp-core/api/getPanelXSdk` 拉取并执行 SDK → 进入面板页若平台未登录自动弹出「登录 PanelX 平台」→ `admin / 123456` 登录 → 平台配置/数据实时渲染（面板 `MANU_ORDER` 映射平台 `SdkTest_IML_00002`，实测返回「测试流程面板」+ 18 条数据）
-- 面板码规则：`engine.js` 的 `PANEL_MAP` 做本地码→平台码映射（当前仅 MANU_ORDER），其余码原样透传（平台侧需存在对应面板）
-- 平台会话：SDK 登录态存 localStorage（`SdkTest_SdkTest_jwt_token`）；token 失效时平台 API 返回非 200，前端已统一归一为「未登录」并自动弹登录框（`platformCall` 包装）
-- 注意事项：平台模式仅表单引擎走平台，门户壳（登录/菜单/角标）仍走 mock；本地 mock 的报表/看板/返修工作台为前端派生数据，平台模式下不适用；平台面板的字段/工具栏以平台配置为准（适配器 `adaptPanelConfig`/`adaptMeta`）
+- 门户（登录/菜单/角标/通知）在 PanelX 代理模式下仍走前端内置演示数据（`USE_PORTAL_MOCK`），仅表单引擎走平台/后端
+- 生产看板 / 返修工作台原为 mock 派生数据，Mock 模式移除后恒空（页面显示提示文案）
+- 参照字段：表头/明细参照均弹窗拉取基础档案面板数据（后端 `PxService.buildMeta` 已透传参照信息，2026-08-20）
 
 ### PanelX 后端代理模式（VITE_PANELX_PROXY=true）
 
@@ -86,15 +68,15 @@ light-mes/
 
 ## 快速开始
 
-### 前端（可独立运行，默认 mock 数据）
+### 前端
 
 ```bash
 cd frontend
 npm install
-npm run dev        # http://localhost:5173
+npm run dev        # http://localhost:5173（默认本地后端模式，需先启动后端）
 ```
 
-登录页演示账号：`admin / 123456`（mock 模式任意账号密码均可）。
+登录页演示账号：`admin / 123456`（本地后端 / 门户演示数据）。
 
 ### 后端
 
@@ -111,13 +93,7 @@ npm run dev        # http://localhost:5173
 
 ### 前后端联调
 
-将前端切到真实接口模式：新建 `frontend/.env.local` 写入：
-
-```
-VITE_MOCK=false
-```
-
-（vite 已配置 `/api` 代理到 `http://localhost:8080`）
+默认即本地后端模式（`frontend/.env.local` 中 `VITE_PANELX_PROXY` 为空），vite 已配置 `/api` 代理到 `http://localhost:8080`。
 
 ## 已实现功能（门户壳 v0.2 · T+ 保真形态）
 
