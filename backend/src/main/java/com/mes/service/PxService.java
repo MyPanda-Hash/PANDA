@@ -98,13 +98,15 @@ public class PxService {
         List<Map<String, Object>> meta = new ArrayList<>();
         List<Map<String, Object>> fields = (List<Map<String, Object>>) fieldsOf(panelCode).get("fields");
         for (Map<String, Object> f : fields) {
-            Map<String, Object> m = new HashMap<>();
-            m.put("code", String.valueOf(f.get("dataName")));
-            m.put("name", String.valueOf(f.get("dataName")));
+            // 保留配置字段的完整描述（参照、计算、自动编码等），表单渲染器据此选择控件和只读状态。
+            // 同时补充旧表单协议使用的 code/name/isNotNull，兼容现有前端。
+            Map<String, Object> m = new HashMap<>(f);
+            String dataName = String.valueOf(f.get("dataName"));
+            m.put("code", dataName);
+            m.put("name", String.valueOf(f.getOrDefault("displayName", dataName)));
             m.put("dataType", f.getOrDefault("dataType", "文本"));
             m.put("isNotNull", Boolean.TRUE.equals(f.get("isRequired")));
             m.put("defaultValue", f.getOrDefault("defaultValue", ""));
-            if (f.containsKey("options")) m.put("options", f.get("options"));
             meta.add(m);
         }
         return meta;
@@ -158,8 +160,11 @@ public class PxService {
                 data.putIfAbsent(String.valueOf(f.get("dataName")), dv);
             }
         }
-        // T+ 单据：单据日期默认系统登录日期
-        if (!data.containsKey("单据日期")) data.put("单据日期", LocalDate.now().toString());
+        // T+ 新建单据：日期始终取当前系统日期，避免种子配置中的历史默认值长期滞留。
+        if (stateField.get("fields") instanceof List<?> fields
+                && fields.stream().anyMatch(f -> f instanceof Map<?, ?> map && "单据日期".equals(map.get("dataName")))) {
+            data.put("单据日期", LocalDate.now().toString());
+        }
         // 自动编码字段（autoCodeField，如工序汇报单「单据编号」）预填单号，表单页可显示
         String af = autoCodeFieldOf(panelCode);
         if (af != null && !af.isBlank() && !data.containsKey(af)) data.put(af, generateFormNo(panelCode));

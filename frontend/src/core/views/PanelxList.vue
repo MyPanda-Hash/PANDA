@@ -17,7 +17,7 @@
         <span v-if="cur['单据状态']" class="doc-status" :class="cur['单据状态']">{{ cur['单据状态'] }}</span>
         <span class="page-btn" title="首页" @click="pageFirst">◁</span>
         <span class="page-btn" title="上一张" @click="page(-1)">◀</span>
-        <span class="page-no">第 {{ curNo }}/{{ total }} 张</span>
+        <span class="page-no">第 {{ curNo }}/{{ pageTotal }} 张</span>
         <span class="page-btn" title="下一张" @click="page(1)">▶</span>
         <span class="page-btn" title="末页" @click="pageLast">▷</span>
       </div>
@@ -25,28 +25,49 @@
 
     <!-- ══════════ ② 表头字段区（label 在上、输入在下）══════════ -->
     <div class="fields udl-fields">
-      <div class="field" v-for="qr in queryFields" :key="qr.dataName">
-        <label :class="{ req: qr.isRequired }">{{ qr.label || qr.dataName }}</label>
-        <el-select
-          v-if="qType(qr) === 'select'"
-          v-model="condition[qr.dataName]"
-          clearable
-          filterable
-          :placeholder="qr.placeholder || ''"
-          @change="search"
-        >
-          <el-option v-for="o in qOptions(qr)" :key="o.value" :label="o.label ?? o.value" :value="o.value" />
-        </el-select>
-        <el-date-picker
-          v-else-if="qType(qr) === 'date'"
-          v-model="condition[qr.dataName]"
-          type="date"
-          value-format="YYYY-MM-DD"
-          :placeholder="qr.placeholder || '选择日期'"
-          @change="search"
-        />
-        <el-input v-else v-model="condition[qr.dataName]" :placeholder="qr.placeholder || ''" @keyup.enter="search" clearable @clear="search" />
-      </div>
+      <!-- 单据态：所有状态都显示当前单据表头；仅未保存新页 / 草稿可编辑 -->
+      <template v-if="isDocumentPanel">
+        <div class="field" v-for="f in headFields" :key="f.dataName">
+          <label :class="{ req: f.isRequired }">{{ fieldLabel(f) }}</label>
+          <el-input v-if="isText(f)" v-model="cur[f.dataName]" :disabled="headerFieldDisabled(f)" :placeholder="fieldLabel(f)" />
+          <el-input-number v-else-if="isNumber(f)" v-model="cur[f.dataName]" :disabled="headerFieldDisabled(f)" :controls="false" />
+          <div v-else-if="isRef(f)" class="ref-ctl">
+            <el-input :model-value="refText(f, cur[f.dataName])" readonly :disabled="headerFieldDisabled(f)" :placeholder="editing ? '点击选择' : ''" @click="openRefPick(f)" />
+            <el-button v-if="editing && !fieldLocked(f)" class="ref-btn" size="small" :icon="Search" @click="openRefPick(f)" />
+          </div>
+          <el-select v-else-if="isSelect(f)" v-model="cur[f.dataName]" :disabled="headerFieldDisabled(f)" filterable clearable allow-create>
+            <el-option v-for="o in (f.options || [])" :key="o.value ?? o" :label="o.label ?? o" :value="o.value ?? o" />
+          </el-select>
+          <el-date-picker v-else-if="isDate(f)" v-model="cur[f.dataName]" :disabled="headerFieldDisabled(f)" type="date" value-format="YYYY-MM-DD" />
+          <el-switch v-else-if="isBool(f)" v-model="cur[f.dataName]" :disabled="headerFieldDisabled(f)" />
+          <el-input v-else v-model="cur[f.dataName]" :disabled="headerFieldDisabled(f)" :placeholder="fieldLabel(f)" />
+        </div>
+      </template>
+      <!-- 查询态：查询字段（search 用） -->
+      <template v-else>
+        <div class="field" v-for="qr in queryFields" :key="qr.dataName">
+          <label :class="{ req: qr.isRequired }">{{ qr.label || qr.dataName }}</label>
+          <el-select
+            v-if="qType(qr) === 'select'"
+            v-model="condition[qr.dataName]"
+            clearable
+            filterable
+            :placeholder="qr.placeholder || ''"
+            @change="search"
+          >
+            <el-option v-for="o in qOptions(qr)" :key="o.value" :label="o.label ?? o.value" :value="o.value" />
+          </el-select>
+          <el-date-picker
+            v-else-if="qType(qr) === 'date'"
+            v-model="condition[qr.dataName]"
+            type="date"
+            value-format="YYYY-MM-DD"
+            :placeholder="qr.placeholder || '选择日期'"
+            @change="search"
+          />
+          <el-input v-else v-model="condition[qr.dataName]" :placeholder="qr.placeholder || ''" @keyup.enter="search" clearable @clear="search" />
+        </div>
+      </template>
     </div>
 
     <div class="body" v-loading="loading">
@@ -70,6 +91,7 @@
           <span v-for="it in headItems(b)" :key="it.kind + it.key" class="dt-tab" :class="{ on: isOn(b, it) }" @click="switchTab(b, it)">{{ it.label }}</span>
           <span v-if="b.id === 'B' && activeTab(b).key === 'materials' && selectedProduct" class="filter-hint">当前产品：{{ selectedProduct }} 的 BOM 子件</span>
           <span class="dt-ics">
+            <el-button v-if="editingDetail(b)" class="add-data-btn" size="small" type="primary" :icon="Plus" @click="addDetailRow(b)">新增数据</el-button>
             <span class="dt-ic" v-for="ic in b.isMain ? iconA : iconB" :key="ic" @click="onIcon(ic, b)">{{ ic }}</span>
           </span>
         </div>
@@ -81,28 +103,60 @@
           :show-summary="tabView(b, activeTab(b)) !== 'summary'"
           :summary-method="sumMethod"
           sum-text="合计"
+          :row-key="(row) => row._placeholder ? row._placeholderKey : row"
           :row-class-name="(o) => rowCls(o, b)"
           @selection-change="(r) => (delSel = r)"
           @row-contextmenu="(row, col, ev) => onCtx(ev, row, b)"
-          @row-dblclick="() => openForm(cur)"
+          @row-dblclick="() => onRowDblclick(cur)"
           @row-click="(row) => onRowClick(row, b)"
           @click.capture="(e) => onTableClick(b, e)"
         >
           <el-table-column v-if="delMode && b.isMain" type="selection" width="45" fixed="left" />
           <el-table-column
-            v-for="c in blockCols(b)"
+            v-for="(c, ci) in blockCols(b)"
             :key="c.prop"
             :prop="c.prop"
             :label="c.label"
             :min-width="c.width"
             :align="c.align"
+            :class-name="editingDetail(b) && c.f.dataType === '参照' && !c.f.computed ? 'detail-ref-col' : ''"
             show-overflow-tooltip
           >
-            <template v-if="c.prop === '材料编码' && activeTab(b).key === 'materials'" #default="{ row }">
-              <span class="mat-cell">
+            <template #default="{ row }">
+              <!-- 材料编码（读态）：下级 BOM 红 * -->
+              <span v-if="c.prop === '材料编码' && activeTab(b).key === 'materials' && !editingDetail(b)" class="mat-cell">
                 <span>{{ row[c.prop] }}</span>
                 <span v-if="hasSubBom(row[c.prop])" class="mat-star" title="该材料有下级子件 BOM，点击行查看">*</span>
               </span>
+              <!-- 编辑态：按 dataType 渲染单元格控件（未保存新页 / 草稿单据） -->
+              <template v-else-if="editingDetail(b) && !row._placeholder && !c.f.computed">
+                <button
+                  v-if="c.f.dataType === '参照'"
+                  type="button"
+                  class="detail-ref-cell"
+                  :title="refText(c.f, row[c.prop]) || undefined"
+                  @click.stop="openDetailRef(c.f, row, b)"
+                >{{ refText(c.f, row[c.prop]) || `选择${engine.refPanelName(c.f)}` }}</button>
+                <el-select v-else-if="c.f.dataType === '下拉框'" v-model="row[c.prop]" filterable allow-create style="width: 100%" @change="applyCalc">
+                  <el-option v-for="o in (c.f.options || [])" :key="o" :label="o.label ?? o" :value="o.value ?? o" />
+                </el-select>
+                <el-switch v-else-if="c.f.dataType === '是否'" v-model="row[c.prop]" />
+                <el-image v-else-if="c.f.dataType === '图片'" :src="row[c.prop] || ''" fit="contain" style="width: 34px; height: 34px">
+                  <template #error><span class="img-ph">图</span></template>
+                </el-image>
+                <el-input-number v-else-if="c.f.dataType === '小数' || c.f.dataType === '整数'" v-model="row[c.prop]" :controls="false" style="width: 100%" @change="applyCalc" />
+                <el-date-picker v-else-if="c.f.dataType === '日期'" v-model="row[c.prop]" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
+                <el-input v-else v-model="row[c.prop]" />
+              </template>
+              <!-- 编辑态占位行：点击物化一行（首列显示 + 提示） -->
+              <span v-else-if="editingDetail(b) && row._placeholder" class="cell-add" @click.stop="materializeDetailRow(b)">{{ ci === 0 ? '+' : '' }}</span>
+              <!-- 只读 / 占位行：纯文本 -->
+              <span v-else>{{ row[c.prop] }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column v-if="editingDetail(b)" label="操作" width="50" align="center" fixed="right">
+            <template #default="{ row }">
+              <el-icon v-if="!row._placeholder" class="del" @click="removeDetailRow(b, row)"><Delete /></el-icon>
             </template>
           </el-table-column>
         </el-table>
@@ -114,7 +168,7 @@
     <div v-if="showFooter" class="footer">
       <div class="remark">
         <label>备注</label>
-        <el-input v-model="remarkText" size="small" placeholder="" />
+        <el-input v-model="remarkText" size="small" placeholder="" :disabled="isDocumentPanel && !editing" />
       </div>
       <div class="footer-hr"></div>
       <div class="audit-line">
@@ -134,6 +188,7 @@
     </div>
 
     <PanelxLogin v-model="loginVisible" @success="onPanelxLogin" />
+    <RefPickDialog v-model="refVisible" :field="refPick?.field" :mode="refPick?.mode" @confirm="onRefConfirm" />
     <NewVoucherDialog v-model:visible="newVisible" :panelCode="panelCode" :panel-name="panelName" @saved="onNewSaved" />
     <BomDialog v-model="bomVisible" :item="bomItem" :parentDoc="bomParent" @saved="onBomSaved" />
     <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
@@ -158,10 +213,12 @@
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Search, Delete } from '@element-plus/icons-vue'
 import { useTabsStore } from '@/stores/tabs'
 import { useUserStore } from '@/stores/user'
 import * as engine from '@/business/engine'
 import PanelxLogin from './PanelxLogin.vue'
+import RefPickDialog from './RefPickDialog.vue'
 import NewVoucherDialog from './NewVoucherDialog.vue'
 import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
@@ -212,6 +269,11 @@ const delSel = ref([])
 const catPickVisible = ref(false)
 const catPick = ref('')
 
+// 就地新增：未保存新页在 list 中的下标（无新页为 -1）；参照弹窗状态
+const draftIdx = ref(-1)
+const refVisible = ref(false)
+const refPick = ref(null)
+
 // 产成品→材料联动：当前选中产成品（列表页单据流览内点击产成品明细行）
 const selectedProduct = ref(null)
 const selectedBomCodes = ref([])
@@ -242,6 +304,19 @@ const cur = computed(() => {
   return l[Math.min(curIdx.value, l.length - 1)]
 })
 const curNo = computed(() => (list.value.length ? Math.min(curIdx.value, list.value.length - 1) + 1 : 0))
+const pageTotal = computed(() => total.value + (hasDraft.value ? 1 : 0))
+
+// 单据类面板始终显示当前单据表头；未保存新页 _draft 或草稿才允许编辑。
+const DOCUMENT_CATEGORIES = new Set(['单据', '期初单据'])
+const isDocumentPanel = computed(() => DOCUMENT_CATEGORIES.has(cfgCache.value?.metadata?.panelCategory))
+const inlineEditCapable = computed(() => isDocumentPanel.value && !cfgCache.value?.metadata?.singleDoc && panelCode.value !== 'INV')
+const editing = computed(() => inlineEditCapable.value && !!cur.value && (cur.value._draft === true || cur.value['单据状态'] === '草稿'))
+const hasDraft = computed(() => draftIdx.value >= 0 && list.value[draftIdx.value]?._draft === true)
+const headFields = computed(() => (cfgCache.value?.dataSchema?.fields || []).filter((f) => !f.hidden))
+// 明细区块仅在「明细」视图下就地编辑（汇总视图为计算聚合，只读）
+function editingDetail(b) {
+  return editing.value && tabView(b, activeTab(b)) === 'detail'
+}
 
 watch(cur, (v) => {
   current.value = v
@@ -260,7 +335,10 @@ watch(cur, (v) => {
 async function page(delta) {
   const l = list.value
   if (!l.length) return
-  const nxt = curIdx.value + delta
+  const leave = await confirmLeaveDraft()
+  if (leave === 'abort' || leave === 'saved') return
+  const base = curIdx.value // 草稿被移除后可能越界一位（= 原草稿位置），供下方按 delta 落点
+  const nxt = base + delta
   if (nxt >= 0 && nxt < l.length) {
     curIdx.value = nxt
     return
@@ -275,11 +353,16 @@ async function page(delta) {
     query.pageNo -= 1
     await load()
     curIdx.value = list.value.length - 1
+    return
   }
+  // 无更多页可走：收拢越界的 curIdx（草稿丢弃后停在原位置时）
+  if (curIdx.value >= l.length) curIdx.value = l.length - 1
 }
 
 async function pageFirst() {
   if (!list.value.length) return
+  const leave = await confirmLeaveDraft()
+  if (leave === 'abort' || leave === 'saved') return
   if (query.pageNo > 1) {
     query.pageNo = 1
     await load()
@@ -289,6 +372,8 @@ async function pageFirst() {
 
 async function pageLast() {
   if (!list.value.length) return
+  const leave = await confirmLeaveDraft()
+  if (leave === 'abort' || leave === 'saved') return
   const lastPage = Math.max(1, Math.ceil(total.value / query.pageSize))
   if (query.pageNo < lastPage) {
     query.pageNo = lastPage
@@ -316,9 +401,12 @@ const mainRows = computed(() => {
   while (rows.length < 5) rows.push({ _placeholder: true })
   return rows
 })
-function onMainRowClick(row) {
+async function onMainRowClick(row) {
   const i = list.value.indexOf(row)
-  if (i >= 0) curIdx.value = i
+  if (i < 0 || i === curIdx.value) return
+  const leave = await confirmLeaveDraft()
+  if (leave === 'abort' || leave === 'saved') return
+  if (i < list.value.length) curIdx.value = i
 }
 function mainRowCls({ row }) {
   if (row._placeholder) return 'ph-row'
@@ -450,7 +538,8 @@ function blockData(b) {
 
 function blockRows(b) {
   const out = blockData(b).map((r) => r)
-  while (out.length < MIN_ROWS) out.push({ _placeholder: true })
+  const missing = MIN_ROWS - out.length
+  for (let i = 0; i < missing; i++) out.push({ _placeholder: true, _placeholderKey: `${activeTab(b).key}-${out.length + i}` })
   return out
 }
 
@@ -463,7 +552,7 @@ function blockCols(b) {
   const t = activeTab(b)
   return (t.cols || []).map((c) => {
     const f = fieldDefOf(c)
-    return { prop: c, label: c, width: colW(f), align: f.dataType === '小数' || f.dataType === '整数' ? 'right' : 'left' }
+    return { prop: c, label: c, width: colW(f), align: f.dataType === '小数' || f.dataType === '整数' ? 'right' : 'left', f }
   })
 }
 
@@ -653,6 +742,218 @@ function fieldDefOf(col) {
   return { dataName: col, dataType: '文本', options: [] }
 }
 
+// ---------- 就地编辑：字段类型判断 / 参照 / 明细重算（移植 PanelxForm） ----------
+function isText(r) {
+  return !r.dataType || r.dataType === '文本' || r.dataType === 'STRING'
+}
+function isNumber(r) {
+  return ['小数', '整数', 'Decimal', 'Long', 'Integer', 'Double'].includes(r.dataType)
+}
+function isDate(r) {
+  return ['日期', '时间', 'DATE', 'DateTime', 'Date'].includes(r.dataType)
+}
+function isBool(r) {
+  return ['是否', 'Boolean', 'BOOL'].includes(r.dataType)
+}
+function isSelect(r) {
+  return r.dataType === '下拉框'
+}
+function isRef(r) {
+  return r.dataType === '参照' && (r.refPanel || r.ref)
+}
+function fieldLocked(r) {
+  return !!(r.autoCode || r.computed)
+}
+function headerFieldDisabled(r) {
+  return !editing.value || fieldLocked(r)
+}
+function fieldLabel(r) {
+  return r.label || r.displayName || r.dataName
+}
+function refText(r, v) {
+  return engine.refTextOf(r, v)
+}
+
+// 明细表达式计算链（对齐 PanelxForm evaluateExpr / applyCalc）
+function evaluateExpr(expr, vars) {
+  const tokens = String(expr).match(/\d+(?:\.\d+)?|[+\-*/()]|[^\s+\-*/()]+/g) || []
+  const output = []
+  const ops = []
+  const prec = { '+': 1, '-': 1, '*': 2, '/': 2 }
+  for (const tk of tokens) {
+    if (/^[\d.]+$/.test(tk)) {
+      output.push(parseFloat(tk))
+    } else if (tk in prec) {
+      while (ops.length && ops[ops.length - 1] !== '(' && prec[ops[ops.length - 1]] >= prec[tk]) output.push(ops.pop())
+      ops.push(tk)
+    } else if (tk === '(') {
+      ops.push(tk)
+    } else if (tk === ')') {
+      while (ops.length && ops[ops.length - 1] !== '(') output.push(ops.pop())
+      if (ops[ops.length - 1] === '(') ops.pop()
+    } else {
+      const v = vars[tk]
+      if (v === undefined) throw new Error('未知变量: ' + tk)
+      output.push(num(v))
+    }
+  }
+  while (ops.length) output.push(ops.pop())
+  const stack = []
+  for (const t of output) {
+    if (typeof t === 'number') stack.push(t)
+    else {
+      const b = stack.pop()
+      const a = stack.pop()
+      if (a === undefined || b === undefined) return 0
+      stack.push(t === '+' ? a + b : t === '-' ? a - b : t === '*' ? a * b : b === 0 ? 0 : a / b)
+    }
+  }
+  return stack[0] ?? 0
+}
+
+function productQty() {
+  const rows = (cur.value.detail && cur.value.detail.products) || []
+  return rows.reduce((s, r) => s + num(r['数量']), 0)
+}
+
+function applyCalc() {
+  const tabs = cfgCache.value?.detail?.tabs || []
+  const detail = cur.value.detail || {}
+  for (const tab of tabs) {
+    const rows = detail[tab.key] || []
+    for (const row of rows) {
+      if (tab.key === 'processes') {
+        row['工序行码'] = `GX${String(num(row['加工顺序']) || rows.indexOf(row) + 1).padStart(3, '0')}`
+      }
+      const vars = { ...row, 产品数量: productQty() }
+      for (const rule of tab.calc || []) {
+        let v
+        try {
+          v = evaluateExpr(rule.formula, vars)
+        } catch (e) {
+          v = 0
+        }
+        if (rule.round != null) v = Math.round(v * 10 ** rule.round) / 10 ** rule.round
+        if (row[rule.target] !== v) row[rule.target] = v
+      }
+    }
+  }
+}
+
+// 新增明细行（按配置 tab.fields 填默认值；数组不存在则初始化）
+function addDetailRow(b) {
+  const key = activeTab(b).key
+  const tabDef = (cfgCache.value?.detail?.tabs || []).find((t) => t.key === key)
+  const detail = cur.value.detail || (cur.value.detail = {})
+  const rows = detail[key] || (detail[key] = [])
+  const row = {}
+  for (const dr of tabDef?.fields || []) {
+    if (dr.dataType === '小数' || dr.dataType === '整数') row[dr.dataName] = dr.defaultValue ?? 0
+    else if (dr.dataType === '是否') row[dr.dataName] = dr.defaultValue ?? false
+    else row[dr.dataName] = dr.defaultValue ?? ''
+  }
+  if (tabDef?.key === 'materials' && selectedProduct.value) row['子件BOM'] = selectedProduct.value
+  rows.push(row)
+  return row
+}
+
+// 占位行来自 blockRows() 的临时数组；只调用 addDetailRow 不会让该 DOM 行立刻切换为编辑态。
+// 把新行内容写回当前占位对象，让整行原地变为真实明细行，同时仍保存到 cur.detail。
+function materializeDetailRow(b) {
+  addDetailRow(b)
+}
+
+function removeDetailRow(b, row) {
+  const key = activeTab(b).key
+  const arr = cur.value.detail && Array.isArray(cur.value.detail[key]) ? cur.value.detail[key] : []
+  const i = arr.indexOf(row)
+  if (i >= 0) arr.splice(i, 1)
+}
+
+// ---------- 参照字段弹窗（开发约束十一-1：能对应基础档案的字段弹窗拉取勾选导入） ----------
+function openRefPick(f) {
+  if (!editing.value || fieldLocked(f)) return
+  refPick.value = { field: f, kind: 'header', code: f.dataName, mode: 'header' }
+  refVisible.value = true
+}
+
+function openDetailRef(dr, row, b) {
+  if (!editing.value || dr.computed) return
+  refPick.value = {
+    field: dr,
+    kind: 'detail',
+    row,
+    block: b,
+    tabDef: (cfgCache.value?.detail?.tabs || []).find((t) => t.key === activeTab(b).key),
+    mode: 'detail',
+  }
+  refVisible.value = true
+}
+
+function onRefConfirm(rows) {
+  const p = refPick.value
+  if (!p || !rows.length) return
+  const r = p.field
+  const rp = r.ref && typeof r.ref === 'object' ? r.ref : r
+  const refField = rp.field || rp.refField
+  const multi = !!(rp.multi || rp.refMulti)
+  const vals = rows.map((x) => x[refField])
+  if (p.kind === 'header') {
+    cur.value[p.code] = multi ? vals.join('、') : vals[0]
+    const first = rows[0] || {}
+    for (const m of rp.map || rp.refMap || []) {
+      if (!m || first[m.from] === undefined) continue
+      const to = m.to || m.from
+      if (to !== p.code) cur.value[to] = first[m.from]
+    }
+  } else {
+    const row = p.row
+    const maps = rp.map || rp.refMap || []
+    const applyMap = (target, srcRow) => {
+      for (const m of maps) {
+        if (!m || srcRow[m.from] === undefined) continue
+        const to = m.to || m.from
+        if (to !== r.dataName) target[to] = srcRow[m.from]
+      }
+    }
+    const rillRow = (target, srcRow) => {
+      target[r.dataName] = srcRow[refField]
+      applyMap(target, srcRow)
+    }
+    rillRow(row, rows[0] || {})
+    if (rows.length > 1 && p.block) {
+      for (let i = 1; i < rows.length; i++) {
+        const nr = addDetailRow(p.block)
+        rillRow(nr, rows[i])
+      }
+    }
+  }
+  refVisible.value = false
+  applyCalc()
+  ElMessage.success(`已导入 ${rows.length} 行${engine.refPanelName(r)}数据`)
+}
+
+function emptyValue(v) {
+  return v === undefined || v === null || String(v).trim() === ''
+}
+
+// 保存前校验：必填表头、必填明细页签，以及每行配置为必填的单元格。
+function validate() {
+  for (const f of headFields.value) {
+    if (f.isRequired && emptyValue(cur.value[f.dataName])) return `${f.dataName}不能为空`
+  }
+  for (const tab of cfgCache.value?.detail?.tabs || []) {
+    const rows = cur.value.detail?.[tab.key] || []
+    if (tab.isRequired && !rows.length) return `请至少添加一行${tab.label}`
+    for (let i = 0; i < rows.length; i++) {
+      for (const f of tab.fields || []) {
+        if (f.isRequired && emptyValue(rows[i][f.dataName])) return `${tab.label}第 ${i + 1} 行${f.dataName}不能为空`
+      }
+    }
+  }
+  return ''
+}
+
 function qType(qr) {
   const t = fieldDefOf(qr.dataName).dataType || '文本'
   if (t === '下拉框' || t === '参照') return 'select'
@@ -726,6 +1027,111 @@ function openForm(row) {
   tabs.open({ path: `/panelx/form/${panelCode.value}`, title, query: q })
 }
 
+// 就地编辑：双击当前单据时，草稿/新页就地编辑（不跳表单）；其余仍打开表单页
+function onRowDblclick(row) {
+  if (editing.value) return
+  openForm(row)
+}
+
+// ---------- 就地新增 / 放弃 / 保存 ----------
+async function startNew() {
+  if (!inlineEditCapable.value) {
+    newVisible.value = true
+    return
+  }
+  if (hasDraft.value) {
+    const r = await confirmLeaveDraft()
+    if (r === 'abort') { curIdx.value = draftIdx.value; return }
+    // 'saved' / 'discarded'：草稿已解决，继续新建一页
+  }
+  try {
+    const payload = await engine.getNewFormPermMatrix({ panelCode: panelCode.value, operationName: operationName.value })
+    const draft = { ...payload.data, detail: {}, _draft: true }
+    for (const t of payload.detail?.tabs || []) draft.detail[t.key] = []
+    list.value.push(draft)
+    draftIdx.value = list.value.length - 1
+    curIdx.value = draftIdx.value
+  } catch (e) {
+    ElMessage.error(engine.errMsg(e) || '新增失败')
+  }
+}
+
+// 移除未保存新页（不弹窗）。keepIdx=true 时保持 curIdx 不动（调用方随后自行导航/新建）
+function removeDraft(keepIdx = false) {
+  if (!hasDraft.value) return
+  list.value.splice(draftIdx.value, 1)
+  draftIdx.value = -1
+  if (!keepIdx && curIdx.value >= list.value.length) curIdx.value = Math.max(0, list.value.length - 1)
+}
+
+// 丢弃草稿（带确认，供搜索/刷新/切面板等使用）；返回是否已丢弃
+async function discardDraft() {
+  if (!hasDraft.value) return true
+  try {
+    await ElMessageBox.confirm('存在未保存的新单据，确定丢弃？', '提示', { type: 'warning' })
+  } catch (e) {
+    return false
+  }
+  removeDraft()
+  return true
+}
+
+// 保存当前未保存新页 / 草稿单据（校验 + 组装 + callButton；成功后重载并定位）
+async function saveDraft(buttonName = '保存') {
+  if (hasDraft.value) curIdx.value = draftIdx.value // 确保 cur 指向未保存新页
+  const msg = validate()
+  if (msg) { ElMessage.warning(msg); return false }
+  const head = { ...cur.value }
+  delete head.detail
+  delete head._draft
+  delete head['编号']
+  delete head['单据状态']
+  delete head['创建时间']
+  delete head['更新时间']
+  delete head['发起人编号']
+  const formData = { ...head, detail: { ...(cur.value.detail || {}) } }
+  if (cur.value['编号']) formData['编号'] = cur.value['编号']
+  try {
+    const res = await engine.callButton({ panelCode: panelCode.value, buttonName, formData, buttonParam: {} })
+    const savedNo = res?.['编号'] || cur.value['编号']
+    draftIdx.value = -1
+    await load()
+    if (savedNo) {
+      const i = list.value.findIndex((r) => r['编号'] === savedNo)
+      curIdx.value = i >= 0 ? i : 0
+    }
+    ElMessage.success(`「${buttonName}」成功`)
+    return true
+  } catch (e) {
+    ElMessage.error(engine.errMsg(e) || '保存失败')
+    return false
+  }
+}
+
+// 离开未保存新页前的确认：返回 'saved' | 'discarded' | 'abort' | 'none'
+async function confirmLeaveDraft() {
+  if (!hasDraft.value) return 'none'
+  let choice
+  try {
+    await ElMessageBox({
+      title: '提示',
+      message: '当前新单据有未保存的数据，是否保存？',
+      type: 'warning',
+      confirmButtonText: '保存',
+      cancelButtonText: '不保存',
+      showCancelButton: true,
+      distinguishCancelAndClose: true,
+      closeOnClickModal: false,
+    })
+    choice = 'save'
+  } catch (e) {
+    choice = e === 'cancel' ? 'discard' : 'abort'
+  }
+  if (choice === 'save') return (await saveDraft()) ? 'saved' : 'abort'
+  if (choice === 'discard') { removeDraft(true); return 'discarded' }
+  return 'abort'
+}
+
 async function onButton(action) {
   if (APPROVE_ACTIONS.includes(action) && !user.isAdmin && !user.approvePanels.includes(panelCode.value)) {
     return ElMessage.warning('当前角色无审批权限')
@@ -779,7 +1185,7 @@ async function onButton(action) {
       catPickVisible.value = true
       return
     }
-    newVisible.value = true
+    await startNew()
     return
   }
   if (action === '修改') {
@@ -787,7 +1193,18 @@ async function onButton(action) {
     openForm(current.value)
     return
   }
+  // 就地保存：编辑态（未保存新页 / 草稿单据）组装表头 + 明细落库
+  if ((action === '保存' || action === '保存为草稿') && editing.value) {
+    if (!current.value) return ElMessage.warning('请先选择一行数据')
+    await saveDraft(action)
+    return
+  }
+  if (action === '放弃' || action === '取消') {
+    if (hasDraft.value) await discardDraft()
+    return
+  }
   if (action === '刷新') {
+    if (!(await discardDraft())) return
     load()
     return
   }
@@ -973,7 +1390,8 @@ async function load() {
   }
 }
 
-function search() {
+async function search() {
+  if (!(await discardDraft())) return
   query.pageNo = 1
   curIdx.value = 0
   load()
@@ -1044,6 +1462,7 @@ async function onImported(rows) {
 
 // 存货（INV）面板：单击行 → 打开 BOM 管理弹窗（勾选存货添加子件、可多级下钻）
 function onRowClick(row, b) {
+  if (editing.value) return
   // 材料明细：点材料行 → 该材料有下级 BOM 则弹窗展示其子件
   if (b && b.id === 'B' && activeTab(b).key === 'materials' && row && row['材料编码'] && hasSubBom(row['材料编码'])) {
     openSubBom(row)
@@ -1064,6 +1483,7 @@ function onRowClick(row, b) {
 // 捕获阶段监听：点产成品明细行任意单元格（含固定列/控件）都触发联动
 async function onTableClick(b, e) {
   if (!b || !e || !e.target || !e.target.closest) return
+  if (editing.value) return
   const t = activeTab(b)
   // 材料明细：点材料行 → 该材料有下级 BOM 则弹窗展示其子件
   if (b.id === 'B' && t.key === 'materials') {
@@ -1165,7 +1585,8 @@ async function gotoCategory() {
 
 watch(
   () => [panelCode.value, operationName.value],
-  () => {
+  async () => {
+    if (!(await discardDraft())) return
     cfgCache.value = null
     qOptCache.clear()
     queryFields.value = []
@@ -1175,7 +1596,7 @@ watch(
   }
 )
 
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener('click', closeCtx)
   document.addEventListener('contextmenu', closeCtx)
   loadSubBomMap() // 材料下级 BOM 映射（红 * 标记 + 点击行弹窗）
@@ -1183,8 +1604,9 @@ onMounted(() => {
     router.replace('/panelx/list/MANU_ORDER')
     return
   }
-  if (route.query.new) newVisible.value = true
-  load()
+  // 先加载列表与配置，再就地新增（startNew 依赖 cfgCache 判断是否可编辑、并把草稿追加到末尾）
+  await load()
+  if (route.query.new) startNew()
 })
 
 onUnmounted(() => {
@@ -1195,8 +1617,17 @@ onUnmounted(() => {
 watch(
   () => route.query.new,
   (v) => {
-    if (v) newVisible.value = true
+    if (v) startNew()
   }
+)
+
+// 就地编辑：明细变化时重算（含税单价/金额/含税金额 等 calc 规则）
+watch(
+  () => cur.value?.detail,
+  () => {
+    if (editing.value) applyCalc()
+  },
+  { deep: true }
 )
 </script>
 
@@ -1571,4 +2002,17 @@ watch(
 .main-grid .dt-head .dt-tab.on { cursor: default; }
 :deep(.main-grid .el-table .row-cur td) { background: #eaf4fe !important; }
 :deep(.main-grid .el-table .ph-row td) { height: 31px; }
+
+/* ═══════ 就地编辑：参照控件 / 单元格 / 新增数据按钮 ═══════ */
+.field .ref-ctl { width: 160px; }
+.ref-ctl { display: flex; align-items: center; gap: 2px; }
+.ref-ctl :deep(.el-input) { flex: 1; width: auto; }
+.ref-btn { flex-shrink: 0; }
+.cell-add { display: inline-block; width: 100%; min-height: 24px; color: #b3b9c4; cursor: pointer; user-select: none; text-align: center; }
+.cell-add:hover { color: #0d5bd3; background: #f0f6ff; }
+.add-data-btn { margin-left: 6px; }
+.del { cursor: pointer; color: #dc2626; }
+.img-ph { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; font-size: 11px; color: #999; border: 1px dashed #d0d7e3; border-radius: 3px; }
+.field :deep(.el-input-number) { width: 160px; }
+.field :deep(.el-switch) { margin-top: 5px; }
 </style>

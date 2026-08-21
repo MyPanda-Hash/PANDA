@@ -153,15 +153,28 @@
                 :key="dr.dataName"
                 :label="dr.dataName"
                 min-width="110"
-                :class-name="dr.computed ? 'computed-col' : ''"
+                :class-name="[dr.computed ? 'computed-col' : '', dr.dataType === '参照' ? 'detail-ref-col' : ''].filter(Boolean).join(' ')"
               >
                 <template #default="{ row }">
                   <template v-if="dr.dataType === '参照'">
                     <span v-if="dr.dataName === '材料编码' && tab.key === 'materials'" class="mat-cell">
-                      <span class="ref-cell" :class="{ disabled: !editable || dr.computed }" @click="openDetailRef(dr, row, tab)">{{ drRefText(dr, row) }}</span>
+                      <button
+                        type="button"
+                        class="detail-ref-cell"
+                        :disabled="!editable || dr.computed"
+                        :title="drRefText(dr, row) || undefined"
+                        @click.stop="openDetailRef(dr, row, tab)"
+                      >{{ drRefText(dr, row) || `选择${engine.refPanelName(dr)}` }}</button>
                       <span v-if="hasSubBom(row[dr.dataName])" class="mat-star" title="该材料有下级子件 BOM，点击行查看">*</span>
                     </span>
-                    <span v-else class="ref-cell" :class="{ disabled: !editable || dr.computed }" @click="openDetailRef(dr, row, tab)">{{ drRefText(dr, row) }}</span>
+                    <button
+                      v-else
+                      type="button"
+                      class="detail-ref-cell"
+                      :disabled="!editable || dr.computed"
+                      :title="drRefText(dr, row) || undefined"
+                      @click.stop="openDetailRef(dr, row, tab)"
+                    >{{ drRefText(dr, row) || `选择${engine.refPanelName(dr)}` }}</button>
                   </template>
                   <el-select v-else-if="dr.dataType === '下拉框'" v-model="row[dr.dataName]" :disabled="!editable || dr.computed" filterable allow-create style="width: 100%" @change="onDetailChange(dr, row, tab)">
                     <el-option v-for="o in dr.options || []" :key="o" :label="o.label ?? o" :value="o.value ?? o" />
@@ -460,6 +473,7 @@ function visibleFields(tab) {
 const visibleMeta = computed(() => (meta.value || []).filter((r) => !r.hidden))
 
 function fieldLocked(r) {
+  if (r.computed) return true
   // 锭号：自动编码；仅勾选「是否手工修改单据编码」时草稿可改
   if (r.autoCode) return !(status.value === '草稿' && form['是否手工修改单据编码'])
   // 存货类别：创建后固定，不允许修改
@@ -515,9 +529,7 @@ function isRef(r) {
 }
 
 function refText(r, v) {
-  if (v === undefined || v === null || v === '') return ''
-  const t = engine.refLabelOf(r, v)
-  return t === null || t === undefined ? String(v) : t
+  return engine.refTextOf(r, v)
 }
 
 function drRefText(dr, row) {
@@ -889,14 +901,22 @@ function summarize({ columns }, tab) {
 
 // ---------- 校验 / 加载 / 按钮 ----------
 
+function emptyValue(v) {
+  return v === undefined || v === null || String(v).trim() === ''
+}
+
 function validate() {
   for (const r of visibleMeta.value) {
-    if (r.isNotNull && (form[r.code] === undefined || form[r.code] === null || String(form[r.code]).trim() === '')) {
-      return `${r.name}不能为空`
-    }
+    if (r.isNotNull && emptyValue(form[r.code])) return `${r.name}不能为空`
   }
   for (const tab of tabs.value) {
-    if (tab.isRequired && !(detailData[tab.key] || []).length) return `请至少添加一行${tab.label}`
+    const rows = detailData[tab.key] || []
+    if (tab.isRequired && !rows.length) return `请至少添加一行${tab.label}`
+    for (let i = 0; i < rows.length; i++) {
+      for (const f of tab.fields || []) {
+        if (f.isRequired && emptyValue(rows[i][f.dataName])) return `${tab.label}第 ${i + 1} 行${f.dataName}不能为空`
+      }
+    }
   }
   return ''
 }
@@ -1374,17 +1394,8 @@ watch(() => [panelCode.value, code.value], load)
 .ref-btn {
   flex-shrink: 0;
 }
-.ref-cell {
-  display: inline-flex;
-  align-items: center;
-  min-height: 26px;
-  padding: 0 6px;
-  color: var(--t-primary);
-  cursor: pointer;
-}
-.ref-cell.disabled {
-  color: inherit;
-  cursor: default;
+.mat-cell .detail-ref-cell {
+  padding-right: 22px;
 }
 .sel-tip {
   font-size: 12px;

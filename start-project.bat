@@ -1,58 +1,19 @@
 @echo off
-chcp 65001 >nul
-setlocal
 cd /d "%~dp0"
-set "ROOT=%~dp0"
+set BIN=F:\INCER\light-mes
+set RUN=%BIN%\run
+if not exist "%RUN%" mkdir "%RUN%"
 
-call "%ROOT%tools\detect-jdk.bat"
-if errorlevel 1 goto :fail
+echo [1/4] ¼ì²é MySQL (3308)...
+netstat -ano | findstr ":3308" | findstr "LISTENING" >nul 2>&1 && (echo   MySQL ÔËĞĞÖĞ) || (echo   MySQL Î´ÔËĞĞ - ÇëÏÈÔÚ phpstudy Ãæ°åµã"Æô¶¯" MySQL)
 
-where npm >nul 2>&1
-if errorlevel 1 (
-  echo [é”™è¯¯] æœªæ‰¾åˆ° npmï¼Œè¯·ç¡®è®¤ Node.js å·²åŠ å…¥ PATHã€‚
-  goto :fail
-)
+echo [2/4] Æô¶¯ºó¶Ë (8080)...
+netstat -ano | findstr ":8080" | findstr "LISTENING" >nul 2>&1 && (echo   ºó¶ËÒÑÔÚÔËĞĞ) || start "light-mes-backend" /min "C:\Program Files\Java\jdk-26.0.2\bin\java.exe" -jar "%BIN%\backend\target\light-mes-backend-0.1.0.jar"
 
-if not exist "%ROOT%backend\target\light-mes-backend-0.1.0.jar" (
-  echo [é”™è¯¯] æœªæ‰¾åˆ°åç«¯ jarï¼Œè¯·å…ˆè¿è¡Œ backend\build.batã€‚
-  goto :fail
-)
-if not exist "%ROOT%frontend\dist\index.html" (
-  echo [é”™è¯¯] æœªæ‰¾åˆ°å‰ç«¯æ„å»ºäº§ç‰©ï¼Œè¯·å…ˆåœ¨ frontend ç›®å½•è¿è¡Œ npm run buildã€‚
-  goto :fail
-)
+echo [3/4] Æô¶¯Ç°¶ËÔ¤ÀÀ (4173)...
+netstat -ano | findstr ":4173" | findstr "LISTENING" >nul 2>&1 && (echo   Ç°¶ËÒÑÔÚÔËĞĞ) || start "light-mes-frontend" /min cmd /c "cd /d %BIN%\frontend && npm run preview"
 
-netstat -ano | findstr ":3306" | findstr "LISTENING" >nul 2>&1
-if errorlevel 1 (
-  echo [é”™è¯¯] MySQL æœªåœ¨ 3306 ç«¯å£è¿è¡Œï¼Œè¯·å…ˆå¯åŠ¨ MySQLã€‚
-  goto :fail
-)
-echo [1/3] MySQL å·²è¿è¡Œï¼ˆ3306ï¼‰
-
-netstat -ano | findstr ":8080" | findstr "LISTENING" >nul 2>&1
-if errorlevel 1 (
-  echo [2/3] å¯åŠ¨åç«¯ï¼ˆ8080ï¼‰...
-  start "light-mes-backend" /min "%JAVA_HOME%\bin\java.exe" -jar "%ROOT%backend\target\light-mes-backend-0.1.0.jar"
-) else (
-  echo [2/3] åç«¯å·²è¿è¡Œï¼ˆ8080ï¼‰
-)
-
-netstat -ano | findstr ":4173" | findstr "LISTENING" >nul 2>&1
-if errorlevel 1 (
-  echo [3/3] å¯åŠ¨å‰ç«¯é¢„è§ˆï¼ˆ4173ï¼‰...
-  start "light-mes-frontend" /min /D "%ROOT%frontend" cmd /c npm run preview
-) else (
-  echo [3/3] å‰ç«¯å·²è¿è¡Œï¼ˆ4173ï¼‰
-)
-
-timeout /t 5 /nobreak >nul
+echo [4/4] µÈ´ı·şÎñ¾ÍĞ÷...
+timeout /t 8 /nobreak >nul
 start "" http://127.0.0.1:4173/
-echo è®¿é—®åœ°å€: http://127.0.0.1:4173/  è´¦å·: admin / 123456
-goto :end
-
-:fail
-echo.
-echo å¯åŠ¨ä¸­æ­¢ã€‚
-
-:end
-pause
+echo ´ò¿ªä¯ÀÀÆ÷: http://127.0.0.1:4173/   ÕËºÅ admin / 123456

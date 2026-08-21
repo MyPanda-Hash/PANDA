@@ -13,25 +13,26 @@
       <div class="fields udl-fields" :style="{ gridTemplateColumns: 'repeat(' + fieldCols + ', 1fr)' }">
         <div v-for="r in visibleMeta" :key="r.code" class="field">
           <label :title="r.name">{{ r.name }}<span v-if="r.isNotNull" class="req">*</span></label>
-          <el-input v-if="isText(r)" v-model="form[r.code]" :placeholder="r.name" />
-          <el-input-number v-else-if="isNumber(r)" v-model="form[r.code]" :controls="false" style="width: 100%" />
+          <el-input v-if="isText(r)" v-model="form[r.code]" :disabled="fieldLocked(r)" :placeholder="r.name" />
+          <el-input-number v-else-if="isNumber(r)" v-model="form[r.code]" :disabled="fieldLocked(r)" :controls="false" style="width: 100%" />
           <!-- 参照字段：点击弹窗拉取基础档案面板数据，勾选导入（开发约束十一-1） -->
           <div v-else-if="isRef(r)" class="ref-ctl">
-            <el-input :model-value="refText(r, form[r.code])" readonly placeholder="点击选择" @click="openRefPick(r)" />
-            <el-button size="small" :icon="Search" class="ref-btn" @click="openRefPick(r)" />
+            <el-input :model-value="refText(r, form[r.code])" readonly :disabled="fieldLocked(r)" placeholder="点击选择" @click="openRefPick(r)" />
+            <el-button v-if="!fieldLocked(r)" size="small" :icon="Search" class="ref-btn" @click="openRefPick(r)" />
           </div>
-          <el-select v-else-if="isSelect(r)" v-model="form[r.code]" filterable clearable allow-create style="width: 100%">
+          <el-select v-else-if="isSelect(r)" v-model="form[r.code]" :disabled="fieldLocked(r)" filterable clearable allow-create style="width: 100%">
             <el-option v-for="o in r.options || []" :key="o" :label="o.label ?? o" :value="o.value ?? o" />
           </el-select>
           <el-date-picker
             v-else-if="isDate(r)"
             v-model="form[r.code]"
+            :disabled="fieldLocked(r)"
             type="date"
             value-format="YYYY-MM-DD"
             style="width: 100%"
           />
-          <el-switch v-else-if="isBool(r)" v-model="form[r.code]" />
-          <el-input v-else v-model="form[r.code]" :placeholder="r.name" />
+          <el-switch v-else-if="isBool(r)" v-model="form[r.code]" :disabled="fieldLocked(r)" />
+          <el-input v-else v-model="form[r.code]" :disabled="fieldLocked(r)" :placeholder="r.name" />
         </div>
       </div>
 
@@ -54,38 +55,40 @@
                 :key="dr.dataName"
                 :label="dr.dataName"
                 min-width="110"
-                :class-name="dr.computed ? 'computed-col' : ''"
+                :class-name="[dr.computed ? 'computed-col' : '', dr.dataType === '参照' ? 'detail-ref-col' : ''].filter(Boolean).join(' ')"
               >
                 <template #default="{ row }">
-                  <el-button
+                  <button
                     v-if="dr.dataType === '参照'"
-                    link
-                    type="primary"
-                    size="small"
-                    class="ref-cell"
-                    @click="openDetailRef(dr, row, tab)"
-                  >{{ drRefText(dr, row) || '选择' + (dr.displayField || dr.dataName) }}</el-button>
-                  <el-select v-else-if="dr.dataType === '下拉框'" v-model="row[dr.dataName]" filterable allow-create style="width: 100%">
+                    type="button"
+                    class="detail-ref-cell"
+                    :disabled="dr.computed"
+                    :title="drRefText(dr, row) || undefined"
+                    @click.stop="openDetailRef(dr, row, tab)"
+                  >{{ drRefText(dr, row) || `选择${engine.refPanelName(dr)}` }}</button>
+                  <el-select v-else-if="dr.dataType === '下拉框'" v-model="row[dr.dataName]" :disabled="dr.computed" filterable allow-create style="width: 100%">
                     <el-option v-for="o in dr.options || []" :key="o" :label="o.label ?? o" :value="o.value ?? o" />
                   </el-select>
-                  <el-switch v-else-if="dr.dataType === '是否'" v-model="row[dr.dataName]" />
+                  <el-switch v-else-if="dr.dataType === '是否'" v-model="row[dr.dataName]" :disabled="dr.computed" />
                   <el-image v-else-if="dr.dataType === '图片'" :src="row[dr.dataName] || ''" fit="contain" style="width: 34px; height: 34px">
                     <template #error><span class="img-ph">图</span></template>
                   </el-image>
                   <el-input-number
                     v-else-if="dr.dataType === '小数' || dr.dataType === '整数'"
                     v-model="row[dr.dataName]"
+                    :disabled="dr.computed"
                     :controls="false"
                     style="width: 100%"
                   />
                   <el-date-picker
                     v-else-if="dr.dataType === '日期'"
                     v-model="row[dr.dataName]"
+                    :disabled="dr.computed"
                     type="date"
                     value-format="YYYY-MM-DD"
                     style="width: 100%"
                   />
-                  <el-input v-else v-model="row[dr.dataName]" />
+                  <el-input v-else v-model="row[dr.dataName]" :disabled="dr.computed" />
                 </template>
               </el-table-column>
               <el-table-column label="操作" width="50" align="center">
@@ -106,7 +109,7 @@
       <el-button type="primary" :loading="saving" @click="onSave">保存</el-button>
     </template>
   </el-dialog>
-  <RefPickDialog v-model="refVisible" :field="refPick?.field" @confirm="onRefConfirm" />
+  <RefPickDialog v-model="refVisible" :field="refPick?.field" :mode="refPick?.kind || 'header'" @confirm="onRefConfirm" />
 </template>
 
 <script setup>
@@ -155,13 +158,16 @@ function isRef(r) {
   return r.dataType === '参照' && (r.ref || r.refPanel)
 }
 
+function fieldLocked(r) {
+  return !!(r.autoCode || r.computed)
+}
+
 function refText(r, v) {
-  if (v === undefined || v === null || v === '') return ''
-  const t = engine.refLabelOf(r, v)
-  return t === null || t === undefined ? String(v) : t
+  return engine.refTextOf(r, v)
 }
 
 function openRefPick(r) {
+  if (fieldLocked(r)) return
   refPick.value = { field: r, kind: 'header', code: r.code }
   refVisible.value = true
 }
@@ -171,6 +177,7 @@ function drRefText(dr, row) {
 }
 
 function openDetailRef(dr, row, tab) {
+  if (dr.computed) return
   refPick.value = { field: dr, kind: 'detail', row, tab }
   refVisible.value = true
 }
@@ -314,14 +321,22 @@ async function onOpen() {
   }
 }
 
+function emptyValue(v) {
+  return v === undefined || v === null || String(v).trim() === ''
+}
+
 function validate() {
   for (const r of visibleMeta.value) {
-    if (r.isNotNull && (form[r.code] === undefined || form[r.code] === null || String(form[r.code]).trim() === '')) {
-      return `${r.name}不能为空`
-    }
+    if (r.isNotNull && emptyValue(form[r.code])) return `${r.name}不能为空`
   }
   for (const tab of tabs.value) {
-    if (tab.isRequired && !(detailData[tab.key] || []).length) return `请至少添加一行${tab.label}`
+    const rows = detailData[tab.key] || []
+    if (tab.isRequired && !rows.length) return `请至少添加一行${tab.label}`
+    for (let i = 0; i < rows.length; i++) {
+      for (const f of tab.fields || []) {
+        if (f.isRequired && emptyValue(rows[i][f.dataName])) return `${tab.label}第 ${i + 1} 行${f.dataName}不能为空`
+      }
+    }
   }
   return ''
 }
@@ -379,12 +394,6 @@ async function onSave() {
 }
 .tab-toolbar {
   margin-bottom: 6px;
-}
-.ref-cell {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .img-ph {
   display: inline-flex;

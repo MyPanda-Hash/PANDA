@@ -120,3 +120,42 @@ body,
 .udl-fields .el-date-editor.el-input {
   width: 100%;
 }
+
+/* 明细参照：按钮覆盖整格，所有元数据驱动表单共用。 */
+.el-table td.el-table__cell.detail-ref-col,
+.el-table td.el-table__cell.detail-ref-col > .cell {
+  padding: 0;
+}
+
+.detail-ref-cell {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 31px;
+  padding: 4px 12px;
+  border: 0;
+  appearance: none;
+  background: transparent;
+  color: var(--t-primary);
+  font: inherit;
+  line-height: 23px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.detail-ref-cell:not(:disabled):hover {
+  background: var(--t-hover-bg);
+}
+
+.detail-ref-cell:focus-visible {
+  outline: 2px solid var(--t-primary);
+  outline-offset: -2px;
+}
+
+.detail-ref-cell:disabled {
+  color: inherit;
+  cursor: default;
+}

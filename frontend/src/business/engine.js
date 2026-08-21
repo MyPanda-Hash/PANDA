@@ -385,11 +385,11 @@ const SO_CONFIG = {
           gridTabs: [
             {
               label: '明细', rowSource: 'items',
-              columns: ['存货名称.品牌', '存货名称', '存货编码', '规格型号', '数量', '销售单位', '单价', '税率%', '含税单价', '金额', '含税金额', '折扣金额', '预计交货日期', '现存量', '备注'],
+              columns: ['存货名称.品牌', '存货编码', '存货名称', '规格型号', '数量', '销售单位', '单价', '税率%', '含税单价', '金额', '含税金额', '折扣金额', '预计交货日期', '现存量', '备注'],
             },
             {
               label: '汇总', rowSource: 'items', summary: true,
-              columns: ['存货名称.品牌', '存货名称', '存货编码', '规格型号', '数量', '销售单位', '单价', '税率%', '含税单价', '金额', '含税金额', '折扣金额', '预计交货日期', '现存量', '备注'],
+              columns: ['存货名称.品牌', '存货编码', '存货名称', '规格型号', '数量', '销售单位', '单价', '税率%', '含税单价', '金额', '含税金额', '折扣金额', '预计交货日期', '现存量', '备注'],
             },
           ],
           topBarBtn: [{ buttonName: '新增流程' }, { buttonName: '删除' }, { buttonName: '刷新' }],
@@ -400,7 +400,7 @@ const SO_CONFIG = {
       formPages: [
         {
           formName: '销售订单',
-          fieldNames: '单据编号,单据日期,客户,客户编码,结算客户,部门,部门.负责人,业务员,项目,预计交货日期,联系人',
+          fieldNames: '单据编号,单据日期,客户编码,客户,结算客户,部门,部门.负责人,业务员,项目,预计交货日期,联系人',
           bottomOperationBarBtn: [{ buttonName: '保存' }, { buttonName: '删除' }, { buttonName: '审核' }, { buttonName: '弃审' }, { buttonName: '整单中止' }, { buttonName: '放弃' }],
           events: [],
         },
@@ -441,9 +441,9 @@ const SO_CONFIG = {
     fields: [
       { dataName: '单据编号', dataType: '文本', isRequired: true, defaultValue: '', autoCode: true },
       { dataName: '单据日期', dataType: '日期', isRequired: true, defaultValue: today },
-      // 参照字段：弹窗拉取 往来单位 面板数据勾选导入（带出 客户编码/结算客户）
-      { dataName: '客户', dataType: '参照', isRequired: true, defaultValue: '', refPanel: 'PARTNER', refField: '往来单位名称', displayField: '往来单位名称', filter: { 停用: false }, refMap: [{ from: '往来单位编码', to: '客户编码' }, { from: '往来单位名称', to: '结算客户' }], refColumns: ['往来单位编码', '往来单位名称', '结算客户', '分管部门', '分管人员', '停用'] },
-      { dataName: '客户编码', dataType: '下拉框', isRequired: false, defaultValue: '', options: ['KH001', 'KH002', 'KH003', 'KH004', 'KH005'] },
+      // 参照字段：弹窗拉取 往来单位 面板数据勾选导入（编码锚定：按钮在 客户编码，带出 客户/结算客户）
+      { dataName: '客户编码', dataType: '参照', isRequired: true, defaultValue: '', refPanel: 'PARTNER', refField: '往来单位编码', displayField: '往来单位名称', filter: { 停用: false }, refMap: [{ from: '往来单位名称', to: '客户' }, { from: '往来单位名称', to: '结算客户' }], refColumns: ['往来单位编码', '往来单位名称', '结算客户', '分管部门', '分管人员', '停用'] },
+      { dataName: '客户', dataType: '文本', isRequired: false, defaultValue: '', computed: true },
       { dataName: '结算客户', dataType: '下拉框', isRequired: true, defaultValue: '', options: ['华东铝业', '中天精工', '西部材料', '南方重工', '北方机械'] },
       { dataName: '部门', dataType: '下拉框', isRequired: false, defaultValue: '', options: ['销售一部', '销售二部', '国际部'] },
       { dataName: '部门.负责人', dataType: '文本', isRequired: false, defaultValue: '' },
@@ -469,9 +469,9 @@ const SO_CONFIG = {
         ],
         fields: [
           { dataName: '存货名称.品牌', dataType: '文本' },
-          // 参照字段：弹窗拉取 存货 面板数据勾选导入（带出 编码/规格/品牌/单位）
-          { dataName: '存货名称', dataType: '参照', refPanel: 'INV', refField: '存货名称', displayField: '存货名称', refMulti: true, filter: { 停用: false }, refMap: [{ from: '存货编码', to: '存货编码' }, { from: '规格型号', to: '规格型号' }, { from: '品牌', to: '存货名称.品牌' }, { from: '计量单位', to: '销售单位' }, { from: '参考成本', to: '单价' }], refColumns: ['存货编码', '存货名称', '规格型号', '品牌', '计量单位', '参考成本', '停用'] },
-          { dataName: '存货编码', dataType: '下拉框', options: ['CP001', 'CP002', 'CP003', 'CP004', 'CP005'] },
+          // 参照字段：弹窗拉取 存货 面板数据勾选导入（编码锚定：按钮在 存货编码，带出 存货名称/规格/品牌/单位/单价）
+          { dataName: '存货编码', dataType: '参照', isRequired: true, refPanel: 'INV', refField: '存货编码', displayField: '存货名称', refMulti: true, filter: { 停用: false }, refMap: [{ from: '存货名称', to: '存货名称' }, { from: '规格型号', to: '规格型号' }, { from: '品牌', to: '存货名称.品牌' }, { from: '计量单位', to: '销售单位' }, { from: '参考成本', to: '单价' }], refColumns: ['存货编码', '存货名称', '规格型号', '品牌', '计量单位', '参考成本', '停用'] },
+          { dataName: '存货名称', dataType: '文本', computed: true },
           { dataName: '规格型号', dataType: '文本' },
           { dataName: '数量', dataType: '小数', defaultValue: 0 },
           { dataName: '销售单位', dataType: '下拉框', options: ['件', 'kg', '套'], defaultValue: '件' },
@@ -10315,6 +10315,8 @@ function buildMeta(cfg = MOCK_CONFIG) {
     options: f.dataType === '参照' ? (resolveRefOptions(f) || []).map((o) => o.value) : f.options,
     displayOptions: f.dataType === '参照' ? resolveRefOptions(f) : undefined,
     autoCode: !!f.autoCode,
+    computed: !!f.computed,
+    hidden: !!f.hidden,
     // 参照字段信息（开发约束十一-1：能对应基础档案的字段必须引用，弹窗拉取面板数据勾选导入）
     ref:
       f.dataType === '参照'
@@ -10454,6 +10456,15 @@ export function refLabelOf(field, value) {
   const opts = resolveRefOptions(r) || []
   const found = opts.find((o) => String(o.value) === String(value))
   return found ? found.label : String(value)
+}
+
+// 参照控件统一显示规则：编码锚点显示所存编码，名称锚点显示基础档案名称。
+export function refTextOf(field, value) {
+  if (value === undefined || value === null || value === '') return ''
+  const r = normRef(field)
+  if (r.refField && r.displayField && r.refField !== r.displayField) return String(value)
+  const label = refLabelOf(field, value)
+  return label === null || label === undefined ? String(value) : label
 }
 
 // 面板自动单号（MO：锭号=MO-yyyy-MM-####；SO：单据编号=SO-yyyy-MM-####；库存：RK/CP/IC/IO/MD/ID-yyyy-MM-####）
