@@ -26,3 +26,7 @@ Desktop.ini
 .DS_Store
 # === 临时还原文件 ===
 .vision-restore/
+
+# Local dependency caches
+.m2-repository/
+frontend/.npm-cache/
