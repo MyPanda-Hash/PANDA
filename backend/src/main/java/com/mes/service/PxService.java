@@ -59,6 +59,8 @@ public class PxService {
 
     @SuppressWarnings("unchecked")
     private void applyRuntimeConfigUpgrades(String panelCode, Map<String, Object> config) {
+        normalizeFieldDefinitions(config);
+        ensureSelectAction(config);
         if ("MANU_ORDER".equals(panelCode)) {
             upgradeDetailReference(config, "products", "产品编码",
                     List.of("存货编码", "存货名称", "规格型号", "所属类别", "品牌", "计量单位", "属性", "停用"),
@@ -76,6 +78,78 @@ public class PxService {
                             Map.of("from", "计量单位", "to", "销售单位"),
                             Map.of("from", "参考成本", "to", "单价")));
         }
+    }
+
+    /** 旧配置存在 selectConfig 但遗漏工具栏动作时，补齐可用的选单入口。 */
+    @SuppressWarnings("unchecked")
+    private void ensureSelectAction(Map<String, Object> config) {
+        Object selectObject = config.get("selectConfig");
+        if (!(selectObject instanceof Map<?, ?> selectConfig) || selectConfig.isEmpty()) return;
+        Object metadataObject = config.get("metadata");
+        if (!(metadataObject instanceof Map<?, ?>)) return;
+        Map<String, Object> metadata = (Map<String, Object>) metadataObject;
+
+        List<Map<String, Object>> groups = new ArrayList<>();
+        Object groupsObject = metadata.get("buttonGroups");
+        if (groupsObject instanceof List<?> values) {
+            for (Object value : values) {
+                if (value instanceof Map<?, ?>) groups.add((Map<String, Object>) value);
+            }
+        }
+        boolean hasSelectAction = groups.stream()
+                .flatMap(group -> {
+                    Object actions = group.get("actions");
+                    return actions instanceof List<?> list ? list.stream() : java.util.stream.Stream.empty();
+                })
+                .anyMatch(action -> String.valueOf(action).startsWith("选"));
+        if (!hasSelectAction) {
+            Object configuredTitle = selectConfig.get("title");
+            String candidate = configuredTitle == null ? "选单" : String.valueOf(configuredTitle);
+            final String action = candidate.isBlank() || !candidate.startsWith("选") ? "选单" : candidate;
+            Map<String, Object> group = new HashMap<>();
+            group.put("name", "选单");
+            group.put("actions", List.of(action));
+            int insertAt = groups.isEmpty() ? 0 : Math.min(1, groups.size());
+            groups.add(insertAt, group);
+            metadata.put("buttonGroups", groups);
+
+            List<Map<String, Object>> buttons = new ArrayList<>();
+            Object buttonsObject = metadata.get("panelButtons");
+            if (buttonsObject instanceof List<?> values) {
+                for (Object value : values) {
+                    if (value instanceof Map<?, ?>) buttons.add((Map<String, Object>) value);
+                }
+            }
+            boolean exists = buttons.stream().anyMatch(button -> action.equals(String.valueOf(button.get("buttonName"))));
+            if (!exists) buttons.add(Map.of("buttonName", action));
+            metadata.put("panelButtons", buttons);
+        }
+    }
+
+    /**
+     * 展平旧配置中误写的嵌套字段数组。库存面板种子曾生成
+     * fields: [公共字段, [扩展字段]]，导致创建表单元数据时发生 ArrayList -> Map 转换异常。
+     */
+    @SuppressWarnings("unchecked")
+    private void normalizeFieldDefinitions(Map<String, Object> config) {
+        Object schemaObject = config.get("dataSchema");
+        if (!(schemaObject instanceof Map<?, ?>)) return;
+        Map<String, Object> schema = (Map<String, Object>) schemaObject;
+        schema.put("fields", flattenFieldDefinitions(schema.get("fields")));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> flattenFieldDefinitions(Object value) {
+        List<Map<String, Object>> fields = new ArrayList<>();
+        if (!(value instanceof List<?> values)) return fields;
+        for (Object item : values) {
+            if (item instanceof Map<?, ?>) {
+                fields.add((Map<String, Object>) item);
+            } else if (item instanceof List<?>) {
+                fields.addAll(flattenFieldDefinitions(item));
+            }
+        }
+        return fields;
     }
 
     @SuppressWarnings("unchecked")
@@ -142,11 +216,20 @@ public class PxService {
     private Map<String, Object> fieldsOf(String panelCode) {
         Map<String, Object> cfg = loadConfig(panelCode);
         Map<String, Object> schema = (Map<String, Object>) cfg.get("dataSchema");
-        List<Map<String, Object>> fields = (List<Map<String, Object>>) schema.get("fields");
+        List<Map<String, Object>> fields = flattenFieldDefinitions(schema == null ? null : schema.get("fields"));
+        Map<String, Object> metadata = (Map<String, Object>) cfg.get("metadata");
+        Object stateObject = metadata == null ? null : metadata.get("panelState");
+        String stateFieldName = "单据状态";
+        if (stateObject instanceof Map<?, ?> state) {
+            Object configuredName = state.get("dataName");
+            if (configuredName != null && !String.valueOf(configuredName).isBlank()) {
+                stateFieldName = String.valueOf(configuredName);
+            }
+        }
         Map<String, Object> out = new HashMap<>();
         out.put("fields", fields);
         out.put("detail", cfg.get("detail"));
-        out.put("stateFieldName", ((Map<String, Object>) ((Map<String, Object>) cfg.get("metadata")).get("panelState")).get("dataName"));
+        out.put("stateFieldName", stateFieldName);
         return out;
     }
 
@@ -190,12 +273,20 @@ public class PxService {
     private List<Map<String, Object>> actionPrivileges(String panelCode, String formPage) {
         Map<String, Object> cfg = loadConfig(panelCode);
         Map<String, Object> metadata = (Map<String, Object>) cfg.get("metadata");
-        Map<String, Object> pageDto = (Map<String, Object>) metadata.get("panelPageDto");
-        List<Map<String, Object>> pages = (List<Map<String, Object>>) pageDto.get("formPages".equals(formPage) ? "formPages" : "tablePages");
+        Object pageDtoObject = metadata == null ? null : metadata.get("panelPageDto");
+        if (!(pageDtoObject instanceof Map<?, ?>)) return new ArrayList<>();
+        Map<String, Object> pageDto = (Map<String, Object>) pageDtoObject;
+        Object pagesObject = pageDto.get("formPages".equals(formPage) ? "formPages" : "tablePages");
+        if (!(pagesObject instanceof List<?> pages) || pages.isEmpty() || !(pages.get(0) instanceof Map<?, ?>)) {
+            return new ArrayList<>();
+        }
         String key = "formPages".equals(formPage) ? "bottomOperationBarBtn" : "topBarBtn";
-        List<Map<String, Object>> btns = (List<Map<String, Object>>) pages.get(0).get(key);
+        Object buttonsObject = ((Map<String, Object>) pages.get(0)).get(key);
+        if (!(buttonsObject instanceof List<?> btns)) return new ArrayList<>();
         List<Map<String, Object>> actions = new ArrayList<>();
-        for (Map<String, Object> b : btns) {
+        for (Object button : btns) {
+            if (!(button instanceof Map<?, ?>)) continue;
+            Map<String, Object> b = (Map<String, Object>) button;
             Map<String, Object> a = new HashMap<>();
             a.put("name", String.valueOf(b.get("buttonName")));
             a.put("visible", true);

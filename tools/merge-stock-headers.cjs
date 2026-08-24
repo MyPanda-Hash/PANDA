@@ -54,7 +54,7 @@ for (const panel of PANELS) {
   if (hFrom < 0) { console.error('header not found: ' + panel.code); process.exit(1) }
   const hEnd = seg.indexOf('], \'' + panel.biz + '\')', hFrom)
   if (hEnd < 0) { console.error('header end not found: ' + panel.code); process.exit(1) }
-  seg = seg.slice(0, hFrom) + 'header: invHeader(' + headerText + '\n  ], \'' + panel.biz + '\')' + seg.slice(hEnd + ('], \'' + panel.biz + '\')').length)
+  seg = seg.slice(0, hFrom) + 'header: invHeader(' + headerText + ', \'' + panel.biz + '\')' + seg.slice(hEnd + ('], \'' + panel.biz + '\')').length)
 
   // ---- toolbarDiff ----
   let tb = []

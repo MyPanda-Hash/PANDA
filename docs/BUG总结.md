@@ -142,3 +142,13 @@
 - **修复**：两处 watch 开头加守卫——`panelCode` 为空/'undefined' 时直接 return（组件即将失活/卸载，不触发加载）
 - **验证**：打开面板 → 关闭全部 → 跳 `/dashboard`、无错误提示 ✅
 - **教训**：**路由参数驱动的 watch 必须防御"参数失效"场景**（路由切走/页签关闭时 params 变 undefined），否则触发无意义加载并误报；keep-alive 组件在失活后仍可能被 watch 触发
+
+## 2026-08-24
+
+### 20. 库存 6 单据新增接口 500，新增弹窗参照字段运行时报错
+
+- **现象**：`PURCHASE_IN`、`FINISH_IN`、`OTHER_IN`、`SALE_OUT`、`MATERIAL_OUT`、`OTHER_OUT` 调用 `getNewFormPermMatrix` 返回 `ArrayList cannot be cast to Map`；含参照字段的 `NewVoucherDialog` 构建告警并可能运行时报 `engine.refTextOf is not a function`；`FINISH_IN` 有 `selectConfig` 但工具栏没有选单入口。
+- **根因**：`merge-stock-headers.cjs` 拼接 `invHeader` 时多写一个 `]`，把扩展字段保存成 `dataSchema.fields[3]` 的嵌套数组；后端按 `List<Map>` 强制遍历。新增弹窗复制参照显示逻辑时调用了已删除的 `refTextOf`，没有沿用 `PanelxForm` 的 `refLabelOf` 回退逻辑。部分旧配置还遗漏了与 `selectConfig` 对应的工具栏组。
+- **修复**：`PxService` 加载配置时递归展平字段定义，并对缺少状态字段、表单页和按钮数组的查询/系统面板安全降级；有 `selectConfig` 但无“选…”动作时补选单组和权限按钮。`NewVoucherDialog` 改用 `refLabelOf` 并提供同步占位文案；修复 `merge-stock-headers.cjs` 的括号拼接。
+- **验证**：独立 MySQL 临时实例导入 `init.sql` 后，81/81 面板配置、权限和查询通过；25/25 可新增面板完成新增、回读、修改、删除；13 个单单据、14 个只读面板、28 个报表和存货类别面板通过对应检查。浏览器 25/25 新增弹窗可打开；班组和产成品入库单真实 UI 保存通过；审核、弃审、提交、驳回、通过、审批历史闭环通过；FINISH_IN 选单弹窗和 Excel 5/5 列、3 行导入通过。
+- **教训**：配置生成器输出必须做结构校验，`fields` 只能是对象的一维数组；通用视图之间复制能力时必须复用同一公开引擎 API；配置存在能力描述时必须同时验证 UI 入口、权限和后端动作三层契约。

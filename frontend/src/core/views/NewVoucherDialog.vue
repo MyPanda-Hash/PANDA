@@ -65,7 +65,7 @@
                     :disabled="dr.computed"
                     :title="drRefText(dr, row) || undefined"
                     @click.stop="openDetailRef(dr, row, tab)"
-                  >{{ drRefText(dr, row) || `选择${engine.refPanelName(dr)}` }}</button>
+                  >{{ drRefText(dr, row) || refPlaceholder(dr) }}</button>
                   <el-select v-else-if="dr.dataType === '下拉框'" v-model="row[dr.dataName]" :disabled="dr.computed" filterable allow-create style="width: 100%">
                     <el-option v-for="o in dr.options || []" :key="o" :label="o.label ?? o" :value="o.value ?? o" />
                   </el-select>
@@ -163,7 +163,14 @@ function fieldLocked(r) {
 }
 
 function refText(r, v) {
-  return engine.refTextOf(r, v)
+  if (v === undefined || v === null || v === '') return ''
+  const text = engine.refLabelOf(r, v)
+  return text === null || text === undefined ? String(v) : text
+}
+
+function refPlaceholder(r) {
+  const ref = r.ref || r
+  return `选择${ref.display || ref.displayField || r.dataName || ''}`
 }
 
 function openRefPick(r) {
