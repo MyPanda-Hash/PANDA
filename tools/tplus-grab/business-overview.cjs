@@ -51,7 +51,10 @@ async function connect(page) {
     } else if (message.method === 'Network.requestWillBeSent') {
       const request = message.params.request
       if (/overview|relation|flow|map|portal|menu/i.test(request.url)) {
-        requests.push({ method: request.method, url: request.url.replace(/([?&](?:pwd|token|sid|user)=)[^&]*/gi, '$1[REDACTED]') })
+        requests.push({
+          method: request.method,
+          url: request.url.replace(/([?&](?:pwd|token|sid|user|TaskSessionID)=)[^&]*/gi, '$1[REDACTED]'),
+        })
       }
     }
   }
@@ -181,6 +184,54 @@ async function clickTextByMouseInFrame(cdp, contextId, frameSelector, text) {
   await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 })
   await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 })
   return { x, y }
+}
+
+async function clickPortalTab(cdp, text) {
+  const position = JSON.parse(await cdp.evaluate(`(() => {
+    const visible = (element) => {
+      const rect = element.getBoundingClientRect()
+      const style = getComputedStyle(element)
+      return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
+    }
+    const candidates = [...document.querySelectorAll('span,div,a,li')]
+      .filter((element) => {
+        if (!visible(element) || (element.textContent || '').trim() !== ${JSON.stringify(text)}) return false
+        const rect = element.getBoundingClientRect()
+        return rect.x > 120 && rect.y >= 45 && rect.y < 90
+      })
+    const element = candidates[0]
+    if (!element) return null
+    const rect = element.getBoundingClientRect()
+    return JSON.stringify({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 })
+  })()`))
+  if (!position) return false
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: position.x, y: position.y })
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: position.x, y: position.y, button: 'left', clickCount: 1 })
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: position.x, y: position.y, button: 'left', clickCount: 1 })
+  return true
+}
+
+function allFrames(tree) {
+  const frames = []
+  const collect = (node) => {
+    frames.push(node.frame)
+    for (const child of node.childFrames || []) collect(child)
+  }
+  collect(tree)
+  return frames
+}
+
+async function contextForFrame(cdp, frame) {
+  let contextId = cdp.contexts.get(frame.id)
+  if (!contextId) {
+    const world = await cdp.send('Page.createIsolatedWorld', {
+      frameId: frame.id,
+      worldName: `overview-frame-${frame.id}`,
+      grantUniveralAccess: true,
+    })
+    contextId = world.executionContextId
+  }
+  return contextId
 }
 
 async function dumpContext(cdp, contextId) {
@@ -363,14 +414,90 @@ async function run(attempt) {
     const overviewClicked = await clickTextInContext(cdp, iscContext.contextId, '业务总览')
     await sleep(1500)
 
-    const productionClicked = await clickTextByMouseInFrame(cdp, iscContext.contextId, '#ISC_iframe', '生产管理')
-    await sleep(2500)
-    const productionContext = await frameContext(cdp, 'MP_iframe', 100)
-    const productionRelation = productionContext
-      ? await dumpContext(cdp, productionContext.contextId)
-      : await dumpPage(cdp)
-    fs.writeFileSync(path.join(OUT, 'production-relation.json'), JSON.stringify(productionRelation, null, 2))
-    await screenshot(cdp, '03-production-relation.png')
+    const modules = [
+      ['production', '生产管理'],
+      ['outsource', '委外管理'],
+      ['quality', '质检管理'],
+      ['sales', '销售管理'],
+      ['retail', '零售管理'],
+      ['supply-collaboration', '供应链协同'],
+      ['inventory', '库存核算'],
+      ['purchase', '采购管理'],
+      ['distribution', '配货管理'],
+      ['logistics', '物流管理'],
+      ['mobile-warehouse', '移动仓管'],
+      ['serial-number', '序列号管理'],
+      ['batch', '批号管理'],
+      ['barcode', '条码管理'],
+      ['kuaidiniao', '快递鸟'],
+      ['cainiao', '菜鸟'],
+      ['isv', 'ISV对接'],
+      ['third-party', '第三方系统'],
+      ['open-api', 'API开放接口'],
+    ]
+    const moduleRelations = []
+    let productionClicked = null
+    let productionRelation = null
+
+    for (const [code, moduleName] of modules) {
+      if (!await clickPortalTab(cdp, '智能供应链')) {
+        moduleRelations.push({ code, moduleName, status: 'tab-not-found' })
+        continue
+      }
+      await sleep(350)
+      const moduleIscContext = await frameContext(cdp, 'ISC_iframe', 40)
+      if (!moduleIscContext) {
+        moduleRelations.push({ code, moduleName, status: 'overview-frame-not-found' })
+        continue
+      }
+
+      const clickedModule = await clickTextByMouseInFrame(cdp, moduleIscContext.contextId, '#ISC_iframe', moduleName)
+      if (moduleName === '生产管理') productionClicked = clickedModule
+      if (!clickedModule) {
+        moduleRelations.push({ code, moduleName, status: 'module-not-found' })
+        continue
+      }
+      await sleep(1400)
+
+      const frames = allFrames(await cdp.frameTree())
+      const relationFrame = frames.find((frame) => {
+        try {
+          return decodeURIComponent(frame.url).includes(`taskID=${moduleName}`)
+        } catch {
+          return frame.url.includes(moduleName)
+        }
+      })
+      if (!relationFrame) {
+        const overviewState = await dumpContext(cdp, moduleIscContext.contextId)
+        const unavailable = overviewState.body.includes('暂未开通此应用')
+        moduleRelations.push({
+          code,
+          moduleName,
+          status: unavailable ? 'unavailable' : 'no-relation-frame',
+        })
+        continue
+      }
+
+      const relationContextId = await contextForFrame(cdp, relationFrame)
+      const relation = await dumpContext(cdp, relationContextId)
+      const savedRelation = {
+        ...relation,
+        url: relation.url.replace(/([?&]TaskSessionID=)[^&]*/i, '$1[REDACTED]'),
+      }
+      fs.writeFileSync(path.join(OUT, `${code}-relation.json`), JSON.stringify(savedRelation, null, 2))
+      await screenshot(cdp, `${String(moduleRelations.length + 3).padStart(2, '0')}-${code}-relation.png`)
+      moduleRelations.push({
+        code,
+        moduleName,
+        status: 'opened',
+        frameName: relationFrame.name,
+        menuCode: (relationFrame.url.match(/[?&]menuCode=([^&]+)/i) || [])[1] || '',
+        relation: savedRelation,
+      })
+      if (moduleName === '生产管理') productionRelation = savedRelation
+    }
+
+    fs.writeFileSync(path.join(OUT, 'module-relations.json'), JSON.stringify(moduleRelations, null, 2))
 
     const targetsAfterOverview = await waitJson(`http://127.0.0.1:${PORT}/json/list`, 3)
     const framesAfterOverview = []
@@ -389,6 +516,7 @@ async function run(attempt) {
       overviewClicked,
       productionClicked,
       productionRelation,
+      moduleRelations,
       targetsAfterOverview: targetsAfterOverview
         .filter((target) => target.type === 'page')
         .map((target) => ({ id: target.id, title: target.title, url: target.url })),
@@ -406,19 +534,52 @@ async function run(attempt) {
 async function main() {
   fs.mkdirSync(OUT, { recursive: true })
   let result
-  for (let attempt = 1; attempt <= 4; attempt += 1) {
+  const samples = []
+  const aggregate = new Map()
+  const priorityModules = new Set(['production', 'outsource', 'quality', 'sales', 'inventory', 'purchase', 'distribution'])
+  for (let attempt = 1; attempt <= 8; attempt += 1) {
     try {
-      result = await run(attempt)
-      console.log(`[attempt ${attempt}] ${result.retry ? result.reason : '门户可用'}`)
-      if (!result.retry) break
+      const sample = await run(attempt)
+      console.log(`[attempt ${attempt}] ${sample.retry ? sample.reason : '门户可用'}`)
+      if (!sample.retry) {
+        samples.push(sample)
+        result = sample
+        for (const module of sample.moduleRelations || []) {
+          const current = aggregate.get(module.code)
+          if (!current || (current.status !== 'opened' && module.status === 'opened')) {
+            aggregate.set(module.code, module)
+          }
+        }
+        const openedPriority = [...priorityModules].filter((code) => aggregate.get(code)?.status === 'opened')
+        console.log(`[attempt ${attempt}] 已抓取重点模块：${openedPriority.join(', ') || '无'}`)
+        if (openedPriority.length === priorityModules.size) break
+      }
     } catch (error) {
       console.log(`[attempt ${attempt}] ${error.message}，重新申请体验账号`)
-      result = { retry: true, reason: error.message }
     }
     await sleep(1500)
   }
-  if (!result || result.retry) throw new Error('连续分配到冲突的体验账号')
-  fs.writeFileSync(path.join(OUT, 'portal-menu-probe.json'), JSON.stringify(result, null, 2).replace(/([?&](?:pwd|token|sid|user)=[^&"\\]*)/gi, (value) => value.replace(/=.*/, '=[REDACTED]')))
+  if (!result) throw new Error('连续分配到不可用的体验账号')
+  result.moduleRelations = [...aggregate.values()]
+  result.productionRelation = aggregate.get('production')?.relation || result.productionRelation
+  result.productionClicked = aggregate.has('production') || result.productionClicked
+  result.samples = samples.map((sample) => ({
+    industry: sample.industry,
+    moduleStatuses: (sample.moduleRelations || []).map((module) => ({
+      code: module.code,
+      moduleName: module.moduleName,
+      status: module.status,
+      menuCode: module.menuCode,
+    })),
+  }))
+  fs.writeFileSync(path.join(OUT, 'module-relations.json'), JSON.stringify(result.moduleRelations, null, 2))
+  fs.writeFileSync(
+    path.join(OUT, 'portal-menu-probe.json'),
+    JSON.stringify(result, null, 2).replace(
+      /([?&](?:pwd|token|sid|user|TaskSessionID)=[^&"\\]*)/gi,
+      (value) => value.replace(/=.*/, '=[REDACTED]'),
+    ),
+  )
   const hits = result.iscDesk.leaves.filter((item) => /业务总览|生产管理|库存|采购|销售|业务流程/.test(item.text))
   console.log(JSON.stringify({
     industry: result.industry,
@@ -427,7 +588,14 @@ async function main() {
     productionClicked: result.productionClicked,
     hits,
     body: result.iscDesk.body.slice(0, 10000),
-    productionBody: result.productionRelation.body.slice(0, 16000),
+    productionBody: result.productionRelation?.body.slice(0, 16000) || '',
+    modules: result.moduleRelations.map((module) => ({
+      code: module.code,
+      moduleName: module.moduleName,
+      status: module.status,
+      menuCode: module.menuCode,
+      body: module.relation?.body.slice(0, 3000),
+    })),
     targetsAfterOverview: result.targetsAfterOverview,
     framesAfterOverview: result.framesAfterOverview,
   }, null, 2))

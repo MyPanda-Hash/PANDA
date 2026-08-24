@@ -1,8 +1,772 @@
 {
-  "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=ISC&ideskColumn=1&taskID=%E6%99%BA%E8%83%BD%E4%BE%9B%E5%BA%94%E9%93%BE&TaskSessionID=e3afe762-4014-4825-cb93-57b2b2840b1f",
+  "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=SA&ideskColumn=2&taskID=%E9%94%80%E5%94%AE%E7%AE%A1%E7%90%86&TaskSessionID=[REDACTED]",
   "title": "我的桌面",
-  "body": "tplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610",
+  "body": "待办\n更多\n刷新\n待审核业务\n1060\n销售订单待出库业务\n682\n销货单待结款业务\n447\n销售订单待销货业务\n382\n基础档案\n存货\n往来单位\n部门\n计量单位\n员工\n账号\n仓库\n结算方式\n物流网点\n允销限销设置\n相关单据\n报价单\n销售订单\n销货单\n销售出库单\n销售发票\n费用单\n销售费用分摊单\n相关报表\n销售订单执行表\n销货单执行表\n销售出库开单执行表\n销售毛利分析表\n销售排行榜\n销售订单跟踪工具\n订单毛利分析\n客户毛利分析\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610",
   "leaves": [
+    {
+      "text": "待办",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-ideskpanel-title-left",
+      "rect": {
+        "x": 1186,
+        "y": 25,
+        "w": 32,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-ideskpanel-title-left"
+        ]
+      ]
+    },
+    {
+      "text": "更多",
+      "tag": "A",
+      "id": "",
+      "className": "t-btn",
+      "rect": {
+        "x": 1319,
+        "y": 28,
+        "w": 36,
+        "h": 18
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-btn"
+        ]
+      ]
+    },
+    {
+      "text": "刷新",
+      "tag": "A",
+      "id": "",
+      "className": "t-btn t-btn-refresh",
+      "rect": {
+        "x": 1355,
+        "y": 27,
+        "w": 42,
+        "h": 20
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "title",
+          "刷新"
+        ],
+        [
+          "class",
+          "t-btn t-btn-refresh"
+        ]
+      ]
+    },
+    {
+      "text": "待审核业务",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1220,
+        "y": 72,
+        "w": 70,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "1060",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-todoitem-num",
+      "rect": {
+        "x": 1357,
+        "y": 70,
+        "w": 36,
+        "h": 17
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-todoitem-num"
+        ]
+      ]
+    },
+    {
+      "text": "销售订单待出库业务",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1220,
+        "y": 126,
+        "w": 126,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "682",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-todoitem-num",
+      "rect": {
+        "x": 1366,
+        "y": 124,
+        "w": 27,
+        "h": 17
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-todoitem-num"
+        ]
+      ]
+    },
+    {
+      "text": "销货单待结款业务",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1220,
+        "y": 180,
+        "w": 112,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "447",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-todoitem-num",
+      "rect": {
+        "x": 1366,
+        "y": 178,
+        "w": 27,
+        "h": 17
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-todoitem-num"
+        ]
+      ]
+    },
+    {
+      "text": "销售订单待销货业务",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1220,
+        "y": 234,
+        "w": 126,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "382",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-todoitem-num",
+      "rect": {
+        "x": 1366,
+        "y": 232,
+        "w": 27,
+        "h": 17
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-todoitem-num"
+        ]
+      ]
+    },
+    {
+      "text": "基础档案",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-ideskpanel-title-left",
+      "rect": {
+        "x": 1186,
+        "y": 312,
+        "w": 64,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-ideskpanel-title-left"
+        ]
+      ]
+    },
+    {
+      "text": "存货",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 357,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "往来单位",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 357,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "部门",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 389,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "计量单位",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 389,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "员工",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 421,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "账号",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 421,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "仓库",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 453,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "结算方式",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 453,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "物流网点",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 485,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "允销限销设置",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 485,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "相关单据",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-ideskpanel-title-left",
+      "rect": {
+        "x": 1186,
+        "y": 553,
+        "w": 64,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-ideskpanel-title-left"
+        ]
+      ]
+    },
+    {
+      "text": "报价单",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 598,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "销售订单",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 598,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "销货单",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 630,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "销售出库单",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 630,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "销售发票",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 662,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "费用单",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 662,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "销售费用分摊单",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 694,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "相关报表",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-ideskpanel-title-left",
+      "rect": {
+        "x": 1186,
+        "y": 762,
+        "w": 64,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-ideskpanel-title-left"
+        ]
+      ]
+    },
+    {
+      "text": "销售订单执行表",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 807,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
+    {
+      "text": "销货单执行表",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 839,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
+    {
+      "text": "销售出库开单执行表",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 871,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
+    {
+      "text": "销售毛利分析表",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 903,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
+    {
+      "text": "销售排行榜",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 935,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
+    {
+      "text": "销售订单跟踪工具",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 967,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
+    {
+      "text": "订单毛利分析",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 999,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
+    {
+      "text": "客户毛利分析",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 1031,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
     {
       "text": "tplusdemo123312331",
       "tag": "DIV",

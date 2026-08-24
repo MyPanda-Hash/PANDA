@@ -1,8 +1,528 @@
 {
-  "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=ISC&ideskColumn=1&taskID=%E6%99%BA%E8%83%BD%E4%BE%9B%E5%BA%94%E9%93%BE&TaskSessionID=e3afe762-4014-4825-cb93-57b2b2840b1f",
+  "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=PU&ideskColumn=2&taskID=%E9%87%87%E8%B4%AD%E7%AE%A1%E7%90%86&TaskSessionID=[REDACTED]",
   "title": "我的桌面",
-  "body": "tplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610",
+  "body": "基础档案\n存货\n往来单位\n部门\n计量单位\n员工\n账号\n仓库\n结算方式\n物流网点\n相关单据\n请购单\n采购订单\n进货单\n采购入库单\n采购发票\n采购费用分摊单\n费用单\n相关报表\n采购订单明细表\n进货单明细表\n采购订单统计表\n进货单统计表\n请购单执行表\n采购订单执行表\n进货单执行表\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610",
   "leaves": [
+    {
+      "text": "基础档案",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-ideskpanel-title-left",
+      "rect": {
+        "x": 1186,
+        "y": 25,
+        "w": 64,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-ideskpanel-title-left"
+        ]
+      ]
+    },
+    {
+      "text": "存货",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 70,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "往来单位",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 70,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "部门",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 102,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "计量单位",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 102,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "员工",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 134,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "账号",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 134,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "仓库",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 166,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "结算方式",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 166,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "物流网点",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 198,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "相关单据",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-ideskpanel-title-left",
+      "rect": {
+        "x": 1186,
+        "y": 266,
+        "w": 64,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-ideskpanel-title-left"
+        ]
+      ]
+    },
+    {
+      "text": "请购单",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 311,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "采购订单",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 311,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "进货单",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 343,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "采购入库单",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 343,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "采购发票",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 375,
+        "w": 113,
+        "h": 64
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "采购费用分摊单",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1294,
+        "y": 375,
+        "w": 113,
+        "h": 64
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "费用单",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col2",
+      "rect": {
+        "x": 1181,
+        "y": 439,
+        "w": 113,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col2"
+        ]
+      ]
+    },
+    {
+      "text": "相关报表",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-ideskpanel-title-left",
+      "rect": {
+        "x": 1186,
+        "y": 507,
+        "w": 64,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-ideskpanel-title-left"
+        ]
+      ]
+    },
+    {
+      "text": "采购订单明细表",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 552,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
+    {
+      "text": "进货单明细表",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 584,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
+    {
+      "text": "采购订单统计表",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 616,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
+    {
+      "text": "进货单统计表",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 648,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
+    {
+      "text": "请购单执行表",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 680,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
+    {
+      "text": "采购订单执行表",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 712,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
+    {
+      "text": "进货单执行表",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-workplanformitem t-workplanformitem-col1",
+      "rect": {
+        "x": 1181,
+        "y": 744,
+        "w": 225,
+        "h": 32
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-workplanformitem t-workplanformitem-col1"
+        ]
+      ]
+    },
     {
       "text": "tplusdemo123312331",
       "tag": "DIV",

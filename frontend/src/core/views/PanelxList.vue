@@ -406,9 +406,6 @@ const bomMasterRows = computed(() => {
   return list.value || [] // BOM_FWD/BOM_REV：后端返回的展平行（父件-子件对）
 })
 
-// 直接新增面板（试点）：点击「新增」创建一张最新草稿单（自动编号+日期），打开表单页编辑，不弹新增弹窗
-const DIRECT_ADD_PANELS = ['SO_ORDER']
-
 const query = reactive({ keyword: '', pageNo: 1, pageSize: 20 })
 const condition = reactive({})
 const list = ref([])
@@ -480,7 +477,14 @@ const queryDialogFields = computed(() => {
   const fields = reportMode.value ? queryFields.value : headerFields.value
   return fields.filter((field) => headerFieldKey(field) !== '备注')
 })
-const draftEditable = computed(() => !reportMode.value && cur.value?.['单据状态'] === '草稿')
+const draftEditable = computed(() => {
+  if (reportMode.value || isBomMasterPanel.value) return false
+  const st = cur.value?.['单据状态']
+  if (st === '草稿') return true
+  // 档案/单单据面板（存货档案、员工、部门、工艺路线等）：启用/停用状态列表页同样内联可编辑（2026-08-24）
+  if (cfgCache.value?.metadata?.singleDoc && (st === '启用' || st === '停用')) return true
+  return false
+})
 const newVisible = ref(false)
 const approvalVisible = ref(false)
 const approvalNo = ref('')
@@ -1506,19 +1510,14 @@ async function onButton(action) {
     return
   }
   if (action === '新增' || action === '新增流程') {
-    if (cfgCache.value?.metadata?.singleDoc) {
-      // 单单据面板（如员工档案/存货档案）：不新建第二张单据，直接打开已有单据（无单据时新建一张）
-      if (current.value && current.value['编号']) { openForm(current.value); return }
-      newVisible.value = true
+    if (cfgCache.value?.metadata?.singleDoc && current.value && current.value['编号']) {
+      // 档案/单单据面板（存货档案、员工、部门等）：直接在当前单据页填写（列表页已内联可编辑），不弹新增弹窗
+      ElMessage.info('请在下方列表页直接填写并保存')
       return
     }
-    if (DIRECT_ADD_PANELS.includes(String(panelCode.value))) {
-      // 直接新增（T+ 形态）：后端创建一张最新草稿单（自动编号 + 单据日期=当天填入表头），
-      // 直接打开表单页编辑（非新增弹窗）。先支持 SO_ORDER 试点，验证通过后扩展其余单据。
-      return await directAdd()
-    }
-    newVisible.value = true
-    return
+    // 统一直接新增（2026-08-24 全量生效）：后端创建一张最新草稿单（autoCode 编号 + 单据日期=当天填入表头），
+    // 刷新列表并定位到新单，在列表页内联填写（不再弹新增弹窗、不跳转表单页）
+    return await directAdd()
   }
   if (action === '修改') {
     if (!current.value) return ElMessage.warning('请先选择一行数据')
@@ -1932,6 +1931,34 @@ watch(queryRefVisible, (visible) => {
   if (!visible) queryRefField.value = null
 })
 
+// 快捷入口「新增单据」（?new=1）统一走直接新增（不弹窗）；singleDoc 无单据时兜底弹窗新建
+let newQueryHandled = false
+async function handleNewQuery() {
+  if (newQueryHandled) return
+  if (cfgCache.value?.metadata?.singleDoc && current.value && current.value['编号']) {
+    newQueryHandled = true
+    ElMessage.info('请在下方列表页直接填写并保存')
+    return
+  }
+  if (cfgCache.value?.metadata?.singleDoc) {
+    newQueryHandled = true
+    newVisible.value = true
+    return
+  }
+  newQueryHandled = true
+  await directAdd()
+}
+watch(
+  () => route.query.new,
+  (v) => {
+    if (v) handleNewQuery()
+  }
+)
+watch(cfgCache, (cfg) => {
+  // 配置加载完成后处理初始 ?new=1（此时才能判断 singleDoc）
+  if (cfg && route.query.new) handleNewQuery()
+})
+
 onMounted(() => {
   document.addEventListener('click', closeCtx)
   document.addEventListener('contextmenu', closeCtx)
@@ -1940,7 +1967,6 @@ onMounted(() => {
     router.replace('/panelx/list/MANU_ORDER')
     return
   }
-  if (route.query.new) newVisible.value = true
   load()
 })
 
@@ -1964,13 +1990,6 @@ onUnmounted(() => {
   document.removeEventListener('click', closeCtx)
   document.removeEventListener('contextmenu', closeCtx)
 })
-
-watch(
-  () => route.query.new,
-  (v) => {
-    if (v) newVisible.value = true
-  }
-)
 </script>
 
 <style scoped>
