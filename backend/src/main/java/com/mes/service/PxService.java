@@ -1209,6 +1209,7 @@ public class PxService {
         else if ("SALE_OUT".equals(panelCode)) biz = "CK-";        // 销售出库单（T+ 出库惯例）
         else if ("PROCESS_REPORT".equals(panelCode)) biz = "GX-";  // 工序汇报单
         else if ("PU_IN".equals(panelCode)) biz = "PU-";           // 进货单
+        else if ("PU_REQ".equals(panelCode)) biz = "CG-";          // 请购单（T+ 采购惯例 CG）
         else if ("SALE_INV".equals(panelCode)) biz = "XS-";        // 销货单
         else if ("PICK_ORDER".equals(panelCode)) biz = "PH-";      // 配货单
         else if ("MATERIAL_REQ".equals(panelCode)) biz = "LL-";    // 领料申请单
@@ -1244,7 +1245,7 @@ public class PxService {
     /** 启用审批流的面板（与前端 APPROVAL_PANELS 一致）：单据日期/单据编号不在新建时预填，提交审核时自动填写 */
     private static final Set<String> APPROVAL_PANELS = Set.of(
             "SO_ORDER", "PURCHASE_IN", "FINISH_IN", "OTHER_IN", "SALE_OUT", "MATERIAL_OUT", "OTHER_OUT",
-            "MANU_ORDER", "PROCESS_REPORT", "INIT_AP", "INIT_AR", "INIT_BALANCE", "BOM", "ROUTE");
+            "MANU_ORDER", "PROCESS_REPORT", "INIT_AP", "INIT_AR", "INIT_BALANCE", "BOM", "ROUTE", "PU_REQ");
 
     /**
      * 审批面板审核类动作（审核/提交审批/审批通过）时自动补表头：

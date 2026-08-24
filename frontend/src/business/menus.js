@@ -30,6 +30,7 @@ export const menuTree = [
         children: [
           {
             code: 'doc', title: '单据', children: [
+              { code: 'puReq', title: '请购单', path: '/panelx/list/PU_REQ', icon: 'Tickets', panelCode: 'PU_REQ', operationName: '新增流程' },
               { code: 'puOrder', title: '采购订单', path: '/panelx/list/PU_ORDER', icon: 'Tickets', panelCode: 'PU_ORDER', operationName: '新增流程' },
               { code: 'puIn', title: '进货单', path: '/panelx/list/PU_IN', icon: 'Tickets', panelCode: 'PU_IN', operationName: '新增流程' },
             ],
