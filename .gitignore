@@ -1,4 +1,4 @@
-# === Node / 前端 ===
+# === Node / 鍓嶇 ===
 node_modules/
 dist/
 *.local
@@ -15,20 +15,27 @@ target/
 .vscode/
 *.iml
 
-# === 工具运行时 ===
+# === 宸ュ叿杩愯鏃? ===
 tools/tplus-grab/profile/
 tools/tplus-grab/profile-*/
 .tplus-grab-out/
 .dsh-vision-toolkit/
 
-# === 系统 ===
+# === 绯荤粺 ===
 Thumbs.db
 Desktop.ini
 .DS_Store
-# === 临时还原文件 ===
+# === 涓存椂杩樺師鏂囦欢 ===
 .vision-restore/
 
-# === ��������ѹ���� ===
+# === 构建产物压缩包 ===
 dist.rar
 dist.tar.gz
 
+# === 部署产物与数据备份（含业务数据，不公开） ===
+docs/deploy/*.tar.gz
+docs/deploy/light_mes_deploy.sql
+docs/deploy/light_mes_full.sql
+docs/deploy/base.sql
+docs/deploy/local-panels.sql
+docs/deploy/pc-table.sql

@@ -32,6 +32,7 @@ Import-Module Posh-SSH
 Log "打包部署包..."
 $jar  = Join-Path $ProjectRoot 'backend\target\light-mes-backend-0.1.0.jar'
 $sql  = Join-Path $ProjectRoot 'backend\src\main\resources\db\init.sql'
+$full = Join-Path $ProjectRoot 'docs\deploy\light_mes_deploy.sql'
 $dist = Join-Path $ProjectRoot 'frontend\dist'
 $sh   = Join-Path $ProjectRoot 'docs\deploy\deploy-route1.sh'
 foreach ($p in @($jar,$sql,$dist,$sh)) { if (-not (Test-Path $p)) { throw "缺少产物: $p" } }
@@ -39,6 +40,7 @@ if (Test-Path $WorkDir) { Remove-Item $WorkDir -Recurse -Force }
 New-Item -ItemType Directory -Path "$WorkDir\dist" -Force | Out-Null
 Copy-Item $jar $WorkDir
 Copy-Item $sql $WorkDir
+if (Test-Path $full) { Copy-Item $full $WorkDir; Log "已加入全量数据: light_mes_deploy.sql" }
 Copy-Item -Recurse "$dist\*" "$WorkDir\dist\"
 Copy-Item $sh $WorkDir
 $zip = "$WorkDir.zip"
@@ -55,9 +57,9 @@ try {
   Log "上传部署包..."
   Set-SCPItem -ComputerName $ServerIp -Credential $cred -AcceptKey -Path $zip -Destination '/opt/light-mes/' -Force
 
-  # ---------- 3. 解压 + 移动 dist ----------
+  # ---------- 3. 解压 + 移动 dist（先删旧目录，避免 mv 嵌套成 dist/dist） ----------
   Log "解压部署包..."
-  $r = Invoke-SSHCommand -SessionId $s.SessionId -Command "apt-get install -y unzip >/dev/null 2>&1; cd /opt/light-mes && unzip -oq light-mes-deploy.zip; mkdir -p /var/www/light-mes; [ -d /opt/light-mes/dist ] && mv -f /opt/light-mes/dist /var/www/light-mes/dist; ls /var/www/light-mes/dist | head -3; echo UNZIP_DONE"
+  $r = Invoke-SSHCommand -SessionId $s.SessionId -Command "apt-get install -y unzip >/dev/null 2>&1; cd /opt/light-mes && unzip -oq light-mes-deploy.zip; mkdir -p /var/www/light-mes; if [ -d /var/www/light-mes/dist ]; then rm -rf /var/www/light-mes/dist; fi; [ -d /opt/light-mes/dist ] && mv -f /opt/light-mes/dist /var/www/light-mes/dist; ls /var/www/light-mes/dist | head -3; echo UNZIP_DONE"
   $r.Output | ForEach-Object { Log "  $_" }
 
   # ---------- 4. 运行部署脚本（前台，超时给足） ----------

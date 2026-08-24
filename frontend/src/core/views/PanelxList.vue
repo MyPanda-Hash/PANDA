@@ -176,7 +176,10 @@
       </el-table>
     </div>
 
-    <div v-else class="body" :class="{ 'draft-body': draftEditable }" v-loading="loading">
+    <div v-else class="body" :class="{ 'draft-body': draftEditable && !isBomMasterPanel }" v-loading="loading && !isBomMasterPanel">
+      <!-- ══════════ 物料清单专用：父件表格 + 子件表格联动（BOM/BOM_FWD/BOM_REV） ══════════ -->
+      <BomMasterDetail v-if="isBomMasterPanel" :rows="bomMasterRows" :reverse="panelCode === 'BOM_REV'" :loading="loading" />
+      <template v-else>
       <!-- ══════════ ③b 主表预览表格（配置 mainTable 时显示：主表字段列，点行切换当前单据，明细联动） -->
       <div v-if="mainGrid" class="main-grid">
         <div class="dt-head">
@@ -286,6 +289,7 @@
           </el-table-column>
         </el-table>
       </div>
+      </template>
 
     </div>
 
@@ -385,6 +389,7 @@ import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
 import BomDialog from './BomDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
+import BomMasterDetail from './BomMasterDetail.vue'
 import ImportDialog from './ImportDialog.vue'
 import DetailMaintainDialog from './DetailMaintainDialog.vue'
 import VoucherFormDialog from './VoucherFormDialog.vue'
@@ -403,6 +408,13 @@ const user = useUserStore()
 const panelCode = computed(() => route.params.panelCode)
 const operationName = computed(() => route.meta.operationName || route.query.operationName || '新增流程')
 const invalidPanel = computed(() => !panelCode.value || panelCode.value === 'undefined')
+
+// 物料清单（BOM/BOM_FWD/BOM_REV）：父件表格 + 子件表格联动视图
+const isBomMasterPanel = computed(() => ['BOM', 'BOM_FWD', 'BOM_REV'].includes(String(panelCode.value)))
+const bomMasterRows = computed(() => {
+  if (panelCode.value === 'BOM') return cur.value?.detail?.['children'] || []
+  return list.value || [] // BOM_FWD/BOM_REV：后端返回的展平行（父件-子件对）
+})
 
 const query = reactive({ keyword: '', pageNo: 1, pageSize: 20 })
 const condition = reactive({})

@@ -388,6 +388,10 @@ public class PxService {
         if (ReportPanelRegistry.isReport(panelCode)) {
             return reportQueryService.query(panelCode, keyword, condition, pageNo, pageSize);
         }
+        // 物料清单查询面板（BOM_FWD 正向 / BOM_REV 反向）：从 BOM 面板 form_data 的 children 明细展开为展平行
+        if ("BOM_FWD".equals(panelCode) || "BOM_REV".equals(panelCode)) {
+            return queryBomFlatten(panelCode, keyword, condition);
+        }
         LambdaQueryWrapper<FormData> qw = new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, panelCode)
                 .orderByDesc(FormData::getCreateTime)
@@ -436,6 +440,56 @@ public class PxService {
         Map<String, Object> out = new HashMap<>();
         out.put("totalSize", rows.size());
         out.put("list", rows.subList(from, to));
+        return out;
+    }
+
+    /**
+     * 物料清单查询面板数据：把 BOM 面板（panelCode=BOM）form_data 的 children 明细
+     * 展开为「父件-子件」展平行，供 BOM_FWD（正向）/BOM_REV（反向）查询面板使用。
+     * 数据量小，不参与分页截断（前端父件表格需全量去重）。
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> queryBomFlatten(String panelCode, String keyword, Map<String, Object> condition) {
+        List<FormData> boms = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "BOM"));
+        List<Map<String, Object>> flat = new ArrayList<>();
+        for (FormData fd : boms) {
+            Map<String, Object> detail = parseData(fd.getDetailData());
+            Object children = detail.get("children");
+            if (!(children instanceof List)) continue;
+            for (Object o : (List<?>) children) {
+                if (!(o instanceof Map)) continue;
+                Map<String, Object> row = new HashMap<>((Map<String, Object>) o);
+                row.put("单据编号", fd.getFormNo());
+                flat.add(row);
+            }
+        }
+        // 条件过滤（父件编码/子件编码等标量字段）
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> row : flat) {
+            boolean hit = true;
+            if (condition != null) {
+                for (Map.Entry<String, Object> e : condition.entrySet()) {
+                    Object v = e.getValue();
+                    if (v == null || "".equals(String.valueOf(v))) continue;
+                    Object rv = row.get(e.getKey());
+                    if (rv == null || !String.valueOf(rv).contains(String.valueOf(v))) { hit = false; break; }
+                }
+            }
+            if (hit && keyword != null && !keyword.isBlank()) {
+                hit = false;
+                for (Object v : row.values()) {
+                    if (v != null && String.valueOf(v).contains(keyword)) { hit = true; break; }
+                }
+            }
+            if (hit) rows.add(row);
+        }
+        // 排序：正向按父件、反向按子件（保证前端分组去重顺序稳定）
+        String sortKey = "BOM_REV".equals(panelCode) ? "子件编码" : "父件编码";
+        rows.sort((a, b) -> String.valueOf(a.get(sortKey)).compareTo(String.valueOf(b.get(sortKey))));
+        Map<String, Object> out = new HashMap<>();
+        out.put("totalSize", rows.size());
+        out.put("list", rows);
         return out;
     }
 

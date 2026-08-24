@@ -29,17 +29,37 @@ apt-get install -y nginx openjdk-17-jdk-headless mysql-server
 
 echo "== 2/5 初始化数据库 =="
 systemctl enable --now mysql
-# 幂等：root 密码可能已是 root（重跑场景），先探测无密码连接，失败再走 ALTER
+# 幂等：探测 root 连接方式（无密码 / root/root），未知密码时明确报错而非静默失败
 if mysql -uroot -e "SELECT 1" >/dev/null 2>&1; then
-  echo "MySQL root 无密码可连，跳过密码设置（已初始化过）"
-else
+  echo "MySQL root 无密码可连，设置密码为 root（幂等）"
   mysql -uroot <<'SQL'
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';
 FLUSH PRIVILEGES;
 SQL
+elif mysql -uroot -proot -e "SELECT 1" >/dev/null 2>&1; then
+  echo "MySQL root/root 已可连，跳过密码设置（已初始化过）"
+else
+  echo "[错误] MySQL root 密码未知（既非无密码也非 root），无法初始化数据库" >&2
+  echo "[错误] 请手动执行: mysql -uroot -p < /opt/light-mes/light_mes_deploy.sql" >&2
+  exit 1
 fi
-mysql -uroot -proot < "$SQL"
-echo "数据库初始化完成: light_mes"
+FULL_SQL=/opt/light-mes/light_mes_deploy.sql
+if [ -f "$FULL_SQL" ]; then
+  echo "检测到全量数据包 light_mes_deploy.sql，执行【备份旧库 → 整体覆盖导入】"
+  mkdir -p /opt/light-mes/backup
+  if mysql -uroot -proot -e "USE light_mes" >/dev/null 2>&1; then
+    BK="/opt/light-mes/backup/light_mes_$(date +%Y%m%d_%H%M%S).sql"
+    mysqldump -uroot -proot --single-transaction --routines --triggers light_mes > "$BK" 2>/dev/null \
+      && echo "旧库已备份: $BK" \
+      || echo "[警告] 旧库备份失败，继续覆盖导入"
+    mysql -uroot -proot -e "DROP DATABASE IF EXISTS light_mes"
+  fi
+  mysql -uroot -proot < "$FULL_SQL"
+  echo "全量数据导入完成: light_mes"
+else
+  mysql -uroot -proot < "$SQL"
+  echo "数据库初始化完成: light_mes"
+fi
 
 echo "== 3/5 后端 systemd 服务 =="
 mkdir -p /opt/light-mes
