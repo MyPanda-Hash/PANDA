@@ -1110,16 +1110,17 @@ async function onButton(action) {
       formData: rd,
       buttonParam: isEdit.value ? { code: form['编号'] } : {},
     })
-    // 推式生单结果：用面板弹窗显示生成的新单据（2026-08-20 不再跳新页签；弹窗嵌入模式由父组件刷新）
+    // 推式生单结果：直接跳转目标面板列表页（不弹窗、不新开标签页），新单按创建时间倒序显示在第一张（草稿内联可编辑）
     if (res?.gotoPanel) {
-      ElMessage.success(`已生成${res.gotoPanel === 'MANU_ORDER' ? '生产加工单' : res.gotoPanel}：${res['编号']}`)
       if (props.embedded) {
         emit('saved', res)
-      } else {
-        genPanel.value = res.gotoPanel
-        genNo.value = res['编号']
-        genVisible.value = true
+        return
       }
+      ElMessage.success(`已生成${res.gotoPanel === 'MANU_ORDER' ? '生产加工单' : res.gotoPanel}：${res['编号']}，请在列表页继续填写`)
+      const targetPath = `/panelx/list/${res.gotoPanel}`
+      tabsStore.close(route.path) // 关闭当前源表单页签（页签被目标面板替换）
+      router.push(targetPath)
+      tabsStore.open({ path: targetPath, title: res.gotoPanel })
       return
     }
     ElMessage.success(`「${action}」成功`)

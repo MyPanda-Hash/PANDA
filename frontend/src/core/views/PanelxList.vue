@@ -1383,6 +1383,9 @@ async function loadCrg() {
   panelName.value = cfg?.metadata?.panelName || panelCode.value
   // 页面标题 = 真实面板名（路由 meta.title 是通用占位，配置加载后覆盖）
   document.title = panelName.value + ' · 轻MES'
+  // 页签标题同步（生单直接跳转/页签替换后显示真实面板名）
+  const curTab = tabs.tabs.find((x) => x.path === route.path)
+  if (curTab) curTab.title = panelName.value
   queryFields.value = tp?.queryFields || []
   // 面板可配置每页条数（如档案类大列表 pageSize=100），未配置时保持默认 20
   if (tp?.pageSize && query.pageSize !== tp.pageSize) {
@@ -1667,11 +1670,12 @@ async function onButton(action) {
       buttonParam: {},
     })
     if (res?.gotoPanel) {
-      ElMessage.success(`已生成${res.gotoPanel === 'MANU_ORDER' ? '生产加工单' : res.gotoPanel}：${res['编号']}`)
-      const q = { code: res['编号'] }
-      const title = (res.gotoPanel === 'MANU_ORDER' ? '加工单-' : '单据-') + res['编号']
-      router.push({ path: `/panelx/form/${res.gotoPanel}`, query: q })
-      tabs.open({ path: `/panelx/form/${res.gotoPanel}`, title, query: q })
+      // 推式生单：直接跳转到目标面板列表页（不新开标签页），新生成的单据按创建时间倒序显示在第一张（草稿内联可编辑）
+      ElMessage.success(`已生成${res.gotoPanel === 'MANU_ORDER' ? '生产加工单' : res.gotoPanel}：${res['编号']}，请在列表页继续填写`)
+      const targetPath = `/panelx/list/${res.gotoPanel}`
+      tabs.close(route.path) // 关闭当前源面板页签（页签被目标面板替换）
+      router.push(targetPath)
+      tabs.open({ path: targetPath, title: res.gotoPanel })
       return
     }
     ElMessage.success(`「${action}」执行成功`)
