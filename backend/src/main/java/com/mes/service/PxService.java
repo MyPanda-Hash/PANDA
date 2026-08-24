@@ -533,6 +533,17 @@ public class PxService {
                 return createMoFromSo(panelCode, formData);
             case "生成工序汇报单（自制汇报）":   // 推式生单：生产加工单 → 工序汇报单（拉取加工单工序明细）
                 return createProcReportFromMo(panelCode, formData);
+            case "生成采购订单":       // 推式生单：请购单 → 采购订单
+                return createPuOrderFromReq(panelCode, formData);
+            case "生成采购入库单":     // 推式生单：采购订单 → 采购入库单
+                return createPurchaseInFromPo(panelCode, formData);
+            case "生成产成品入库单":   // 推式生单：生产加工单 → 产成品入库单
+                return createFinishInFromMo(panelCode, formData);
+            case "生成材料出库单":     // 推式生单：领料申请单/生产加工单 → 材料出库单
+                return createMaterialOut(panelCode, formData);
+            case "生成销售出库单":     // 推式生单：销售订单 → 销售出库单
+            case "生成销售出库单(普通销售)":
+                return createSaleOutFromSo(panelCode, formData);
             // 审批流
             case "提交审批":
                 return submitApproval(panelCode, formData);
@@ -812,6 +823,284 @@ public class PxService {
         out.put("gotoPanel", "PROCESS_REPORT");
         out.put("编号", newNo);
         return out;
+    }
+
+    // ══════════ 推式生单（业务流程图流转，2026-08-24 全量补全） ══════════
+
+    private double num(Object v) {
+        if (v == null) return 0;
+        try { return Double.parseDouble(String.valueOf(v)); } catch (Exception e) { return 0; }
+    }
+
+    /** 通用：读取源单据（必须已审核），插入目标草稿单，返回 {编号, gotoPanel} */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> insertGenerated(String targetPanel, String sourcePanel, String sourceNo,
+                                                Map<String, Object> head, Map<String, Object> detail) {
+        String newNo = generateFormNo(targetPanel);
+        FormData fd = new FormData();
+        fd.setPanelCode(targetPanel);
+        fd.setFormNo(newNo);
+        head.put("来源单据", sourcePanel);
+        head.put("来源单号", sourceNo);
+        fd.setData(toJson(head));
+        fd.setDetailData(toJson(detail));
+        fd.setStatus("草稿");
+        fd.setCreateBy("admin");
+        fd.setCreateTime(LocalDateTime.now());
+        fd.setUpdateTime(LocalDateTime.now());
+        formMapper.insert(fd);
+        Map<String, Object> out = new HashMap<>();
+        out.put("单据状态", "草稿");
+        out.put("gotoPanel", targetPanel);
+        out.put("编号", newNo);
+        return out;
+    }
+
+    /** 推式生单：请购单（PU_REQ）→ 采购订单（PU_ORDER）；表头带建议供应商，明细带存货/数量/价格 */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createPuOrderFromReq(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "PU_REQ").eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("请购单不存在：" + no);
+        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核请购单可生成采购订单");
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> items = dm.get("items") instanceof List
+                ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
+        if (items.isEmpty()) throw new IllegalStateException("请购单无明细：" + no);
+
+        Map<String, Object> poData = new HashMap<>();
+        poData.put("单据日期", LocalDate.now().toString());
+        poData.put("项目", head.getOrDefault("项目", ""));
+        poData.put("供应商", head.getOrDefault("建议供应商", ""));
+        poData.put("供应商编码", head.getOrDefault("建议供应商编码", ""));
+        poData.put("币种", "人民币");
+        poData.put("汇率", 1);
+        poData.put("到货地址", head.getOrDefault("到货地址", ""));
+        poData.put("交货日期", head.getOrDefault("需求日期", ""));
+        poData.put("发货状态", "未发货");
+        poData.put("合同号", String.valueOf(no));
+        poData.put("订金金额", 0);
+        poData.put("付款方式", "现付");
+        poData.put("数据来源", "请购单");
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> it : items) {
+            Map<String, Object> r = new HashMap<>();
+            r.put("物料编码", it.getOrDefault("存货编码", ""));
+            r.put("物料名称", it.getOrDefault("存货名称", ""));
+            r.put("规格型号", it.getOrDefault("规格型号", ""));
+            r.put("单位", it.getOrDefault("采购单位", "件"));
+            r.put("数量", it.getOrDefault("数量", 0));
+            r.put("单价", it.getOrDefault("单价", 0));
+            r.put("金额", it.getOrDefault("金额", 0));
+            r.put("税率%", it.getOrDefault("税率%", 13));
+            r.put("含税单价", it.getOrDefault("含税单价", 0));
+            r.put("含税金额", it.getOrDefault("含税金额", 0));
+            r.put("预计到货日期", it.getOrDefault("需求日期", ""));
+            r.put("现存量", it.getOrDefault("现存量", 0));
+            r.put("现存量说明", it.getOrDefault("现存量说明", ""));
+            rows.add(r);
+        }
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("PU_ORDER", "PU_REQ", String.valueOf(no), poData, detail);
+    }
+
+    /** 推式生单：采购订单（PU_ORDER）→ 采购入库单（PURCHASE_IN） */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createPurchaseInFromPo(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "PU_ORDER").eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("采购订单不存在：" + no);
+        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核采购订单可生成采购入库单");
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> items = dm.get("items") instanceof List
+                ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
+        if (items.isEmpty()) throw new IllegalStateException("采购订单无明细：" + no);
+
+        Map<String, Object> piData = new HashMap<>();
+        piData.put("单据日期", LocalDate.now().toString());
+        piData.put("供应商编码", head.getOrDefault("供应商编码", ""));
+        piData.put("供应商", head.getOrDefault("供应商", ""));
+        piData.put("采购订单号", String.valueOf(no));
+        piData.put("数据来源", "采购订单");
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> it : items) {
+            Map<String, Object> r = new HashMap<>();
+            r.put("仓库", "原料仓");
+            r.put("存货名称", it.getOrDefault("物料名称", ""));
+            r.put("规格型号", it.getOrDefault("规格型号", ""));
+            r.put("实收数量", it.getOrDefault("数量", 0));
+            r.put("计量单位", it.getOrDefault("单位", "件"));
+            r.put("单价", it.getOrDefault("单价", 0));
+            r.put("税率%", it.getOrDefault("税率%", 13));
+            r.put("含税单价", it.getOrDefault("含税单价", 0));
+            r.put("金额", it.getOrDefault("金额", 0));
+            r.put("含税金额", it.getOrDefault("含税金额", 0));
+            r.put("现存量", it.getOrDefault("现存量", 0));
+            rows.add(r);
+        }
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("PURCHASE_IN", "PU_ORDER", String.valueOf(no), piData, detail);
+    }
+
+    /** 推式生单：生产加工单（MANU_ORDER）→ 产成品入库单（FINISH_IN） */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createFinishInFromMo(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("生产加工单不存在：" + no);
+        if (!"已审核".equals(src.getStatus()) && !"生产中".equals(src.getStatus())) {
+            throw new IllegalStateException("仅已审核/生产中的生产加工单可生成产成品入库单");
+        }
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> products = dm.get("products") instanceof List
+                ? (List<Map<String, Object>>) dm.get("products") : new ArrayList<>();
+        if (products.isEmpty()) throw new IllegalStateException("生产加工单无产成品明细：" + no);
+
+        Map<String, Object> fiData = new HashMap<>();
+        fiData.put("单据日期", LocalDate.now().toString());
+        fiData.put("加工单号", String.valueOf(no));
+        fiData.put("业务类型", "产成品入库");
+        fiData.put("入库类别", "自制加工入库");
+        fiData.put("生产车间", head.getOrDefault("生产车间", ""));
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> p : products) {
+            Map<String, Object> r = new HashMap<>();
+            r.put("产品名称", p.getOrDefault("产品名称", ""));
+            r.put("仓库", "成品仓");
+            r.put("规格型号", p.getOrDefault("规格型号", ""));
+            r.put("计量单位", p.getOrDefault("生产单位", "件"));
+            r.put("实收数量", p.getOrDefault("数量", 0));
+            r.put("单价", 0);
+            r.put("金额", 0);
+            r.put("现存量", p.getOrDefault("现存量", 0));
+            r.put("图号", p.getOrDefault("图号", ""));
+            rows.add(r);
+        }
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("FINISH_IN", "MANU_ORDER", String.valueOf(no), fiData, detail);
+    }
+
+    /** 推式生单：领料申请单（MATERIAL_REQ）或生产加工单（MANU_ORDER）→ 材料出库单（MATERIAL_OUT） */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createMaterialOut(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, panelCode).eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("来源单据不存在：" + no);
+        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核单据可生成材料出库单");
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> rows = new ArrayList<>();
+        Map<String, Object> moData = new HashMap<>();
+        moData.put("单据日期", LocalDate.now().toString());
+        moData.put("业务类型", "材料出库");
+        moData.put("出库类别", "直接领料");
+        moData.put("生产车间", head.getOrDefault("生产车间", ""));
+        moData.put("领用人", head.getOrDefault("领料申请人", ""));
+        moData.put("加工单号", head.getOrDefault("加工单号", ""));
+        if ("MATERIAL_REQ".equals(panelCode)) {
+            List<Map<String, Object>> items = dm.get("items") instanceof List
+                    ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
+            for (Map<String, Object> it : items) {
+                Map<String, Object> r = new HashMap<>();
+                r.put("仓库", it.getOrDefault("仓库", "原料仓"));
+                r.put("加工单号", it.getOrDefault("加工单号", ""));
+                r.put("材料名称", it.getOrDefault("材料名称", ""));
+                r.put("计量单位", it.getOrDefault("计量单位", "kg"));
+                r.put("数量", it.getOrDefault("数量", 0));
+                r.put("单价", it.getOrDefault("单价", 0));
+                r.put("金额", it.getOrDefault("金额", 0));
+                r.put("规格型号", it.getOrDefault("规格型号", ""));
+                r.put("现存量", it.getOrDefault("现存量", 0));
+                r.put("现存量说明", it.getOrDefault("现存量说明", ""));
+                rows.add(r);
+            }
+        } else {
+            List<Map<String, Object>> mats = dm.get("materials") instanceof List
+                    ? (List<Map<String, Object>>) dm.get("materials") : new ArrayList<>();
+            for (Map<String, Object> m : mats) {
+                Map<String, Object> r = new HashMap<>();
+                r.put("仓库", m.getOrDefault("预出仓库", "原料仓"));
+                r.put("加工单号", String.valueOf(no));
+                r.put("材料名称", m.getOrDefault("材料名称", ""));
+                r.put("计量单位", m.getOrDefault("计量单位", "kg"));
+                r.put("数量", m.getOrDefault("计划数量", m.getOrDefault("需用数量", 0)));
+                r.put("单价", 0);
+                r.put("金额", 0);
+                r.put("规格型号", m.getOrDefault("规格型号", ""));
+                r.put("现存量", m.getOrDefault("现存量", 0));
+                rows.add(r);
+            }
+        }
+        if (rows.isEmpty()) throw new IllegalStateException("来源单据无材料明细：" + no);
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("MATERIAL_OUT", panelCode, String.valueOf(no), moData, detail);
+    }
+
+    /** 推式生单：销售订单（SO_ORDER）→ 销售出库单（SALE_OUT） */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createSaleOutFromSo(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "SO_ORDER").eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("销售订单不存在：" + no);
+        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核销售订单可生成销售出库单");
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> items = dm.get("items") instanceof List
+                ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
+        if (items.isEmpty()) throw new IllegalStateException("销售订单无明细：" + no);
+
+        Map<String, Object> soData = new HashMap<>();
+        soData.put("单据日期", LocalDate.now().toString());
+        soData.put("客户", head.getOrDefault("客户", ""));
+        soData.put("客户编码", head.getOrDefault("客户编码", ""));
+        soData.put("结算客户", head.getOrDefault("结算客户", ""));
+        soData.put("业务员", head.getOrDefault("业务员", ""));
+        soData.put("销售订单号", String.valueOf(no));
+        soData.put("数据来源", "销售订单");
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> it : items) {
+            Map<String, Object> r = new HashMap<>();
+            r.put("仓库", "成品仓");
+            r.put("存货名称", it.getOrDefault("存货名称", ""));
+            r.put("存货编码", it.getOrDefault("存货编码", ""));
+            r.put("规格型号", it.getOrDefault("规格型号", ""));
+            r.put("计量单位", it.getOrDefault("销售单位", "件"));
+            r.put("数量", it.getOrDefault("数量", 0));
+            r.put("税率%", it.getOrDefault("税率%", 13));
+            double tax = num(it.getOrDefault("税率%", 13));
+            double qty = num(it.getOrDefault("数量", 0));
+            double price = num(it.getOrDefault("含税单价", 0));
+            double amount = qty * price;
+            r.put("售价", price);
+            r.put("含税售价", price);
+            r.put("销售金额", Math.round(amount * 100) / 100.0);
+            r.put("含税销售金额", Math.round(amount * 100) / 100.0);
+            r.put("税额", Math.round(amount * tax / (100 + tax) * 100) / 100.0);
+            r.put("折扣金额", 0);
+            r.put("现存量", it.getOrDefault("现存量", 0));
+            r.put("现存量说明", it.getOrDefault("现存量说明", ""));
+            rows.add(r);
+        }
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("SALE_OUT", "SO_ORDER", String.valueOf(no), soData, detail);
     }
 
     /**
@@ -1207,8 +1496,10 @@ public class PxService {
         else if ("FINISH_IN".equals(panelCode)) biz = "FI-";       // 产成品入库单
         else if ("PURCHASE_IN".equals(panelCode)) biz = "RK-";     // 采购入库单（T+ 入库惯例）
         else if ("SALE_OUT".equals(panelCode)) biz = "CK-";        // 销售出库单（T+ 出库惯例）
+        else if ("MATERIAL_OUT".equals(panelCode)) biz = "CL-";    // 材料出库单（2026-08-24 修复：原默认 MO- 前缀错误）
         else if ("PROCESS_REPORT".equals(panelCode)) biz = "GX-";  // 工序汇报单
         else if ("PU_IN".equals(panelCode)) biz = "PU-";           // 进货单
+        else if ("PU_ORDER".equals(panelCode)) biz = "PO-";        // 采购订单（2026-08-24 修复：原默认 MO- 前缀错误）
         else if ("PU_REQ".equals(panelCode)) biz = "CG-";          // 请购单（T+ 采购惯例 CG）
         else if ("SALE_INV".equals(panelCode)) biz = "XS-";        // 销货单
         else if ("PICK_ORDER".equals(panelCode)) biz = "PH-";      // 配货单
