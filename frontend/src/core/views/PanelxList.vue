@@ -1440,18 +1440,15 @@ function onFormSaved() {
 }
 
 // 直接新增：调后端保存（空表头）创建最新草稿单（autoCode 编号 + 单据日期=当天自动填入），
-// 跳转表单页编辑（非弹窗）。保存返回 {编号, 单据状态}。
+// 刷新列表并定位到新单，在列表页直接内联填写（不跳转表单页/不弹新增弹窗）。
 async function directAdd() {
   try {
     const res = await engine.callButton({ panelCode: panelCode.value, buttonName: '保存', formData: {}, buttonParam: {} })
     const no = res && (res['编号'] || res.formNo)
     if (!no) return ElMessage.error('新增失败：未返回单据编号')
-    const path = `/panelx/form/${panelCode.value}`
-    const q = { code: no }
-    load() // 刷新列表（keep-alive 返回时可见新单）
-    router.push({ path, query: q })
-    tabs.open({ path, title: `${panelName.value}-${no}`, query: q })
-    ElMessage.success(`已新增 ${panelName.value}-${no}`)
+    await load() // 刷新列表（新单按创建时间倒序置顶）
+    curIdx.value = 0 // 定位到最新单据，草稿状态列表页可直接填写
+    ElMessage.success(`已新增 ${panelName.value}-${no}，请在列表页填写并保存`)
   } catch (e) {
     ElMessage.error(engine.errMsg(e) || '新增失败')
   }

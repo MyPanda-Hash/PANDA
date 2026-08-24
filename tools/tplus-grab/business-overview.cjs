@@ -127,7 +127,16 @@ async function waitForText(cdp, text, attempts = 40) {
 
 async function frameContext(cdp, urlPart, attempts = 60) {
   for (let index = 0; index < attempts; index += 1) {
-    const frame = cdp.findFrame(await cdp.frameTree(), urlPart)
+    const tree = await cdp.frameTree()
+    const find = (node) => {
+      if (node.frame.url.includes(urlPart) || node.frame.name === urlPart) return node.frame
+      for (const child of node.childFrames || []) {
+        const found = find(child)
+        if (found) return found
+      }
+      return null
+    }
+    const frame = find(tree)
     if (frame) {
       let contextId = cdp.contexts.get(frame.id)
       if (!contextId) {
@@ -143,6 +152,35 @@ async function frameContext(cdp, urlPart, attempts = 60) {
     await sleep(250)
   }
   return null
+}
+
+async function clickTextByMouseInFrame(cdp, contextId, frameSelector, text) {
+  const local = JSON.parse(await cdp.evaluate(`(() => {
+    const visible = (element) => {
+      const rect = element.getBoundingClientRect()
+      const style = getComputedStyle(element)
+      return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
+    }
+    const element = [...document.querySelectorAll('button,a,span,div,li,td')]
+      .find((item) => visible(item) && (item.textContent || '').trim() === ${JSON.stringify(text)})
+    if (!element) return null
+    const rect = element.getBoundingClientRect()
+    return JSON.stringify({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 })
+  })()`, contextId))
+  if (!local) return false
+  const frame = JSON.parse(await cdp.evaluate(`(() => {
+    const element = document.querySelector(${JSON.stringify(frameSelector)})
+    if (!element) return null
+    const rect = element.getBoundingClientRect()
+    return JSON.stringify({ x: rect.x, y: rect.y })
+  })()`))
+  if (!frame) return false
+  const x = frame.x + local.x
+  const y = frame.y + local.y
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y })
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 })
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 })
+  return { x, y }
 }
 
 async function dumpContext(cdp, contextId) {
@@ -292,6 +330,9 @@ async function run(attempt) {
     cdp = await connect(page)
     await cdp.send('Page.enable'); await cdp.send('Runtime.enable'); await cdp.send('Network.enable')
     const industry = await login(cdp)
+    if (!await waitForText(cdp, '智能供应链', 120)) {
+      throw new Error('门户一级菜单未加载完成')
+    }
     let portal = await dumpPage(cdp)
     if (portal.body.includes('长时间未操作或相同账号在另外地点登录')) {
       return { retry: true, reason: '演示账号会话冲突', industry, portal }
@@ -303,24 +344,31 @@ async function run(attempt) {
       await clickByText(cdp, '×')
       await sleep(500)
     }
-    const clicked = await clickBySelector(cdp, 'li.menufist_ISC') || await clickByText(cdp, '智能供应链')
-    if (!clicked) throw new Error('未找到智能供应链一级菜单')
-    await sleep(2000)
+    let clicked = false
+    let iscContext = null
+    for (let index = 0; index < 3 && !iscContext; index += 1) {
+      clicked = await clickBySelector(cdp, 'li.menufist_ISC') || await clickByText(cdp, '智能供应链')
+      if (!clicked) throw new Error('未找到智能供应链一级菜单')
+      await sleep(2000)
+      iscContext = await frameContext(cdp, 'menuCode=ISC', 40)
+    }
+    if (!iscContext) throw new Error('未找到智能供应链 iframe')
     const menu = await dumpPage(cdp)
     fs.writeFileSync(path.join(OUT, 'isc-menu.json'), JSON.stringify(menu, null, 2))
     await screenshot(cdp, '02-intelligent-supply-chain.png')
 
-    const iscContext = await frameContext(cdp, 'menuCode=ISC')
-    if (!iscContext) throw new Error('未找到智能供应链 iframe')
     const iscDesk = await dumpContext(cdp, iscContext.contextId)
     fs.writeFileSync(path.join(OUT, 'isc-idesk.json'), JSON.stringify(iscDesk, null, 2))
 
     const overviewClicked = await clickTextInContext(cdp, iscContext.contextId, '业务总览')
     await sleep(1500)
 
-    const productionClicked = await clickTextInContext(cdp, iscContext.contextId, '生产管理')
+    const productionClicked = await clickTextByMouseInFrame(cdp, iscContext.contextId, '#ISC_iframe', '生产管理')
     await sleep(2500)
-    const productionRelation = await dumpContext(cdp, iscContext.contextId)
+    const productionContext = await frameContext(cdp, 'MP_iframe', 100)
+    const productionRelation = productionContext
+      ? await dumpContext(cdp, productionContext.contextId)
+      : await dumpPage(cdp)
     fs.writeFileSync(path.join(OUT, 'production-relation.json'), JSON.stringify(productionRelation, null, 2))
     await screenshot(cdp, '03-production-relation.png')
 
@@ -359,9 +407,14 @@ async function main() {
   fs.mkdirSync(OUT, { recursive: true })
   let result
   for (let attempt = 1; attempt <= 4; attempt += 1) {
-    result = await run(attempt)
-    console.log(`[attempt ${attempt}] ${result.retry ? result.reason : '门户可用'}`)
-    if (!result.retry) break
+    try {
+      result = await run(attempt)
+      console.log(`[attempt ${attempt}] ${result.retry ? result.reason : '门户可用'}`)
+      if (!result.retry) break
+    } catch (error) {
+      console.log(`[attempt ${attempt}] ${error.message}，重新申请体验账号`)
+      result = { retry: true, reason: error.message }
+    }
     await sleep(1500)
   }
   if (!result || result.retry) throw new Error('连续分配到冲突的体验账号')

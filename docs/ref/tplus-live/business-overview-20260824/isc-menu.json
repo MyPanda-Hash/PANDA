@@ -1,7 +1,7 @@
 {
   "url": "https://h4t.chanjet.com/tplus/view/portal/portal.html?_from=exp",
   "title": "畅捷通 T+",
-  "body": "[641164]户外用品\n\n[00]总部   已认证 畅捷通信息技术股份有限公司 2026-08-24 \n更新公告\nnew\n99+\n23\n87\n123\n  \n经营分析\n新商贸\n供应链协同\n智能供应链\n新生产\n质量管理\n智能财税\n多组织\n智能体广场\n基础设置\nTOP应用\n我的桌面\n智能供应链\n   ",
+  "body": "[641164]户外用品\n[00]总部   已认证 畅捷通信息技术股份有限公司 2026-08-24 \n更新公告\nnew\n99+\n99+\ntplusdemo12302\n  \n经营分析\n新商贸\n供应链协同\n智能供应链\n新生产\n质量管理\n智能财税\n多组织\n基础设置\nTOP应用\n我的桌面\n智能供应链\n   ",
   "leaves": [
     {
       "text": "[00]总部",
@@ -79,7 +79,7 @@
       "id": "",
       "className": "new-icon",
       "rect": {
-        "x": 1250,
+        "x": 1210,
         "y": 6,
         "w": 28,
         "h": 12
@@ -94,7 +94,7 @@
       "id": "",
       "className": "circleNum",
       "rect": {
-        "x": 1317,
+        "x": 1277,
         "y": 5,
         "w": 25,
         "h": 18
@@ -104,19 +104,19 @@
       "attrs": [
         [
           "data-count",
-          "4608"
+          "4330"
         ]
       ]
     },
     {
-      "text": "23",
+      "text": "99+",
       "tag": "SPAN",
       "id": "",
       "className": "circleNum",
       "rect": {
-        "x": 1357,
+        "x": 1345,
         "y": 5,
-        "w": 19,
+        "w": 25,
         "h": 18
       },
       "href": null,
@@ -124,39 +124,19 @@
       "attrs": [
         [
           "data-count",
-          "23"
+          "701"
         ]
       ]
     },
     {
-      "text": "87",
-      "tag": "SPAN",
-      "id": "",
-      "className": "circleNum",
-      "rect": {
-        "x": 1391,
-        "y": 5,
-        "w": 19,
-        "h": 18
-      },
-      "href": null,
-      "onclick": null,
-      "attrs": [
-        [
-          "data-count",
-          "87"
-        ]
-      ]
-    },
-    {
-      "text": "123",
+      "text": "tplusdemo12302",
       "tag": "SPAN",
       "id": "username",
       "className": "show-name",
       "rect": {
-        "x": 1540,
+        "x": 1500,
         "y": 14,
-        "w": 20,
+        "w": 60,
         "h": 22
       },
       "href": null,
@@ -284,28 +264,13 @@
       "attrs": []
     },
     {
-      "text": "智能体广场",
-      "tag": "SPAN",
-      "id": "",
-      "className": "menu-text",
-      "rect": {
-        "x": 0,
-        "y": 441,
-        "w": 87,
-        "h": 44
-      },
-      "href": null,
-      "onclick": null,
-      "attrs": []
-    },
-    {
       "text": "基础设置",
       "tag": "SPAN",
       "id": "",
       "className": "menu-text",
       "rect": {
         "x": 0,
-        "y": 485,
+        "y": 441,
         "w": 72,
         "h": 44
       },
@@ -320,7 +285,7 @@
       "className": "menu-text",
       "rect": {
         "x": 0,
-        "y": 529,
+        "y": 485,
         "w": 73,
         "h": 44
       },
@@ -361,7 +326,7 @@
   ],
   "iframes": [
     {
-      "src": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=ISC&ideskColumn=1&taskID=%E6%99%BA%E8%83%BD%E4%BE%9B%E5%BA%94%E9%93%BE&TaskSessionID=a1b3c81e-ecd0-f083-2f19-9c4f80accb69",
+      "src": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=ISC&ideskColumn=1&taskID=%E6%99%BA%E8%83%BD%E4%BE%9B%E5%BA%94%E9%93%BE&TaskSessionID=4b8cfa7f-3271-5c42-1dc0-8fd10b3b9059",
       "id": "ISC_iframe",
       "name": "",
       "rect": {
