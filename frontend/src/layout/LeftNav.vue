@@ -31,7 +31,7 @@
             v-for="m in g.children"
             :key="m.code"
             class="nav-module"
-            :class="{ active: cardModule === m.code }"
+            :class="{ active: cardModule?.code === m.code }"
             @mouseenter="openCard(m, $event)"
             @click="toggleCard(m, $event)"
           >
@@ -42,17 +42,21 @@
       </template>
     </el-scrollbar>
 
-    <div v-if="cardModule" class="fly-card" :style="{ top: cardTop + 'px' }">
-      <div class="fly-head">
-        <span class="fly-back" @click="closeCard">← 返回</span>
-        <span class="fly-title">{{ cardModule.title }}</span>
-      </div>
+    <div
+      v-if="cardModule"
+      ref="cardRef"
+      class="fly-card"
+      :style="{
+        top: cardTop + 'px',
+        '--fly-pointer-top': cardPointerTop + 'px',
+        '--fly-card-max-height': cardMaxHeight + 'px',
+      }"
+    >
       <div class="card-body">
         <div v-for="cat in cardColumns" :key="cat.title" class="card-group">
           <div class="card-group-title">{{ cat.title }}</div>
           <div class="card-items">
-            <div v-for="leaf in cat.items" :key="leaf.code" class="card-item" @click="go(leaf)">
-              <el-icon v-if="leaf.icon"><component :is="leaf.icon" /></el-icon>
+            <div v-for="leaf in cat.items" :key="leaf.code" class="card-item" :title="leaf.title" @click="go(leaf)">
               <span>{{ leaf.title }}</span>
             </div>
           </div>
@@ -111,7 +115,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { menuTree as rawMenuTree, filterMenuTree } from '@/business/menus'
 import { useTabsStore } from '@/stores/tabs'
@@ -124,6 +128,7 @@ const tabs = useTabsStore()
 const app = useAppStore()
 const user = useUserStore()
 const navRef = ref(null)
+const cardRef = ref(null)
 
 // 角色权限过滤后的菜单树（操作员仅见被授权面板）
 const menuTree = computed(() => filterMenuTree(rawMenuTree, user.visiblePanels, user.isAdmin))
@@ -131,6 +136,9 @@ const menuTree = computed(() => filterMenuTree(rawMenuTree, user.visiblePanels, 
 const expandedGroup = ref('')
 const cardModule = ref(null)
 const cardTop = ref(0)
+const cardPointerTop = ref(24)
+const cardMaxHeight = ref(420)
+let cardAnchorEl = null
 const billSearchVisible = ref(false)
 const billAddVisible = ref(false)
 const billKeyword = ref('')
@@ -174,14 +182,12 @@ function clickGroup(g) {
   expandedGroup.value = expandedGroup.value === g.code ? '' : g.code
 }
 
-function openCard(m, e) {
+async function openCard(m, e) {
   if (!app.collapsed && !m.children) return
   cardModule.value = m
-  if (e && e.currentTarget && navRef.value) {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const navRect = navRef.value.getBoundingClientRect()
-    cardTop.value = rect.top - navRect.top
-  }
+  if (e?.currentTarget) cardAnchorEl = e.currentTarget
+  await nextTick()
+  updateCardPosition()
 }
 
 function toggleCard(m, e) {
@@ -191,6 +197,35 @@ function toggleCard(m, e) {
 
 function closeCard() {
   cardModule.value = null
+  cardAnchorEl = null
+}
+
+// 弹层尽量从所选菜单项开始展示；空间不足时自动上移，指示箭头仍精确指向所选项。
+async function updateCardPosition() {
+  if (!cardModule.value || !cardAnchorEl || !navRef.value || !cardRef.value) return
+
+  const navRect = navRef.value.getBoundingClientRect()
+  const anchorRect = cardAnchorEl.getBoundingClientRect()
+  const visibleBottom = Math.min(navRect.bottom, window.innerHeight)
+  const availableHeight = Math.max(180, visibleBottom - navRect.top - 16)
+  cardMaxHeight.value = availableHeight
+
+  await nextTick()
+  if (!cardRef.value) return
+
+  const cardHeight = Math.min(cardRef.value.offsetHeight, availableHeight)
+  const anchorTop = anchorRect.top - navRect.top
+  const anchorCenter = anchorTop + anchorRect.height / 2
+  const minTop = 8
+  const maxTop = Math.max(minTop, visibleBottom - navRect.top - cardHeight - 8)
+  const nextTop = Math.min(Math.max(anchorTop, minTop), maxTop)
+  const pointerInset = 14
+
+  cardTop.value = nextTop
+  cardPointerTop.value = Math.min(
+    Math.max(anchorCenter - nextTop, pointerInset),
+    Math.max(pointerInset, cardHeight - pointerInset)
+  )
 }
 
 // ===== 移动端：层级堆叠导航（下钻式） =====
@@ -284,6 +319,9 @@ watch(
   () => [billSearchVisible.value, billAddVisible.value],
   () => { billKeyword.value = '' }
 )
+
+onMounted(() => window.addEventListener('resize', updateCardPosition))
+onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
 </script>
 
 <style scoped>
@@ -330,7 +368,7 @@ watch(
 }
 .dark .rz-icon:hover {
   background: #33343c;
-  color: #7ea6rr;
+  color: #7ea6ff;
 }
 .leftnav.collapsed .func-zone {
   flex-direction: column;
@@ -365,7 +403,7 @@ watch(
 .dark .nav-group:hover,
 .dark .nav-group.active {
   background: #33343c;
-  color: #7ea6rr;
+  color: #7ea6ff;
 }
 .gi {
   font-size: 16px;
@@ -413,7 +451,7 @@ watch(
 .dark .nav-module:hover,
 .dark .nav-module.active {
   background: #33343c;
-  color: #7ea6rr;
+  color: #7ea6ff;
 }
 .mi {
   font-size: 12px;
@@ -421,46 +459,77 @@ watch(
 .fly-card {
   position: absolute;
   left: 100%;
-  margin-left: 4px;
-  min-width: 560px;
-  max-width: 820px;
+  min-width: 520px;
+  max-width: min(820px, calc(100vw - 210px));
+  max-height: var(--fly-card-max-height, 420px);
   background: var(--t-card-bg);
-  border: 1px solid var(--t-border);
-  border-radius: 10px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
-  overflow: hidden;
+  border: 1px solid #d5d8dc;
+  border-radius: 5px;
+  box-shadow: 0 4px 14px rgba(31, 42, 55, 0.14);
   z-index: 200;
+}
+.fly-card::before,
+.fly-card::after {
+  position: absolute;
+  top: calc(var(--fly-pointer-top, 24px) - 11px);
+  width: 0;
+  height: 0;
+  border-top: 11px solid transparent;
+  border-bottom: 11px solid transparent;
+  content: '';
+  pointer-events: none;
+}
+.fly-card::before {
+  left: -13px;
+  border-right: 13px solid #d5d8dc;
+}
+.fly-card::after {
+  left: -11px;
+  border-right: 12px solid var(--t-card-bg);
 }
 .dark .fly-card {
   background: #26272e;
   border-color: #3a3b42;
 }
+.dark .fly-card::before {
+  border-right-color: #3a3b42;
+}
+.dark .fly-card::after {
+  border-right-color: #26272e;
+}
 .card-body {
   display: flex;
   flex-direction: row;
-  gap: 4px;
-  max-height: 420px;
+  max-height: var(--fly-card-max-height, 420px);
   overflow: auto;
-  padding: 14px 16px;
+  padding: 14px 16px 16px;
+  border-radius: 5px;
 }
 .card-group {
   flex: 1;
-  min-width: 110px;
+  min-width: 180px;
   display: flex;
   flex-direction: column;
+  padding: 0 4px;
+}
+.card-group + .card-group {
+  margin-left: 14px;
+  padding-left: 18px;
+  border-left: 1px dashed #d9dde2;
 }
 .card-group-title {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--t-text-1);
-  padding: 4px 10px;
-  border-bottom: 1px solid var(--t-border-light);
-  margin-bottom: 6px;
+  padding: 2px 0 10px;
+  margin-bottom: 2px;
   white-space: nowrap;
 }
 .dark .card-group-title {
   color: #ddd;
-  border-color: #3a3b42;
+}
+.dark .card-group + .card-group {
+  border-left-color: #45464f;
 }
 .card-items {
   display: flex;
@@ -469,24 +538,30 @@ watch(
 .card-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
-  font-size: 13px;
+  min-width: 0;
+  padding: 7px 0;
+  font-size: 14px;
   color: var(--t-text-1);
-  border-radius: 6px;
+  border-radius: 3px;
   cursor: pointer;
   white-space: nowrap;
+  transition: color 0.15s, background-color 0.15s, padding-left 0.15s;
+}
+.card-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .dark .card-item {
   color: #ccc;
 }
 .card-item:hover {
+  padding-left: 8px;
   background: var(--t-hover-bg);
   color: var(--t-primary);
 }
 .dark .card-item:hover {
   background: #33343c;
-  color: #7ea6rr;
+  color: #7ea6ff;
 }
 .bill-list {
   max-height: 400px;
