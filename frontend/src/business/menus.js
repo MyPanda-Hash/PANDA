@@ -11,6 +11,12 @@ export const menuTree = [
     icon: 'Connection',
     children: [
       {
+        code: 'businessOverview',
+        title: '业务总览',
+        path: '/scm/businessOverview',
+        icon: 'Connection',
+      },
+      {
         code: 'sales',
         title: '销售管理',
         icon: 'ShoppingCart',

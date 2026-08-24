@@ -191,6 +191,11 @@ async function openCard(m, e) {
 }
 
 function toggleCard(m, e) {
+  // 叶子模块（无 children，如业务总览）：直接跳转，不弹浮层
+  if (!m.children || !m.children.length) {
+    go(m)
+    return
+  }
   if (cardModule.value === m) closeCard()
   else openCard(m, e)
 }
