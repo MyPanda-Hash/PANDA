@@ -692,6 +692,9 @@ public class PxService {
         detail.put("materials", materials);
         detail.put("processes", defaultProcesses(products, String.valueOf(moData.getOrDefault("生产车间", "熔铸车间"))));
 
+        // 新建兜底：单据日期=当天 + 锭号=form_no（修复：销售订单生单生成的加工单锭号缺失，必填校验无法保存草稿）
+        fillNewDefaults("MANU_ORDER", moData, newNo);
+
         FormData mo = new FormData();
         mo.setPanelCode("MANU_ORDER");
         mo.setFormNo(newNo);
@@ -808,6 +811,9 @@ public class PxService {
         Map<String, Object> detail = new HashMap<>();
         detail.put("items", items);
 
+        // 新建兜底：单据日期=当天 + 单据编号=form_no（修复：生单生成的汇报单编号缺失，必填校验无法保存草稿）
+        fillNewDefaults("PROCESS_REPORT", prData, newNo);
+
         FormData pr = new FormData();
         pr.setPanelCode("PROCESS_REPORT");
         pr.setFormNo(newNo);
@@ -837,6 +843,8 @@ public class PxService {
     private Map<String, Object> insertGenerated(String targetPanel, String sourcePanel, String sourceNo,
                                                 Map<String, Object> head, Map<String, Object> detail) {
         String newNo = generateFormNo(targetPanel);
+        // 新建兜底：字段默认值 + 单据日期=当天 + 单据编号/锭号=form_no（修复：生单目标单必填字段缺失无法保存草稿）
+        fillNewDefaults(targetPanel, head, newNo);
         FormData fd = new FormData();
         fd.setPanelCode(targetPanel);
         fd.setFormNo(newNo);
