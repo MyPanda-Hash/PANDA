@@ -1,7 +1,7 @@
 {
   "url": "https://h4t.chanjet.com/tplus/view/portal/portal.html?_from=exp",
   "title": "畅捷通 T+",
-  "body": "[641164]户外用品\n\n[00]总部   已认证 畅捷通信息技术股份有限公司 2026-08-24 \n更新公告\nnew\n99+\n13\n87\ntplusdemo12331\n  \n经营分析\n新商贸\n供应链协同\n智能供应链\n新生产\n质量管理\n智能财税\n多组织\n智能体广场\n基础设置\nTOP应用\n我的桌面\n智能供应链\n   ",
+  "body": "[641164]户外用品\n\n[00]总部   已认证 畅捷通信息技术股份有限公司 2026-08-24 \n更新公告\nnew\n99+\n2\n99+\ntplusdemo12352\n  \n经营分析\n新商贸\n供应链协同\n智能供应链\n新生产\n质量管理\n智能财税\n多组织\n智能体广场\n基础设置\nTOP应用\n我的桌面\n智能供应链\n   ",
   "leaves": [
     {
       "text": "[00]总部",
@@ -104,12 +104,12 @@
       "attrs": [
         [
           "data-count",
-          "4643"
+          "4656"
         ]
       ]
     },
     {
-      "text": "13",
+      "text": "2",
       "tag": "SPAN",
       "id": "",
       "className": "circleNum",
@@ -124,19 +124,19 @@
       "attrs": [
         [
           "data-count",
-          "13"
+          "2"
         ]
       ]
     },
     {
-      "text": "87",
+      "text": "99+",
       "tag": "SPAN",
       "id": "",
       "className": "circleNum",
       "rect": {
-        "x": 1351,
+        "x": 1345,
         "y": 5,
-        "w": 19,
+        "w": 25,
         "h": 18
       },
       "href": null,
@@ -144,12 +144,12 @@
       "attrs": [
         [
           "data-count",
-          "87"
+          "678"
         ]
       ]
     },
     {
-      "text": "tplusdemo12331",
+      "text": "tplusdemo12352",
       "tag": "SPAN",
       "id": "username",
       "className": "show-name",
@@ -361,7 +361,7 @@
   ],
   "iframes": [
     {
-      "src": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=ISC&ideskColumn=1&taskID=%E6%99%BA%E8%83%BD%E4%BE%9B%E5%BA%94%E9%93%BE&TaskSessionID=e3afe762-4014-4825-cb93-57b2b2840b1f",
+      "src": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=ISC&ideskColumn=1&taskID=%E6%99%BA%E8%83%BD%E4%BE%9B%E5%BA%94%E9%93%BE&TaskSessionID=[REDACTED]",
       "id": "ISC_iframe",
       "name": "",
       "rect": {

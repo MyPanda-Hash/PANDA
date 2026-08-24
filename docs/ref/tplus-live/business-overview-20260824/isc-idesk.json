@@ -1,10 +1,1151 @@
 {
-  "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=ISC&ideskColumn=1&taskID=%E6%99%BA%E8%83%BD%E4%BE%9B%E5%BA%94%E9%93%BE&TaskSessionID=e3afe762-4014-4825-cb93-57b2b2840b1f",
+  "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=ISC&ideskColumn=1&taskID=%E6%99%BA%E8%83%BD%E4%BE%9B%E5%BA%94%E9%93%BE&TaskSessionID=[REDACTED]",
   "title": "我的桌面",
-  "body": "tplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610",
+  "body": "实时概况\n刷新\n本月采购情况\n采购次数\n66\n采购金额\n6,925,446.96\n本月采购未入库数量\n0\n本月进货情况\n进货次数\n0\n进货金额\n0.00\n在库商品\n总数量\n1,059,625.141\n总金额\n181,927,472\n近30天未出库\n商品数\n51\n总金额\n13,783,383.52\n本月出入库\n入库总数量\n343,901.4\n出库总数量\n136,952.701\n销售订单未出库\n总数量\n0.00\n总单数\n0\n业务总览\n收起\n生产管理\n委外管理\n质检管理\n销售管理\n零售管理\n供应链协同\n库存核算\n采购管理\n配货管理\n物流管理\n移动仓管\n序列号管理\n批号管理\n条码管理\n快递鸟\n菜鸟\nISV对接\n第三方系统\nAPI开放接口\n内部协同\n智能供应链\n生态赋能\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632",
   "leaves": [
     {
-      "text": "tplusdemo123312331",
+      "text": "实时概况",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-ideskpanel-title-left",
+      "rect": {
+        "x": 30,
+        "y": 25,
+        "w": 64,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-ideskpanel-title-left"
+        ]
+      ]
+    },
+    {
+      "text": "刷新",
+      "tag": "A",
+      "id": "",
+      "className": "t-btn t-btn-refresh",
+      "rect": {
+        "x": 1349,
+        "y": 27,
+        "w": 42,
+        "h": 20
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "title",
+          "刷新"
+        ],
+        [
+          "class",
+          "t-btn t-btn-refresh"
+        ]
+      ]
+    },
+    {
+      "text": "本月采购情况",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 57,
+        "y": 72,
+        "w": 84,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "采购次数",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemtitle",
+      "rect": {
+        "x": 37,
+        "y": 96,
+        "w": 48,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemtitle"
+        ],
+        [
+          "title",
+          "采购次数"
+        ]
+      ]
+    },
+    {
+      "text": "66",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemvalue alink alinkfirst",
+      "rect": {
+        "x": 95,
+        "y": 96,
+        "w": 22,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemvalue alink alinkfirst"
+        ],
+        [
+          "title",
+          "66"
+        ]
+      ]
+    },
+    {
+      "text": "采购金额",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemtitle",
+      "rect": {
+        "x": 37,
+        "y": 124,
+        "w": 48,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemtitle"
+        ],
+        [
+          "title",
+          "采购金额"
+        ]
+      ]
+    },
+    {
+      "text": "6,925,446.96",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemvalue alink",
+      "rect": {
+        "x": 95,
+        "y": 124,
+        "w": 97,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemvalue alink"
+        ],
+        [
+          "title",
+          "6,925,446.96"
+        ]
+      ]
+    },
+    {
+      "text": "本月采购未入库数量",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 332,
+        "y": 72,
+        "w": 126,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "0",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemvalue alink alinkfirst",
+      "rect": {
+        "x": 312,
+        "y": 96,
+        "w": 13,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemvalue alink alinkfirst"
+        ],
+        [
+          "title",
+          "0"
+        ]
+      ]
+    },
+    {
+      "text": "本月进货情况",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 607,
+        "y": 72,
+        "w": 84,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "进货次数",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemtitle",
+      "rect": {
+        "x": 587,
+        "y": 96,
+        "w": 48,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemtitle"
+        ],
+        [
+          "title",
+          "进货次数"
+        ]
+      ]
+    },
+    {
+      "text": "0",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemvalue alink alinkfirst",
+      "rect": {
+        "x": 645,
+        "y": 96,
+        "w": 13,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemvalue alink alinkfirst"
+        ],
+        [
+          "title",
+          "0"
+        ]
+      ]
+    },
+    {
+      "text": "进货金额",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemtitle",
+      "rect": {
+        "x": 587,
+        "y": 124,
+        "w": 48,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemtitle"
+        ],
+        [
+          "title",
+          "进货金额"
+        ]
+      ]
+    },
+    {
+      "text": "0.00",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemvalue alink",
+      "rect": {
+        "x": 645,
+        "y": 124,
+        "w": 35,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemvalue alink"
+        ],
+        [
+          "title",
+          "0.00"
+        ]
+      ]
+    },
+    {
+      "text": "在库商品",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 882,
+        "y": 72,
+        "w": 56,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "总数量",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemtitle",
+      "rect": {
+        "x": 862,
+        "y": 96,
+        "w": 36,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemtitle"
+        ],
+        [
+          "title",
+          "总数量"
+        ]
+      ]
+    },
+    {
+      "text": "1,059,625.141",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemvalue alink alinkfirst",
+      "rect": {
+        "x": 908,
+        "y": 96,
+        "w": 106,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemvalue alink alinkfirst"
+        ],
+        [
+          "title",
+          "1,059,625.141"
+        ]
+      ]
+    },
+    {
+      "text": "总金额",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemtitle",
+      "rect": {
+        "x": 862,
+        "y": 124,
+        "w": 36,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemtitle"
+        ],
+        [
+          "title",
+          "总金额"
+        ]
+      ]
+    },
+    {
+      "text": "181,927,472",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemvalue alink",
+      "rect": {
+        "x": 908,
+        "y": 124,
+        "w": 93,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemvalue alink"
+        ],
+        [
+          "title",
+          "181,927,472"
+        ]
+      ]
+    },
+    {
+      "text": "近30天未出库",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1157,
+        "y": 72,
+        "w": 86,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "商品数",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemtitle",
+      "rect": {
+        "x": 1137,
+        "y": 96,
+        "w": 36,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemtitle"
+        ],
+        [
+          "title",
+          "商品数"
+        ]
+      ]
+    },
+    {
+      "text": "51",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemvalue alink alinkfirst",
+      "rect": {
+        "x": 1183,
+        "y": 96,
+        "w": 22,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemvalue alink alinkfirst"
+        ],
+        [
+          "title",
+          "51"
+        ]
+      ]
+    },
+    {
+      "text": "总金额",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemtitle",
+      "rect": {
+        "x": 1137,
+        "y": 124,
+        "w": 36,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemtitle"
+        ],
+        [
+          "title",
+          "总金额"
+        ]
+      ]
+    },
+    {
+      "text": "13,783,383.52",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemvalue alink",
+      "rect": {
+        "x": 1183,
+        "y": 124,
+        "w": 106,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemvalue alink"
+        ],
+        [
+          "title",
+          "13,783,383.52"
+        ]
+      ]
+    },
+    {
+      "text": "本月出入库",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 57,
+        "y": 174,
+        "w": 70,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "入库总数量",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemtitle",
+      "rect": {
+        "x": 37,
+        "y": 198,
+        "w": 60,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemtitle"
+        ],
+        [
+          "title",
+          "入库总数量"
+        ]
+      ]
+    },
+    {
+      "text": "343,901.4",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemvalue alink alinkfirst",
+      "rect": {
+        "x": 107,
+        "y": 198,
+        "w": 75,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemvalue alink alinkfirst"
+        ],
+        [
+          "title",
+          "343,901.4"
+        ]
+      ]
+    },
+    {
+      "text": "出库总数量",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemtitle",
+      "rect": {
+        "x": 37,
+        "y": 226,
+        "w": 60,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemtitle"
+        ],
+        [
+          "title",
+          "出库总数量"
+        ]
+      ]
+    },
+    {
+      "text": "136,952.701",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemvalue alink",
+      "rect": {
+        "x": 107,
+        "y": 226,
+        "w": 93,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemvalue alink"
+        ],
+        [
+          "title",
+          "136,952.701"
+        ]
+      ]
+    },
+    {
+      "text": "销售订单未出库",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 332,
+        "y": 174,
+        "w": 98,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "总数量",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemtitle",
+      "rect": {
+        "x": 312,
+        "y": 198,
+        "w": 36,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemtitle"
+        ],
+        [
+          "title",
+          "总数量"
+        ]
+      ]
+    },
+    {
+      "text": "0.00",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemvalue alink alinkfirst",
+      "rect": {
+        "x": 358,
+        "y": 198,
+        "w": 35,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemvalue alink alinkfirst"
+        ],
+        [
+          "title",
+          "0.00"
+        ]
+      ]
+    },
+    {
+      "text": "总单数",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemtitle",
+      "rect": {
+        "x": 312,
+        "y": 226,
+        "w": 36,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemtitle"
+        ],
+        [
+          "title",
+          "总单数"
+        ]
+      ]
+    },
+    {
+      "text": "0",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-reportdata-data-itemvalue alink",
+      "rect": {
+        "x": 358,
+        "y": 226,
+        "w": 13,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-reportdata-data-itemvalue alink"
+        ],
+        [
+          "title",
+          "0"
+        ]
+      ]
+    },
+    {
+      "text": "业务总览",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-ideskpanel-title-left",
+      "rect": {
+        "x": 30,
+        "y": 300,
+        "w": 64,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-ideskpanel-title-left"
+        ]
+      ]
+    },
+    {
+      "text": "收起",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 120,
+        "y": 303,
+        "w": 24,
+        "h": 18
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "生产管理",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 121,
+        "y": 412,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "委外管理",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 121,
+        "y": 485,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "质检管理",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 121,
+        "y": 557,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "销售管理",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 121,
+        "y": 631,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "零售管理",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 121,
+        "y": 706,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "供应链协同",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 324,
+        "y": 412,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "库存核算",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 396,
+        "y": 412,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "采购管理",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 324,
+        "y": 485,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "配货管理",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 396,
+        "y": 485,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "物流管理",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 324,
+        "y": 557,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "移动仓管",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 396,
+        "y": 557,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "序列号管理",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 324,
+        "y": 631,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "批号管理",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 398,
+        "y": 631,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "条码管理",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 324,
+        "y": 706,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "快递鸟",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 591,
+        "y": 412,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "菜鸟",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 591,
+        "y": 510,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "ISV对接",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 591,
+        "y": 608,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "第三方系统",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 591,
+        "y": 706,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "API开放接口",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 398,
+        "y": 706,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "内部协同",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-dia-title null",
+      "rect": {
+        "x": 126,
+        "y": 341,
+        "w": 47,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-dia-title null"
+        ],
+        [
+          "style",
+          "top: 8px; left: 126px; width: 59px; height: 20px;"
+        ]
+      ]
+    },
+    {
+      "text": "智能供应链",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-dia-title null",
+      "rect": {
+        "x": 361,
+        "y": 341,
+        "w": 59,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-dia-title null"
+        ],
+        [
+          "style",
+          "top: 8px; left: 420px; width: 74px; height: 20px;"
+        ]
+      ]
+    },
+    {
+      "text": "生态赋能",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-dia-title null",
+      "rect": {
+        "x": 599,
+        "y": 341,
+        "w": 47,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-dia-title null"
+        ],
+        [
+          "style",
+          "top: 8px; left: 718px; width: 59px; height: 20px;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -24,7 +1165,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -44,7 +1185,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -64,7 +1205,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -84,7 +1225,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -104,7 +1245,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -124,7 +1265,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -144,7 +1285,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -164,7 +1305,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -184,7 +1325,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -204,7 +1345,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -224,7 +1365,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -244,7 +1385,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -264,7 +1405,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -284,7 +1425,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -304,7 +1445,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -324,7 +1465,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -344,7 +1485,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -364,7 +1505,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -384,7 +1525,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -404,7 +1545,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -424,7 +1565,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -444,7 +1585,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -464,7 +1605,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -484,7 +1625,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -504,7 +1645,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -524,7 +1665,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -544,7 +1685,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -564,7 +1705,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -584,7 +1725,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -604,7 +1745,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -624,7 +1765,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -644,7 +1785,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -664,7 +1805,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -684,7 +1825,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -704,7 +1845,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -724,7 +1865,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -744,7 +1885,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -764,7 +1905,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -784,7 +1925,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -804,7 +1945,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -824,7 +1965,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -844,7 +1985,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -864,7 +2005,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -884,7 +2025,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -904,7 +2045,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -924,7 +2065,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -944,7 +2085,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",

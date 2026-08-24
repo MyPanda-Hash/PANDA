@@ -65,6 +65,7 @@
 | [采购入库单选单设计](../tools/panels/PURCHASE_IN/PURCHASE_IN.select.md) | 场景设计 | 采购订单选单 |
 | [进货单设计](../tools/panels/PU_IN/PU_IN.notes.md) | 场景设计 | 进货单配置 |
 | [到货单设计](../tools/panels/ARRIVAL_IN/ARRIVAL_IN.notes.md) | 场景设计 | 到货单配置 |
+| [请购单设计（T+ 机械行业实测）](design/T+请购单-真实面板设计.md) | 调研基线 | 请购单配置（抓取存档 `docs/ref/tplus-live/pu_req-20260824/`） |
 
 ### 5.3 销售与配货
 

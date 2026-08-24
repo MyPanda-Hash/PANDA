@@ -12,6 +12,14 @@ const path = require('node:path')
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const PORT = 9333
 const OUT = path.resolve(__dirname, '../../docs/ref/tplus-live/business-overview-20260824')
+const MODULE_FILTER = new Set((process.env.TPLUS_MODULES || '').split(',').filter(Boolean))
+const MAX_ATTEMPTS = Number(process.env.TPLUS_ATTEMPTS || 8)
+const MODULE_RELATIONS_FILE = MODULE_FILTER.size ? 'focused-module-relations.json' : 'module-relations.json'
+const PORTAL_PROBE_FILE = MODULE_FILTER.size ? 'focused-portal-probe.json' : 'portal-menu-probe.json'
+
+function sanitizeArtifact(value) {
+  return JSON.parse(JSON.stringify(value).replace(/([?&](?:pwd|token|sid|user|TaskSessionID)=)[^&"\\]*/gi, '$1[REDACTED]'))
+}
 
 function edgePath() {
   return [
@@ -273,6 +281,17 @@ async function dumpContext(cdp, contextId) {
   })()`, contextId))
 }
 
+async function waitForContextText(cdp, contextId, text, attempts = 40) {
+  for (let index = 0; index < attempts; index += 1) {
+    try {
+      const found = await cdp.evaluate(`(document.body?.innerText || '').includes(${JSON.stringify(text)})`, contextId)
+      if (found) return true
+    } catch {}
+    await sleep(250)
+  }
+  return false
+}
+
 async function clickTextInContext(cdp, contextId, text) {
   return cdp.evaluate(`(() => {
     const visible = (element) => {
@@ -405,16 +424,16 @@ async function run(attempt) {
     }
     if (!iscContext) throw new Error('未找到智能供应链 iframe')
     const menu = await dumpPage(cdp)
-    fs.writeFileSync(path.join(OUT, 'isc-menu.json'), JSON.stringify(menu, null, 2))
+    fs.writeFileSync(path.join(OUT, 'isc-menu.json'), JSON.stringify(sanitizeArtifact(menu), null, 2))
     await screenshot(cdp, '02-intelligent-supply-chain.png')
 
     const iscDesk = await dumpContext(cdp, iscContext.contextId)
-    fs.writeFileSync(path.join(OUT, 'isc-idesk.json'), JSON.stringify(iscDesk, null, 2))
+    fs.writeFileSync(path.join(OUT, 'isc-idesk.json'), JSON.stringify(sanitizeArtifact(iscDesk), null, 2))
 
     const overviewClicked = await clickTextInContext(cdp, iscContext.contextId, '业务总览')
     await sleep(1500)
 
-    const modules = [
+    const allModules = [
       ['production', '生产管理'],
       ['outsource', '委外管理'],
       ['quality', '质检管理'],
@@ -435,6 +454,9 @@ async function run(attempt) {
       ['third-party', '第三方系统'],
       ['open-api', 'API开放接口'],
     ]
+    const modules = MODULE_FILTER.size
+      ? allModules.filter(([code]) => MODULE_FILTER.has(code))
+      : allModules
     const moduleRelations = []
     let productionClicked = null
     let productionRelation = null
@@ -479,6 +501,11 @@ async function run(attempt) {
       }
 
       const relationContextId = await contextForFrame(cdp, relationFrame)
+      if (moduleName === '生产管理') {
+        await waitForContextText(cdp, relationContextId, '业务流程图', 60)
+      } else {
+        await waitForContextText(cdp, relationContextId, '基础档案', 40)
+      }
       const relation = await dumpContext(cdp, relationContextId)
       const savedRelation = {
         ...relation,
@@ -497,7 +524,7 @@ async function run(attempt) {
       if (moduleName === '生产管理') productionRelation = savedRelation
     }
 
-    fs.writeFileSync(path.join(OUT, 'module-relations.json'), JSON.stringify(moduleRelations, null, 2))
+    fs.writeFileSync(path.join(OUT, MODULE_RELATIONS_FILE), JSON.stringify(moduleRelations, null, 2))
 
     const targetsAfterOverview = await waitJson(`http://127.0.0.1:${PORT}/json/list`, 3)
     const framesAfterOverview = []
@@ -536,8 +563,10 @@ async function main() {
   let result
   const samples = []
   const aggregate = new Map()
-  const priorityModules = new Set(['production', 'outsource', 'quality', 'sales', 'inventory', 'purchase', 'distribution'])
-  for (let attempt = 1; attempt <= 8; attempt += 1) {
+  const priorityModules = MODULE_FILTER.size
+    ? new Set(MODULE_FILTER)
+    : new Set(['production', 'outsource', 'quality', 'sales', 'inventory', 'purchase', 'distribution'])
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     try {
       const sample = await run(attempt)
       console.log(`[attempt ${attempt}] ${sample.retry ? sample.reason : '门户可用'}`)
@@ -572,9 +601,9 @@ async function main() {
       menuCode: module.menuCode,
     })),
   }))
-  fs.writeFileSync(path.join(OUT, 'module-relations.json'), JSON.stringify(result.moduleRelations, null, 2))
+  fs.writeFileSync(path.join(OUT, MODULE_RELATIONS_FILE), JSON.stringify(result.moduleRelations, null, 2))
   fs.writeFileSync(
-    path.join(OUT, 'portal-menu-probe.json'),
+    path.join(OUT, PORTAL_PROBE_FILE),
     JSON.stringify(result, null, 2).replace(
       /([?&](?:pwd|token|sid|user|TaskSessionID)=[^&"\\]*)/gi,
       (value) => value.replace(/=.*/, '=[REDACTED]'),

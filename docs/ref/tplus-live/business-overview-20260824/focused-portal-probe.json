@@ -1,0 +1,6573 @@
+{
+  "retry": false,
+  "industry": "机械行业",
+  "portal": {
+    "url": "https://h4t.chanjet.com/tplus/view/portal/portal.html?_from=exp",
+    "title": "畅捷通 T+",
+    "body": "[641164]户外用品\n\n[00]总部   已认证 畅捷通信息技术股份有限公司 2026-08-24 \n更新公告\nnew\n99+\n2\n99+\ntplusdemo12352\n  \n经营分析\n新商贸\n供应链协同\n智能供应链\n新生产\n质量管理\n智能财税\n多组织\n智能体广场\n基础设置\nTOP应用\n我的桌面\n   ",
+    "leaves": [
+      {
+        "text": "[00]总部",
+        "tag": "SPAN",
+        "id": "current-mark",
+        "className": "",
+        "rect": {
+          "x": 305,
+          "y": 27,
+          "w": 51,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "已认证",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-cloud-show t-dec-show t-user-info t-soft-remove t-attestationt-info",
+        "rect": {
+          "x": 456,
+          "y": 15,
+          "w": 42,
+          "h": 30
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "data-ctltype",
+            "label"
+          ]
+        ]
+      },
+      {
+        "text": "畅捷通信息技术股份有限公司",
+        "tag": "SPAN",
+        "id": "companyname",
+        "className": "t-cloud-show t-dec-show t-user-info t-soft-remove",
+        "rect": {
+          "x": 502,
+          "y": 15,
+          "w": 100,
+          "h": 30
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "2026-08-24",
+        "tag": "SPAN",
+        "id": "logindate",
+        "className": "t-user-info",
+        "rect": {
+          "x": 614,
+          "y": 15,
+          "w": 72,
+          "h": 30
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "data-ctltype",
+            "label"
+          ]
+        ]
+      },
+      {
+        "text": "new",
+        "tag": "SPAN",
+        "id": "",
+        "className": "new-icon",
+        "rect": {
+          "x": 1210,
+          "y": 6,
+          "w": 28,
+          "h": 12
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "99+",
+        "tag": "SPAN",
+        "id": "",
+        "className": "circleNum",
+        "rect": {
+          "x": 1277,
+          "y": 5,
+          "w": 25,
+          "h": 18
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "data-count",
+            "4656"
+          ]
+        ]
+      },
+      {
+        "text": "2",
+        "tag": "SPAN",
+        "id": "",
+        "className": "circleNum",
+        "rect": {
+          "x": 1317,
+          "y": 5,
+          "w": 19,
+          "h": 18
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "data-count",
+            "2"
+          ]
+        ]
+      },
+      {
+        "text": "99+",
+        "tag": "SPAN",
+        "id": "",
+        "className": "circleNum",
+        "rect": {
+          "x": 1345,
+          "y": 5,
+          "w": 25,
+          "h": 18
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "data-count",
+            "678"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo12352",
+        "tag": "SPAN",
+        "id": "username",
+        "className": "show-name",
+        "rect": {
+          "x": 1500,
+          "y": 14,
+          "w": 60,
+          "h": 22
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "经营分析",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 89,
+          "w": 72,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "新商贸",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 133,
+          "w": 57,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "供应链协同",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 177,
+          "w": 87,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "智能供应链",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 221,
+          "w": 87,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "新生产",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 265,
+          "w": 57,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "质量管理",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 309,
+          "w": 72,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "智能财税",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 353,
+          "w": 72,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "多组织",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 397,
+          "w": 57,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "智能体广场",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 441,
+          "w": 87,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "基础设置",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 485,
+          "w": 72,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "TOP应用",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 529,
+          "w": 73,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "我的桌面",
+        "tag": "SPAN",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 154,
+          "y": 60,
+          "w": 56,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      }
+    ],
+    "iframes": [
+      {
+        "src": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=idesk",
+        "id": "MY_IDESK_iframe",
+        "name": "",
+        "rect": {
+          "x": 130,
+          "y": 83,
+          "w": 1440,
+          "h": 825
+        }
+      }
+    ]
+  },
+  "menu": {
+    "url": "https://h4t.chanjet.com/tplus/view/portal/portal.html?_from=exp",
+    "title": "畅捷通 T+",
+    "body": "[641164]户外用品\n\n[00]总部   已认证 畅捷通信息技术股份有限公司 2026-08-24 \n更新公告\nnew\n99+\n2\n99+\ntplusdemo12352\n  \n经营分析\n新商贸\n供应链协同\n智能供应链\n新生产\n质量管理\n智能财税\n多组织\n智能体广场\n基础设置\nTOP应用\n我的桌面\n智能供应链\n   ",
+    "leaves": [
+      {
+        "text": "[00]总部",
+        "tag": "SPAN",
+        "id": "current-mark",
+        "className": "",
+        "rect": {
+          "x": 305,
+          "y": 27,
+          "w": 51,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "已认证",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-cloud-show t-dec-show t-user-info t-soft-remove t-attestationt-info",
+        "rect": {
+          "x": 456,
+          "y": 15,
+          "w": 42,
+          "h": 30
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "data-ctltype",
+            "label"
+          ]
+        ]
+      },
+      {
+        "text": "畅捷通信息技术股份有限公司",
+        "tag": "SPAN",
+        "id": "companyname",
+        "className": "t-cloud-show t-dec-show t-user-info t-soft-remove",
+        "rect": {
+          "x": 502,
+          "y": 15,
+          "w": 100,
+          "h": 30
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "2026-08-24",
+        "tag": "SPAN",
+        "id": "logindate",
+        "className": "t-user-info",
+        "rect": {
+          "x": 614,
+          "y": 15,
+          "w": 72,
+          "h": 30
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "data-ctltype",
+            "label"
+          ]
+        ]
+      },
+      {
+        "text": "new",
+        "tag": "SPAN",
+        "id": "",
+        "className": "new-icon",
+        "rect": {
+          "x": 1210,
+          "y": 6,
+          "w": 28,
+          "h": 12
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "99+",
+        "tag": "SPAN",
+        "id": "",
+        "className": "circleNum",
+        "rect": {
+          "x": 1277,
+          "y": 5,
+          "w": 25,
+          "h": 18
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "data-count",
+            "4656"
+          ]
+        ]
+      },
+      {
+        "text": "2",
+        "tag": "SPAN",
+        "id": "",
+        "className": "circleNum",
+        "rect": {
+          "x": 1317,
+          "y": 5,
+          "w": 19,
+          "h": 18
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "data-count",
+            "2"
+          ]
+        ]
+      },
+      {
+        "text": "99+",
+        "tag": "SPAN",
+        "id": "",
+        "className": "circleNum",
+        "rect": {
+          "x": 1345,
+          "y": 5,
+          "w": 25,
+          "h": 18
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "data-count",
+            "678"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo12352",
+        "tag": "SPAN",
+        "id": "username",
+        "className": "show-name",
+        "rect": {
+          "x": 1500,
+          "y": 14,
+          "w": 60,
+          "h": 22
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "经营分析",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 89,
+          "w": 72,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "新商贸",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 133,
+          "w": 57,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "供应链协同",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 177,
+          "w": 87,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "智能供应链",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": -2,
+          "y": 220,
+          "w": 91,
+          "h": 46
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "新生产",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 265,
+          "w": 57,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "质量管理",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 309,
+          "w": 72,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "智能财税",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 353,
+          "w": 72,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "多组织",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 397,
+          "w": 57,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "智能体广场",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 441,
+          "w": 87,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "基础设置",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 485,
+          "w": 72,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "TOP应用",
+        "tag": "SPAN",
+        "id": "",
+        "className": "menu-text",
+        "rect": {
+          "x": 0,
+          "y": 529,
+          "w": 73,
+          "h": 44
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "我的桌面",
+        "tag": "SPAN",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 154,
+          "y": 60,
+          "w": 56,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "智能供应链",
+        "tag": "SPAN",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 224,
+          "y": 60,
+          "w": 81,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      }
+    ],
+    "iframes": [
+      {
+        "src": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=ISC&ideskColumn=1&taskID=%E6%99%BA%E8%83%BD%E4%BE%9B%E5%BA%94%E9%93%BE&TaskSessionID=[REDACTED]",
+        "id": "ISC_iframe",
+        "name": "",
+        "rect": {
+          "x": 130,
+          "y": 83,
+          "w": 1440,
+          "h": 815
+        }
+      }
+    ]
+  },
+  "iscDesk": {
+    "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=ISC&ideskColumn=1&taskID=%E6%99%BA%E8%83%BD%E4%BE%9B%E5%BA%94%E9%93%BE&TaskSessionID=[REDACTED]",
+    "title": "我的桌面",
+    "body": "实时概况\n刷新\n本月采购情况\n采购次数\n66\n采购金额\n6,925,446.96\n本月采购未入库数量\n0\n本月进货情况\n进货次数\n0\n进货金额\n0.00\n在库商品\n总数量\n1,059,625.141\n总金额\n181,927,472\n近30天未出库\n商品数\n51\n总金额\n13,783,383.52\n本月出入库\n入库总数量\n343,901.4\n出库总数量\n136,952.701\n销售订单未出库\n总数量\n0.00\n总单数\n0\n业务总览\n收起\n生产管理\n委外管理\n质检管理\n销售管理\n零售管理\n供应链协同\n库存核算\n采购管理\n配货管理\n物流管理\n移动仓管\n序列号管理\n批号管理\n条码管理\n快递鸟\n菜鸟\nISV对接\n第三方系统\nAPI开放接口\n内部协同\n智能供应链\n生态赋能\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632",
+    "leaves": [
+      {
+        "text": "实时概况",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-ideskpanel-title-left",
+        "rect": {
+          "x": 30,
+          "y": 25,
+          "w": 64,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-ideskpanel-title-left"
+          ]
+        ]
+      },
+      {
+        "text": "刷新",
+        "tag": "A",
+        "id": "",
+        "className": "t-btn t-btn-refresh",
+        "rect": {
+          "x": 1349,
+          "y": 27,
+          "w": 42,
+          "h": 20
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "title",
+            "刷新"
+          ],
+          [
+            "class",
+            "t-btn t-btn-refresh"
+          ]
+        ]
+      },
+      {
+        "text": "本月采购情况",
+        "tag": "SPAN",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 57,
+          "y": 72,
+          "w": 84,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "采购次数",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemtitle",
+        "rect": {
+          "x": 37,
+          "y": 96,
+          "w": 48,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemtitle"
+          ],
+          [
+            "title",
+            "采购次数"
+          ]
+        ]
+      },
+      {
+        "text": "66",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemvalue alink alinkfirst",
+        "rect": {
+          "x": 95,
+          "y": 96,
+          "w": 22,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemvalue alink alinkfirst"
+          ],
+          [
+            "title",
+            "66"
+          ]
+        ]
+      },
+      {
+        "text": "采购金额",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemtitle",
+        "rect": {
+          "x": 37,
+          "y": 124,
+          "w": 48,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemtitle"
+          ],
+          [
+            "title",
+            "采购金额"
+          ]
+        ]
+      },
+      {
+        "text": "6,925,446.96",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemvalue alink",
+        "rect": {
+          "x": 95,
+          "y": 124,
+          "w": 97,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemvalue alink"
+          ],
+          [
+            "title",
+            "6,925,446.96"
+          ]
+        ]
+      },
+      {
+        "text": "本月采购未入库数量",
+        "tag": "SPAN",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 332,
+          "y": 72,
+          "w": 126,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "0",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemvalue alink alinkfirst",
+        "rect": {
+          "x": 312,
+          "y": 96,
+          "w": 13,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemvalue alink alinkfirst"
+          ],
+          [
+            "title",
+            "0"
+          ]
+        ]
+      },
+      {
+        "text": "本月进货情况",
+        "tag": "SPAN",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 607,
+          "y": 72,
+          "w": 84,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "进货次数",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemtitle",
+        "rect": {
+          "x": 587,
+          "y": 96,
+          "w": 48,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemtitle"
+          ],
+          [
+            "title",
+            "进货次数"
+          ]
+        ]
+      },
+      {
+        "text": "0",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemvalue alink alinkfirst",
+        "rect": {
+          "x": 645,
+          "y": 96,
+          "w": 13,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemvalue alink alinkfirst"
+          ],
+          [
+            "title",
+            "0"
+          ]
+        ]
+      },
+      {
+        "text": "进货金额",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemtitle",
+        "rect": {
+          "x": 587,
+          "y": 124,
+          "w": 48,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemtitle"
+          ],
+          [
+            "title",
+            "进货金额"
+          ]
+        ]
+      },
+      {
+        "text": "0.00",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemvalue alink",
+        "rect": {
+          "x": 645,
+          "y": 124,
+          "w": 35,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemvalue alink"
+          ],
+          [
+            "title",
+            "0.00"
+          ]
+        ]
+      },
+      {
+        "text": "在库商品",
+        "tag": "SPAN",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 882,
+          "y": 72,
+          "w": 56,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "总数量",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemtitle",
+        "rect": {
+          "x": 862,
+          "y": 96,
+          "w": 36,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemtitle"
+          ],
+          [
+            "title",
+            "总数量"
+          ]
+        ]
+      },
+      {
+        "text": "1,059,625.141",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemvalue alink alinkfirst",
+        "rect": {
+          "x": 908,
+          "y": 96,
+          "w": 106,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemvalue alink alinkfirst"
+          ],
+          [
+            "title",
+            "1,059,625.141"
+          ]
+        ]
+      },
+      {
+        "text": "总金额",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemtitle",
+        "rect": {
+          "x": 862,
+          "y": 124,
+          "w": 36,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemtitle"
+          ],
+          [
+            "title",
+            "总金额"
+          ]
+        ]
+      },
+      {
+        "text": "181,927,472",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemvalue alink",
+        "rect": {
+          "x": 908,
+          "y": 124,
+          "w": 93,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemvalue alink"
+          ],
+          [
+            "title",
+            "181,927,472"
+          ]
+        ]
+      },
+      {
+        "text": "近30天未出库",
+        "tag": "SPAN",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 1157,
+          "y": 72,
+          "w": 86,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "商品数",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemtitle",
+        "rect": {
+          "x": 1137,
+          "y": 96,
+          "w": 36,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemtitle"
+          ],
+          [
+            "title",
+            "商品数"
+          ]
+        ]
+      },
+      {
+        "text": "51",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemvalue alink alinkfirst",
+        "rect": {
+          "x": 1183,
+          "y": 96,
+          "w": 22,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemvalue alink alinkfirst"
+          ],
+          [
+            "title",
+            "51"
+          ]
+        ]
+      },
+      {
+        "text": "总金额",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemtitle",
+        "rect": {
+          "x": 1137,
+          "y": 124,
+          "w": 36,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemtitle"
+          ],
+          [
+            "title",
+            "总金额"
+          ]
+        ]
+      },
+      {
+        "text": "13,783,383.52",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemvalue alink",
+        "rect": {
+          "x": 1183,
+          "y": 124,
+          "w": 106,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemvalue alink"
+          ],
+          [
+            "title",
+            "13,783,383.52"
+          ]
+        ]
+      },
+      {
+        "text": "本月出入库",
+        "tag": "SPAN",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 57,
+          "y": 174,
+          "w": 70,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "入库总数量",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemtitle",
+        "rect": {
+          "x": 37,
+          "y": 198,
+          "w": 60,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemtitle"
+          ],
+          [
+            "title",
+            "入库总数量"
+          ]
+        ]
+      },
+      {
+        "text": "343,901.4",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemvalue alink alinkfirst",
+        "rect": {
+          "x": 107,
+          "y": 198,
+          "w": 75,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemvalue alink alinkfirst"
+          ],
+          [
+            "title",
+            "343,901.4"
+          ]
+        ]
+      },
+      {
+        "text": "出库总数量",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemtitle",
+        "rect": {
+          "x": 37,
+          "y": 226,
+          "w": 60,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemtitle"
+          ],
+          [
+            "title",
+            "出库总数量"
+          ]
+        ]
+      },
+      {
+        "text": "136,952.701",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemvalue alink",
+        "rect": {
+          "x": 107,
+          "y": 226,
+          "w": 93,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemvalue alink"
+          ],
+          [
+            "title",
+            "136,952.701"
+          ]
+        ]
+      },
+      {
+        "text": "销售订单未出库",
+        "tag": "SPAN",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 332,
+          "y": 174,
+          "w": 98,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "总数量",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemtitle",
+        "rect": {
+          "x": 312,
+          "y": 198,
+          "w": 36,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemtitle"
+          ],
+          [
+            "title",
+            "总数量"
+          ]
+        ]
+      },
+      {
+        "text": "0.00",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemvalue alink alinkfirst",
+        "rect": {
+          "x": 358,
+          "y": 198,
+          "w": 35,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemvalue alink alinkfirst"
+          ],
+          [
+            "title",
+            "0.00"
+          ]
+        ]
+      },
+      {
+        "text": "总单数",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemtitle",
+        "rect": {
+          "x": 312,
+          "y": 226,
+          "w": 36,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemtitle"
+          ],
+          [
+            "title",
+            "总单数"
+          ]
+        ]
+      },
+      {
+        "text": "0",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-reportdata-data-itemvalue alink",
+        "rect": {
+          "x": 358,
+          "y": 226,
+          "w": 13,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-reportdata-data-itemvalue alink"
+          ],
+          [
+            "title",
+            "0"
+          ]
+        ]
+      },
+      {
+        "text": "业务总览",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-ideskpanel-title-left",
+        "rect": {
+          "x": 30,
+          "y": 300,
+          "w": 64,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-ideskpanel-title-left"
+          ]
+        ]
+      },
+      {
+        "text": "收起",
+        "tag": "SPAN",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 120,
+          "y": 303,
+          "w": 24,
+          "h": 18
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "生产管理",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 121,
+          "y": 412,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "委外管理",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 121,
+          "y": 485,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "质检管理",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 121,
+          "y": 557,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "销售管理",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 121,
+          "y": 631,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "零售管理",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 121,
+          "y": 706,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "供应链协同",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 324,
+          "y": 412,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "库存核算",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 396,
+          "y": 412,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "采购管理",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 324,
+          "y": 485,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "配货管理",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 396,
+          "y": 485,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "物流管理",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 324,
+          "y": 557,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "移动仓管",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 396,
+          "y": 557,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "序列号管理",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 324,
+          "y": 631,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "批号管理",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 398,
+          "y": 631,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "条码管理",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 324,
+          "y": 706,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "快递鸟",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 591,
+          "y": 412,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "菜鸟",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 591,
+          "y": 510,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "ISV对接",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 591,
+          "y": 608,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "第三方系统",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 591,
+          "y": 706,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "API开放接口",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 398,
+          "y": 706,
+          "w": 64,
+          "h": 14
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "内部协同",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-dia-title null",
+        "rect": {
+          "x": 126,
+          "y": 341,
+          "w": 47,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-dia-title null"
+          ],
+          [
+            "style",
+            "top: 8px; left: 126px; width: 59px; height: 20px;"
+          ]
+        ]
+      },
+      {
+        "text": "智能供应链",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-dia-title null",
+        "rect": {
+          "x": 361,
+          "y": 341,
+          "w": 59,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-dia-title null"
+          ],
+          [
+            "style",
+            "top: 8px; left: 420px; width: 74px; height: 20px;"
+          ]
+        ]
+      },
+      {
+        "text": "生态赋能",
+        "tag": "SPAN",
+        "id": "",
+        "className": "t-dia-title null",
+        "rect": {
+          "x": 599,
+          "y": 341,
+          "w": 47,
+          "h": 16
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-dia-title null"
+          ],
+          [
+            "style",
+            "top: 8px; left: 718px; width: 59px; height: 20px;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": -7,
+          "y": -26,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 1,
+          "y": 3,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 303,
+          "y": -26,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 311,
+          "y": 3,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 613,
+          "y": -26,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 621,
+          "y": 3,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 923,
+          "y": -26,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 931,
+          "y": 3,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": -7,
+          "y": 104,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 1,
+          "y": 133,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 303,
+          "y": 104,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 311,
+          "y": 133,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 613,
+          "y": 104,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 621,
+          "y": 133,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 923,
+          "y": 104,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 931,
+          "y": 133,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": -7,
+          "y": 234,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 1,
+          "y": 263,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 303,
+          "y": 234,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 311,
+          "y": 263,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 613,
+          "y": 234,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 621,
+          "y": 263,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 923,
+          "y": 234,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 931,
+          "y": 263,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": -7,
+          "y": 364,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 1,
+          "y": 393,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 303,
+          "y": 364,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 311,
+          "y": 393,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 613,
+          "y": 364,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 621,
+          "y": 393,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 923,
+          "y": 364,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 931,
+          "y": 393,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": -7,
+          "y": 494,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 1,
+          "y": 523,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 303,
+          "y": 494,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 311,
+          "y": 523,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 613,
+          "y": 494,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 621,
+          "y": 523,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 923,
+          "y": 494,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 931,
+          "y": 523,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": -7,
+          "y": 624,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 1,
+          "y": 653,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 303,
+          "y": 624,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 311,
+          "y": 653,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 613,
+          "y": 624,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 621,
+          "y": 653,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 923,
+          "y": 624,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 931,
+          "y": 653,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      }
+    ],
+    "iframes": []
+  },
+  "overviewClicked": true,
+  "productionClicked": true,
+  "productionRelation": {
+    "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=MP&ideskColumn=2&taskID=%E7%94%9F%E4%BA%A7%E7%AE%A1%E7%90%86&TaskSessionID=[REDACTED]",
+    "title": "我的桌面",
+    "body": "业务流程图\n收起\n基础档案\n存货\n计量单位\n部门\n员工\n仓库\n项目\n班组\n工序\n工艺路线\n物料清单\n相关单据\n多阶投产\n生产加工单\n材料出库单\n产成品入库单\n销售订单\n采购需求分析\n请购单\n采购订单\n相关报表\n生产加工单执行表\n生产加工单跟踪工具\n生产加工单产成品明细表\n生产加工单材料明细表\n生产加工单工序明细表\n生产加工单产成品统计表\n生产加工单材料统计表\n生产加工单工序统计表\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632",
+    "leaves": [
+      {
+        "text": "业务流程图",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-ideskpanel-title-left",
+        "rect": {
+          "x": 30,
+          "y": 25,
+          "w": 80,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-ideskpanel-title-left"
+          ]
+        ]
+      },
+      {
+        "text": "收起",
+        "tag": "SPAN",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 136,
+          "y": 28,
+          "w": 24,
+          "h": 18
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": []
+      },
+      {
+        "text": "基础档案",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-ideskpanel-title-left",
+        "rect": {
+          "x": 1186,
+          "y": 25,
+          "w": 64,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-ideskpanel-title-left"
+          ]
+        ]
+      },
+      {
+        "text": "存货",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1181,
+          "y": 70,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "计量单位",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1294,
+          "y": 70,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "部门",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1181,
+          "y": 102,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "员工",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1294,
+          "y": 102,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "仓库",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1181,
+          "y": 134,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "项目",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1294,
+          "y": 134,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "班组",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1181,
+          "y": 166,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "工序",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1294,
+          "y": 166,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "工艺路线",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1181,
+          "y": 198,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "物料清单",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1294,
+          "y": 198,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "相关单据",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-ideskpanel-title-left",
+        "rect": {
+          "x": 1186,
+          "y": 266,
+          "w": 64,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-ideskpanel-title-left"
+          ]
+        ]
+      },
+      {
+        "text": "多阶投产",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1181,
+          "y": 311,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "生产加工单",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1294,
+          "y": 311,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "材料出库单",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1181,
+          "y": 343,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "产成品入库单",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1294,
+          "y": 343,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "销售订单",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1181,
+          "y": 375,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "采购需求分析",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1294,
+          "y": 375,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "请购单",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1181,
+          "y": 407,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "采购订单",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col2",
+        "rect": {
+          "x": 1294,
+          "y": 407,
+          "w": 113,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col2"
+          ]
+        ]
+      },
+      {
+        "text": "相关报表",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-ideskpanel-title-left",
+        "rect": {
+          "x": 1186,
+          "y": 475,
+          "w": 64,
+          "h": 24
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-ideskpanel-title-left"
+          ]
+        ]
+      },
+      {
+        "text": "生产加工单执行表",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col1",
+        "rect": {
+          "x": 1181,
+          "y": 520,
+          "w": 225,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col1"
+          ]
+        ]
+      },
+      {
+        "text": "生产加工单跟踪工具",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col1",
+        "rect": {
+          "x": 1181,
+          "y": 552,
+          "w": 225,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col1"
+          ]
+        ]
+      },
+      {
+        "text": "生产加工单产成品明细表",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col1",
+        "rect": {
+          "x": 1181,
+          "y": 584,
+          "w": 225,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col1"
+          ]
+        ]
+      },
+      {
+        "text": "生产加工单材料明细表",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col1",
+        "rect": {
+          "x": 1181,
+          "y": 616,
+          "w": 225,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col1"
+          ]
+        ]
+      },
+      {
+        "text": "生产加工单工序明细表",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col1",
+        "rect": {
+          "x": 1181,
+          "y": 648,
+          "w": 225,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col1"
+          ]
+        ]
+      },
+      {
+        "text": "生产加工单产成品统计表",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col1",
+        "rect": {
+          "x": 1181,
+          "y": 680,
+          "w": 225,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col1"
+          ]
+        ]
+      },
+      {
+        "text": "生产加工单材料统计表",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col1",
+        "rect": {
+          "x": 1181,
+          "y": 712,
+          "w": 225,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col1"
+          ]
+        ]
+      },
+      {
+        "text": "生产加工单工序统计表",
+        "tag": "DIV",
+        "id": "",
+        "className": "t-workplanformitem t-workplanformitem-col1",
+        "rect": {
+          "x": 1181,
+          "y": 744,
+          "w": 225,
+          "h": 32
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "class",
+            "t-workplanformitem t-workplanformitem-col1"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": -7,
+          "y": -26,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 1,
+          "y": 3,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 303,
+          "y": -26,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 311,
+          "y": 3,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 613,
+          "y": -26,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 621,
+          "y": 3,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 923,
+          "y": -26,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 931,
+          "y": 3,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": -7,
+          "y": 104,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 1,
+          "y": 133,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 303,
+          "y": 104,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 311,
+          "y": 133,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 613,
+          "y": 104,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 621,
+          "y": 133,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 923,
+          "y": 104,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 931,
+          "y": 133,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": -7,
+          "y": 234,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 1,
+          "y": 263,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 303,
+          "y": 234,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 311,
+          "y": 263,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 613,
+          "y": 234,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 621,
+          "y": 263,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 923,
+          "y": 234,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 931,
+          "y": 263,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": -7,
+          "y": 364,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 1,
+          "y": 393,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 303,
+          "y": 364,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 311,
+          "y": 393,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 613,
+          "y": 364,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 621,
+          "y": 393,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 923,
+          "y": 364,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 931,
+          "y": 393,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": -7,
+          "y": 494,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 1,
+          "y": 523,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 303,
+          "y": 494,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 311,
+          "y": 523,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 613,
+          "y": 494,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 621,
+          "y": 523,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 923,
+          "y": 494,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 931,
+          "y": 523,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": -7,
+          "y": 624,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 1,
+          "y": 653,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 303,
+          "y": 624,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 311,
+          "y": 653,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 613,
+          "y": 624,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 621,
+          "y": 653,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "tplusdemo123522352",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 923,
+          "y": 624,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      },
+      {
+        "text": "08241632",
+        "tag": "DIV",
+        "id": "",
+        "className": "",
+        "rect": {
+          "x": 931,
+          "y": 653,
+          "w": 211,
+          "h": 83
+        },
+        "href": null,
+        "onclick": null,
+        "attrs": [
+          [
+            "style",
+            "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+          ]
+        ]
+      }
+    ],
+    "iframes": []
+  },
+  "moduleRelations": [
+    {
+      "code": "production",
+      "moduleName": "生产管理",
+      "status": "opened",
+      "frameName": "MP_iframe",
+      "menuCode": "MP",
+      "relation": {
+        "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=MP&ideskColumn=2&taskID=%E7%94%9F%E4%BA%A7%E7%AE%A1%E7%90%86&TaskSessionID=[REDACTED]",
+        "title": "我的桌面",
+        "body": "业务流程图\n收起\n基础档案\n存货\n计量单位\n部门\n员工\n仓库\n项目\n班组\n工序\n工艺路线\n物料清单\n相关单据\n多阶投产\n生产加工单\n材料出库单\n产成品入库单\n销售订单\n采购需求分析\n请购单\n采购订单\n相关报表\n生产加工单执行表\n生产加工单跟踪工具\n生产加工单产成品明细表\n生产加工单材料明细表\n生产加工单工序明细表\n生产加工单产成品统计表\n生产加工单材料统计表\n生产加工单工序统计表\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632",
+        "leaves": [
+          {
+            "text": "业务流程图",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-ideskpanel-title-left",
+            "rect": {
+              "x": 30,
+              "y": 25,
+              "w": 80,
+              "h": 24
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-ideskpanel-title-left"
+              ]
+            ]
+          },
+          {
+            "text": "收起",
+            "tag": "SPAN",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 136,
+              "y": 28,
+              "w": 24,
+              "h": 18
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": []
+          },
+          {
+            "text": "基础档案",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-ideskpanel-title-left",
+            "rect": {
+              "x": 1186,
+              "y": 25,
+              "w": 64,
+              "h": 24
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-ideskpanel-title-left"
+              ]
+            ]
+          },
+          {
+            "text": "存货",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1181,
+              "y": 70,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "计量单位",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1294,
+              "y": 70,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "部门",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1181,
+              "y": 102,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "员工",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1294,
+              "y": 102,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "仓库",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1181,
+              "y": 134,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "项目",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1294,
+              "y": 134,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "班组",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1181,
+              "y": 166,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "工序",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1294,
+              "y": 166,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "工艺路线",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1181,
+              "y": 198,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "物料清单",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1294,
+              "y": 198,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "相关单据",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-ideskpanel-title-left",
+            "rect": {
+              "x": 1186,
+              "y": 266,
+              "w": 64,
+              "h": 24
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-ideskpanel-title-left"
+              ]
+            ]
+          },
+          {
+            "text": "多阶投产",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1181,
+              "y": 311,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "生产加工单",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1294,
+              "y": 311,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "材料出库单",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1181,
+              "y": 343,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "产成品入库单",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1294,
+              "y": 343,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "销售订单",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1181,
+              "y": 375,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "采购需求分析",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1294,
+              "y": 375,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "请购单",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1181,
+              "y": 407,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "采购订单",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col2",
+            "rect": {
+              "x": 1294,
+              "y": 407,
+              "w": 113,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col2"
+              ]
+            ]
+          },
+          {
+            "text": "相关报表",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-ideskpanel-title-left",
+            "rect": {
+              "x": 1186,
+              "y": 475,
+              "w": 64,
+              "h": 24
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-ideskpanel-title-left"
+              ]
+            ]
+          },
+          {
+            "text": "生产加工单执行表",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col1",
+            "rect": {
+              "x": 1181,
+              "y": 520,
+              "w": 225,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col1"
+              ]
+            ]
+          },
+          {
+            "text": "生产加工单跟踪工具",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col1",
+            "rect": {
+              "x": 1181,
+              "y": 552,
+              "w": 225,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col1"
+              ]
+            ]
+          },
+          {
+            "text": "生产加工单产成品明细表",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col1",
+            "rect": {
+              "x": 1181,
+              "y": 584,
+              "w": 225,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col1"
+              ]
+            ]
+          },
+          {
+            "text": "生产加工单材料明细表",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col1",
+            "rect": {
+              "x": 1181,
+              "y": 616,
+              "w": 225,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col1"
+              ]
+            ]
+          },
+          {
+            "text": "生产加工单工序明细表",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col1",
+            "rect": {
+              "x": 1181,
+              "y": 648,
+              "w": 225,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col1"
+              ]
+            ]
+          },
+          {
+            "text": "生产加工单产成品统计表",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col1",
+            "rect": {
+              "x": 1181,
+              "y": 680,
+              "w": 225,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col1"
+              ]
+            ]
+          },
+          {
+            "text": "生产加工单材料统计表",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col1",
+            "rect": {
+              "x": 1181,
+              "y": 712,
+              "w": 225,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col1"
+              ]
+            ]
+          },
+          {
+            "text": "生产加工单工序统计表",
+            "tag": "DIV",
+            "id": "",
+            "className": "t-workplanformitem t-workplanformitem-col1",
+            "rect": {
+              "x": 1181,
+              "y": 744,
+              "w": 225,
+              "h": 32
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "class",
+                "t-workplanformitem t-workplanformitem-col1"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": -7,
+              "y": -26,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 1,
+              "y": 3,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 303,
+              "y": -26,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 311,
+              "y": 3,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 613,
+              "y": -26,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 621,
+              "y": 3,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 923,
+              "y": -26,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 931,
+              "y": 3,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": -7,
+              "y": 104,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 1,
+              "y": 133,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 303,
+              "y": 104,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 311,
+              "y": 133,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 613,
+              "y": 104,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 621,
+              "y": 133,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 923,
+              "y": 104,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 931,
+              "y": 133,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": -7,
+              "y": 234,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 1,
+              "y": 263,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 303,
+              "y": 234,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 311,
+              "y": 263,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 613,
+              "y": 234,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 621,
+              "y": 263,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 923,
+              "y": 234,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 931,
+              "y": 263,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": -7,
+              "y": 364,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 1,
+              "y": 393,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 303,
+              "y": 364,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 311,
+              "y": 393,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 613,
+              "y": 364,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 621,
+              "y": 393,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 923,
+              "y": 364,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 931,
+              "y": 393,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": -7,
+              "y": 494,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 1,
+              "y": 523,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 303,
+              "y": 494,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 311,
+              "y": 523,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 613,
+              "y": 494,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 621,
+              "y": 523,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 923,
+              "y": 494,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 931,
+              "y": 523,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": -7,
+              "y": 624,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 1,
+              "y": 653,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 303,
+              "y": 624,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 311,
+              "y": 653,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 613,
+              "y": 624,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 621,
+              "y": 653,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "tplusdemo123522352",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 923,
+              "y": 624,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          },
+          {
+            "text": "08241632",
+            "tag": "DIV",
+            "id": "",
+            "className": "",
+            "rect": {
+              "x": 931,
+              "y": 653,
+              "w": 211,
+              "h": 83
+            },
+            "href": null,
+            "onclick": null,
+            "attrs": [
+              [
+                "style",
+                "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+              ]
+            ]
+          }
+        ],
+        "iframes": []
+      }
+    }
+  ],
+  "targetsAfterOverview": [
+    {
+      "id": "C682E362A1B17FA6FA1A9006555D21BF",
+      "title": "我们现在正在你的所有设备上同步你的浏览数据",
+      "url": "edge://sync-confirmation-dialog/"
+    },
+    {
+      "id": "32E7811F4D57095CE41CF10E183F2117",
+      "title": "畅捷通 T+",
+      "url": "https://h4t.chanjet.com/tplus/view/portal/portal.html?_from=exp"
+    }
+  ],
+  "framesAfterOverview": [
+    {
+      "id": "32E7811F4D57095CE41CF10E183F2117",
+      "url": "https://h4t.chanjet.com/tplus/view/portal/portal.html?_from=exp"
+    },
+    {
+      "id": "99F78A17714EE550B6BE058035AFD41C",
+      "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=idesk",
+      "name": "MY_IDESK_iframe"
+    },
+    {
+      "id": "C936D33EF7FA0863C6F62DED60A9C30D",
+      "url": "about:blank",
+      "name": "duduIframe"
+    },
+    {
+      "id": "11DCE3C846CE5DEAE66DB19CDA47D4D3",
+      "url": "about:blank",
+      "name": ""
+    },
+    {
+      "id": "3FE4B20DB7320C4C179A2F81B652CF67",
+      "url": "about:blank",
+      "name": ""
+    },
+    {
+      "id": "D83B748825C681F8AD7FEB91FBDEDAA3",
+      "url": "about:blank",
+      "name": ""
+    },
+    {
+      "id": "3D87326E6AE12896D15908B3DA753206",
+      "url": "about:blank",
+      "name": ""
+    },
+    {
+      "id": "FFC90635CD1A0B0D9C544C2CB99A491A",
+      "url": "about:blank",
+      "name": ""
+    },
+    {
+      "id": "66A565DF0B9E0BDDD757F4846FE09EED",
+      "url": "about:blank",
+      "name": "msgNotifyIframe"
+    },
+    {
+      "id": "6D633600207376820EA70DCA5ED45C04",
+      "url": "https://service.chanjet.com/robot/robot/ng_robot.html?product=T%2BCloud&env=prod&dogtype=1&map=1&tp_exp=1",
+      "name": "_robot_frame"
+    },
+    {
+      "id": "B03DACC8BDD1E2CE524572917CD4C211",
+      "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=ISC&ideskColumn=1&taskID=%E6%99%BA%E8%83%BD%E4%BE%9B%E5%BA%94%E9%93%BE&TaskSessionID=[REDACTED]",
+      "name": "ISC_iframe"
+    },
+    {
+      "id": "C66CF7AF886554C717EB937DDE1A611C",
+      "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=MP&ideskColumn=2&taskID=%E7%94%9F%E4%BA%A7%E7%AE%A1%E7%90%86&TaskSessionID=[REDACTED]",
+      "name": "MP_iframe"
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "url": "https://pro-c6615-mall-source-map.oss-cn-beijing.aliyuncs.com/cjet-monitor.min.js?0.5169313864463843"
+    },
+    {
+      "method": "POST",
+      "url": "https://t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetVersionNum"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/view/ossjump.html?fromApp=exp&sid=[REDACTED]&user=[REDACTED]&pwd=[REDACTED]&accNum=641164&menuCode=null"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/portal.login.model.js"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/view/portal/portal.html?fromApp=exp&sid=[REDACTED]&user=[REDACTED]&pwd=[REDACTED]&accNum=641164&menuCode=null&c=&s=&oem="
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/css/portal/portal.css?t=20210301"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/css/portal/portal-accordion-menu.css?t=13.000.000.0001.106"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/css/ex/portalex.css?t=13.000.000.0001.106"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/css/ticonfont/portalvoucher/iconfont.css"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/css/ticonfont/flowdiagram/iconfont.css?t=13.000.000.0001.106"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/css/diagram/portal.dia.css?t=13.000.000.0001.106"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/css/portal/portal.skinPanel.css?t=13.000.000.0001.106"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/css/portal/portal.themeExt.css?t=13.000.000.0001.106"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/css/portal/theme/default.css?t=13.000.000.0001.106"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/img/portal/notices/fubao.png"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/img/portal/industry/step1.png"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/img/portal/industry/arrow.png"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/img/portal/industry/step2.png"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/img/portal/industry/step3.png"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/test.js?t=13.000.000.0001.106"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/view/portal/ajaxpro/Ufida.T.CodeBehind.Default,Ufida.T.EAP.Portal.UIP.ashx"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/portal.themeExt.js?t=13.000.000.0001.106"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/portal.skinPanel.js?t=13.000.000.0001.106"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/portal.help.js?t=20.000.000.0135.0068"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/portal.setting.js?t=13.000.000.0001.107"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/ciaUtil.js"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/ykj.util.js"
+    },
+    {
+      "method": "GET",
+      "url": "https://t.static.chanjet.com/21.000.000.0135/js/portal/thelpset_common.js"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/portal.ashx?f=portal.control.js,portal.model.js,portal.controller.js,portal.login.model.js"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/jquery.scroll.js?t=13.000.000.0001.106"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/jquery.autocomplete.js?t=13.000.000.0001.106"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/protocolcheck.js?t=13.000.000.0001.106"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/portal.page.js?t=13.000.000.0001.106"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/portal.exam.js"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/portal.exam.countdown.js"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/css/ticonfont/portalvoucher/iconfont.woff2?t=1747280705068"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/css/ticonfont/flowdiagram/iconfont.woff2?t=1748226653053"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/css/ticonfont/portalvoucher/iconfont.woff?t=1747280705068"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/css/ticonfont/flowdiagram/iconfont.woff?t=1748226653053"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetAccInformation?infoName=MessageTone"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/js/portal/aiassistant.umd.js"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/view/portal/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/view/portal/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/IsUseNewDesktop"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetAccInformation?infoName=IsMultiTabs"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetAccInformation?infoName=reportIsMultiTabs"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetAccInformation?infoName=IsEnableAdjustVchDetailCol"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetAccInformation?infoName=WordSegmentationSearch"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetAccInformation?infoName=GenkiPhilipsDocking"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetPersonName"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=getPortalLogo"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetPortalSkinAll"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetUserAllWizard"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetVersionType"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetVersionNum"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetFuBaoArguemnts"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetAppSetup"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=AjaxGetRedirectUrlArgs"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetSupportUrlParams"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetCloudExpireTip"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetAdvert"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=IsEnterpriseAdmin"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=ShowCreateAccount"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetOrgNameInfos&_args=&_version=%5Cu49%5Cu48%5Cu48%5Cu48%5Cu48%5Cu48%5Cu49%5Cu50%5Cu51%5Cu53%5Cu50%097a78c884-3d59-4330-9863-428e9eba5003&_t=35.329272608971564"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=getPortalLogo"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetPortalSkinAll"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=LoadPortalData2&_args=&_version=%5Cu49%5Cu48%5Cu48%5Cu48%5Cu48%5Cu48%5Cu49%5Cu50%5Cu51%5Cu53%5Cu50%097a78c884-3d59-4330-9863-428e9eba5003&_t=91.64067373123723"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=LoadPortalData&_args=%7B%22onlyContainMenus%22:false%7D&_version=%5Cu49%5Cu48%5Cu48%5Cu48%5Cu48%5Cu48%5Cu49%5Cu50%5Cu51%5Cu53%5Cu50%097a78c884-3d59-4330-9863-428e9eba5003&_t=85.24416831682558&{%22onlyContainMenus%22:false}"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=CalculateAndUpdateInnerMsgCount"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=CalculateAndUpdateAlarmMsgCount"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/img/portal/slider-bg.png"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetMsgNotifyList"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/img/portal/tpluscloudlogo.png"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetYKJAPIData"
+    },
+    {
+      "method": "GET",
+      "url": "https://pro-c6615-mall-source-map.oss-cn-beijing.aliyuncs.com/cjet-monitor.min.js?0.43837105834866685"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/css/portal/theme/skinBlue.css"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetUserFubaoSetting"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetCurrentMarketingOrgan&_args=&_version=%5Cu49%5Cu48%5Cu48%5Cu48%5Cu48%5Cu48%5Cu49%5Cu50%5Cu51%5Cu53%5Cu50%097a78c884-3d59-4330-9863-428e9eba5003&_t=55.608035399731456"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/img/portal/chanjet-logo2.png"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/view/portal/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx"
+    },
+    {
+      "method": "GET",
+      "url": "https://service.chanjet.com/robot/robot/ng_robot.html?product=T%2BCloud&env=prod&dogtype=1&map=1&tp_exp=1"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=BuriedPoint"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=GetB2BHostUrl"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=idesk"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/view/portal/ajaxpro/Ufida.T.CodeBehind.Default,Ufida.T.EAP.Portal.UIP.ashx"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/view/portal/ajaxpro/Ufida.T.CodeBehind.Default,Ufida.T.EAP.Portal.UIP.ashx"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=UpdateMessageCount&_args=&_version=%5Cu49%5Cu48%5Cu48%5Cu48%5Cu48%5Cu48%5Cu49%5Cu50%5Cu51%5Cu53%5Cu50%097a78c884-3d59-4330-9863-428e9eba5003&_t=37.7031360718873"
+    },
+    {
+      "method": "GET",
+      "url": "https://hm.baidu.com/hm.gif?hca=E8A5337663699568&cc=1&ck=1&cl=24-bit&ds=800x600&vl=0&et=0&ja=0&ln=zh-cn&lo=0&rnd=632802999&si=9056373c2b348e88d842e0070f8286a6&su=https%3A%2F%2Fh4t.chanjet.com%2F&v=1.3.2&lv=1&sn=27680&r=0&ww=0&u=https%3A%2F%2Fservice.chanjet.com%2Frobot%2Frobot%2Fng_robot.html%3Fproduct%3DT%252BCloud%26env%3Dprod%26dogtype%3D1%26map%3D1%26tp_exp%3D1&tt=%E6%9C%8D%E5%AE%9D%E6%9C%BA%E5%99%A8%E4%BA%BA"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetAccInformation?infoName=IsShowAIWeb"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=BuriedPointValue"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=ReregMutex"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetUserSolution?code="
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetIndicator?solutionId=69"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetTodoJson?code=idesk"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetOfenUseFunc"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetAdvertiseData"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetToBeAuditPollSeconds"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetIndicatorInfo?codes=MP4005_WorkSituation,MP3005_SingularAndTotalQuantityToday,MP5060_ReportSingularNumberAndAmountToday,MP3005_SingularAndTotalQuantityYesterday&action=query"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetIndicatorInfo?codes=SA4002_thismonth_sale,SA6031_thismonth_sale&action=query"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetIndicatorInfo?codes=PU4001_VouchersAndAmount,ST4001_VouchersAndAmount&action=query"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=InsertHistroy"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=ISC&ideskColumn=1&taskID=%E6%99%BA%E8%83%BD%E4%BE%9B%E5%BA%94%E9%93%BE&TaskSessionID=[REDACTED]"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=BuriedPointValue"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=ReregMutex"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetUserSolution?code=ISC"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetIndicator?solutionId=16"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetFlowChart?code=ISC"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetIndicatorInfo?codes=PU4001_VouchersAndAmount,PU8007_StockNoQuantityAndAmount,PU4002_VouchersAndAmount,ST9001_QuantityAmount,ST6063_ObsoleteMaterialRpt01,ST6061_ArrivalQtyAndDispatchQty,SA8006_thismonth_return&action=query"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=InsertHistroy"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=MP&ideskColumn=2&taskID=%E7%94%9F%E4%BA%A7%E7%AE%A1%E7%90%86&TaskSessionID=[REDACTED]"
+    },
+    {
+      "method": "POST",
+      "url": "https://h4t.chanjet.com/tplus/ajaxpro/Ufida.T.EAP.Portal.UIP.Portal,Ufida.T.EAP.Portal.UIP.ashx?method=ReregMutex"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetUserSolution?code=MP"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetIndicator?solutionId=22"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetWorkPlanForm?name=mp"
+    },
+    {
+      "method": "GET",
+      "url": "https://h4t.chanjet.com/tplus/tplusapi/PortalApi/GetFlowChart?code=MP"
+    }
+  ],
+  "samples": [
+    {
+      "industry": "机械行业",
+      "moduleStatuses": [
+        {
+          "code": "production",
+          "moduleName": "生产管理",
+          "status": "opened",
+          "menuCode": "MP"
+        }
+      ]
+    }
+  ]
+}

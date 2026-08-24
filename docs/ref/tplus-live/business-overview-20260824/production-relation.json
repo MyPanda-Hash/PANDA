@@ -1,8 +1,43 @@
 {
   "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=MP&ideskColumn=2&taskID=%E7%94%9F%E4%BA%A7%E7%AE%A1%E7%90%86&TaskSessionID=[REDACTED]",
   "title": "我的桌面",
-  "body": "基础档案\n存货\n计量单位\n部门\n员工\n仓库\n项目\n班组\n工序\n工艺路线\n物料清单\n相关单据\n多阶投产\n生产加工单\n材料出库单\n产成品入库单\n销售订单\n采购需求分析\n请购单\n采购订单\n相关报表\n生产加工单执行表\n生产加工单跟踪工具\n生产加工单产成品明细表\n生产加工单材料明细表\n生产加工单工序明细表\n生产加工单产成品统计表\n生产加工单材料统计表\n生产加工单工序统计表\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610\ntplusdemo123312331\n08241610",
+  "body": "业务流程图\n收起\n基础档案\n存货\n计量单位\n部门\n员工\n仓库\n项目\n班组\n工序\n工艺路线\n物料清单\n相关单据\n多阶投产\n生产加工单\n材料出库单\n产成品入库单\n销售订单\n采购需求分析\n请购单\n采购订单\n相关报表\n生产加工单执行表\n生产加工单跟踪工具\n生产加工单产成品明细表\n生产加工单材料明细表\n生产加工单工序明细表\n生产加工单产成品统计表\n生产加工单材料统计表\n生产加工单工序统计表\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632\ntplusdemo123522352\n08241632",
   "leaves": [
+    {
+      "text": "业务流程图",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-ideskpanel-title-left",
+      "rect": {
+        "x": 30,
+        "y": 25,
+        "w": 80,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-ideskpanel-title-left"
+        ]
+      ]
+    },
+    {
+      "text": "收起",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 136,
+        "y": 28,
+        "w": 24,
+        "h": 18
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
     {
       "text": "基础档案",
       "tag": "DIV",
@@ -584,7 +619,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -604,7 +639,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -624,7 +659,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -644,7 +679,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -664,7 +699,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -684,7 +719,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -704,7 +739,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -724,7 +759,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -744,7 +779,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -764,7 +799,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -784,7 +819,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -804,7 +839,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -824,7 +859,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -844,7 +879,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -864,7 +899,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -884,7 +919,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -904,7 +939,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -924,7 +959,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -944,7 +979,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -964,7 +999,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -984,7 +1019,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1004,7 +1039,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1024,7 +1059,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1044,7 +1079,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1064,7 +1099,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1084,7 +1119,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1104,7 +1139,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1124,7 +1159,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1144,7 +1179,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1164,7 +1199,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1184,7 +1219,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1204,7 +1239,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1224,7 +1259,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1244,7 +1279,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1264,7 +1299,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1284,7 +1319,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1304,7 +1339,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1324,7 +1359,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1344,7 +1379,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1364,7 +1399,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1384,7 +1419,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1404,7 +1439,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1424,7 +1459,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1444,7 +1479,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1464,7 +1499,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1484,7 +1519,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1504,7 +1539,7 @@
       ]
     },
     {
-      "text": "tplusdemo123312331",
+      "text": "tplusdemo123522352",
       "tag": "DIV",
       "id": "",
       "className": "",
@@ -1524,7 +1559,7 @@
       ]
     },
     {
-      "text": "08241610",
+      "text": "08241632",
       "tag": "DIV",
       "id": "",
       "className": "",
