@@ -534,13 +534,8 @@ watch(cur, (v) => {
   current.value = v
   detailRefVisible.value = false
   detailRefPick.value = null
-  // 产成品→材料联动：默认选中第一个产成品（材料明细只显示其 BOM 子件，不整单全显示）
-  const blk = blocks.value.find((x) => x.id === 'A')
-  const tab = blk ? activeTab(blk) : null
-  if (tab && tab.key === 'products') {
-    const first = detailRows(tab)[0]
-    if (first && first['产品编码'] !== selectedProduct.value) selectProduct(first['产品编码'])
-  } else if (selectedProduct.value) {
+  // 产成品→材料联动：默认不选中（点击产成品明细行才过滤材料明细），切换单据时重置
+  if (selectedProduct.value) {
     selectedProduct.value = null
     selectedBomCodes.value = []
   }
@@ -1844,16 +1839,24 @@ async function onTableClick(b, e) {
   selectProduct(row['产品编码'])
 }
 
-// 材料下级 BOM 映射（INV 全量 _bom → 编码索引）；材料编码行右上角显示红 *，点击行弹窗查看
+// 材料下级 BOM 映射（BOM 面板 children：父件编码 → 子件行）；材料编码行右上角显示红 *，点击行弹窗查看
 async function loadSubBomMap() {
   try {
-    const res = await engine.queryFormDataList({ panelCode: 'INV', condition: {}, pageNo: 1, pageSize: 100 })
+    const res = await engine.queryFormDataList({ panelCode: 'BOM', condition: {}, pageNo: 1, pageSize: 100 })
     const map = {}
     for (const d of res.list || []) {
-      for (const it of (d.detail && d.detail.items) || []) {
-        let bom = it['_bom']
-        if (typeof bom === 'string') { try { bom = JSON.parse(bom) } catch (err) { bom = [] } }
-        map[it['存货编码']] = Array.isArray(bom) ? bom : []
+      for (const it of (d.detail && d.detail.children) || []) {
+        const parent = it['父件编码']
+        if (!parent) continue
+        if (!map[parent]) map[parent] = []
+        map[parent].push({
+          材料编码: it['子件编码'],
+          材料名称: it['子件名称'],
+          规格型号: it['规格型号'] || '',
+          计量单位: it['子件计量单位'] || '件',
+          定额需用数量: it['定额数量'] ?? 0,
+          '损耗率%': it['损耗率%'] ?? 0,
+        })
       }
     }
     subBomMap.value = map
