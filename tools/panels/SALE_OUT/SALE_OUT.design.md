@@ -1,5 +1,13 @@
 # 销售出库单（SALE_OUT / T+ ST1021）面板：真实抓取对照分析 + 新配置设计
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 库存与供应链 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../../../docs/README.md) |
+
 > 对照对象：真实 T+ 机械行业账套 h4t.chanjet.com，单据页 `ST1021 销售出库单`（2026-08-19 抓取）
 > - 列表页结构：`docs/ref/tplus-live/mech-20260819/st/sale_out.dom.json`（cols 列定义 / query 查询 / toolbar / topText 工具栏下拉全名）
 > - 新增表单表头：`docs/ref/tplus-live/mech-20260819/st/sale_out-new-form.json`（ctrls 字段与必填 *）

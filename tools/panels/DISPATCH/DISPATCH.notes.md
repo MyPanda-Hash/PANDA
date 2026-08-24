@@ -1,5 +1,13 @@
 # 工序派工单（DISPATCH / T+ #SW10）面板：真实抓取对照分析 + 完整配置设计
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 质量与车间 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../../../docs/README.md) |
+
 > 对照对象：真实 T+ 机械行业账套 h4t.chanjet.com，单据页 `SW10 工序派工单`（2026-08-19 抓取）
 > - 抓取产物：`docs/ref/tplus-live/mech-20260819/qc/dispatch-list.dom.json`（cols 246 列 / query 6 项 / toolbar+topText 工具栏下拉全名 / strips；rowCount=465，URL `BAPView/Voucher.aspx?sysId=SW&mId=SW10`）
 > - 配置模板：`frontend/src/business/engine.js` `PU_ORDER_CONFIG`（L2041 单据面板模板）+ `MANU_ORDER_CONFIG`（L59 生产加工单，其 工序明细 为本面板选单来源）+ `PROCESS_REPORT_CONFIG`（L2849 同属工序级单据：工序编码/工序名称/生产车间/设备/工人 字段参照）

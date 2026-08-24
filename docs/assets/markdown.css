@@ -1,0 +1,85 @@
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 36px 56px;
+  font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.75;
+  letter-spacing: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: inherit;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+h1 {
+  margin-top: 0;
+  padding-bottom: 0.35em;
+  font-size: 2em;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+h2 {
+  margin-top: 1.8em;
+  padding-bottom: 0.25em;
+  font-size: 1.5em;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+h3 {
+  margin-top: 1.5em;
+  font-size: 1.2em;
+}
+
+p,
+ul,
+ol,
+table,
+blockquote,
+pre {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+
+code,
+pre,
+kbd,
+samp {
+  font-family: "Cascadia Code", Consolas, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.92em;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 8px 10px;
+  vertical-align: top;
+}
+
+blockquote {
+  padding: 0.1em 1em;
+  color: var(--vscode-descriptionForeground);
+  border-left: 4px solid var(--vscode-textLink-foreground);
+}
+
+@media (max-width: 720px) {
+  body {
+    padding: 20px 16px 40px;
+    font-size: 14px;
+  }
+}

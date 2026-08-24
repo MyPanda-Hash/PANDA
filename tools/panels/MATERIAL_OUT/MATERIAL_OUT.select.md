@@ -1,5 +1,13 @@
 # 材料出库单「选单」按钮专项（MATERIAL_OUT.select.md）
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 库存与供应链 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../../../docs/README.md) |
+
 > 数据来源：真实 T+ ST1022 材料出库单 topText（选单/选单转换 下拉全名），见 `material_out.dom.json` topText 与 `material_out-new-form.json` header。
 > 参考结构：engine.js `SALE_OUT_CONFIG.selectConfig`（L804，source/detailMap 平铺）、`PROCESS_REPORT` 选单（L1224，headerMap + detailRows 单据粒度提取明细）。
 

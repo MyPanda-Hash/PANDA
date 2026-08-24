@@ -1,5 +1,13 @@
 # 领料申请单（MATERIAL_REQ）面板设计说明
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 库存与供应链 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../../../docs/README.md) |
+
 > 面板码：MATERIAL_REQ / 面板名：领料申请单 / 真实菜单码：#ST1039（sysId=ST, mId=ST1039, pId=voucherView）
 > 类型：单据（panelCategory=单据，autoCodeField=单据编号，单据状态：草稿/已审核/已中止）
 > 数据来源：真实 T+ h4t 机械行业抓取 `docs/ref/tplus-live/mech-20260819/src/material_req-list.dom.json`（2026-08-19）

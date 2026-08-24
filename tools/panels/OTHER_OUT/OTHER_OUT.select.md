@@ -1,5 +1,13 @@
 # OTHER_OUT 其他出库单 · 选单按钮专项分析
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 库存与供应链 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../../../docs/README.md) |
+
 > 依据：`docs/ref/tplus-live/mech-20260819/st/other_out.dom.json` topText / toolbar 数组、`other_out-new-form.json` header（工具栏下拉全名）。
 > 真实 T+：ST1024 其他出库单（h4t.chanjet.com 机械行业账套）。
 

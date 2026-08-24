@@ -1,5 +1,13 @@
 # OTHER_OUT 其他出库单 · 对照分析与新配置设计
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 库存与供应链 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../../../docs/README.md) |
+
 > 抓取来源：真实 T+ 机械行业账套 h4t.chanjet.com，`/tplus/BAPView/Voucher.aspx?sysId=ST&mId=ST1024&pId=voucherView`（其他出库单）
 > 抓取产物：`docs/ref/tplus-live/mech-20260819/st/other_out.dom.json`（列表页结构）、`other_out-new-form.json`（新增表单表头 ctrls）
 > 本文件为**独立设计文件**（tools/panels/OTHER_OUT/），不修改任何共享代码；合并由主会话完成。

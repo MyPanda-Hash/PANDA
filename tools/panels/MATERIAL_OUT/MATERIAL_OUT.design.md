@@ -1,5 +1,13 @@
 # 材料出库单面板（MATERIAL_OUT）对照分析 + 新配置设计
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 库存与供应链 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../../../docs/README.md) |
+
 > 数据来源：真实 T+ 机械行业账套（h4t.chanjet.com，ST1022 材料出库单）
 > `docs/ref/tplus-live/mech-20260819/st/material_out.dom.json`（列表页：cols/query/toolbar/topText）+ `material_out.html` + `material_out-new-form.json`（新增表单表头 ctrls）
 > 对照对象：`frontend/src/business/engine.js` `MATERIAL_OUT_CONFIG`（L904-972，invPanel 工厂 L536）

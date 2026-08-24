@@ -1,5 +1,13 @@
 # 成品报检单（FINISH_INSPECT / T+ #QM10）面板：真实抓取对照分析 + 完整配置设计
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 质量与车间 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../../../docs/README.md) |
+
 > 对照对象：真实 T+ 机械行业账套 h4t.chanjet.com，单据页 `QM10 成品报检单`（2026-08-19 抓取）
 > - 抓取产物：`docs/ref/tplus-live/mech-20260819/qc/finish_inspect-list.dom.json`（cols 列定义 / query 查询字段 / toolbar+topText 工具栏下拉全名；URL `BAPView/Voucher.aspx?sysId=QM&mId=QM10&pId=voucherView`，rowCount=320 行）
 > - 真实菜单树：`docs/ref/tplus-live/mech-20260819/qc-menu-tree.json`（质检管理 → 报检单 → 成品报检单 #QM10；子表 统计表 #QM6010 / 明细表 #QM4010）

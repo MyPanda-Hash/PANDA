@@ -1,5 +1,13 @@
 # T+ 工艺路线 - 真实面板设计（2026-08-19 抓取实测）
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 生产制造 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../README.md) |
+
 > 来源：h2t.chanjet.com 演示账套 [012007] 轻MES（账号 tplusdemo128xx，自动分配）
 > 菜单：基础设置 → 基础设置 → 基本信息 → 工艺路线（代码 AA1055，DoubleList 双表型档案，带审核/弃审）
 > 抓取存档：`docs/ref/tplus-live/route-AA1055/`（route-aa1055.dom.json 列表结构 / route-aa1055-probe.json 双表+点击联动 / route-aa1055-probe2.json 选中行明细 / route-aa1055-form.json / route-aa1055.png 截图）

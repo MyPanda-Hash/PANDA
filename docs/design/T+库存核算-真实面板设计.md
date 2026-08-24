@@ -1,5 +1,13 @@
 # T+ 库存核算 6 单据面板 · 真实结构实测（2026-08-14）
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 库存与供应链 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../README.md) |
+
 > 来源：h2t.chanjet.com 演示账套 [012007] 轻MES，账号 tplusdemo12853（无头 Edge + CDP 9222 门户会话）
 > 页面：`BAPView/Voucher.aspx?sysId=ST&mId=XXXX&pId=voucherView`（列表/表单同页，点「新增」切换表单态）
 > 原始数据：`%TEMP%\pptr\inv\<mId>\`（report.json / 01-body-text.txt / 02-list / 03-form）

@@ -1,5 +1,13 @@
 # 配货单 PICK_ORDER 面板设计说明
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 库存与供应链 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../../../docs/README.md) |
+
 > 面板码 `PICK_ORDER` / 面板名 `配货单` / 真实 T+ 菜单 `#DI20`（h4t.chanjet.com `/tplus/BAPView/Voucher.aspx?sysId=DI&mId=DI20`）
 > 抓取源：`docs/ref/tplus-live/mech-20260819/src/pick_order-list.dom.json`（2026-08-19 实测，266 行明细、单页签「明细」）
 > 交付：`PICK_ORDER.config.js`（可直接拼入 engine.js）+ 本说明；**未修改任何共享代码**

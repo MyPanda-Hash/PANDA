@@ -1,5 +1,13 @@
 # 销售出库单（SALE_OUT）「选单」按钮专项：真实子项 + 源单据 + selectConfig 建议
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 库存与供应链 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../../../docs/README.md) |
+
 > 数据来源：sale_out.dom.json topText（选单下拉全名）、mech-isc-tree-raw.json（T+ 菜单确认源单据面板存在性）
 > 现有配置：engine.js SALE_OUT_CONFIG.selectConfig（source=SO_ORDER，L804-822）
 

@@ -1,5 +1,13 @@
 # 进货单（PU_IN / T+ #PU03）面板：真实抓取对照分析 + 完整配置设计
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 库存与供应链 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../../../docs/README.md) |
+
 > 对照对象：真实 T+ 机械行业账套 h4t.chanjet.com，单据页 `PU03 进货单`（2026-08-19 抓取）
 > - 抓取产物：`docs/ref/tplus-live/mech-20260819/src/purchase_in-list.dom.json`（cols 列定义 / query 查询字段 / toolbar+topText 工具栏下拉全名 / strips；30KB，URL `BAPView/Voucher.aspx?sysId=PU&mId=PU03`）
 > - 配置模板：`frontend/src/business/engine.js` `PU_ORDER_CONFIG`（L2053-2180，结构：metadata.panelPageDto.tablePages[0].queryFields/gridTabs、formPages、panelButtons、buttonGroups、dataSchema.fields、detail.tabs[0].fields）

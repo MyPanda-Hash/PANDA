@@ -1,5 +1,13 @@
 # 来料/成品检验单（INSPECTION / T+ #QM15）面板：真实抓取对照分析 + 完整配置设计
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 质量与车间 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../../../docs/README.md) |
+
 > 对照对象：真实 T+ 机械行业账套 h4t.chanjet.com，单据页 `QM15 来料/成品检验单`（2026-08-19 抓取）
 > - 抓取产物：`docs/ref/tplus-live/mech-20260819/qc/inspection-list.dom.json`（cols 列定义 / query 查询字段 / toolbar+topText 工具栏下拉全名 / tabs / strips；1383 行，URL `BAPView/Voucher.aspx?sysId=QM&mId=QM15`，rowCount 505）
 > - 配置模板：`frontend/src/business/engine.js` `PU_ORDER_CONFIG`（L2041 起）+ `tools/panels/PU_IN/PU_IN.config.js` 完整产出范例（同批开发结构基准；`ARRIVAL_IN_CONFIG` 在 engine.js 中暂不存在，故以 PU_IN 结构为准）

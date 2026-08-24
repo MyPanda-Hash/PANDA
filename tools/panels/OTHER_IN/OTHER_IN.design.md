@@ -1,5 +1,13 @@
 # OTHER_IN 其他入库单面板 — 对照分析与新配置设计
 
+| 属性 | 内容 |
+|---|---|
+| 文档类型 | 场景设计 |
+| 适用场景 | 库存与供应链 |
+| 维护状态 | 调研基线 |
+| 最后整理 | 2026-08-24 |
+| 文档导航 | [文档中心](../../../docs/README.md) |
+
 > 对照对象：真实 T+（机械行业账套 h4t.chanjet.com，ST1004 其他入库单，抓取于 2026-08-19）
 > 抓取数据：`docs/ref/tplus-live/mech-20260819/st/other_in.dom.json`、`other_in-new-form.json`、`other_in.html`
 > 现有轻MES配置：`frontend/src/business/engine.js` OTHER_IN_CONFIG（invPanel 工厂，L754-799）
