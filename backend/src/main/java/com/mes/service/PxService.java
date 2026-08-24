@@ -1275,8 +1275,8 @@ public class PxService {
             if (dv != null && !"".equals(String.valueOf(dv))) formData.putIfAbsent(dn, dv);
         }
         if (names.contains("单据日期")) {
-            Object dv = formData.get("单据日期");
-            if (dv == null || String.valueOf(dv).isBlank()) formData.put("单据日期", LocalDate.now().toString());
+            // 新建即填当天（忽略面板配置里的历史默认日期，2026-08-24 修复：配置 defaultValue 为旧日期导致新单日期错误）
+            formData.put("单据日期", LocalDate.now().toString());
         }
         String codeKey = names.contains("单据编号") ? "单据编号" : (names.contains("锭号") ? "锭号" : null);
         if (codeKey != null) {

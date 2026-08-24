@@ -406,6 +406,9 @@ const bomMasterRows = computed(() => {
   return list.value || [] // BOM_FWD/BOM_REV：后端返回的展平行（父件-子件对）
 })
 
+// 直接新增面板（试点）：点击「新增」创建一张最新草稿单（自动编号+日期），打开表单页编辑，不弹新增弹窗
+const DIRECT_ADD_PANELS = ['SO_ORDER']
+
 const query = reactive({ keyword: '', pageNo: 1, pageSize: 20 })
 const condition = reactive({})
 const list = ref([])
@@ -1436,6 +1439,24 @@ function onFormSaved() {
   load()
 }
 
+// 直接新增：调后端保存（空表头）创建最新草稿单（autoCode 编号 + 单据日期=当天自动填入），
+// 跳转表单页编辑（非弹窗）。保存返回 {编号, 单据状态}。
+async function directAdd() {
+  try {
+    const res = await engine.callButton({ panelCode: panelCode.value, buttonName: '保存', formData: {}, buttonParam: {} })
+    const no = res && (res['编号'] || res.formNo)
+    if (!no) return ElMessage.error('新增失败：未返回单据编号')
+    const path = `/panelx/form/${panelCode.value}`
+    const q = { code: no }
+    load() // 刷新列表（keep-alive 返回时可见新单）
+    router.push({ path, query: q })
+    tabs.open({ path, title: `${panelName.value}-${no}`, query: q })
+    ElMessage.success(`已新增 ${panelName.value}-${no}`)
+  } catch (e) {
+    ElMessage.error(engine.errMsg(e) || '新增失败')
+  }
+}
+
 async function onButton(action) {
   if (APPROVE_ACTIONS.includes(action) && !user.isAdmin && !user.approvePanels.includes(panelCode.value)) {
     return ElMessage.warning('当前角色无审批权限')
@@ -1493,6 +1514,11 @@ async function onButton(action) {
       if (current.value && current.value['编号']) { openForm(current.value); return }
       newVisible.value = true
       return
+    }
+    if (DIRECT_ADD_PANELS.includes(String(panelCode.value))) {
+      // 直接新增（T+ 形态）：后端创建一张最新草稿单（自动编号 + 单据日期=当天填入表头），
+      // 直接打开表单页编辑（非新增弹窗）。先支持 SO_ORDER 试点，验证通过后扩展其余单据。
+      return await directAdd()
     }
     newVisible.value = true
     return
