@@ -740,18 +740,6 @@ function addDetailRow(tab) {
   if (tab.subTable) row['子表材料'] = []
   // 材料明细：新增行自动归属当前选中的产成品（子件BOM=产品编码），保证联动过滤精确
   if (tab.key === 'materials' && selectedProduct.value) row['子件BOM'] = selectedProduct.value
-  // 存货：新增物品按类别单据编码自动替补（产成品→CP001、原材料→YL001、辅助材料→FZ001、包装物→BZ001、半成品→BC001…）
-  if (panelCode.value === 'INV' && tab.key === 'items') {
-    const pre = { 产成品: 'CP', 原材料: 'YL', 辅助材料: 'FZ', 包装物: 'BZ', 半成品: 'BC' }[form['类别']] || ''
-    if (pre) {
-      let max = 0
-      for (const r of rows) {
-        const m = String(r['存货编码'] || '').match(new RegExp('^' + pre + '(\\d+)$'))
-        if (m) max = Math.max(max, parseInt(m[1], 10))
-      }
-      row['存货编码'] = pre + String(max + 1).padStart(3, '0')
-    }
-  }
   rows.push(row)
   return row
 }

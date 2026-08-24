@@ -358,16 +358,6 @@
     <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
     <ImportDialog v-model="impVisible" :fields="impFields" :target-label="impLabel" @imported="onImported" />
     <ApprovalHistoryDialog v-model="approvalVisible" :panelCode="panelCode" :formNo="approvalNo" />
-    <el-dialog v-model="catPickVisible" title="选择类别添加存货" width="360px" append-to-body>
-      <el-select v-model="catPick" style="width: 100%" placeholder="选择存货类别">
-        <el-option v-for="c in ['产成品', '原材料', '辅助材料', '包装物', '半成品']" :key="c" :label="c" :value="c" />
-      </el-select>
-      <div style="margin-top:8px;font-size:12px;color:#999">存货固定 5 张类别单据，新增物品进入对应类别单据的明细中</div>
-      <template #footer>
-        <el-button @click="catPickVisible = false">取消</el-button>
-        <el-button type="primary" :disabled="!catPick" @click="gotoCategory">打开该类别单据</el-button>
-      </template>
-    </el-dialog>
     <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
     <DetailMaintainDialog v-model="maintainVisible" :panel-code="panelCode" :row="maintainRow" @saved="onMaintainSaved" />
     <VoucherFormDialog v-model="formVisible" :panel-code="formPanel || panelCode" :code="formCode" @saved="onFormSaved" />
@@ -501,8 +491,6 @@ const bomItem = ref(null)
 const bomParent = ref(null)
 const delMode = ref(false)
 const delSel = ref([])
-const catPickVisible = ref(false)
-const catPick = ref('')
 
 // 产成品→材料联动：当前选中产成品（列表页单据流览内点击产成品明细行）
 const selectedProduct = ref(null)
@@ -1402,7 +1390,7 @@ async function loadCrg() {
 function isDisabled(action) {
   const st = current.value?.['单据状态']
   const map = {
-    新增: catPickVisible.value, // 存货类别选择弹窗打开时禁用，防止重复触发
+    新增: false, // 单单据面板新增按钮不置灰
     删除: !current.value,
     审核: !current.value || st !== '草稿',
     弃审: !current.value || st !== '已审核',
@@ -1501,16 +1489,9 @@ async function onButton(action) {
   }
   if (action === '新增' || action === '新增流程') {
     if (cfgCache.value?.metadata?.singleDoc) {
-      // 单单据面板（如员工档案）：不新建第二张单据，直接打开已有单据（无单据时新建一张）
+      // 单单据面板（如员工档案/存货档案）：不新建第二张单据，直接打开已有单据（无单据时新建一张）
       if (current.value && current.value['编号']) { openForm(current.value); return }
       newVisible.value = true
-      return
-    }
-    if (panelCode.value === 'INV') {
-      // 存货固定 5 张类别单据：新增物品进入对应类别单据（不新建第 6 张）
-      // 防重复触发：类别选择弹窗已打开时忽略再次点击（避免刷新单据）
-      if (catPickVisible.value) return
-      catPickVisible.value = true
       return
     }
     newVisible.value = true
@@ -1887,29 +1868,6 @@ async function selectProduct(code) {
 
 function onBomSaved() {
   load()
-}
-
-// 打开所选类别对应的存货单据（5 类固定）；单据被删后自动补建
-async function gotoCategory() {
-  const docMap = { 产成品: 'CP-001', 原材料: 'YL-001', 辅助材料: 'FZ-001', 包装物: 'BZ-001', 半成品: 'BC-001' }
-  const doc = docMap[catPick.value]
-  if (!doc) return
-  catPickVisible.value = false
-  catPick.value = ''
-  // 检查该类别单据是否存在，缺失则自动补建（保持 5 张）
-  try {
-    const res = await engine.queryFormDataList({ panelCode: 'INV', condition: { 类别: catPick.value }, pageNo: 1, pageSize: 10 })
-    const exists = (res.list || []).some((r) => r['编号'] === doc)
-    if (!exists) {
-      await engine.callButton({ panelCode: 'INV', buttonName: '保存', formData: { 类别: catPick.value, detail: { items: [] } }, buttonParam: {} })
-      ElMessage.success('已自动补建类别单据 ' + doc)
-    }
-  } catch (e) {
-    // 补建失败不阻塞跳转
-  }
-  const q = { code: doc }
-  router.push({ path: `/panelx/form/${panelCode.value}`, query: q })
-  tabs.open({ path: `/panelx/form/${panelCode.value}`, title: '存货-' + doc, query: q })
 }
 
 watch(

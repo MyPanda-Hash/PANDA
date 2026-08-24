@@ -1,0 +1,148 @@
+{
+  "industry": "机械行业",
+  "portalUrl": "https://h4t.chanjet.com/tplus/view/portal/portal.html?[REDACTED]",
+  "state": {
+    "url": "https://h4t.chanjet.com/tplus/view/portal/portal.html?_from=exp",
+    "title": "畅捷通 T+",
+    "body": "[641164]户外用品\n\n[00]总部   已认证 畅捷通信息技术股份有限公司 2026-08-24 \n更新公告\nnew\ntplusdemo12390\n  \n经营分析\n新商贸\n供应链协同\n智能供应链\n新生产\n质量管理\n智能财税\n多组织\n智能体广场\n基础设置\nTOP应用\n   \n警告\n长时间未操作或相同账号在另外地点登录，请重新登录。\n确定",
+    "iframes": [
+      {
+        "src": "",
+        "id": "duduIframe",
+        "name": ""
+      },
+      {
+        "src": "https://h4t.chanjet.com/tplus/view/portal/portal.html?_from=exp",
+        "id": "",
+        "name": ""
+      },
+      {
+        "src": "https://h4t.chanjet.com/tplus/view/portal/portal.html?_from=exp",
+        "id": "",
+        "name": ""
+      },
+      {
+        "src": "https://h4t.chanjet.com/tplus/view/portal/portal.html?_from=exp",
+        "id": "",
+        "name": ""
+      },
+      {
+        "src": "https://h4t.chanjet.com/tplus/view/portal/portal.html?_from=exp",
+        "id": "",
+        "name": ""
+      },
+      {
+        "src": "https://h4t.chanjet.com/tplus/view/portal/portal.html?_from=exp",
+        "id": "",
+        "name": ""
+      },
+      {
+        "src": "https://h4t.chanjet.com/tplus/view/portal/portal.html?_from=exp",
+        "id": "msgNotifyIframe",
+        "name": ""
+      },
+      {
+        "src": "https://service.chanjet.com/robot/robot/ng_robot.html?product=T%2BCloud&env=prod&dogtype=1&map=1&tp_exp=1",
+        "id": "_robot_frame",
+        "name": ""
+      }
+    ]
+  },
+  "events": [
+    {
+      "type": "nav",
+      "url": "https://t.chanjet.com/tplus/view/login.html"
+    },
+    {
+      "type": "nav",
+      "url": "about:blank"
+    },
+    {
+      "type": "nav",
+      "url": "about:blank"
+    },
+    {
+      "type": "nav",
+      "url": "about:blank"
+    },
+    {
+      "type": "nav",
+      "url": "about:blank"
+    },
+    {
+      "type": "nav",
+      "url": "about:blank"
+    },
+    {
+      "type": "nav",
+      "url": "https://t.chanjet.com/view/selectRoles.html?t=1787556960943"
+    },
+    {
+      "type": "nav",
+      "url": "https://h4t.chanjet.com/tplus/view/ossjump.html?[REDACTED]"
+    },
+    {
+      "type": "nav",
+      "url": "https://h4t.chanjet.com/tplus/view/portal/portal.html?[REDACTED]"
+    },
+    {
+      "type": "nav",
+      "url": "about:blank"
+    },
+    {
+      "type": "nav",
+      "url": "about:blank"
+    },
+    {
+      "type": "nav",
+      "url": "about:blank"
+    },
+    {
+      "type": "nav",
+      "url": "about:blank"
+    },
+    {
+      "type": "nav",
+      "url": "about:blank"
+    },
+    {
+      "type": "nav",
+      "url": "about:blank"
+    },
+    {
+      "type": "nav",
+      "url": "about:blank"
+    },
+    {
+      "type": "nav",
+      "url": "about:blank"
+    },
+    {
+      "type": "nav",
+      "url": "https://service.chanjet.com/robot/robot/ng_robot.html?product=T%2BCloud&env=prod&dogtype=1&map=1&tp_exp=1"
+    },
+    {
+      "type": "nav",
+      "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=idesk"
+    }
+  ],
+  "roleDump": {
+    "url": "https://t.chanjet.com/view/selectRoles.html?t=1787556960943",
+    "body": "请选择体验的领域及行业\n选领域\n新制造多组织新商贸新零售\n选行业\n机械行业\n轻MES",
+    "items": [
+      "立即体验",
+      "请选择体验的领域及行业",
+      "新制造",
+      "多组织",
+      "新商贸",
+      "新零售",
+      "机械行业",
+      "轻MES",
+      "财务多组织",
+      "业务多组织",
+      "工业品商贸",
+      "T+CRM",
+      "食品连锁"
+    ]
+  }
+}
