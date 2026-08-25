@@ -392,6 +392,10 @@ public class PxService {
         if ("BOM_FWD".equals(panelCode) || "BOM_REV".equals(panelCode)) {
             return queryBomFlatten(panelCode, keyword, condition);
         }
+        // 采购需求分析（PU_REQ_ANALYSIS）：聚合生产加工单材料需求 - 现存量 - 已请购 - 已出库 = 建议请购数量
+        if ("PU_REQ_ANALYSIS".equals(panelCode)) {
+            return queryPurchaseReqAnalysis(keyword, condition);
+        }
         LambdaQueryWrapper<FormData> qw = new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, panelCode)
                 .orderByDesc(FormData::getCreateTime)
@@ -493,6 +497,121 @@ public class PxService {
         return out;
     }
 
+    /**
+     * 采购需求分析（对齐真实 T+ 生产管理相关单据「采购需求分析」）：
+     * 遍历已审核/生产中的生产加工单 materials 明细，逐材料汇总：
+     * 需用数量（计划数量） - 现存量 - 已请购数量（PU_REQ items 数量合计） - 已出库数量（MATERIAL_OUT items 数量合计）
+     * = 建议请购数量；已全部满足的材料行不输出。结果按材料编码分组聚合。
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> queryPurchaseReqAnalysis(String keyword, Map<String, Object> condition) {
+        Map<String, Map<String, Object>> agg = new java.util.LinkedHashMap<>();
+        List<FormData> mos = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER")
+                .in(FormData::getStatus, List.of("已审核", "生产中")));
+        for (FormData mo : mos) {
+            Map<String, Object> head = parseData(mo.getData());
+            Map<String, Object> dm = parseData(mo.getDetailData());
+            Object mats = dm.get("materials");
+            if (!(mats instanceof List)) continue;
+            for (Object o : (List<?>) mats) {
+                if (!(o instanceof Map)) continue;
+                Map<String, Object> m = (Map<String, Object>) o;
+                String code = String.valueOf(m.getOrDefault("材料编码", ""));
+                String name = String.valueOf(m.getOrDefault("材料名称", ""));
+                if (code.isEmpty() && name.isEmpty()) continue;
+                String key = code.isEmpty() ? name : code;
+                Map<String, Object> row = agg.computeIfAbsent(key, k -> {
+                    Map<String, Object> r = new HashMap<>();
+                    r.put("材料编码", code);
+                    r.put("材料名称", name);
+                    r.put("规格型号", m.getOrDefault("规格型号", ""));
+                    r.put("计量单位", m.getOrDefault("计量单位", "kg"));
+                    r.put("需用数量", 0.0);
+                    r.put("现存量", 0.0);
+                    r.put("已请购数量", 0.0);
+                    r.put("已出库数量", 0.0);
+                    r.put("建议请购数量", 0.0);
+                    r.put("需求加工单", new java.util.LinkedHashSet<>());
+                    return r;
+                });
+                double need = num(m.getOrDefault("计划数量", m.getOrDefault("需用数量", 0)));
+                row.put("需用数量", num(row.get("需用数量")) + need);
+                row.put("现存量", Math.max(num(row.get("现存量")), num(m.getOrDefault("现存量", 0))));
+                if (!"".equals(String.valueOf(head.getOrDefault("单据编号", "")))) {
+                    ((java.util.Set<String>) row.get("需求加工单")).add(String.valueOf(head.get("单据编号")));
+                }
+            }
+        }
+        // 已请购：PU_REQ items 数量合计（按材料名称/编码匹配）
+        sumDetailQty("PU_REQ", "items", "已请购数量", agg, "存货名称", "存货编码", "数量");
+        // 已出库：MATERIAL_OUT items 数量合计
+        sumDetailQty("MATERIAL_OUT", "items", "已出库数量", agg, "材料名称", "材料编码", "数量");
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> row : agg.values()) {
+            double need = num(row.get("需用数量"));
+            double stock = num(row.get("现存量"));
+            double purchased = num(row.get("已请购数量"));
+            double issued = num(row.get("已出库数量"));
+            double suggest = Math.max(0, Math.round((need - stock - purchased - issued) * 100) / 100.0);
+            if (suggest <= 0) continue;
+            row.put("建议请购数量", suggest);
+            Set<String> src = (Set<String>) row.remove("需求加工单");
+            row.put("需求来源", String.join("、", src));
+            rows.add(row);
+        }
+        // 条件过滤（材料名称/材料编码/关键字）
+        List<Map<String, Object>> hit = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            boolean ok = true;
+            if (condition != null) {
+                for (Map.Entry<String, Object> e : condition.entrySet()) {
+                    Object v = e.getValue();
+                    if (v == null || "".equals(String.valueOf(v))) continue;
+                    Object rv = row.get(e.getKey());
+                    if (rv == null || !String.valueOf(rv).contains(String.valueOf(v))) { ok = false; break; }
+                }
+            }
+            if (ok && keyword != null && !keyword.isBlank()) {
+                ok = String.valueOf(row.get("材料名称")).contains(keyword)
+                        || String.valueOf(row.get("材料编码")).contains(keyword);
+            }
+            if (ok) hit.add(row);
+        }
+        hit.sort((a, b) -> String.valueOf(a.get("材料编码")).compareTo(String.valueOf(b.get("材料编码"))));
+        Map<String, Object> out = new HashMap<>();
+        out.put("totalSize", hit.size());
+        out.put("list", hit);
+        return out;
+    }
+
+    /** 累加某面板明细行某数量字段到聚合行（材料编码优先，其次材料名称） */
+    @SuppressWarnings("unchecked")
+    private void sumDetailQty(String panelCode, String tabKey, String targetKey,
+                              Map<String, Map<String, Object>> agg, String nameField, String codeField, String qtyField) {
+        List<FormData> docs = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, panelCode));
+        for (FormData fd : docs) {
+            Map<String, Object> dm = parseData(fd.getDetailData());
+            Object items = dm.get(tabKey);
+            if (!(items instanceof List)) continue;
+            for (Object o : (List<?>) items) {
+                if (!(o instanceof Map)) continue;
+                Map<String, Object> it = (Map<String, Object>) o;
+                String code = String.valueOf(it.getOrDefault(codeField, ""));
+                String name = String.valueOf(it.getOrDefault(nameField, ""));
+                String key = code.isEmpty() ? name : code;
+                Map<String, Object> row = agg.get(key);
+                if (row == null) {
+                    // 名称回退匹配：无编码的明细行按名称聚合
+                    row = agg.get(name);
+                    if (row == null) continue;
+                }
+                row.put(targetKey, num(row.get(targetKey)) + num(it.getOrDefault(qtyField, 0)));
+            }
+        }
+    }
+
     // ---------- 按钮（业务流转） ----------
 
     @SuppressWarnings("unchecked")
@@ -539,8 +658,11 @@ public class PxService {
                 return createPurchaseInFromPo(panelCode, formData);
             case "生成产成品入库单":   // 推式生单：生产加工单 → 产成品入库单
                 return createFinishInFromMo(panelCode, formData);
-            case "生成材料出库单":     // 推式生单：领料申请单/生产加工单 → 材料出库单
+            case "生成材料出库单":     // 推式生单：领料申请单/生产加工单/调拨单 → 材料出库单
                 return createMaterialOut(panelCode, formData);
+            case "生成调拨单":         // 推式生单：领料申请单 → 调拨单（对齐真实 T+ 领料申请单「生单-生成调拨单」）
+            case "生成调拨单(分单)":
+                return createTransferFromMaterialReq(panelCode, formData);
             case "生成销售出库单":     // 推式生单：销售订单 → 销售出库单
             case "生成销售出库单(普通销售)":
                 return createSaleOutFromSo(panelCode, formData);
@@ -1019,7 +1141,26 @@ public class PxService {
         moData.put("生产车间", head.getOrDefault("生产车间", ""));
         moData.put("领用人", head.getOrDefault("领料申请人", ""));
         moData.put("加工单号", head.getOrDefault("加工单号", ""));
-        if ("MATERIAL_REQ".equals(panelCode)) {
+        if ("TRANSFER".equals(panelCode)) {
+            // 推式生单：调拨单 → 材料出库单（调拨出库，T+ 调拨单出库方向）
+            List<Map<String, Object>> items = dm.get("items") instanceof List
+                    ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
+            for (Map<String, Object> it : items) {
+                Map<String, Object> r = new HashMap<>();
+                r.put("仓库", head.getOrDefault("调出仓库", "原料仓"));
+                r.put("加工单号", head.getOrDefault("来源单号", ""));
+                r.put("材料名称", it.getOrDefault("存货名称", ""));
+                r.put("计量单位", it.getOrDefault("计量单位", "kg"));
+                r.put("数量", it.getOrDefault("数量", 0));
+                r.put("单价", it.getOrDefault("单价", 0));
+                r.put("金额", it.getOrDefault("金额", 0));
+                r.put("规格型号", it.getOrDefault("规格型号", ""));
+                r.put("现存量", it.getOrDefault("现存量", 0));
+                r.put("现存量说明", it.getOrDefault("现存量说明", ""));
+                rows.add(r);
+            }
+            moData.put("出库类别", "调拨出库");
+        } else if ("MATERIAL_REQ".equals(panelCode)) {
             List<Map<String, Object>> items = dm.get("items") instanceof List
                     ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
             for (Map<String, Object> it : items) {
@@ -1057,6 +1198,50 @@ public class PxService {
         Map<String, Object> detail = new HashMap<>();
         detail.put("items", rows);
         return insertGenerated("MATERIAL_OUT", panelCode, String.valueOf(no), moData, detail);
+    }
+
+    /** 推式生单：领料申请单（MATERIAL_REQ）→ 调拨单（TRANSFER）：明细材料转入调拨单，调出仓库=领料申请单仓库 */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createTransferFromMaterialReq(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MATERIAL_REQ").eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("领料申请单不存在：" + no);
+        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核领料申请单可生成调拨单");
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> items = dm.get("items") instanceof List
+                ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
+        if (items.isEmpty()) throw new IllegalStateException("领料申请单无材料明细：" + no);
+
+        Map<String, Object> trData = new HashMap<>();
+        trData.put("单据日期", LocalDate.now().toString());
+        trData.put("业务类型", "调拨");
+        trData.put("调出仓库", head.getOrDefault("仓库", "原料仓"));
+        trData.put("调入仓库", "");
+        trData.put("经手人", head.getOrDefault("领料申请人", ""));
+        trData.put("生产车间", head.getOrDefault("生产车间", ""));
+        trData.put("部门", head.getOrDefault("部门", ""));
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> it : items) {
+            Map<String, Object> r = new HashMap<>();
+            r.put("存货编码", it.getOrDefault("材料编码", ""));
+            r.put("存货名称", it.getOrDefault("材料名称", ""));
+            r.put("规格型号", it.getOrDefault("规格型号", ""));
+            r.put("计量单位", it.getOrDefault("计量单位", "kg"));
+            r.put("数量", it.getOrDefault("数量", 0));
+            r.put("单价", it.getOrDefault("单价", 0));
+            r.put("金额", it.getOrDefault("金额", 0));
+            r.put("现存量", it.getOrDefault("现存量", 0));
+            r.put("现存量说明", it.getOrDefault("现存量说明", ""));
+            r.put("加工单号", it.getOrDefault("加工单号", ""));
+            r.put("行中止", false);
+            rows.add(r);
+        }
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("TRANSFER", "MATERIAL_REQ", String.valueOf(no), trData, detail);
     }
 
     /** 推式生单：销售订单（SO_ORDER）→ 销售出库单（SALE_OUT） */
@@ -1516,6 +1701,7 @@ public class PxService {
         else if ("FINISH_INSPECT".equals(panelCode)) biz = "BJ-";   // 成品报检单
         else if ("INSPECTION".equals(panelCode)) biz = "JY-";       // 来料成品检验单
         else if ("DISPATCH".equals(panelCode)) biz = "PG-";         // 工序派工单
+        else if ("TRANSFER".equals(panelCode)) biz = "DB-";        // 调拨单（T+ 调拨惯例 DB）
         else if ("INV".equals(panelCode)) biz = "INV-"; // 存货类别单据
         else biz = "MO-";
         String base = biz + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
@@ -1544,7 +1730,8 @@ public class PxService {
     /** 启用审批流的面板（与前端 APPROVAL_PANELS 一致）：单据日期/单据编号不在新建时预填，提交审核时自动填写 */
     private static final Set<String> APPROVAL_PANELS = Set.of(
             "SO_ORDER", "PURCHASE_IN", "FINISH_IN", "OTHER_IN", "SALE_OUT", "MATERIAL_OUT", "OTHER_OUT",
-            "MANU_ORDER", "PROCESS_REPORT", "INIT_AP", "INIT_AR", "INIT_BALANCE", "BOM", "ROUTE", "PU_REQ");
+            "MANU_ORDER", "PROCESS_REPORT", "INIT_AP", "INIT_AR", "INIT_BALANCE", "BOM", "ROUTE", "PU_REQ",
+            "TRANSFER");
 
     /**
      * 审批面板审核类动作（审核/提交审批/审批通过）时自动补表头：

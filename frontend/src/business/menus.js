@@ -36,6 +36,7 @@ export const menuTree = [
         children: [
           {
             code: 'doc', title: '单据', children: [
+              { code: 'puReqAnalysis', title: '采购需求分析', path: '/panelx/list/PU_REQ_ANALYSIS', icon: 'DataAnalysis', panelCode: 'PU_REQ_ANALYSIS' },
               { code: 'puReq', title: '请购单', path: '/panelx/list/PU_REQ', icon: 'Tickets', panelCode: 'PU_REQ', operationName: '新增流程' },
               { code: 'puOrder', title: '采购订单', path: '/panelx/list/PU_ORDER', icon: 'Tickets', panelCode: 'PU_ORDER', operationName: '新增流程' },
               { code: 'puIn', title: '进货单', path: '/panelx/list/PU_IN', icon: 'Tickets', panelCode: 'PU_IN', operationName: '新增流程' },
@@ -69,6 +70,7 @@ export const menuTree = [
               { code: 'materialOut', title: '材料出库单', path: '/panelx/list/MATERIAL_OUT', icon: 'Upload', panelCode: 'MATERIAL_OUT', operationName: '新增流程' },
               { code: 'otherOut', title: '其他出库单', path: '/panelx/list/OTHER_OUT', icon: 'Upload', panelCode: 'OTHER_OUT', operationName: '新增流程' },
               { code: 'materialReq', title: '领料申请单', path: '/panelx/list/MATERIAL_REQ', icon: 'Upload', panelCode: 'MATERIAL_REQ', operationName: '新增流程' },
+              { code: 'transfer', title: '调拨单', path: '/panelx/list/TRANSFER', icon: 'RefreshRight', panelCode: 'TRANSFER', operationName: '新增流程' },
             ],
           },
           {
@@ -138,6 +140,7 @@ export const menuTree = [
             code: 'doc', title: '单据', children: [
               { code: 'manufactureOrder', title: '生产加工单', path: '/panelx/list/MANU_ORDER', icon: 'Document', panelCode: 'MANU_ORDER', operationName: '新增流程' },
               { code: 'dispatch', title: '工序派工单', path: '/panelx/list/DISPATCH', icon: 'AlarmClock', panelCode: 'DISPATCH', operationName: '新增流程' },
+              { code: 'transfer', title: '调拨单', path: '/panelx/list/TRANSFER', icon: 'RefreshRight', panelCode: 'TRANSFER', operationName: '新增流程' },
               { code: 'manufactureOrderProc', title: '生产加工单工序统计表', path: '/panelx/list/MANU_PROC_STATS', panelCode: 'MANU_PROC_STATS', icon: 'Histogram' },
             ],
           },
