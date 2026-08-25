@@ -337,7 +337,7 @@ const subActive = reactive({})
 const selectedProduct = ref(null)
 const selectedBomCodes = ref([])
 
-// 材料下级 BOM（红 * + 弹窗）：存货编码 → _bom 数组
+// 材料下级 BOM（红 * + 弹窗）：存货编码 → 物料清单 BOM 面板 children 子件行
 const subBomMap = ref({})
 const subBomVisible = ref(false)
 const subBomMaterial = ref(null)
@@ -721,21 +721,20 @@ function onRowClickDetail(tab, row) {
   }
 }
 
-// 选中产成品：行高亮 + 材料明细只显示该产品的 BOM 子件（异步查 INV 物品 _bom → 材料编码集合）
+// 选中产成品：行高亮 + 材料明细只显示该产品的 BOM 子件（物料清单 BOM 面板 children → 子件编码集合；2026-08-25 原 INV _bom 已迁移）
 async function selectProduct(code) {
   selectedProduct.value = code
   selectedBomCodes.value = []
   try {
-    const res = await engine.queryFormDataList({ panelCode: 'INV', condition: {}, pageNo: 1, pageSize: 100 })
+    const res = await engine.queryFormDataList({ panelCode: 'BOM', condition: {}, pageNo: 1, pageSize: 200 })
+    const codes = []
     for (const d of res.list || []) {
-      const it = ((d.detail && d.detail.items) || []).find((i) => i['存货编码'] === code)
-      if (it && it['_bom']) {
-        let bom = []
-        try { bom = typeof it['_bom'] === 'string' ? JSON.parse(it['_bom']) : it['_bom'] } catch (err) {}
-        selectedBomCodes.value = (Array.isArray(bom) ? bom : []).map((b) => b['材料编码']).filter(Boolean)
-        break
+      for (const it of (d.detail && d.detail.children) || []) {
+        if (String(it['父件编码']) !== code) continue
+        if (it['子件编码']) codes.push(String(it['子件编码']))
       }
     }
+    selectedBomCodes.value = codes
   } catch (err) {
     // 查询失败按 子件BOM 标记兜底
   }
@@ -889,7 +888,7 @@ async function loadBomFor(code) {
   if (!code || bomLoaded.has(code)) return
   bomLoaded.add(code)
   try {
-    // BOM 数据源：BOM 面板 children（父件编码 → 子件行）；INV 物品行 _bom 为空数组时无数据
+    // BOM 数据源：物料清单 BOM 面板 children（父件编码 → 子件行；2026-08-25 原 INV 物品行 _bom 已迁移废弃）
     const res = await engine.queryFormDataList({ panelCode: 'BOM', condition: {}, pageNo: 1, pageSize: 100 })
     const bom = []
     for (const d of res.list || []) {

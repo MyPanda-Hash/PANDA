@@ -1,5 +1,10 @@
-docs: 规范沉淀「已审核才能选择生单」四层保障 + 灰按钮点击拦截，避免后续面板重复问题
+feat: BOM 关系维护迁移至物料清单面板（存货 _bom 废弃），所有 BOM 展示逻辑改读 BOM children
 
-- 开发规范与需求总览：§21 生单/选单补四层保障（选单弹窗过滤/字段参照过滤/生成按钮置灰/后端校验）；§4 工具栏补灰按钮入口拦截强制项；历史事故红线 #13
-- 面板交互设计规范：§10.2 补四层保障实现清单；§20.2 补灰按钮点击拦截规范
-- BUG总结：#21 灰按钮点击穿透完整记录（现象/根因/修复/验证/教训）
+- 数据迁移（run/migrate-bom.sql）：INV 物品行 _bom 关系 15 条合并入 BOM 面板 children（父件/子件编码对齐 INV 档案：CP001/CP002/CP003/CP004/CP005/YL002 多级/BC001-003 半成品），INV items _bom 全部清空
+- INV 面板配置移除 _bom 隐藏字段；BOM 面板父件编码/子件编码升级为参照 INV（选存货带出名称/规格/单位）
+- 后端 createMoFromSo：生成材料明细改读 BOM 面板 children（原 INV _bom）
+- 前端 PanelxForm/PanelxList selectProduct（产成品→材料过滤兜底）改读 BOM children
+- PanelxList 移除 INV 行点击 BOM 管理弹窗（BomDialog.vue 删除），存货回归纯存货管理
+- init.sql 种子同步（INV 配置去 _bom、BOM 配置参照字段、BOM children 新数据）
+- 规范文档同步：面板交互设计规范 §11/§13/§15、开发规范 §11（BOM 唯一数据源=物料清单 children）
+- 验证：BOM children 15 行/BOM_FWD 展平/销售订单→MO 带材料（YL002×1.05+5%、FZ001×0.02+2%）/MO 表单参照选 CP001 自动带出材料/INV 点击无 BOM 弹窗

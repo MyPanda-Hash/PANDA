@@ -957,23 +957,26 @@ public class PxService {
             p.put("需求令号", head.getOrDefault("单据编号", ""));
             products.add(p);
         }
-        // 生成材料明细：按产成品的存货 BOM（INV 类别单据物品 _bom）自动带出
+        // 生成材料明细：按物料清单（BOM 面板 children，父件编码=产品编码）自动带出（2026-08-25：原 INV 物品行 _bom 已废弃迁移至物料清单）
         List<Map<String, Object>> materials = new ArrayList<>();
         Map<String, List<Map<String, Object>>> bomByItem = new HashMap<>();
-        for (FormData idoc : formMapper.selectList(new LambdaQueryWrapper<FormData>().eq(FormData::getPanelCode, "INV"))) {
-            Map<String, Object> idetail = parseData(idoc.getDetailData());
-            Object iitems = idetail.get("items");
-            if (iitems instanceof List) {
-                for (Object o : (List<?>) iitems) {
+        for (FormData bdoc : formMapper.selectList(new LambdaQueryWrapper<FormData>().eq(FormData::getPanelCode, "BOM"))) {
+            Map<String, Object> bdetail = parseData(bdoc.getDetailData());
+            Object bchildren = bdetail.get("children");
+            if (bchildren instanceof List) {
+                for (Object o : (List<?>) bchildren) {
                     if (!(o instanceof Map)) continue;
                     Map<String, Object> it = (Map<String, Object>) o;
-                    Object bomObj = it.get("_bom");
-                    if (bomObj == null || String.valueOf(bomObj).isBlank()) continue;
-                    try {
-                        List<Map<String, Object>> bom = json.readValue(String.valueOf(bomObj),
-                                new TypeReference<List<Map<String, Object>>>() {});
-                        bomByItem.put(String.valueOf(it.get("存货编码")), bom);
-                    } catch (Exception ignore) {}
+                    String parent = String.valueOf(it.getOrDefault("父件编码", ""));
+                    if (parent.isEmpty()) continue;
+                    Map<String, Object> bomRow = new HashMap<>();
+                    bomRow.put("材料编码", it.getOrDefault("子件编码", ""));
+                    bomRow.put("材料名称", it.getOrDefault("子件名称", ""));
+                    bomRow.put("规格型号", it.getOrDefault("规格型号", ""));
+                    bomRow.put("计量单位", it.getOrDefault("子件计量单位", "kg"));
+                    bomRow.put("定额需用数量", it.getOrDefault("定额数量", 0));
+                    bomRow.put("损耗率%", it.getOrDefault("损耗率%", 0));
+                    bomByItem.computeIfAbsent(parent, k -> new ArrayList<>()).add(bomRow);
                 }
             }
         }

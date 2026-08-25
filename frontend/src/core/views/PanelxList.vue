@@ -354,7 +354,6 @@
       </template>
     </el-dialog>
     <NewVoucherDialog v-model:visible="newVisible" :panelCode="panelCode" :panel-name="panelName" @saved="onNewSaved" />
-    <BomDialog v-model="bomVisible" :item="bomItem" :parentDoc="bomParent" @saved="onBomSaved" />
     <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
     <ImportDialog v-model="impVisible" :fields="impFields" :target-label="impLabel" @imported="onImported" />
     <ApprovalHistoryDialog v-model="approvalVisible" :panelCode="panelCode" :formNo="approvalNo" />
@@ -377,7 +376,6 @@ import RefPickDialog from './RefPickDialog.vue'
 import NewVoucherDialog from './NewVoucherDialog.vue'
 import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
-import BomDialog from './BomDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
 import BomMasterDetail from './BomMasterDetail.vue'
 import ImportDialog from './ImportDialog.vue'
@@ -493,9 +491,6 @@ const impVisible = ref(false)
 const impFields = ref([])
 const impLabel = ref('明细')
 const selCfg = ref(null)
-const bomVisible = ref(false)
-const bomItem = ref(null)
-const bomParent = ref(null)
 const delMode = ref(false)
 const delSel = ref([])
 
@@ -503,7 +498,7 @@ const delSel = ref([])
 const selectedProduct = ref(null)
 const selectedBomCodes = ref([])
 
-// 材料下级 BOM（红 * + 弹窗）：存货编码 → _bom 数组
+// 材料下级 BOM（红 * + 弹窗）：存货编码 → 物料清单 BOM 面板 children 子件行
 const subBomMap = ref({})
 const subBomVisible = ref(false)
 const subBomMaterial = ref(null)
@@ -1861,11 +1856,8 @@ function onRowClick(row, b) {
     selectProduct(row['产品编码'])
     return
   }
-  if (panelCode.value !== 'INV') return
-  if (!row || !row['存货编码']) return
-  bomItem.value = row
-  bomParent.value = cur.value // 父类别单据（当前行）
-  bomVisible.value = true
+  // 存货（INV）面板为纯存货管理（2026-08-25：BOM 关系维护已迁移至物料清单面板，存货行点击不再弹 BOM 管理）
+  if (panelCode.value === 'INV') return
 }
 
 // 捕获阶段监听：点产成品明细行任意单元格（含固定列/控件）都触发联动
@@ -1931,28 +1923,23 @@ function openSubBom(row) {
   subBomVisible.value = true
 }
 
-// 选中产成品：行高亮 + 材料明细联动（异步读该产品存货 BOM → 材料编码集合）
+// 选中产成品：行高亮 + 材料明细联动（物料清单 BOM 面板 children → 子件编码集合；2026-08-25 原 INV _bom 已迁移）
 async function selectProduct(code) {
   selectedProduct.value = code
   selectedBomCodes.value = []
   try {
-    const res = await engine.queryFormDataList({ panelCode: 'INV', condition: {}, pageNo: 1, pageSize: 100 })
+    const res = await engine.queryFormDataList({ panelCode: 'BOM', condition: {}, pageNo: 1, pageSize: 200 })
+    const codes = []
     for (const d of res.list || []) {
-      const it = ((d.detail && d.detail.items) || []).find((i) => i['存货编码'] === code)
-      if (it && it['_bom']) {
-        let bom = []
-        try { bom = typeof it['_bom'] === 'string' ? JSON.parse(it['_bom']) : it['_bom'] } catch (err) {}
-        selectedBomCodes.value = (Array.isArray(bom) ? bom : []).map((b) => b['材料编码']).filter(Boolean)
-        break
+      for (const it of (d.detail && d.detail.children) || []) {
+        if (String(it['父件编码']) !== code) continue
+        if (it['子件编码']) codes.push(String(it['子件编码']))
       }
     }
+    selectedBomCodes.value = codes
   } catch (err) {
     // 查询失败按 子件BOM 标记兜底
   }
-}
-
-function onBomSaved() {
-  load()
 }
 
 watch(
