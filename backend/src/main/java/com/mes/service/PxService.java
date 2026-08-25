@@ -747,6 +747,8 @@ public class PxService {
                 return createPuOrderFromReq(panelCode, formData);
             case "生成采购入库单":     // 推式生单：采购订单 → 采购入库单
                 return createPurchaseInFromPo(panelCode, formData);
+            case "生成进货单":         // 推式生单：采购订单 → 进货单（对齐真实 T+ 采购订单「生单-生成进货单」）
+                return createPuInFromPo(panelCode, formData);
             case "生成产成品入库单":   // 推式生单：生产加工单 → 产成品入库单
                 return createFinishInFromMo(panelCode, formData);
             case "生成材料出库单":     // 推式生单：领料申请单/生产加工单/调拨单 → 材料出库单
@@ -1191,6 +1193,60 @@ public class PxService {
         Map<String, Object> detail = new HashMap<>();
         detail.put("items", rows);
         return insertGenerated("PURCHASE_IN", "PU_ORDER", String.valueOf(no), piData, detail);
+    }
+
+    /** 推式生单：采购订单（PU_ORDER）→ 进货单（PU_IN）：明细按采购订单物料带入，含税金额拆分税额 */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createPuInFromPo(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "PU_ORDER").eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("采购订单不存在：" + no);
+        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核采购订单可生成进货单");
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> items = dm.get("items") instanceof List
+                ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
+        if (items.isEmpty()) throw new IllegalStateException("采购订单无明细：" + no);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("单据日期", LocalDate.now().toString());
+        data.put("业务类型", "进货");
+        data.put("供应商编码", head.getOrDefault("供应商编码", ""));
+        data.put("供应商", head.getOrDefault("供应商", ""));
+        data.put("供应商简称", head.getOrDefault("供应商", ""));
+        data.put("经手人", head.getOrDefault("经手人", ""));
+        data.put("部门", head.getOrDefault("部门", ""));
+        data.put("仓库", "原料仓");
+        data.put("来源单据", "PU_ORDER");
+        data.put("来源单号", String.valueOf(no));
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> it : items) {
+            double qty = num(it.getOrDefault("数量", 0));
+            double price = num(it.getOrDefault("含税单价", it.getOrDefault("单价", 0)));
+            double taxRate = num(it.getOrDefault("税率%", 13));
+            double gross = Math.round(qty * price * 100) / 100.0;
+            double tax = Math.round(gross * taxRate / (100 + taxRate) * 100) / 100.0;
+            Map<String, Object> r = new HashMap<>();
+            r.put("仓库", "原料仓");
+            r.put("存货编码", it.getOrDefault("物料编码", ""));
+            r.put("存货名称", it.getOrDefault("物料名称", ""));
+            r.put("规格型号", it.getOrDefault("规格型号", ""));
+            r.put("数量", qty);
+            r.put("采购单位", it.getOrDefault("单位", "件"));
+            r.put("单价", it.getOrDefault("单价", 0));
+            r.put("税率%", taxRate);
+            r.put("含税单价", price);
+            r.put("金额", Math.round(qty * num(it.getOrDefault("单价", 0)) * 100) / 100.0);
+            r.put("税额", tax);
+            r.put("含税金额", gross);
+            r.put("现存量", it.getOrDefault("现存量", 0));
+            rows.add(r);
+        }
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("PU_IN", "PU_ORDER", String.valueOf(no), data, detail);
     }
 
     /** 推式生单：生产加工单（MANU_ORDER）→ 产成品入库单（FINISH_IN） */
