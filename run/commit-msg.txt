@@ -1,5 +1,0 @@
-fix: 参照字段 refMap 互带 + BOM 自动带出读 BOM 面板 children
-
-- 修复1: 新面板(委外加工单/发料/入库、调拨、报价、销售发票、采购发票、盘点、货位调整、序列号)存货类参照字段缺 refMap，选材料/产品后 编码/名称/规格/单位 不互带 → applyRuntimeConfigUpgrades 统一注入 upgradeInvPairRef(编码↔名称+规格+单位带出，已有 refMap 不覆盖)
-- 修复2: 产品→材料 BOM 自动带出读错数据源(INV 物品行 _bom 为空数组，真实 BOM 在 BOM 面板 children) → loadBomFor 改为从 BOM 面板 children 按父件编码取子件(与 loadSubBomMap 一致)
-- 验证: getPanelConfig 10 面板 refMap 注入确认；全流程 e2e 48/48 回归通过；BOM children 数据 CP001→CL002(6061铝锭 1.05kg) 确认
