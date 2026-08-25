@@ -1,8 +1,1 @@
-fix: 存货回归单单据面板 + 物料清单多单据化（新增可用）+ 计量单位下拉动态并入 UOM
-
-- INV：panel_config 加 singleDoc（items 行带所属类别字段/列），数据合并为 1 张单单据（本地 17 物品 / 服务器 CL 体系 10 物品），存货回归纯档案管理
-- BOM：去 singleDoc 改多单据（可新增多张物料清单），generateFormNo 加 BOM- 前缀；children 按物料清单编码拆分（本地 9 张 BOM-001~009 / 服务器 6 张）；列表页「新增」创建 BOM-2026-08-2501 草稿可填写保存（原单单据下新增被拦截"没反应"）
-- 计量单位：PxService.injectUnitOptions 运行时把 UOM 面板计量单位并入所有「单位」下拉 options（30s 缓存，UOM 保存即时清缓存）——UOM 新增单位后其他面板下拉自动显示完整（如吨）
-- init.sql 同步：INV 配置 singleDoc/所属类别、INV 数据 1 行单单据（CL 体系）、BOM 配置去 singleDoc、BOM 数据 6 张单
-- 迁移 SQL：run/migrate2-local.sql（本地）、run/migrate2-server.sql（服务器，已执行）
-- 验证：BOM 新增成功（BOM-2026-08-2501）、INV 单单据 17 物品+所属类别、MANU 计量单位 options 含吨
+fix: 计量单位注入匹配收窄为 endsWith("单位")——「单位类型」下拉不再混入计量单位名称（仅 单计量/多计量）

@@ -233,7 +233,9 @@ public class PxService {
         for (Map<String, Object> field : fields) {
             if (!"下拉框".equals(field.get("dataType"))) continue;
             String dn = String.valueOf(field.getOrDefault("dataName", ""));
-            if (!dn.contains("单位")) continue;
+            // 2026-08-25：只匹配「XX单位」取值字段（计量单位/销售单位/生产单位/子件计量单位/主单位…），
+            // 排除「单位类型」等分类字段（contains("单位") 过宽会把单位类型也注入计量单位名称，如 单计量/多计量 选项混入 件/kg）
+            if (!dn.endsWith("单位")) continue;
             List<String> opts = new ArrayList<>();
             Object o = field.get("options");
             if (o instanceof List<?>) {
