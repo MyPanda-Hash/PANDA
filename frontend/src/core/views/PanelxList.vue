@@ -13,7 +13,7 @@
         <span v-if="actsOf(g).length > 1" class="tb-caret" @click.stop="toggleGroup(gi)">▼</span>
         <div v-if="openGroup === gi" class="tb-menu">
           <!-- 下拉排除主按钮（组按钮=第一个 action，下拉只列其余动作，避免「审核」重复） -->
-          <div class="ctx-item" v-for="a in dropItems(g)" :key="a" @click="onGroupAction(a)">{{ a }}</div>
+          <div class="ctx-item" :class="{ disabled: isDisabled(a) }" v-for="a in dropItems(g)" :key="a" @click="onGroupAction(a)">{{ a }}</div>
         </div>
       </div>
       <div class="tools-right">
@@ -853,6 +853,8 @@ function toggleGroup(gi) {
 }
 function onGroupAction(a) {
   openGroup.value = -1
+  // 2026-08-25：灰按钮（如草稿态「生成XX」）点击不执行、不弹提示
+  if (isDisabled(a)) return
   onButton(a)
 }
 
@@ -1509,6 +1511,8 @@ async function directAdd() {
 }
 
 async function onButton(action) {
+  // 2026-08-25：灰按钮（disabled）点击直接忽略，不执行、不弹提示（如草稿态「生成XX」生单按钮）
+  if (isDisabled(action)) return
   if (APPROVE_ACTIONS.includes(action) && !user.isAdmin && !user.approvePanels.includes(panelCode.value)) {
     return ElMessage.warning('当前角色无审批权限')
   }
@@ -2628,6 +2632,15 @@ onUnmounted(() => {
 .ctx-item:hover {
   background: #f0f5ff;
   color: #0d5bd3;
+}
+/* 2026-08-25：灰按钮下拉项（如草稿态「生成XX」）视觉置灰 */
+.ctx-item.disabled {
+  color: #c0c4cc;
+  cursor: not-allowed;
+}
+.ctx-item.disabled:hover {
+  background: transparent;
+  color: #c0c4cc;
 }
 :deep(.el-table .row-approved td) { background: #f0fdf4 !important; }
 .main-grid { margin-bottom: 10px; }

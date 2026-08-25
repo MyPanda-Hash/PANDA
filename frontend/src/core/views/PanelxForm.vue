@@ -1016,6 +1016,8 @@ async function load() {
 }
 
 async function onButton(action) {
+  // 2026-08-25：灰按钮（disabled）点击直接忽略，不执行、不弹提示（如草稿态「生成XX」生单按钮）
+  if (isDisabled(action)) return
   if (APPROVE_ACTIONS.includes(action) && !user.isAdmin && !user.approvePanels.includes(panelCode.value)) {
     return ElMessage.warning('当前角色无审批权限')
   }

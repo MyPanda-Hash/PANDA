@@ -1,5 +1,5 @@
-feat: 选单生单统一"已审核才能选择生单"——生成按钮按状态置灰 + 参照弹窗只列已审核源单据
+fix: 灰按钮（disabled）点击不再触发任何操作与提示——草稿态「生成XX」生单按钮点击完全忽略
 
-- PanelxList/PanelxForm：所有「生成XX」生单按钮统一按源单状态置灰（仅已审核/生产中可用，对齐 T+）
-- engine.js queryRefRows：参照面板有「审核」流程时（单据类参照）仅返回已审核单据（防御性，当前字段参照均为档案面板）
-- 后端 12 条推式生单链路已校验（仅已审核可生成），SelectVoucherDialog 选单弹窗已过滤——本次补齐 UI 置灰与字段参照兜底
+- PanelxList/PanelxForm onButton 入口统一拦截 isDisabled 动作（不执行、不调后端、不弹提示）
+- PanelxList 下拉项 onGroupAction 同样拦截 + .ctx-item.disabled 视觉置灰
+- 验证：草稿 SO 点「生单」主按钮（生成销售出库单）→ 零提示、零弹窗、callButton 零请求
