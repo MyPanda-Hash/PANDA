@@ -55,17 +55,23 @@
             </VueFlow>
           </div>
         </div>
-        <div class="bo-sections" v-if="cur">
-          <div class="bo-sec" v-if="cur.docs && cur.docs.length">
-            <span class="bo-sec-title">相关单据</span>
+      </div>
+      <div class="bo-sections" v-if="cur">
+        <div class="bo-sec" v-if="cur.docs && cur.docs.length">
+          <span class="bo-sec-title" :style="{ '--sc': cur.color }">相关单据</span>
+          <div class="bo-sec-btns">
             <span v-for="d in cur.docs" :key="d.code" class="bo-btn" @click="go(d.code)">{{ d.label }}</span>
           </div>
-          <div class="bo-sec" v-if="cur.archives && cur.archives.length">
-            <span class="bo-sec-title">基础档案</span>
+        </div>
+        <div class="bo-sec" v-if="cur.archives && cur.archives.length">
+          <span class="bo-sec-title" :style="{ '--sc': cur.color }">基础档案</span>
+          <div class="bo-sec-btns">
             <span v-for="d in cur.archives" :key="d.code" class="bo-btn" @click="go(d.code)">{{ d.label }}</span>
           </div>
-          <div class="bo-sec" v-if="cur.reports && cur.reports.length">
-            <span class="bo-sec-title">相关报表</span>
+        </div>
+        <div class="bo-sec" v-if="cur.reports && cur.reports.length">
+          <span class="bo-sec-title" :style="{ '--sc': cur.color }">相关报表</span>
+          <div class="bo-sec-btns">
             <span v-for="d in cur.reports" :key="d.code" class="bo-btn" @click="go(d.code)">{{ d.label }}</span>
           </div>
         </div>
@@ -589,34 +595,45 @@ function go(code) {
   white-space: nowrap;
 }
 .bo-sections {
+  width: 248px;
+  flex-shrink: 0;
   background: #fff;
   border: 1px solid #e4e7ed;
   border-radius: 8px;
-  padding: 10px 14px;
-  flex: 1;
+  padding: 8px 12px 12px;
   overflow-y: auto;
 }
 .bo-sec {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 0;
+  padding: 8px 0;
   border-bottom: 1px dashed #eef0f3;
 }
 .bo-sec:last-child {
   border-bottom: none;
 }
 .bo-sec-title {
-  width: 70px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12.5px;
-  font-weight: 600;
-  color: #606266;
-  flex-shrink: 0;
+  font-weight: 700;
+  color: #303133;
+  margin-bottom: 7px;
+}
+.bo-sec-title::before {
+  content: '';
+  width: 4px;
+  height: 13px;
+  border-radius: 2px;
+  background: var(--sc, #0d5bd3);
+}
+.bo-sec-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 .bo-btn {
-  padding: 4px 12px;
-  font-size: 12.5px;
+  padding: 3px 9px;
+  font-size: 12px;
   color: #0d5bd3;
   background: #f0f7ff;
   border: 1px solid #cfe3ff;
