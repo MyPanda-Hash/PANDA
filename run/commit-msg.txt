@@ -1,6 +1,1 @@
-feat: 选单生成后去掉弹窗——直接到列表页定位新选入单据
-
-- PanelxList onSelGenerated：选单生成后不再弹 VoucherFormDialog 面板弹窗，load() 后按新单编号定位（一屏一单流览直接显示）
-- PanelxForm onSelGenerated：选单生成后不再弹 genVisible 弹窗，跳转目标面板列表页 ?focus=单号 定位；移除 genVisible/VoucherFormDialog 引用
-- PanelxList load() 支持 ?focus= 单号定位（定位后清理 query）
-- 验证：列表页选单→无弹窗定位新 MO；表单页选单→跳列表页 focus 定位新 MO
+style: 所有表格字段头全局居中对齐（el-table th/.cell center，含列表页/表单/参照弹窗/报表）

@@ -176,6 +176,22 @@ body,
   cursor: default;
 }
 
+/* ===== 表格字段头全局居中对齐（2026-08-25）===== */
+.el-table th.el-table__cell,
+.el-table th.el-table__cell .cell {
+  text-align: center !important;
+  justify-content: center !important;
+}
+.el-table th.el-table__cell .cell > .el-checkbox,
+.el-table th.el-table__cell .cell > .el-table__cell-inner {
+  justify-content: center;
+}
+/* 表头排序/筛选图标跟随文字居中 */
+.el-table th.el-table__cell .cell .caret-wrapper,
+.el-table th.el-table__cell .cell .el-icon {
+  margin-right: 0;
+}
+
 /* ===== 移动端全局（≤768px）===== */
 @media (max-width: 768px) {
   /* 弹窗宽度：覆盖 el-dialog 内联 --el-dialog-width（固定 420/440/560/760px 一律收窄） */
