@@ -21,8 +21,14 @@ export const menuTree = [
         title: '销售管理',
         icon: 'ShoppingCart',
         children: [
-          { code: 'cat', title: '单据', children: [{ code: 'salesOrder', title: '销售订单', path: '/panelx/list/SO_ORDER', icon: 'Tickets', panelCode: 'SO_ORDER', operationName: '新增流程' },
-          { code: 'saleInv', title: '销货单', path: '/panelx/list/SALE_INV', icon: 'Tickets', panelCode: 'SALE_INV', operationName: '新增流程' }] },
+          { code: 'cat', title: '单据', children: [
+            { code: 'quoteOrder', title: '报价单', path: '/panelx/list/QUOTE_ORDER', icon: 'Tickets', panelCode: 'QUOTE_ORDER', operationName: '新增流程' },
+            { code: 'salesOrder', title: '销售订单', path: '/panelx/list/SO_ORDER', icon: 'Tickets', panelCode: 'SO_ORDER', operationName: '新增流程' },
+            { code: 'saleInv', title: '销货单', path: '/panelx/list/SALE_INV', icon: 'Tickets', panelCode: 'SALE_INV', operationName: '新增流程' },
+            { code: 'saleInvoice', title: '销售发票', path: '/panelx/list/SALE_INVOICE', icon: 'Tickets', panelCode: 'SALE_INVOICE', operationName: '新增流程' },
+            { code: 'expense', title: '费用单', path: '/panelx/list/EXPENSE', icon: 'Tickets', panelCode: 'EXPENSE', operationName: '新增流程' },
+            { code: 'saleCostAlloc', title: '销售费用分摊单', path: '/panelx/list/SALE_COST_ALLOC', icon: 'Tickets', panelCode: 'SALE_COST_ALLOC', operationName: '新增流程' },
+          ] },
           { code: 'detail', title: '明细表', children: [{ code: 'salesOrderDetail', title: '销售订单明细表', path: '/panelx/list/SALES_ORDER_DETAIL', panelCode: 'SALES_ORDER_DETAIL', icon: 'List' }] },
           { code: 'stats', title: '统计表', children: [{ code: 'salesOrderStats', title: '销售订单统计表', path: '/panelx/list/SALES_ORDER_STATS', panelCode: 'SALES_ORDER_STATS', icon: 'Histogram' }] },
           { code: 'exec', title: '执行表', children: [{ code: 'salesOrderExec', title: '销售订单执行表', path: '/panelx/list/SALES_ORDER_EXEC', panelCode: 'SALES_ORDER_EXEC', icon: 'Operation' }] },

@@ -205,17 +205,34 @@ const modules = [
   {
     code: 'sales', name: '销售管理', icon: 'ShoppingCart',
     nodes: [
+      { code: 'QUOTE_ORDER', label: '报价单' },
       { code: 'SO_ORDER', label: '销售订单' },
       { code: 'SALE_INV', label: '销货单' },
       { code: 'SALE_OUT', label: '销售出库单' },
+      { code: 'SALE_INVOICE', label: '销售发票' },
+      { code: 'EXPENSE', label: '费用单' },
+      { code: 'SALE_COST_ALLOC', label: '销售费用分摊单' },
     ],
     edges: [
+      { from: 'QUOTE_ORDER', to: 'SO_ORDER' },
       { from: 'SO_ORDER', to: 'SALE_INV' },
       { from: 'SO_ORDER', to: 'SALE_OUT' },
+      { from: 'SALE_INV', to: 'SALE_OUT' },
+      { from: 'SALE_INV', to: 'SALE_INVOICE' },
+      { from: 'EXPENSE', to: 'SALE_COST_ALLOC' },
+      { from: 'SALE_INVOICE', to: 'SALE_COST_ALLOC' },
     ],
-    pos: { SO_ORDER: [40, 170], SALE_INV: [300, 140], SALE_OUT: [300, 260] },
-    docs: [{ code: 'SO_ORDER', label: '销售订单' }, { code: 'SALE_INV', label: '销货单' }, { code: 'SALE_OUT', label: '销售出库单' }],
-    archives: [{ code: 'PARTNER', label: '往来单位(客户)' }, { code: 'INV', label: '存货' }],
+    pos: {
+      QUOTE_ORDER: [40, 40], SO_ORDER: [250, 40], SALE_INV: [460, 40], SALE_INVOICE: [670, 40],
+      SALE_OUT: [460, 160], EXPENSE: [250, 170], SALE_COST_ALLOC: [670, 170],
+    },
+    docs: [
+      { code: 'QUOTE_ORDER', label: '报价单' }, { code: 'SO_ORDER', label: '销售订单' },
+      { code: 'SALE_INV', label: '销货单' }, { code: 'SALE_OUT', label: '销售出库单' },
+      { code: 'SALE_INVOICE', label: '销售发票' }, { code: 'EXPENSE', label: '费用单' },
+      { code: 'SALE_COST_ALLOC', label: '销售费用分摊单' },
+    ],
+    archives: [{ code: 'PARTNER', label: '往来单位(客户)' }, { code: 'INV', label: '存货' }, { code: 'DEPT', label: '部门' }, { code: 'EMP', label: '员工' }, { code: 'UOM', label: '计量单位' }, { code: 'WH', label: '仓库' }, { code: 'SETTLE', label: '结算方式' }],
     reports: [
       { code: 'SALES_ORDER_DETAIL', label: '销售订单明细表' }, { code: 'SALES_ORDER_STATS', label: '销售订单统计表' },
       { code: 'SALES_ORDER_EXEC', label: '销售订单执行表' }, { code: 'SALES_ORDER_PROGRESS', label: '销售订单生产进度表' },
