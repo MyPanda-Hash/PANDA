@@ -88,18 +88,31 @@
         </div>
         <div v-if="selRole.isAdmin" class="admin-tip">管理员为超级权限：默认可见全部面板并拥有全部审批，无需配置。</div>
         <template v-else>
-          <el-table :data="panelRows" size="small" border max-height="300">
-            <el-table-column label="面板" prop="panelName" min-width="150" />
-            <el-table-column label="可见" width="60" align="center">
-              <template #default="{ row }"><el-checkbox v-model="row.checked" /></template>
-            </el-table-column>
-            <el-table-column label="审批权限" width="84" align="center">
-              <template #default="{ row }">
-                <el-checkbox v-if="row.hasApproval" v-model="row.canApprove" :disabled="!row.checked" />
-                <span v-else>-</span>
+          <el-collapse v-model="openGroups" class="perm-collapse">
+            <el-collapse-item v-for="g in groupedPanels" :key="g.code" :name="g.code">
+              <template #title>
+                <span class="g-title">{{ g.name }}</span>
+                <span class="g-count">{{ g.panels.length }} 个面板</span>
+                <span class="g-actions" @click.stop>
+                  <el-button link size="small" type="primary" @click="setGroupVisible(g, true)">全选可见</el-button>
+                  <el-button link size="small" type="success" @click="setGroupApprove(g)">全选审批</el-button>
+                  <el-button link size="small" @click="setGroupVisible(g, false)">清空</el-button>
+                </span>
               </template>
-            </el-table-column>
-          </el-table>
+              <el-table :data="g.panels" size="small" border>
+                <el-table-column label="面板" prop="panelName" min-width="150" />
+                <el-table-column label="可见" width="60" align="center">
+                  <template #default="{ row }"><el-checkbox v-model="row.checked" /></template>
+                </el-table-column>
+                <el-table-column label="审批权限" width="84" align="center">
+                  <template #default="{ row }">
+                    <el-checkbox v-if="row.hasApproval" v-model="row.canApprove" :disabled="!row.checked" />
+                    <span v-else>-</span>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </el-collapse-item>
+          </el-collapse>
           <div class="perm-actions">
             <el-button type="primary" size="small" :loading="saving" @click="savePanels">保存面板权限</el-button>
             <el-button size="small" @click="loadRolePanels(selRole)">刷新</el-button>
@@ -182,6 +195,101 @@ import request from '@core/request'
 import { useUserStore } from '@/stores/user'
 
 const user = useUserStore()
+
+// 2026-08-25：面板按业务总览模块分组（一层=业务模块，模块内配置具体面板可见/审批权限），
+// 与业务总览 BusinessOverview 9 模块 + 基础档案/查询/系统设置 对齐；未映射面板进「其他」兜底
+const PANEL_GROUPS = [
+  {
+    code: 'prod', name: '生产管理',
+    panels: ['MANU_ORDER', 'PROCESS_REPORT', 'REWORK_REPORT', 'MATERIAL_REQ', 'MATERIAL_OUT', 'FINISH_IN', 'TRANSFER',
+      'MANU_ORDER_EXEC', 'MANU_ORDER_TRACKER', 'MANU_ORDER_PRODUCT_DETAIL', 'MANU_ORDER_MATERIAL_DETAIL', 'MANU_ORDER_DETAIL', 'PROC_DETAIL',
+      'MANU_ORDER_PRODUCT_STATS', 'MANU_ORDER_MATERIAL_STATS', 'MANU_ORDER_STATS', 'MANU_PROC_STATS', 'PROC_STATS', 'SALARY_STATS', 'SALARY_DETAIL',
+      'FINISH_IN_DETAIL', 'FINISH_IN_STATS', 'MATERIAL_OUT_DETAIL', 'MATERIAL_OUT_STATS',
+      'ROUTE', 'OP', 'TEAM', 'WC', 'OP_CONV'],
+  },
+  {
+    code: 'outsource', name: '委外管理',
+    panels: ['OUTSOURCE_ORDER', 'OUTSOURCE_ISSUE', 'OUTSOURCE_IN', 'OUTSOURCE_FEE',
+      'OUTSOURCE_ISSUE_BALANCE', 'OUTSOURCE_ORDER_EXEC', 'OUTSOURCE_ORDER_PRODUCT_DETAIL', 'OUTSOURCE_ORDER_MATERIAL_DETAIL', 'OUTSOURCE_FEE_DETAIL',
+      'OUTSOURCE_ORDER_PRODUCT_STATS', 'OUTSOURCE_ORDER_MATERIAL_STATS', 'OUTSOURCE_FEE_STATS'],
+  },
+  {
+    code: 'sales', name: '销售管理',
+    panels: ['QUOTE_ORDER', 'SO_ORDER', 'SALE_INV', 'SALE_OUT', 'SALE_INVOICE', 'EXPENSE', 'SALE_COST_ALLOC',
+      'SALES_ORDER_DETAIL', 'SALES_ORDER_STATS', 'SALES_ORDER_EXEC', 'SALES_ORDER_PROGRESS', 'SALE_OUT_DETAIL', 'SALE_OUT_STATS'],
+  },
+  {
+    code: 'purchase', name: '采购管理',
+    panels: ['PU_REQ', 'PU_ORDER', 'PURCHASE_IN', 'PU_IN', 'PU_INVOICE', 'PU_COST_ALLOC', 'PU_REQ_ANALYSIS',
+      'PURCHASE_IN_DETAIL', 'PURCHASE_IN_STATS'],
+  },
+  {
+    code: 'distribution', name: '配货管理',
+    panels: ['PICK_ORDER', 'OTHER_IN', 'OTHER_OUT',
+      'PICK_ORDER_DETAIL', 'PICK_ORDER_STATS', 'PICK_ORDER_SUMMARY', 'OTHER_IN_DETAIL', 'OTHER_IN_STATS', 'OTHER_OUT_DETAIL', 'OTHER_OUT_STATS'],
+  },
+  {
+    code: 'inv', name: '库存核算',
+    panels: ['STOCK_STATUS', 'STOCK_SUMMARY', 'STOCK_LEDGER'],
+  },
+  {
+    code: 'pda', name: '移动仓管',
+    panels: ['STOCK_CHECK', 'LOCATION_ADJUST'],
+  },
+  {
+    code: 'sn', name: '序列号管理',
+    panels: ['SERIAL_NO', 'SERIAL_STATUS', 'SERIAL_TRACE'],
+  },
+  {
+    code: 'qc', name: '质量管理',
+    panels: ['ARRIVAL_IN', 'INSPECTION', 'FINISH_INSPECT', 'DISPATCH'],
+  },
+  {
+    code: 'archives', name: '基础档案',
+    panels: ['INV', 'INV_PRICE', 'PARTNER', 'PARTNER_INV', 'DEPT', 'EMP', 'EQUIP', 'WH', 'UOM', 'PROJ', 'REGION', 'REJECT', 'BOM'],
+  },
+  {
+    code: 'query', name: '查询分析',
+    panels: ['BOM_FWD', 'BOM_REV'],
+  },
+  {
+    code: 'sys', name: '系统设置',
+    panels: ['SYS_ALARM', 'SYS_BILL_DESIGN', 'SYS_BOARD_AUTH', 'SYS_CODE', 'SYS_MOBILE', 'SYS_MOBILE_TPL', 'SYS_OPT', 'SYS_PRINT', 'SYS_PRINT_DEFAULT',
+      'SYS_SCREEN', 'SYS_SCREEN_DL', 'SYS_TASK', 'COST_MAINTAIN', 'INIT_AP', 'INIT_AR', 'INIT_BALANCE'],
+  },
+]
+// 面板码 → 组（加速查找）
+const PANEL_GROUP_MAP = {}
+for (const g of PANEL_GROUPS) for (const p of g.panels) PANEL_GROUP_MAP[p] = g.code
+
+const openGroups = ref(PANEL_GROUPS.map((g) => g.code))
+// 按模块分组渲染（行对象与 panelRows 同引用，勾选联动保存）
+const groupedPanels = computed(() => {
+  const buckets = PANEL_GROUPS.map((g) => ({ code: g.code, name: g.name, panels: [] }))
+  const other = { code: 'other', name: '其他', panels: [] }
+  const byCode = {}
+  for (const b of buckets) byCode[b.code] = b
+  byCode.other = other
+  for (const r of panelRows.value) {
+    byCode[PANEL_GROUP_MAP[r.panelCode] || 'other'].panels.push(r)
+  }
+  return buckets.concat(other)
+})
+
+function setGroupVisible(g, v) {
+  for (const r of g.panels) {
+    r.checked = v
+    if (!v) r.canApprove = false
+  }
+}
+function setGroupApprove(g) {
+  for (const r of g.panels) {
+    if (r.hasApproval) {
+      r.checked = true
+      r.canApprove = true
+    }
+  }
+}
 
 const deptTree = ref([])
 const deptVisible = ref(false)
@@ -448,4 +556,35 @@ onMounted(load)
 .perm-sub { font-weight: 400; color: #888; font-size: 12px; }
 .admin-tip { color: #c0392b; font-size: 12px; padding: 8px 0; }
 .perm-actions { margin-top: 10px; display: flex; gap: 8px; }
+/* 2026-08-25：按业务模块分组的权限配置 */
+.perm-collapse {
+  border: 1px solid #e3e8ef;
+  border-radius: 6px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.perm-collapse :deep(.el-collapse-item__header) {
+  height: 34px;
+  line-height: 34px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1c4f8a;
+  background: #f7f9fc;
+}
+.perm-collapse :deep(.el-collapse-item__wrap) {
+  padding: 6px 10px 10px;
+}
+.g-count {
+  font-weight: 400;
+  color: #999;
+  font-size: 12px;
+  margin-left: 6px;
+}
+.g-actions {
+  margin-left: auto;
+  margin-right: 14px;
+  display: inline-flex;
+  align-items: center;
+}
 </style>
