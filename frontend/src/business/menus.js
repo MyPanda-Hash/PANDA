@@ -17,18 +17,6 @@ export const menuTree = [
         icon: 'Connection',
       },
       {
-        code: 'mobileWarehouse',
-        title: '移动仓管',
-        path: '/scm/mobileWarehouse',
-        icon: 'Iphone',
-      },
-      {
-        code: 'serialNumber',
-        title: '序列号管理',
-        path: '/scm/serialNumber',
-        icon: 'Sort',
-      },
-      {
         code: 'sales',
         title: '销售管理',
         icon: 'ShoppingCart',
