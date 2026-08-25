@@ -1458,10 +1458,13 @@ function isDisabled(action) {
     审批通过: !current.value || st !== '审批中',
     审批驳回: !current.value || st !== '审批中',
    驳回审批: !current.value || st !== '审批中',
-    生成生产加工单: !current.value || st !== '已审核',
     保存: !draftEditable.value || inlineSaving.value,
     保存为草稿: !draftEditable.value || inlineSaving.value,
     保存新增: !draftEditable.value || inlineSaving.value,
+  }
+  // 2026-08-25：所有「生成XX」生单按钮统一仅已审核/生产中可用（对齐 T+：已审核才能选择生单）
+  if (map[action] === undefined && action.startsWith('生成')) {
+    return !current.value || !['已审核', '生产中'].includes(st)
   }
   return map[action] === true
 }

@@ -106,6 +106,17 @@ export async function queryRefRows(field, { keyword = '', pageSize = 200 } = {})
   // 单单据面板：condition 不带 filter——单据行顶层无明细字段，后端过滤不到明细；
   // filter/keyword 在展平后的明细行上应用
   const cond = SINGLE_DOC_CODES.has(r.refPanel) || hasAlternativeFilter ? {} : filter
+  // 2026-08-25：参照面板有「审核」流程（单据类面板）时，仅已审核来源单据可选（对齐 T+：已审核才能选择生单）
+  if (!cond['单据状态']) {
+    try {
+      const cfg = await getPanelConfig(r.refPanel)
+      const hasAudit = (cfg?.metadata?.buttonGroups || []).some((g) =>
+        (g.actions || []).some((a) => a === '审核'))
+      if (hasAudit) cond['单据状态'] = '已审核'
+    } catch (e) {
+      /* 配置不可得时不强制过滤 */
+    }
+  }
   // 单单据面板：keyword 也不传后端（单据行无明细字段，后端匹配不到），前端展平后过滤
   const res = await queryFormDataList({ panelCode: r.refPanel, condition: cond, keyword: SINGLE_DOC_CODES.has(r.refPanel) ? '' : keyword, pageNo: 1, pageSize })
   let list = res.list || []

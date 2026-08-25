@@ -510,7 +510,10 @@ function isDisabled(action) {
     提交审批: s !== '草稿' || !isEdit.value,
     审批通过: s !== '审批中' || !isEdit.value,
     审批驳回: s !== '审批中' || !isEdit.value,
-    生成生产加工单: s !== '已审核' || !isEdit.value,
+  }
+  // 2026-08-25：所有「生成XX」生单按钮统一仅已审核/生产中可用（对齐 T+：已审核才能选择生单）
+  if (map[action] === undefined && action.startsWith('生成')) {
+    return !['已审核', '生产中'].includes(s) || !isEdit.value
   }
   return map[action] === true
 }
