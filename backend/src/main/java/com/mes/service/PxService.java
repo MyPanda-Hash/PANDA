@@ -708,6 +708,12 @@ public class PxService {
                 return createSaleInvoiceFromSaleInv(panelCode, formData);
             case "生成销售费用分摊单": // 推式生单：费用单 → 销售费用分摊单
                 return createSaleCostAllocFromExpense(panelCode, formData);
+            case "生成采购发票":       // 推式生单：进货单/采购订单 → 采购发票（对齐真实 T+ 进货单/采购订单「生单-生成采购发票」）
+            case "生成采购发票（普通采购）":
+            case "生成采购发票（采购退货）":
+                return createPuInvoice(panelCode, formData);
+            case "生成采购费用分摊单": // 推式生单：费用单（采购费用）→ 采购费用分摊单
+                return createPuCostAllocFromExpense(panelCode, formData);
             case "生成销售出库单":     // 推式生单：销售订单 → 销售出库单
             case "生成销售出库单(普通销售)":
                 return createSaleOutFromSo(panelCode, formData);
@@ -1631,6 +1637,111 @@ public class PxService {
         return insertGenerated("SALE_COST_ALLOC", "EXPENSE", String.valueOf(no), data, detail);
     }
 
+    /** 推式生单：进货单（PU_IN）/采购订单（PU_ORDER）→ 采购发票（PU_INVOICE）；明细按含税单价拆分税额/价税合计 */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createPuInvoice(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        String source = "PU_IN".equals(panelCode) ? "PU_IN" : "PU_ORDER";
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, source).eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("来源单据不存在：" + no);
+        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核单据可生成采购发票");
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> items = dm.get("items") instanceof List
+                ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
+        if (items.isEmpty()) throw new IllegalStateException("来源单据无明细：" + no);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("单据日期", LocalDate.now().toString());
+        data.put("业务类型", "采购发票");
+        data.put("供应商", String.valueOf(head.getOrDefault("供应商", head.getOrDefault("供应商简称", ""))));
+        data.put("供应商编码", head.getOrDefault("供应商编码", ""));
+        data.put("部门", head.getOrDefault("部门", ""));
+        data.put("业务员", String.valueOf(head.getOrDefault("业务员", head.getOrDefault("经手人", ""))));
+        data.put("开票类型", "增值税专用发票");
+        data.put("进货单号", "PU_IN".equals(source) ? String.valueOf(no) : "");
+        data.put("采购订单号", "PU_ORDER".equals(source) ? String.valueOf(no) : "");
+        data.put("来源单据", source);
+        data.put("来源单号", String.valueOf(no));
+        List<Map<String, Object>> rows = new ArrayList<>();
+        double total = 0;
+        for (Map<String, Object> it : items) {
+            double qty = num(it.getOrDefault("数量", 0));
+            Object priceVal = it.getOrDefault("含税单价", it.getOrDefault("单价", 0));
+            double price = num(priceVal);
+            double taxRate = num(it.getOrDefault("税率%", 13));
+            double gross = Math.round(qty * price * 100) / 100.0;
+            double tax = Math.round(gross * taxRate / (100 + taxRate) * 100) / 100.0;
+            double net = Math.round((gross - tax) * 100) / 100.0;
+            total += gross;
+            Object invCode = it.getOrDefault("存货编码", it.getOrDefault("物料编码", ""));
+            Object invName = it.getOrDefault("存货名称", it.getOrDefault("物料名称", ""));
+            Object unit = it.getOrDefault("采购单位", it.getOrDefault("单位", it.getOrDefault("计量单位", "件")));
+            Map<String, Object> r = new HashMap<>();
+            r.put("存货编码", invCode);
+            r.put("存货名称", invName);
+            r.put("规格型号", it.getOrDefault("规格型号", ""));
+            r.put("计量单位", unit);
+            r.put("数量", qty);
+            r.put("无税单价", Math.round(net / Math.max(qty, 1) * 100) / 100.0);
+            r.put("税率%", taxRate);
+            r.put("税额", tax);
+            r.put("价税合计", gross);
+            rows.add(r);
+        }
+        data.put("价税合计", Math.round(total * 100) / 100.0);
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("PU_INVOICE", source, String.valueOf(no), data, detail);
+    }
+
+    /** 推式生单：费用单（EXPENSE，费用类型=采购费用）→ 采购费用分摊单（PU_COST_ALLOC） */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createPuCostAllocFromExpense(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "EXPENSE").eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("费用单不存在：" + no);
+        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核费用单可生成采购费用分摊单");
+        Map<String, Object> head = parseData(src.getData());
+        if (!"采购费用".equals(String.valueOf(head.getOrDefault("费用类型", "")))) {
+            throw new IllegalStateException("仅费用类型为「采购费用」的费用单可生成采购费用分摊单");
+        }
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> items = dm.get("items") instanceof List
+                ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
+        if (items.isEmpty()) throw new IllegalStateException("费用单无费用明细：" + no);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("单据日期", LocalDate.now().toString());
+        data.put("业务类型", "采购费用分摊");
+        data.put("供应商", head.getOrDefault("往来单位", ""));
+        data.put("费用类型", "采购费用");
+        data.put("部门", head.getOrDefault("部门", ""));
+        data.put("经手人", head.getOrDefault("经手人", ""));
+        data.put("来源单据", "EXPENSE");
+        data.put("来源单号", String.valueOf(no));
+        List<Map<String, Object>> rows = new ArrayList<>();
+        double total = 0;
+        for (Map<String, Object> it : items) {
+            double amount = num(it.getOrDefault("金额", 0));
+            total += amount;
+            Map<String, Object> r = new HashMap<>();
+            r.put("费用单号", String.valueOf(no));
+            r.put("费用项目", it.getOrDefault("费用项目", ""));
+            r.put("分摊金额", amount);
+            r.put("备注", it.getOrDefault("备注", ""));
+            rows.add(r);
+        }
+        data.put("分摊合计", Math.round(total * 100) / 100.0);
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("PU_COST_ALLOC", "EXPENSE", String.valueOf(no), data, detail);
+    }
+
     /**
      * 默认工序（3 道：下料/机加工/检验）：推式生单生成加工单时附带，工序汇报单按此生成待汇报行
      */
@@ -2045,6 +2156,8 @@ public class PxService {
         else if ("SALE_INVOICE".equals(panelCode)) biz = "FP-";    // 销售发票（T+ 发票惯例 FP）
         else if ("EXPENSE".equals(panelCode)) biz = "FY-";         // 费用单（T+ 费用惯例 FY）
         else if ("SALE_COST_ALLOC".equals(panelCode)) biz = "FT-"; // 销售费用分摊单（T+ 分摊惯例 FT）
+        else if ("PU_INVOICE".equals(panelCode)) biz = "PI-";     // 采购发票（进项发票）
+        else if ("PU_COST_ALLOC".equals(panelCode)) biz = "PC-";  // 采购费用分摊单
         else if ("INV".equals(panelCode)) biz = "INV-"; // 存货类别单据
         else biz = "MO-";
         String base = biz + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
@@ -2075,7 +2188,7 @@ public class PxService {
             "SO_ORDER", "PURCHASE_IN", "FINISH_IN", "OTHER_IN", "SALE_OUT", "MATERIAL_OUT", "OTHER_OUT",
             "MANU_ORDER", "PROCESS_REPORT", "INIT_AP", "INIT_AR", "INIT_BALANCE", "BOM", "ROUTE", "PU_REQ",
             "TRANSFER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_IN", "OUTSOURCE_FEE",
-            "QUOTE_ORDER", "SALE_INVOICE", "EXPENSE", "SALE_COST_ALLOC");
+            "QUOTE_ORDER", "SALE_INVOICE", "EXPENSE", "SALE_COST_ALLOC", "PU_INVOICE", "PU_COST_ALLOC");
 
     /**
      * 审批面板审核类动作（审核/提交审批/审批通过）时自动补表头：
