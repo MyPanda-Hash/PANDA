@@ -89,6 +89,15 @@ public class ReportQueryService {
             case "OUTSOURCE_ORDER_PRODUCT_STATS" -> outsourceOrderProductStats();
             case "OUTSOURCE_ORDER_MATERIAL_STATS" -> outsourceOrderMaterialStats();
             case "OUTSOURCE_FEE_STATS" -> outsourceFeeStats();
+            case "MANU_ORDER_EXEC" -> manufactureOrderExecution();
+            case "MANU_ORDER_TRACKER" -> manufactureOrderTracker();
+            case "MANU_ORDER_PRODUCT_DETAIL" -> manufactureDetail();
+            case "MANU_ORDER_MATERIAL_DETAIL" -> manufactureMaterialDetail();
+            case "MANU_ORDER_PRODUCT_STATS" -> manufactureProductStats();
+            case "MANU_ORDER_MATERIAL_STATS" -> manufactureMaterialStats();
+            case "PICK_ORDER_DETAIL" -> pickOrderDetail();
+            case "PICK_ORDER_STATS" -> pickOrderStats();
+            case "PICK_ORDER_SUMMARY" -> pickOrderSummary();
             default -> List.of();
         };
     }
@@ -804,6 +813,194 @@ public class ReportQueryService {
         }
         for (Map<String, Object> target : groups.values()) {
             target.put("委外单价", divide(number(target.get("费用金额")), number(target.get("数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    // ---------- 生产管理执行/跟踪/产成品材料报表（对齐真实 T+ 生产管理 MP 模块, 2026-08-25） ----------
+
+    private List<Map<String, Object>> manufactureOrderExecution() {
+        Map<String, BigDecimal> received = new HashMap<>();
+        for (Doc doc : docs("FINISH_IN")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String orderNo = firstText(doc.head(), "加工单号", "来源单号", "销售订单号");
+                if (orderNo.isBlank()) continue;
+                String key = join(orderNo, item.get("产品编码"), item.get("产品名称"));
+                received.merge(key, number(first(item, Map.of(), "实收数量", "数量")), BigDecimal::add);
+            }
+        }
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> source : manufactureDetail()) {
+            String orderNo = text(source.get("单据编号"));
+            String key = join(orderNo, source.get("产品编码"), source.get("产品名称"));
+            BigDecimal planned = number(source.get("数量"));
+            BigDecimal reported = number(source.get("累计汇报套数(工序单位)"));
+            BigDecimal completed = "已完工".equals(source.get("单据状态")) ? planned : BigDecimal.ZERO;
+            BigDecimal inStock = received.getOrDefault(key, BigDecimal.ZERO);
+            out.add(row("单据编号", orderNo, "单据状态", source.get("单据状态"),
+                    "生产车间", source.get("生产车间"), "客户", source.get("客户"),
+                    "产品编码", source.get("产品编码"), "产品名称", source.get("产品名称"),
+                    "规格型号", source.get("规格型号"), "计划数量", planned,
+                    "累计汇报数量", reported, "完工数量", completed,
+                    "累计入库数量", inStock, "未完工数量", planned.subtract(reported).max(BigDecimal.ZERO),
+                    "生产进度%", percent(reported, planned), "预完工日", source.get("预完工日")));
+        }
+        return out;
+    }
+
+    private List<Map<String, Object>> manufactureOrderTracker() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        Map<String, BigDecimal> reportedByProcess = new HashMap<>();
+        for (Doc doc : docs("PROCESS_REPORT")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String orderNo = text(first(item, doc.head(), "加工单号"));
+                String key = join(orderNo, item.get("工序编码"));
+                reportedByProcess.merge(key, number(first(item, Map.of(), "报工数量", "合格数量")), BigDecimal::add);
+            }
+        }
+        for (Doc doc : docs("MANU_ORDER")) {
+            for (Map<String, Object> process : detailRows(doc, "processes")) {
+                String orderNo = documentNo(doc);
+                String key = join(orderNo, process.get("工序编码"));
+                BigDecimal planQty = number(process.get("计划数量"));
+                BigDecimal reported = reportedByProcess.getOrDefault(key, BigDecimal.ZERO);
+                out.add(row("单据编号", orderNo, "单据状态", doc.entity().getStatus(),
+                        "产品编码", first(process, Map.of(), "产品编码"), "产品名称", first(process, Map.of(), "产品名称"),
+                        "规格型号", first(process, Map.of(), "规格型号"), "数量", planQty,
+                        "工序编码", process.get("工序编码"), "工序名称", process.get("工序名称"),
+                        "生产车间", first(process, doc.head(), "生产车间"), "工作中心", process.get("工作中心"),
+                        "设备", process.get("设备"), "班组", first(process, Map.of(), "班组", "班组名称"),
+                        "工人", first(process, Map.of(), "工人", "工人名称"),
+                        "计划数量", planQty, "报工数量", reported,
+                        "合格数量", reported,
+                        "工序完工状态", firstText(process, "工序完工状态", "派工加工状态"),
+                        "工序进度%", percent(reported, planQty)));
+            }
+        }
+        return out;
+    }
+
+    private List<Map<String, Object>> manufactureMaterialDetail() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("MANU_ORDER")) {
+            for (Map<String, Object> item : detailRows(doc, "materials")) {
+                Map<String, Object> product = detailRows(doc, "products").isEmpty()
+                        ? Map.of() : detailRows(doc, "products").get(0);
+                out.add(row("单据编号", documentNo(doc), "单据状态", doc.entity().getStatus(),
+                        "生产车间", value(doc, "生产车间"),
+                        "产品编码", product.get("产品编码"), "产品名称", product.get("产品名称"),
+                        "材料编码", item.get("材料编码"), "材料名称", item.get("材料名称"),
+                        "规格型号", first(item, Map.of(), "规格型号", "材料规格"),
+                        "计量单位", first(item, Map.of(), "计量单位", "生产单位"),
+                        "计划数量", number(first(item, Map.of(), "计划数量", "需用数量", "定额需用数量")),
+                        "需用数量", number(first(item, Map.of(), "需用数量", "定额需用数量", "计划数量")),
+                        "预出仓库", first(item, Map.of(), "预出仓库", "仓库"),
+                        "现存量", number(item.get("现存量")), "可用量", number(item.get("可用量"))));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> manufactureProductStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : manufactureDetail()) {
+            String key = join(source.get("产品编码"), source.get("产品名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "产品编码", source.get("产品编码"), "产品名称", source.get("产品名称"),
+                    "规格型号", source.get("规格型号"), "生产单位", source.get("生产单位"),
+                    "加工单数", BigDecimal.ZERO, "计划数量", BigDecimal.ZERO,
+                    "已完工数量", BigDecimal.ZERO, "生产进度%", BigDecimal.ZERO));
+            add(target, "加工单数", BigDecimal.ONE);
+            add(target, "计划数量", source.get("数量"));
+            if ("已完工".equals(source.get("单据状态"))) add(target, "已完工数量", source.get("数量"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("生产进度%", percent(number(target.get("已完工数量")), number(target.get("计划数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> manufactureMaterialStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : manufactureMaterialDetail()) {
+            String key = join(source.get("材料编码"), source.get("材料名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "材料编码", source.get("材料编码"), "材料名称", source.get("材料名称"),
+                    "规格型号", source.get("规格型号"), "计量单位", source.get("计量单位"),
+                    "加工单数", BigDecimal.ZERO, "计划数量", BigDecimal.ZERO,
+                    "已领料数量", BigDecimal.ZERO, "未领料数量", BigDecimal.ZERO));
+            add(target, "加工单数", BigDecimal.ONE);
+            add(target, "计划数量", source.get("计划数量"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("未领料数量", number(target.get("计划数量")).subtract(number(target.get("已领料数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    // ---------- 配货管理报表（对齐真实 T+ 配货管理 DIM 模块, 2026-08-25） ----------
+
+    private List<Map<String, Object>> pickOrderDetail() {
+        Map<String, Map<String, Object>> inventory = inventoryIndex();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("PICK_ORDER")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String name = firstText(item, "存货名称", "产品名称", "存货");
+                Map<String, Object> inv = inventory.getOrDefault(name, Map.of());
+                BigDecimal qty = number(first(item, Map.of(), "数量", "配货数量"));
+                BigDecimal price = number(first(item, Map.of(), "单价", "售价"));
+                BigDecimal amount = number(first(item, Map.of(), "金额", "销售金额"));
+                if (amount.signum() == 0 && qty.signum() != 0 && price.signum() != 0) amount = qty.multiply(price);
+                out.add(row("单据编号", documentNo(doc), "单据日期", value(doc, "单据日期"),
+                        "单据状态", doc.entity().getStatus(), "客户", value(doc, "客户"),
+                        "仓库", first(item, doc.head(), "仓库"), "存货编码", first(item, inv, "存货编码"),
+                        "存货名称", name, "规格型号", first(item, inv, "规格型号"),
+                        "计量单位", first(item, inv, "销售单位", "计量单位"), "数量", qty,
+                        "单价", price, "金额", amount, "销售订单号", firstText(doc.head(), "销售订单号", "来源单号"),
+                        "制单人", firstText(doc.head(), "制单人", "发起人编号"), "审核人", firstText(doc.head(), "审核人")));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> pickOrderStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : pickOrderDetail()) {
+            String key = join(source.get("客户"), source.get("存货编码"), source.get("存货名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "客户", source.get("客户"), "存货编码", source.get("存货编码"),
+                    "存货名称", source.get("存货名称"), "规格型号", source.get("规格型号"),
+                    "主单位", source.get("计量单位"), "配货单数", BigDecimal.ZERO,
+                    "数量(主单位)", BigDecimal.ZERO, "金额", BigDecimal.ZERO));
+            add(target, "配货单数", BigDecimal.ONE);
+            add(target, "数量(主单位)", source.get("数量"));
+            add(target, "金额", source.get("金额"));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> pickOrderSummary() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : pickOrderDetail()) {
+            String key = join(source.get("仓库"), source.get("存货编码"), source.get("存货名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "仓库", source.get("仓库"), "存货编码", source.get("存货编码"),
+                    "存货名称", source.get("存货名称"), "规格型号", source.get("规格型号"),
+                    "配货单数", BigDecimal.ZERO, "配货数量", BigDecimal.ZERO,
+                    "销售出库数量", BigDecimal.ZERO, "未出库数量", BigDecimal.ZERO));
+            add(target, "配货单数", BigDecimal.ONE);
+            add(target, "配货数量", source.get("数量"));
+        }
+        // 销售出库数量：SALE_OUT 中 销售订单号 关联
+        for (Map<String, Object> row : inventoryDetail("SALE_OUT", "SALE")) {
+            String key = join(row.get("仓库"), row.get("存货编码"), row.get("存货"));
+            Map<String, Object> target = groups.get(key);
+            if (target != null) add(target, "销售出库数量", row.get("数量"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("未出库数量", number(target.get("配货数量")).subtract(number(target.get("销售出库数量"))));
         }
         return new ArrayList<>(groups.values());
     }

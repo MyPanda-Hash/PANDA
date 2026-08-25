@@ -127,9 +127,12 @@ const modules = [
       { code: 'BOM', label: '物料清单' },
     ],
     reports: [
+      { code: 'MANU_ORDER_EXEC', label: '生产加工单执行表' }, { code: 'MANU_ORDER_TRACKER', label: '生产加工单跟踪工具' },
+      { code: 'MANU_ORDER_PRODUCT_DETAIL', label: '生产加工单产成品明细表' }, { code: 'MANU_ORDER_MATERIAL_DETAIL', label: '生产加工单材料明细表' },
+      { code: 'MANU_ORDER_DETAIL', label: '生产加工单明细表' }, { code: 'PROC_DETAIL', label: '工序明细表' },
+      { code: 'MANU_ORDER_PRODUCT_STATS', label: '生产加工单产成品统计表' }, { code: 'MANU_ORDER_MATERIAL_STATS', label: '生产加工单材料统计表' },
       { code: 'MANU_ORDER_STATS', label: '生产加工单统计表' }, { code: 'MANU_PROC_STATS', label: '工序统计表' },
-      { code: 'SALARY_STATS', label: '工资统计表' }, { code: 'MANU_ORDER_DETAIL', label: '生产加工单明细表' },
-      { code: 'PROC_DETAIL', label: '工序明细表' }, { code: 'PROC_STATS', label: '工序统计表(车间)' },
+      { code: 'PROC_STATS', label: '工序统计表(车间)' }, { code: 'SALARY_STATS', label: '工资统计表' },
     ],
   },
   {
@@ -260,9 +263,12 @@ const modules = [
       { from: 'PICK_ORDER', to: 'SALE_OUT' },
     ],
     pos: { SO_ORDER: [40, 170], PICK_ORDER: [300, 170], SALE_OUT: [560, 170] },
-    docs: [{ code: 'PICK_ORDER', label: '配货单' }, { code: 'SO_ORDER', label: '销售订单' }, { code: 'SALE_OUT', label: '销售出库单' }],
+    docs: [{ code: 'PICK_ORDER', label: '配货单' }, { code: 'SO_ORDER', label: '销售订单' }, { code: 'SALE_OUT', label: '销售出库单' }, { code: 'SALE_INV', label: '销货单' }],
     archives: [{ code: 'INV', label: '存货' }, { code: 'WH', label: '仓库' }],
-    reports: [],
+    reports: [
+      { code: 'PICK_ORDER_DETAIL', label: '配货单明细表' }, { code: 'PICK_ORDER_STATS', label: '配货单统计表' },
+      { code: 'PICK_ORDER_SUMMARY', label: '配货综合统计表' },
+    ],
   },
   {
     code: 'inv', name: '库存核算', icon: 'Box',

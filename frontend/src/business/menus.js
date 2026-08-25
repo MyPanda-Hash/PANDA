@@ -110,6 +110,13 @@ export const menuTree = [
               { code: 'pickOrder', title: '配货单', path: '/panelx/list/PICK_ORDER', icon: 'Tickets', panelCode: 'PICK_ORDER', operationName: '新增流程' },
             ],
           },
+          {
+            code: 'report', title: '报表', children: [
+              { code: 'pickDetail', title: '配货单明细表', path: '/panelx/list/PICK_ORDER_DETAIL', panelCode: 'PICK_ORDER_DETAIL', icon: 'List' },
+              { code: 'pickStats', title: '配货单统计表', path: '/panelx/list/PICK_ORDER_STATS', panelCode: 'PICK_ORDER_STATS', icon: 'Histogram' },
+              { code: 'pickSummary', title: '配货综合统计表', path: '/panelx/list/PICK_ORDER_SUMMARY', panelCode: 'PICK_ORDER_SUMMARY', icon: 'DataAnalysis' },
+            ],
+          },
         ],
       },
       {
@@ -211,6 +218,12 @@ export const menuTree = [
           },
           {
             code: 'report', title: '报表', children: [
+              { code: 'manufactureExec', title: '生产加工单执行表', path: '/panelx/list/MANU_ORDER_EXEC', panelCode: 'MANU_ORDER_EXEC', icon: 'Operation' },
+              { code: 'manufactureTracker', title: '生产加工单跟踪工具', path: '/panelx/list/MANU_ORDER_TRACKER', panelCode: 'MANU_ORDER_TRACKER', icon: 'Search' },
+              { code: 'manufactureProductDetail', title: '生产加工单产成品明细表', path: '/panelx/list/MANU_ORDER_PRODUCT_DETAIL', panelCode: 'MANU_ORDER_PRODUCT_DETAIL', icon: 'List' },
+              { code: 'manufactureMaterialDetail', title: '生产加工单材料明细表', path: '/panelx/list/MANU_ORDER_MATERIAL_DETAIL', panelCode: 'MANU_ORDER_MATERIAL_DETAIL', icon: 'List' },
+              { code: 'manufactureProductStats', title: '生产加工单产成品统计表', path: '/panelx/list/MANU_ORDER_PRODUCT_STATS', panelCode: 'MANU_ORDER_PRODUCT_STATS', icon: 'Histogram' },
+              { code: 'manufactureMaterialStats', title: '生产加工单材料统计表', path: '/panelx/list/MANU_ORDER_MATERIAL_STATS', panelCode: 'MANU_ORDER_MATERIAL_STATS', icon: 'Histogram' },
               { code: 'manufactureDetail', title: '生产加工单明细表', path: '/panelx/list/MANU_ORDER_DETAIL', panelCode: 'MANU_ORDER_DETAIL', icon: 'List' },
               { code: 'manufactureStats', title: '生产加工单统计表', path: '/panelx/list/MANU_ORDER_STATS', panelCode: 'MANU_ORDER_STATS', icon: 'Histogram' },
               { code: 'manufactureBoard', title: '生产看板', path: '/prod/manufacture/board', icon: 'Monitor' },
