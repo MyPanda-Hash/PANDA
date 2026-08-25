@@ -1,0 +1,355 @@
+{
+  "url": "https://h4t.chanjet.com/tplus/view/portal/portal.html?_from=exp",
+  "title": "畅捷通 T+",
+  "body": "[641164]户外用品\n\n[00]总部   已认证 畅捷通信息技术股份有限公司 2026-08-25 \n更新公告\nnew\n99+\n99+\ntplusdemo12320\n  \n经营分析\n新商贸\n供应链协同\n智能供应链\n新生产\n质量管理\n智能财税\n多组织\n智能体广场\n基础设置\nTOP应用\n我的桌面\n智能供应链\n   ",
+  "leaves": [
+    {
+      "text": "[00]总部",
+      "tag": "SPAN",
+      "id": "current-mark",
+      "className": "",
+      "rect": {
+        "x": 305,
+        "y": 27,
+        "w": 51,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "已认证",
+      "tag": "SPAN",
+      "id": "",
+      "className": "t-cloud-show t-dec-show t-user-info t-soft-remove t-attestationt-info",
+      "rect": {
+        "x": 456,
+        "y": 15,
+        "w": 42,
+        "h": 30
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "data-ctltype",
+          "label"
+        ]
+      ]
+    },
+    {
+      "text": "畅捷通信息技术股份有限公司",
+      "tag": "SPAN",
+      "id": "companyname",
+      "className": "t-cloud-show t-dec-show t-user-info t-soft-remove",
+      "rect": {
+        "x": 502,
+        "y": 15,
+        "w": 100,
+        "h": 30
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "2026-08-25",
+      "tag": "SPAN",
+      "id": "logindate",
+      "className": "t-user-info",
+      "rect": {
+        "x": 614,
+        "y": 15,
+        "w": 72,
+        "h": 30
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "data-ctltype",
+          "label"
+        ]
+      ]
+    },
+    {
+      "text": "new",
+      "tag": "SPAN",
+      "id": "",
+      "className": "new-icon",
+      "rect": {
+        "x": 1210,
+        "y": 6,
+        "w": 28,
+        "h": 12
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "99+",
+      "tag": "SPAN",
+      "id": "",
+      "className": "circleNum",
+      "rect": {
+        "x": 1277,
+        "y": 5,
+        "w": 25,
+        "h": 18
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "data-count",
+          "4711"
+        ]
+      ]
+    },
+    {
+      "text": "99+",
+      "tag": "SPAN",
+      "id": "",
+      "className": "circleNum",
+      "rect": {
+        "x": 1345,
+        "y": 5,
+        "w": 25,
+        "h": 18
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "data-count",
+          "682"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo12320",
+      "tag": "SPAN",
+      "id": "username",
+      "className": "show-name",
+      "rect": {
+        "x": 1500,
+        "y": 14,
+        "w": 60,
+        "h": 22
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "经营分析",
+      "tag": "SPAN",
+      "id": "",
+      "className": "menu-text",
+      "rect": {
+        "x": 0,
+        "y": 89,
+        "w": 72,
+        "h": 44
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "新商贸",
+      "tag": "SPAN",
+      "id": "",
+      "className": "menu-text",
+      "rect": {
+        "x": 0,
+        "y": 133,
+        "w": 57,
+        "h": 44
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "供应链协同",
+      "tag": "SPAN",
+      "id": "",
+      "className": "menu-text",
+      "rect": {
+        "x": 0,
+        "y": 177,
+        "w": 87,
+        "h": 44
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "智能供应链",
+      "tag": "SPAN",
+      "id": "",
+      "className": "menu-text",
+      "rect": {
+        "x": -2,
+        "y": 220,
+        "w": 91,
+        "h": 46
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "新生产",
+      "tag": "SPAN",
+      "id": "",
+      "className": "menu-text",
+      "rect": {
+        "x": 0,
+        "y": 265,
+        "w": 57,
+        "h": 44
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "质量管理",
+      "tag": "SPAN",
+      "id": "",
+      "className": "menu-text",
+      "rect": {
+        "x": 0,
+        "y": 309,
+        "w": 72,
+        "h": 44
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "智能财税",
+      "tag": "SPAN",
+      "id": "",
+      "className": "menu-text",
+      "rect": {
+        "x": 0,
+        "y": 353,
+        "w": 72,
+        "h": 44
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "多组织",
+      "tag": "SPAN",
+      "id": "",
+      "className": "menu-text",
+      "rect": {
+        "x": 0,
+        "y": 397,
+        "w": 57,
+        "h": 44
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "智能体广场",
+      "tag": "SPAN",
+      "id": "",
+      "className": "menu-text",
+      "rect": {
+        "x": 0,
+        "y": 441,
+        "w": 87,
+        "h": 44
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "基础设置",
+      "tag": "SPAN",
+      "id": "",
+      "className": "menu-text",
+      "rect": {
+        "x": 0,
+        "y": 485,
+        "w": 72,
+        "h": 44
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "TOP应用",
+      "tag": "SPAN",
+      "id": "",
+      "className": "menu-text",
+      "rect": {
+        "x": 0,
+        "y": 529,
+        "w": 73,
+        "h": 44
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "我的桌面",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 154,
+        "y": 60,
+        "w": 56,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "智能供应链",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 224,
+        "y": 60,
+        "w": 81,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    }
+  ],
+  "iframes": [
+    {
+      "src": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=ISC&ideskColumn=1&taskID=%E6%99%BA%E8%83%BD%E4%BE%9B%E5%BA%94%E9%93%BE&TaskSessionID=[REDACTED]",
+      "id": "ISC_iframe",
+      "name": "",
+      "rect": {
+        "x": 130,
+        "y": 83,
+        "w": 1440,
+        "h": 815
+      }
+    }
+  ]
+}

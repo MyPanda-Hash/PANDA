@@ -1,0 +1,1463 @@
+{
+  "url": "https://h4t.chanjet.com/tplus/v2/idesk/idesk?menuCode=SN&ideskColumn=1&taskID=%E5%BA%8F%E5%88%97%E5%8F%B7%E7%AE%A1%E7%90%86&TaskSessionID=[REDACTED]",
+  "title": "我的桌面",
+  "body": "序列号功能简介\n收起\n流程图\n收起\n启用序列号\n序列号预生成\n入库\n出库\n序列号跟踪表\n序列号查询\n扫码出库\n扫码入库\n序列号标签打印\n设置序列号内容\n序列号生成规则\n序列号拆分\n外部数据导入\n选择在库序列号出库\n序列号盘点\nPDA序列号入库\nPDA序列号出库\n使用说明\n收起\n启用序列号\n设置存货\n启用序列号\n入库时：\n可以扫码、录入、导入序列号\n出库时：\n直接扫描序列号或选择序列号，简单更高效\n序列号查询：\n通过 序列号状况表 可查询序列号状态，通过 序列号跟踪表 可对序列号进行追溯查询\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052\ntplusdemo123202320\n08251052",
+  "leaves": [
+    {
+      "text": "序列号功能简介",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-ideskpanel-title-left",
+      "rect": {
+        "x": 30,
+        "y": 25,
+        "w": 112,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-ideskpanel-title-left"
+        ]
+      ]
+    },
+    {
+      "text": "收起",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1349,
+        "y": 28,
+        "w": 24,
+        "h": 18
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "流程图",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-ideskpanel-title-left",
+      "rect": {
+        "x": 30,
+        "y": 286,
+        "w": 48,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-ideskpanel-title-left"
+        ]
+      ]
+    },
+    {
+      "text": "收起",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 104,
+        "y": 289,
+        "w": 24,
+        "h": 18
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "启用序列号",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 36,
+        "y": 417,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "序列号预生成",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 195,
+        "y": 417,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "入库",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 353,
+        "y": 417,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "出库",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 511,
+        "y": 417,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "序列号跟踪表",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 670,
+        "y": 417,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "序列号查询",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 670,
+        "y": 529,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "扫码出库",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 511,
+        "y": 529,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "扫码入库",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 353,
+        "y": 529,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "序列号标签打印",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 195,
+        "y": 529,
+        "w": 64,
+        "h": 29
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "设置序列号内容",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 36,
+        "y": 529,
+        "w": 64,
+        "h": 29
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "序列号生成规则",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 36,
+        "y": 620,
+        "w": 64,
+        "h": 29
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "序列号拆分",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 195,
+        "y": 620,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "外部数据导入",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 353,
+        "y": 620,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "选择在库序列号出库",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 511,
+        "y": 620,
+        "w": 64,
+        "h": 29
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "序列号盘点",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 670,
+        "y": 620,
+        "w": 64,
+        "h": 14
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "PDA序列号入库",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 353,
+        "y": 721,
+        "w": 64,
+        "h": 29
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "PDA序列号出库",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 511,
+        "y": 721,
+        "w": 64,
+        "h": 29
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "使用说明",
+      "tag": "DIV",
+      "id": "",
+      "className": "t-ideskpanel-title-left",
+      "rect": {
+        "x": 30,
+        "y": 892,
+        "w": 64,
+        "h": 24
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "class",
+          "t-ideskpanel-title-left"
+        ]
+      ]
+    },
+    {
+      "text": "收起",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1349,
+        "y": 895,
+        "w": 24,
+        "h": 18
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "启用序列号",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 51,
+        "y": 1008,
+        "w": 80,
+        "h": 17
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "设置存货",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 324,
+        "y": 996,
+        "w": 64,
+        "h": 17
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "启用序列号",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 324,
+        "y": 1025,
+        "w": 70,
+        "h": 16
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "入库时：",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 596,
+        "y": 984,
+        "w": 64,
+        "h": 17
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "可以扫码、录入、导入序列号",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 596,
+        "y": 1013,
+        "w": 154,
+        "h": 40
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "出库时：",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 869,
+        "y": 984,
+        "w": 64,
+        "h": 17
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "直接扫描序列号或选择序列号，简单更高效",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 869,
+        "y": 1013,
+        "w": 154,
+        "h": 40
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "序列号查询：",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1141,
+        "y": 960,
+        "w": 96,
+        "h": 17
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "通过 序列号状况表 可查询序列号状态，通过 序列号跟踪表 可对序列号进行追溯查询",
+      "tag": "SPAN",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1141,
+        "y": 989,
+        "w": 162,
+        "h": 88
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": []
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": -7,
+        "y": -26,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1,
+        "y": 3,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 303,
+        "y": -26,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 311,
+        "y": 3,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 613,
+        "y": -26,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 621,
+        "y": 3,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 923,
+        "y": -26,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 931,
+        "y": 3,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": -7,
+        "y": 104,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1,
+        "y": 133,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 303,
+        "y": 104,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 311,
+        "y": 133,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 613,
+        "y": 104,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 621,
+        "y": 133,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 923,
+        "y": 104,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 931,
+        "y": 133,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": -7,
+        "y": 234,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1,
+        "y": 263,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 303,
+        "y": 234,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 311,
+        "y": 263,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 613,
+        "y": 234,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 621,
+        "y": 263,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 923,
+        "y": 234,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 931,
+        "y": 263,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": -7,
+        "y": 364,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1,
+        "y": 393,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 303,
+        "y": 364,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 311,
+        "y": 393,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 613,
+        "y": 364,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 621,
+        "y": 393,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 923,
+        "y": 364,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 931,
+        "y": 393,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": -7,
+        "y": 494,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1,
+        "y": 523,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 303,
+        "y": 494,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 311,
+        "y": 523,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 613,
+        "y": 494,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 621,
+        "y": 523,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 923,
+        "y": 494,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 931,
+        "y": 523,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": -7,
+        "y": 624,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 1,
+        "y": 653,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 303,
+        "y": 624,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 311,
+        "y": 653,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 613,
+        "y": 624,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 621,
+        "y": 653,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "tplusdemo123202320",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 923,
+        "y": 624,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    },
+    {
+      "text": "08251052",
+      "tag": "DIV",
+      "id": "",
+      "className": "",
+      "rect": {
+        "x": 931,
+        "y": 653,
+        "w": 211,
+        "h": 83
+      },
+      "href": null,
+      "onclick": null,
+      "attrs": [
+        [
+          "style",
+          "font-size: 20px; font-family: Arial, \"Microsoft YaHei\", \"Pingfang SC\", \"Helvetica Neue\", Helvetica, sans-serif;"
+        ]
+      ]
+    }
+  ],
+  "iframes": []
+}

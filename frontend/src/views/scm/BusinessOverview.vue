@@ -93,7 +93,6 @@ const modules = [
       { code: 'MATERIAL_OUT', label: '材料出库单' },
       { code: 'FINISH_IN', label: '产成品入库单' },
       { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' },
-      { code: 'PU_REQ', label: '请购单' },
     ],
     edges: [
       { from: 'SO_ORDER', to: 'MANU_ORDER' },
@@ -111,7 +110,7 @@ const modules = [
     pos: {
       SO_ORDER: [20, 40], MANU_ORDER: [230, 40], PROCESS_REPORT: [440, 40], TRANSFER: [650, 40],
       MATERIAL_REQ: [440, 130], MATERIAL_OUT: [650, 130],
-      FINISH_IN: [440, 220], PU_REQ_ANALYSIS: [230, 220], PU_REQ: [440, 310],
+      FINISH_IN: [440, 220], PU_REQ_ANALYSIS: [230, 220],
     },
     docs: [
       { code: 'MANU_ORDER', label: '生产加工单' }, { code: 'PROCESS_REPORT', label: '工序汇报单' },
@@ -263,7 +262,11 @@ const modules = [
       { from: 'PICK_ORDER', to: 'SALE_OUT' },
     ],
     pos: { SO_ORDER: [40, 170], PICK_ORDER: [300, 170], SALE_OUT: [560, 170] },
-    docs: [{ code: 'PICK_ORDER', label: '配货单' }, { code: 'SO_ORDER', label: '销售订单' }, { code: 'SALE_OUT', label: '销售出库单' }, { code: 'SALE_INV', label: '销货单' }],
+    docs: [
+      { code: 'PICK_ORDER', label: '配货单' }, { code: 'OTHER_OUT', label: '其他出库单' },
+      { code: 'OTHER_IN', label: '其他入库单' }, { code: 'SO_ORDER', label: '销售订单' },
+      { code: 'SALE_OUT', label: '销售出库单' }, { code: 'SALE_INV', label: '销货单' },
+    ],
     archives: [{ code: 'INV', label: '存货' }, { code: 'WH', label: '仓库' }],
     reports: [
       { code: 'PICK_ORDER_DETAIL', label: '配货单明细表' }, { code: 'PICK_ORDER_STATS', label: '配货单统计表' },
@@ -287,8 +290,9 @@ const modules = [
     },
     docs: [
       { code: 'PURCHASE_IN', label: '采购入库单' }, { code: 'FINISH_IN', label: '产成品入库单' },
-      { code: 'OTHER_IN', label: '其他入库单' }, { code: 'SALE_OUT', label: '销售出库单' },
-      { code: 'MATERIAL_OUT', label: '材料出库单' }, { code: 'OTHER_OUT', label: '其他出库单' },
+      { code: 'OUTSOURCE_IN', label: '委外入库单' }, { code: 'OTHER_IN', label: '其他入库单' },
+      { code: 'SALE_OUT', label: '销售出库单' }, { code: 'MATERIAL_OUT', label: '材料出库单' },
+      { code: 'OTHER_OUT', label: '其他出库单' }, { code: 'PU_COST_ALLOC', label: '采购费用分摊单' },
       { code: 'MATERIAL_REQ', label: '领料申请单' }, { code: 'TRANSFER', label: '调拨单' },
     ],
     archives: [{ code: 'INV', label: '存货' }, { code: 'WH', label: '仓库' }, { code: 'REGION', label: '地区' }],
