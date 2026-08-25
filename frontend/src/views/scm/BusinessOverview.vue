@@ -1,5 +1,5 @@
-<!-- BusinessOverview.vue — 智能供应链「业务总览」（对齐 T+：模块 + 业务流程图 + 相关单据/档案/报表）
-     流程图节点=单据面板，点击进入；箭头=生单/选单流转（对齐业务流程图 + 已实现的推式生单/选单联动） -->
+<!-- BusinessOverview.vue — 智能供应链「业务总览」：模块 + 业务流程图（Vue Flow 升级版）
+     流程图节点=单据面板，点击进入；箭头=生单/选单流转（对齐业务流程图 + 推式生单/选单联动） -->
 <template>
   <div class="bo-page">
     <div class="bo-head">
@@ -13,41 +13,47 @@
           :key="m.code"
           class="bo-mod"
           :class="{ on: active === m.code }"
+          :style="{ '--mc': m.color }"
           @click="active = m.code"
         >
-          <el-icon class="bo-mod-icon"><component :is="m.icon" /></el-icon>
+          <el-icon class="bo-mod-icon"><component :is="ICONS[m.icon]" /></el-icon>
           <span>{{ m.name }}</span>
         </div>
       </div>
       <div class="bo-main">
         <div class="bo-flow" v-if="cur">
           <div class="bo-flow-title">
-            <span>{{ cur.name }} · 业务流程图</span>
+            <span>
+              <i class="bo-flow-dot" :style="{ background: cur.color }"></i>
+              {{ cur.name }} · 业务流程图
+            </span>
             <span class="bo-flow-tip">节点点击进入 · 箭头为生单/选单流转</span>
           </div>
-          <svg :viewBox="'0 0 ' + VW + ' ' + VH" class="bo-svg" :key="cur.code">
-            <defs>
-              <marker id="bo-arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="#0d5bd3" />
-              </marker>
-            </defs>
-            <g v-for="(e, i) in cur.edges" :key="'e' + i">
-              <line
-                :x1="nodeX(e.from)" :y1="nodeY(e.from) + NODE_H / 2"
-                :x2="nodeX(e.to)" :y2="nodeY(e.to) + NODE_H / 2"
-                stroke="#0d5bd3" stroke-width="1.6" marker-end="url(#bo-arrow)"
-              />
-            </g>
-            <g
-              v-for="n in cur.nodes"
-              :key="n.code"
-              class="bo-node"
-              @click="go(n.code)"
+          <div class="bo-canvas">
+            <VueFlow
+              v-model:nodes="nodes"
+              v-model:edges="edges"
+              :min-zoom="0.35"
+              :max-zoom="1.8"
+              :default-viewport="{ zoom: 0.95 }"
+              :nodes-draggable="false"
+              :nodes-connectable="false"
+              :elements-selectable="false"
+              :delete-key-code="null"
+              class="bo-vueflow"
+              @node-click="onNodeClick"
             >
-              <rect :x="nodeX(n.code)" :y="nodeY(n.code)" :width="NODE_W" :height="NODE_H" rx="5" />
-              <text :x="nodeX(n.code) + NODE_W / 2" :y="nodeY(n.code) + NODE_H / 2 + 5" text-anchor="middle">{{ n.label }}</text>
-            </g>
-          </svg>
+              <Background :gap="20" :size="1.4" variant="dots" />
+              <template #node-flowNode="nodeProps">
+                <div class="fn-card" :style="{ '--c': nodeProps.data.color }">
+                  <div class="fn-head">
+                    <el-icon><component :is="ICONS[nodeProps.data.icon]" /></el-icon>
+                  </div>
+                  <div class="fn-label">{{ nodeProps.data.label }}</div>
+                </div>
+              </template>
+            </VueFlow>
+          </div>
         </div>
         <div class="bo-sections" v-if="cur">
           <div class="bo-sec" v-if="cur.docs && cur.docs.length">
@@ -69,21 +75,23 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { VueFlow, MarkerType, useVueFlow } from '@vue-flow/core'
+import { Background } from '@vue-flow/background'
+import '@vue-flow/core/dist/style.css'
+import '@vue-flow/core/dist/theme-default.css'
+import { SetUp, Van, ShoppingCart, Box, Iphone, Sort, View, Connection } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { useTabsStore } from '@/stores/tabs'
+
+const ICONS = { SetUp, Van, ShoppingCart, Box, Iphone, Sort, View, Connection }
 
 const router = useRouter()
 const tabs = useTabsStore()
 
-const NODE_W = 150
-const NODE_H = 40
-const VW = 980
-const VH = 420
-
 const modules = [
   {
-    code: 'prod', name: '生产管理', icon: 'SetUp',
+    code: 'prod', name: '生产管理', icon: 'SetUp', color: '#2f6fed',
     nodes: [
       { code: 'SO_ORDER', label: '销售订单' },
       { code: 'MANU_ORDER', label: '生产加工单' },
@@ -110,7 +118,7 @@ const modules = [
     pos: {
       SO_ORDER: [20, 40], MANU_ORDER: [230, 40], PROCESS_REPORT: [440, 40], TRANSFER: [650, 40],
       MATERIAL_REQ: [440, 130], MATERIAL_OUT: [650, 130],
-      FINISH_IN: [440, 220], PU_REQ_ANALYSIS: [230, 220],
+      FINISH_IN: [440, 220], PU_REQ_ANALYSIS: [230, 220], PU_REQ: [440, 310],
     },
     docs: [
       { code: 'MANU_ORDER', label: '生产加工单' }, { code: 'PROCESS_REPORT', label: '工序汇报单' },
@@ -135,46 +143,7 @@ const modules = [
     ],
   },
   {
-    code: 'purchase', name: '采购管理', icon: 'ShoppingCart',
-    nodes: [
-      { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' },
-      { code: 'PU_REQ', label: '请购单' },
-      { code: 'PU_ORDER', label: '采购订单' },
-      { code: 'PURCHASE_IN', label: '采购入库单' },
-      { code: 'PU_IN', label: '进货单' },
-      { code: 'PU_INVOICE', label: '采购发票' },
-      { code: 'EXPENSE', label: '费用单' },
-      { code: 'PU_COST_ALLOC', label: '采购费用分摊单' },
-    ],
-    edges: [
-      { from: 'PU_REQ_ANALYSIS', to: 'PU_REQ' },
-      { from: 'PU_REQ', to: 'PU_ORDER' },
-      { from: 'PU_ORDER', to: 'PURCHASE_IN' },
-      { from: 'PU_ORDER', to: 'PU_IN' },
-      { from: 'PU_IN', to: 'PU_INVOICE' },
-      { from: 'PU_ORDER', to: 'PU_INVOICE' },
-      { from: 'EXPENSE', to: 'PU_COST_ALLOC' },
-      { from: 'PU_INVOICE', to: 'PU_COST_ALLOC' },
-    ],
-    pos: {
-      PU_REQ_ANALYSIS: [30, 60], PU_REQ: [30, 170], PU_ORDER: [260, 140],
-      PURCHASE_IN: [490, 60], PU_IN: [490, 170], PU_INVOICE: [730, 140],
-      EXPENSE: [490, 280], PU_COST_ALLOC: [730, 280],
-    },
-    docs: [
-      { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' }, { code: 'PU_REQ', label: '请购单' },
-      { code: 'PU_ORDER', label: '采购订单' },
-      { code: 'PU_IN', label: '进货单' }, { code: 'PURCHASE_IN', label: '采购入库单' },
-      { code: 'PU_INVOICE', label: '采购发票' }, { code: 'EXPENSE', label: '费用单' },
-      { code: 'PU_COST_ALLOC', label: '采购费用分摊单' },
-    ],
-    archives: [{ code: 'PARTNER', label: '往来单位(供应商)' }, { code: 'INV', label: '存货' }, { code: 'WH', label: '仓库' }],
-    reports: [
-      { code: 'PURCHASE_IN_DETAIL', label: '采购入库明细表' }, { code: 'PURCHASE_IN_STATS', label: '采购入库统计表' },
-    ],
-  },
-  {
-    code: 'outsource', name: '委外管理', icon: 'Van',
+    code: 'outsource', name: '委外管理', icon: 'Van', color: '#0e9f9f',
     nodes: [
       { code: 'SO_ORDER', label: '销售订单' },
       { code: 'OUTSOURCE_ORDER', label: '委外加工单' },
@@ -215,7 +184,7 @@ const modules = [
     ],
   },
   {
-    code: 'sales', name: '销售管理', icon: 'ShoppingCart',
+    code: 'sales', name: '销售管理', icon: 'ShoppingCart', color: '#e8873a',
     nodes: [
       { code: 'QUOTE_ORDER', label: '报价单' },
       { code: 'SO_ORDER', label: '销售订单' },
@@ -251,7 +220,46 @@ const modules = [
     ],
   },
   {
-    code: 'distribution', name: '配货管理', icon: 'Box',
+    code: 'purchase', name: '采购管理', icon: 'ShoppingCart', color: '#3aa76d',
+    nodes: [
+      { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' },
+      { code: 'PU_REQ', label: '请购单' },
+      { code: 'PU_ORDER', label: '采购订单' },
+      { code: 'PURCHASE_IN', label: '采购入库单' },
+      { code: 'PU_IN', label: '进货单' },
+      { code: 'PU_INVOICE', label: '采购发票' },
+      { code: 'EXPENSE', label: '费用单' },
+      { code: 'PU_COST_ALLOC', label: '采购费用分摊单' },
+    ],
+    edges: [
+      { from: 'PU_REQ_ANALYSIS', to: 'PU_REQ' },
+      { from: 'PU_REQ', to: 'PU_ORDER' },
+      { from: 'PU_ORDER', to: 'PURCHASE_IN' },
+      { from: 'PU_ORDER', to: 'PU_IN' },
+      { from: 'PU_IN', to: 'PU_INVOICE' },
+      { from: 'PU_ORDER', to: 'PU_INVOICE' },
+      { from: 'EXPENSE', to: 'PU_COST_ALLOC' },
+      { from: 'PU_INVOICE', to: 'PU_COST_ALLOC' },
+    ],
+    pos: {
+      PU_REQ_ANALYSIS: [30, 60], PU_REQ: [30, 170], PU_ORDER: [260, 140],
+      PURCHASE_IN: [490, 60], PU_IN: [490, 170], PU_INVOICE: [730, 140],
+      EXPENSE: [490, 280], PU_COST_ALLOC: [730, 280],
+    },
+    docs: [
+      { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' }, { code: 'PU_REQ', label: '请购单' },
+      { code: 'PU_ORDER', label: '采购订单' },
+      { code: 'PU_IN', label: '进货单' }, { code: 'PURCHASE_IN', label: '采购入库单' },
+      { code: 'PU_INVOICE', label: '采购发票' }, { code: 'EXPENSE', label: '费用单' },
+      { code: 'PU_COST_ALLOC', label: '采购费用分摊单' },
+    ],
+    archives: [{ code: 'PARTNER', label: '往来单位(供应商)' }, { code: 'INV', label: '存货' }, { code: 'WH', label: '仓库' }],
+    reports: [
+      { code: 'PURCHASE_IN_DETAIL', label: '采购入库明细表' }, { code: 'PURCHASE_IN_STATS', label: '采购入库统计表' },
+    ],
+  },
+  {
+    code: 'distribution', name: '配货管理', icon: 'Box', color: '#7a5af8',
     nodes: [
       { code: 'SO_ORDER', label: '销售订单' },
       { code: 'PICK_ORDER', label: '配货单' },
@@ -274,7 +282,7 @@ const modules = [
     ],
   },
   {
-    code: 'inv', name: '库存核算', icon: 'Box',
+    code: 'inv', name: '库存核算', icon: 'Box', color: '#4a7bd8',
     nodes: [
       { code: 'PURCHASE_IN', label: '采购入库单' },
       { code: 'FINISH_IN', label: '产成品入库单' },
@@ -302,7 +310,7 @@ const modules = [
     ],
   },
   {
-    code: 'pda', name: '移动仓管', icon: 'Iphone',
+    code: 'pda', name: '移动仓管', icon: 'Iphone', color: '#1c9fae',
     nodes: [
       { code: 'PURCHASE_IN', label: '采购入库单' },
       { code: 'FINISH_IN', label: '产成品入库单' },
@@ -336,7 +344,7 @@ const modules = [
     ],
   },
   {
-    code: 'sn', name: '序列号管理', icon: 'Sort',
+    code: 'sn', name: '序列号管理', icon: 'Sort', color: '#5a7fa8',
     nodes: [
       { code: 'INV', label: '存货(启用序列号)' },
       { code: 'SERIAL_NO', label: '序列号登记单' },
@@ -359,7 +367,7 @@ const modules = [
     reports: [],
   },
   {
-    code: 'qc', name: '质量管理', icon: 'View',
+    code: 'qc', name: '质量管理', icon: 'View', color: '#d95b5b',
     nodes: [
       { code: 'ARRIVAL_IN', label: '到货单' },
       { code: 'INSPECTION', label: '来料/成品检验单' },
@@ -381,15 +389,38 @@ const modules = [
 const active = ref('prod')
 const cur = computed(() => modules.find((m) => m.code === active.value) || modules[0])
 
-function nodePos(code) {
-  return (cur.value && cur.value.pos && cur.value.pos[code]) || [0, 0]
+// ---------- Vue Flow 图数据（按当前模块构建） ----------
+const nodes = ref([])
+const edges = ref([])
+const { fitView } = useVueFlow()
+
+function buildFlow() {
+  const m = cur.value
+  nodes.value = (m.nodes || []).map((n) => ({
+    id: n.code,
+    type: 'flowNode',
+    position: { x: (m.pos && m.pos[n.code] ? m.pos[n.code][0] : 0), y: (m.pos && m.pos[n.code] ? m.pos[n.code][1] : 0) },
+    data: { code: n.code, label: n.label, icon: m.icon, color: m.color },
+  }))
+  edges.value = (m.edges || []).map((e, i) => ({
+    id: 'e' + i + '-' + e.from + '-' + e.to,
+    source: e.from,
+    target: e.to,
+    type: 'smoothstep',
+    markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: m.color },
+    style: { stroke: m.color, strokeWidth: 1.8 },
+  }))
 }
-function nodeX(code) {
-  return nodePos(code)[0]
+
+watch(cur, () => {
+  buildFlow()
+  setTimeout(() => fitView({ padding: 0.2, maxZoom: 1.2 }), 80)
+}, { immediate: true })
+
+function onNodeClick({ node }) {
+  go(node.data.code)
 }
-function nodeY(code) {
-  return nodePos(code)[1]
-}
+
 function go(code) {
   const path = '/panelx/list/' + code
   router.push(path)
@@ -404,7 +435,7 @@ function go(code) {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  background: #f9f9f9;
+  background: #f5f7fa;
 }
 .bo-head {
   padding-bottom: 12px;
@@ -428,30 +459,33 @@ function go(code) {
   min-height: 0;
 }
 .bo-modules {
-  width: 170px;
+  width: 176px;
   flex-shrink: 0;
   background: #fff;
   border: 1px solid #e4e7ed;
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 8px;
   overflow-y: auto;
 }
 .bo-mod {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   padding: 10px 12px;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
   color: #333;
+  margin-bottom: 2px;
+  transition: background .15s, color .15s;
 }
 .bo-mod:hover {
   background: #f0f7ff;
 }
 .bo-mod.on {
-  background: #0d5bd3;
+  background: var(--mc, #0d5bd3);
   color: #fff;
+  box-shadow: 0 3px 8px rgba(31, 45, 61, .18);
 }
 .bo-mod-icon {
   font-size: 15px;
@@ -466,8 +500,8 @@ function go(code) {
 .bo-flow {
   background: #fff;
   border: 1px solid #e4e7ed;
-  border-radius: 6px;
-  padding: 10px 12px;
+  border-radius: 8px;
+  padding: 10px 12px 12px;
 }
 .bo-flow-title {
   display: flex;
@@ -478,35 +512,67 @@ function go(code) {
   color: #333;
   padding-bottom: 8px;
 }
+.bo-flow-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
 .bo-flow-tip {
   font-size: 11px;
   font-weight: 400;
   color: #909399;
 }
-.bo-svg {
+.bo-canvas {
+  height: 430px;
+  border: 1px solid #eef1f5;
+  border-radius: 8px;
+  background: #fbfcfe;
+  overflow: hidden;
+}
+.bo-vueflow {
   width: 100%;
-  height: auto;
-  display: block;
+  height: 100%;
 }
-.bo-node {
+/* 自定义节点卡片（商务风） */
+.fn-card {
+  width: 158px;
+  border-radius: 9px;
+  background: #fff;
+  border: 1.5px solid var(--c, #2f6fed);
+  box-shadow: 0 2px 10px rgba(31, 45, 61, .10);
   cursor: pointer;
+  overflow: hidden;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
 }
-.bo-node rect {
-  fill: #eef4ff;
-  stroke: #0d5bd3;
-  stroke-width: 1.3;
+.fn-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(31, 45, 61, .18);
+  border-color: var(--c, #2f6fed);
 }
-.bo-node:hover rect {
-  fill: #d7e6ff;
+.fn-head {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 15px;
+  background: linear-gradient(135deg, var(--c, #2f6fed), rgba(0, 0, 0, .18) 130%);
 }
-.bo-node text {
+.fn-label {
+  padding: 7px 6px;
+  text-align: center;
   font-size: 12.5px;
-  fill: #1f2d3d;
+  font-weight: 600;
+  color: #1f2d3d;
+  white-space: nowrap;
 }
 .bo-sections {
   background: #fff;
   border: 1px solid #e4e7ed;
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 10px 14px;
   flex: 1;
   overflow-y: auto;
@@ -535,8 +601,9 @@ function go(code) {
   color: #0d5bd3;
   background: #f0f7ff;
   border: 1px solid #cfe3ff;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
+  transition: background .15s;
 }
 .bo-btn:hover {
   background: #d7e6ff;
