@@ -45,6 +45,41 @@ export const menuTree = [
         ],
       },
       {
+        code: 'outsource',
+        title: '委外管理',
+        icon: 'Van',
+        children: [
+          {
+            code: 'doc', title: '单据', children: [
+              { code: 'outsourceOrder', title: '委外加工单', path: '/panelx/list/OUTSOURCE_ORDER', icon: 'Tickets', panelCode: 'OUTSOURCE_ORDER', operationName: '新增流程' },
+              { code: 'outsourceIssue', title: '委外发料单', path: '/panelx/list/OUTSOURCE_ISSUE', icon: 'Tickets', panelCode: 'OUTSOURCE_ISSUE', operationName: '新增流程' },
+              { code: 'outsourceIn', title: '委外入库单', path: '/panelx/list/OUTSOURCE_IN', icon: 'Tickets', panelCode: 'OUTSOURCE_IN', operationName: '新增流程' },
+              { code: 'outsourceFee', title: '委外加工费用单', path: '/panelx/list/OUTSOURCE_FEE', icon: 'Tickets', panelCode: 'OUTSOURCE_FEE', operationName: '新增流程' },
+            ],
+          },
+          {
+            code: 'detail', title: '明细表', children: [
+              { code: 'outsourceProductDetail', title: '委外加工单产成品明细表', path: '/panelx/list/OUTSOURCE_ORDER_PRODUCT_DETAIL', panelCode: 'OUTSOURCE_ORDER_PRODUCT_DETAIL', icon: 'List' },
+              { code: 'outsourceMaterialDetail', title: '委外加工单材料明细表', path: '/panelx/list/OUTSOURCE_ORDER_MATERIAL_DETAIL', panelCode: 'OUTSOURCE_ORDER_MATERIAL_DETAIL', icon: 'List' },
+              { code: 'outsourceFeeDetail', title: '委外加工费用单明细表', path: '/panelx/list/OUTSOURCE_FEE_DETAIL', panelCode: 'OUTSOURCE_FEE_DETAIL', icon: 'List' },
+            ],
+          },
+          {
+            code: 'stats', title: '统计表', children: [
+              { code: 'outsourceProductStats', title: '委外加工单产成品统计表', path: '/panelx/list/OUTSOURCE_ORDER_PRODUCT_STATS', panelCode: 'OUTSOURCE_ORDER_PRODUCT_STATS', icon: 'Histogram' },
+              { code: 'outsourceMaterialStats', title: '委外加工单材料统计表', path: '/panelx/list/OUTSOURCE_ORDER_MATERIAL_STATS', panelCode: 'OUTSOURCE_ORDER_MATERIAL_STATS', icon: 'Histogram' },
+              { code: 'outsourceFeeStats', title: '委外加工费用单统计表', path: '/panelx/list/OUTSOURCE_FEE_STATS', panelCode: 'OUTSOURCE_FEE_STATS', icon: 'Histogram' },
+            ],
+          },
+          {
+            code: 'exec', title: '执行表', children: [
+              { code: 'outsourceExec', title: '委外加工单执行表', path: '/panelx/list/OUTSOURCE_ORDER_EXEC', panelCode: 'OUTSOURCE_ORDER_EXEC', icon: 'Operation' },
+              { code: 'outsourceIssueBalance', title: '委外发料耗用结存表', path: '/panelx/list/OUTSOURCE_ISSUE_BALANCE', panelCode: 'OUTSOURCE_ISSUE_BALANCE', icon: 'DataAnalysis' },
+            ],
+          },
+        ],
+      },
+      {
         code: 'distribution',
         title: '配货管理',
         icon: 'Box',

@@ -5,9 +5,9 @@ spring:
   application:
     name: light-mes-backend
   datasource:
-    url: jdbc:mysql://localhost:3306/light_mes?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3308/light_mes?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     username: root
-    password: "CHANGE_ME" # 生产环境通过环境变量 SPRING_DATASOURCE_PASSWORD 注入
+    password: "${SPRING_DATASOURCE_PASSWORD:CHANGE_ME}" # 本地/生产环境均通过环境变量注入
     driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:

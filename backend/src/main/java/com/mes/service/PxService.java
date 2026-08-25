@@ -663,6 +663,13 @@ public class PxService {
             case "生成调拨单":         // 推式生单：领料申请单 → 调拨单（对齐真实 T+ 领料申请单「生单-生成调拨单」）
             case "生成调拨单(分单)":
                 return createTransferFromMaterialReq(panelCode, formData);
+            case "生成委外发料单":     // 推式生单：委外加工单/领料申请单 → 委外发料单
+            case "生成委外发料单(分单)":
+                return createOutsourceIssue(panelCode, formData);
+            case "生成委外入库单":     // 推式生单：委外加工单 → 委外入库单
+                return createOutsourceInFromOrder(panelCode, formData);
+            case "生成委外加工费用单": // 推式生单：委外加工单 → 委外加工费用单
+                return createOutsourceFeeFromOrder(panelCode, formData);
             case "生成销售出库单":     // 推式生单：销售订单 → 销售出库单
             case "生成销售出库单(普通销售)":
                 return createSaleOutFromSo(panelCode, formData);
@@ -1244,6 +1251,146 @@ public class PxService {
         return insertGenerated("TRANSFER", "MATERIAL_REQ", String.valueOf(no), trData, detail);
     }
 
+    /** 推式生单：委外加工单（OUTSOURCE_ORDER）/领料申请单（MATERIAL_REQ）→ 委外发料单（OUTSOURCE_ISSUE） */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createOutsourceIssue(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        String source = "OUTSOURCE_ORDER".equals(panelCode) ? "OUTSOURCE_ORDER" : "MATERIAL_REQ";
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, source).eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("来源单据不存在：" + no);
+        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核单据可生成委外发料单");
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> rows = new ArrayList<>();
+        if ("OUTSOURCE_ORDER".equals(source)) {
+            List<Map<String, Object>> mats = dm.get("materials") instanceof List
+                    ? (List<Map<String, Object>>) dm.get("materials") : new ArrayList<>();
+            for (Map<String, Object> m : mats) {
+                Map<String, Object> r = new HashMap<>();
+                r.put("材料编码", m.getOrDefault("材料编码", ""));
+                r.put("材料名称", m.getOrDefault("材料名称", ""));
+                r.put("规格型号", m.getOrDefault("规格型号", ""));
+                r.put("计量单位", m.getOrDefault("计量单位", "kg"));
+                r.put("数量", m.getOrDefault("计划数量", m.getOrDefault("需用数量", 0)));
+                r.put("单价", 0);
+                r.put("金额", 0);
+                r.put("仓库", m.getOrDefault("预出仓库", "原料仓"));
+                rows.add(r);
+            }
+        } else {
+            List<Map<String, Object>> items = dm.get("items") instanceof List
+                    ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
+            for (Map<String, Object> it : items) {
+                Map<String, Object> r = new HashMap<>();
+                r.put("材料编码", it.getOrDefault("材料编码", ""));
+                r.put("材料名称", it.getOrDefault("材料名称", ""));
+                r.put("规格型号", it.getOrDefault("规格型号", ""));
+                r.put("计量单位", it.getOrDefault("计量单位", "kg"));
+                r.put("数量", it.getOrDefault("数量", 0));
+                r.put("单价", it.getOrDefault("单价", 0));
+                r.put("金额", it.getOrDefault("金额", 0));
+                r.put("仓库", it.getOrDefault("仓库", "原料仓"));
+                rows.add(r);
+            }
+        }
+        if (rows.isEmpty()) throw new IllegalStateException("来源单据无材料明细：" + no);
+        Map<String, Object> data = new HashMap<>();
+        data.put("单据日期", LocalDate.now().toString());
+        data.put("业务类型", "委外发料");
+        data.put("委外供应商", head.getOrDefault("委外供应商", ""));
+        data.put("委外加工单号", "OUTSOURCE_ORDER".equals(source) ? String.valueOf(no) : "");
+        data.put("仓库", rows.get(0).getOrDefault("仓库", "原料仓"));
+        data.put("部门", head.getOrDefault("部门", ""));
+        data.put("经手人", head.getOrDefault("经手人", ""));
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("OUTSOURCE_ISSUE", source, String.valueOf(no), data, detail);
+    }
+
+    /** 推式生单：委外加工单（OUTSOURCE_ORDER）→ 委外入库单（OUTSOURCE_IN） */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createOutsourceInFromOrder(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "OUTSOURCE_ORDER").eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("委外加工单不存在：" + no);
+        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核委外加工单可生成委外入库单");
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> items = dm.get("products") instanceof List
+                ? (List<Map<String, Object>>) dm.get("products") : new ArrayList<>();
+        if (items.isEmpty()) throw new IllegalStateException("委外加工单无产成品明细：" + no);
+        Map<String, Object> data = new HashMap<>();
+        data.put("单据日期", LocalDate.now().toString());
+        data.put("业务类型", "委外入库");
+        data.put("委外供应商", head.getOrDefault("委外供应商", ""));
+        data.put("委外加工单号", String.valueOf(no));
+        data.put("仓库", "原料仓");
+        data.put("经手人", head.getOrDefault("经手人", ""));
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> it : items) {
+            Map<String, Object> r = new HashMap<>();
+            r.put("产品编码", it.getOrDefault("产品编码", ""));
+            r.put("产品名称", it.getOrDefault("产品名称", ""));
+            r.put("规格型号", it.getOrDefault("规格型号", ""));
+            r.put("计量单位", it.getOrDefault("计量单位", "件"));
+            r.put("实收数量", it.getOrDefault("数量", 0));
+            r.put("单价", it.getOrDefault("委外单价", it.getOrDefault("单价", 0)));
+            r.put("金额", it.getOrDefault("金额", 0));
+            r.put("现存量", it.getOrDefault("现存量", 0));
+            rows.add(r);
+        }
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("OUTSOURCE_IN", "OUTSOURCE_ORDER", String.valueOf(no), data, detail);
+    }
+
+    /** 推式生单：委外加工单（OUTSOURCE_ORDER）→ 委外加工费用单（OUTSOURCE_FEE）：按产成品明细委外单价×数量汇总 */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createOutsourceFeeFromOrder(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "OUTSOURCE_ORDER").eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("委外加工单不存在：" + no);
+        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核委外加工单可生成委外加工费用单");
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> items = dm.get("products") instanceof List
+                ? (List<Map<String, Object>>) dm.get("products") : new ArrayList<>();
+        if (items.isEmpty()) throw new IllegalStateException("委外加工单无产成品明细：" + no);
+        Map<String, Object> data = new HashMap<>();
+        data.put("单据日期", LocalDate.now().toString());
+        data.put("业务类型", "委外加工费用");
+        data.put("委外供应商", head.getOrDefault("委外供应商", ""));
+        data.put("委外加工单号", String.valueOf(no));
+        data.put("经手人", head.getOrDefault("经手人", ""));
+        List<Map<String, Object>> rows = new ArrayList<>();
+        double total = 0;
+        for (Map<String, Object> it : items) {
+            double qty = num(it.getOrDefault("数量", 0));
+            double price = num(it.getOrDefault("委外单价", it.getOrDefault("单价", 0)));
+            double amount = Math.round(qty * price * 100) / 100.0;
+            total += amount;
+            Map<String, Object> r = new HashMap<>();
+            r.put("费用项目", "委外加工费");
+            r.put("产品名称", it.getOrDefault("产品名称", ""));
+            r.put("计量单位", it.getOrDefault("计量单位", "件"));
+            r.put("数量", qty);
+            r.put("委外单价", price);
+            r.put("费用金额", amount);
+            r.put("备注", "");
+            rows.add(r);
+        }
+        data.put("费用合计", Math.round(total * 100) / 100.0);
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("OUTSOURCE_FEE", "OUTSOURCE_ORDER", String.valueOf(no), data, detail);
+    }
+
     /** 推式生单：销售订单（SO_ORDER）→ 销售出库单（SALE_OUT） */
     @SuppressWarnings("unchecked")
     private Map<String, Object> createSaleOutFromSo(String panelCode, Map<String, Object> formData) {
@@ -1702,6 +1849,10 @@ public class PxService {
         else if ("INSPECTION".equals(panelCode)) biz = "JY-";       // 来料成品检验单
         else if ("DISPATCH".equals(panelCode)) biz = "PG-";         // 工序派工单
         else if ("TRANSFER".equals(panelCode)) biz = "DB-";        // 调拨单（T+ 调拨惯例 DB）
+        else if ("OUTSOURCE_ORDER".equals(panelCode)) biz = "WW-"; // 委外加工单（T+ 委外惯例 WW）
+        else if ("OUTSOURCE_ISSUE".equals(panelCode)) biz = "WF-"; // 委外发料单
+        else if ("OUTSOURCE_IN".equals(panelCode)) biz = "WR-";    // 委外入库单
+        else if ("OUTSOURCE_FEE".equals(panelCode)) biz = "WY-";   // 委外加工费用单
         else if ("INV".equals(panelCode)) biz = "INV-"; // 存货类别单据
         else biz = "MO-";
         String base = biz + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
@@ -1731,7 +1882,7 @@ public class PxService {
     private static final Set<String> APPROVAL_PANELS = Set.of(
             "SO_ORDER", "PURCHASE_IN", "FINISH_IN", "OTHER_IN", "SALE_OUT", "MATERIAL_OUT", "OTHER_OUT",
             "MANU_ORDER", "PROCESS_REPORT", "INIT_AP", "INIT_AR", "INIT_BALANCE", "BOM", "ROUTE", "PU_REQ",
-            "TRANSFER");
+            "TRANSFER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_IN", "OUTSOURCE_FEE");
 
     /**
      * 审批面板审核类动作（审核/提交审批/审批通过）时自动补表头：

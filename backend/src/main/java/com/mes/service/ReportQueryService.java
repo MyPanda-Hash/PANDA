@@ -81,6 +81,14 @@ public class ReportQueryService {
             case "SALARY_DETAIL" -> salaryDetail();
             case "SALARY_STATS" -> salaryStats();
             case "REWORK_REPORT" -> reworkRows();
+            case "OUTSOURCE_ORDER_PRODUCT_DETAIL" -> outsourceOrderProductDetail();
+            case "OUTSOURCE_ORDER_MATERIAL_DETAIL" -> outsourceOrderMaterialDetail();
+            case "OUTSOURCE_FEE_DETAIL" -> outsourceFeeDetail();
+            case "OUTSOURCE_ORDER_EXEC" -> outsourceOrderExecution();
+            case "OUTSOURCE_ISSUE_BALANCE" -> outsourceIssueBalance();
+            case "OUTSOURCE_ORDER_PRODUCT_STATS" -> outsourceOrderProductStats();
+            case "OUTSOURCE_ORDER_MATERIAL_STATS" -> outsourceOrderMaterialStats();
+            case "OUTSOURCE_FEE_STATS" -> outsourceFeeStats();
             default -> List.of();
         };
     }
@@ -625,6 +633,179 @@ public class ReportQueryService {
                     "返修状态", source.get("返修状态")));
         }
         return out;
+    }
+
+    // ---------- outsource reports (T+ 委外管理 OM 模块, 2026-08-25) ----------
+
+    private List<Map<String, Object>> outsourceOrderProductDetail() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("OUTSOURCE_ORDER")) {
+            for (Map<String, Object> item : detailRows(doc, "products")) {
+                BigDecimal qty = number(item.get("数量"));
+                BigDecimal price = number(first(item, Map.of(), "委外单价", "单价"));
+                BigDecimal amount = number(item.get("金额"));
+                if (amount.signum() == 0) amount = qty.multiply(price);
+                out.add(row("单据编号", documentNo(doc), "单据状态", doc.entity().getStatus(),
+                        "单据日期", value(doc, "单据日期"), "委外供应商", value(doc, "委外供应商"),
+                        "生产车间", value(doc, "生产车间"), "经手人", value(doc, "经手人"),
+                        "交货日期", first(item, doc.head(), "交货日期", "预完工日"),
+                        "产品编码", item.get("产品编码"), "产品名称", item.get("产品名称"),
+                        "规格型号", item.get("规格型号"), "计量单位", first(item, Map.of(), "计量单位", "生产单位"),
+                        "数量", qty, "委外单价", price, "金额", amount,
+                        "预完工日", value(doc, "预完工日"), "制单人", firstText(doc.head(), "制单人", "发起人编号"),
+                        "审核人", firstText(doc.head(), "审核人")));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> outsourceOrderMaterialDetail() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("OUTSOURCE_ORDER")) {
+            for (Map<String, Object> item : detailRows(doc, "materials")) {
+                out.add(row("单据编号", documentNo(doc), "单据状态", doc.entity().getStatus(),
+                        "单据日期", value(doc, "单据日期"), "委外供应商", value(doc, "委外供应商"),
+                        "材料编码", item.get("材料编码"), "材料名称", item.get("材料名称"),
+                        "规格型号", item.get("规格型号"), "计量单位", first(item, Map.of(), "计量单位", "生产单位"),
+                        "计划数量", number(first(item, Map.of(), "计划数量", "需用数量")),
+                        "预出仓库", first(item, Map.of(), "预出仓库", "仓库"),
+                        "现存量", number(item.get("现存量")), "可用量", number(item.get("可用量"))));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> outsourceFeeDetail() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("OUTSOURCE_FEE")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                out.add(row("单据编号", documentNo(doc), "单据日期", value(doc, "单据日期"),
+                        "单据状态", doc.entity().getStatus(), "委外供应商", value(doc, "委外供应商"),
+                        "委外加工单号", value(doc, "委外加工单号"), "费用项目", item.get("费用项目"),
+                        "产品名称", item.get("产品名称"), "计量单位", item.get("计量单位"),
+                        "数量", number(item.get("数量")), "委外单价", number(item.get("委外单价")),
+                        "费用金额", number(first(item, Map.of(), "费用金额", "金额")),
+                        "费用合计", number(doc.head().get("费用合计")),
+                        "经手人", value(doc, "经手人"), "备注", item.get("备注")));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> outsourceOrderExecution() {
+        Map<String, BigDecimal> received = new HashMap<>();
+        Map<String, BigDecimal> issued = new HashMap<>();
+        for (Doc doc : docs("OUTSOURCE_IN")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String orderNo = firstText(doc.head(), "委外加工单号");
+                String key = join(orderNo, item.get("产品编码"), item.get("产品名称"));
+                received.merge(key, number(item.get("实收数量")), BigDecimal::add);
+            }
+        }
+        for (Doc doc : docs("OUTSOURCE_ISSUE")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String orderNo = firstText(doc.head(), "委外加工单号");
+                String key = join(orderNo, item.get("材料编码"), item.get("材料名称"));
+                issued.merge(key, number(item.get("数量")), BigDecimal::add);
+            }
+        }
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("OUTSOURCE_ORDER")) {
+            for (Map<String, Object> item : detailRows(doc, "products")) {
+                String key = join(documentNo(doc), item.get("产品编码"), item.get("产品名称"));
+                BigDecimal ordered = number(item.get("数量"));
+                BigDecimal receivedQty = received.getOrDefault(key, BigDecimal.ZERO);
+                BigDecimal issueQty = issued.getOrDefault(join(documentNo(doc), item.get("产品编码"), item.get("产品名称")), BigDecimal.ZERO);
+                out.add(row("单据编号", documentNo(doc), "单据日期", value(doc, "单据日期"),
+                        "委外供应商", value(doc, "委外供应商"), "产品编码", item.get("产品编码"),
+                        "产品名称", item.get("产品名称"), "规格型号", item.get("规格型号"),
+                        "订单数量", ordered, "已入库数量", receivedQty,
+                        "入库执行率%", percent(receivedQty, ordered),
+                        "已发料数量", issueQty, "未入库数量", ordered.subtract(receivedQty),
+                        "交货日期", first(item, doc.head(), "交货日期", "预完工日"),
+                        "单据状态", doc.entity().getStatus()));
+            }
+        }
+        return out;
+    }
+
+    private List<Map<String, Object>> outsourceIssueBalance() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("OUTSOURCE_ISSUE")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                BigDecimal issued = number(item.get("数量"));
+                out.add(row("单据编号", documentNo(doc), "单据日期", value(doc, "单据日期"),
+                        "委外供应商", value(doc, "委外供应商"), "委外加工单号", value(doc, "委外加工单号"),
+                        "材料编码", item.get("材料编码"), "材料名称", item.get("材料名称"),
+                        "规格型号", item.get("规格型号"), "计量单位", item.get("计量单位"),
+                        "发料数量", issued, "耗用数量", BigDecimal.ZERO, "结存数量", issued));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> outsourceOrderProductStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : outsourceOrderProductDetail()) {
+            String key = join(source.get("委外供应商"), source.get("产品编码"), source.get("产品名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "委外供应商", source.get("委外供应商"), "产品编码", source.get("产品编码"),
+                    "产品名称", source.get("产品名称"), "规格型号", source.get("规格型号"),
+                    "计量单位", source.get("计量单位"), "加工单数", BigDecimal.ZERO,
+                    "订单数量", BigDecimal.ZERO, "已入库数量", BigDecimal.ZERO,
+                    "未入库数量", BigDecimal.ZERO, "委外金额", BigDecimal.ZERO));
+            add(target, "加工单数", BigDecimal.ONE);
+            add(target, "订单数量", source.get("数量"));
+            add(target, "金额", source.get("金额"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("委外金额", target.get("金额"));
+            target.put("未入库数量", number(target.get("订单数量")).subtract(number(target.get("已入库数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> outsourceOrderMaterialStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : outsourceOrderMaterialDetail()) {
+            String key = join(source.get("委外供应商"), source.get("材料编码"), source.get("材料名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "委外供应商", source.get("委外供应商"), "材料编码", source.get("材料编码"),
+                    "材料名称", source.get("材料名称"), "规格型号", source.get("规格型号"),
+                    "计量单位", source.get("计量单位"), "加工单数", BigDecimal.ZERO,
+                    "计划数量", BigDecimal.ZERO, "已发料数量", BigDecimal.ZERO,
+                    "未发料数量", BigDecimal.ZERO));
+            add(target, "加工单数", BigDecimal.ONE);
+            add(target, "计划数量", source.get("计划数量"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("未发料数量", number(target.get("计划数量")).subtract(number(target.get("已发料数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> outsourceFeeStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : outsourceFeeDetail()) {
+            String key = join(source.get("委外供应商"), source.get("费用项目"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "委外供应商", source.get("委外供应商"), "费用项目", source.get("费用项目"),
+                    "单据数", BigDecimal.ZERO, "数量", BigDecimal.ZERO,
+                    "委外单价", BigDecimal.ZERO, "费用金额", BigDecimal.ZERO,
+                    "费用合计", BigDecimal.ZERO));
+            add(target, "单据数", BigDecimal.ONE);
+            add(target, "数量", source.get("数量"));
+            add(target, "费用金额", source.get("费用金额"));
+            add(target, "费用合计", source.get("费用合计"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("委外单价", divide(number(target.get("费用金额")), number(target.get("数量"))));
+        }
+        return new ArrayList<>(groups.values());
     }
 
     // ---------- cross-report indexes ----------

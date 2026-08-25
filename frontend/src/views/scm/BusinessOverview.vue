@@ -162,6 +162,47 @@ const modules = [
     ],
   },
   {
+    code: 'outsource', name: '委外管理', icon: 'Van',
+    nodes: [
+      { code: 'SO_ORDER', label: '销售订单' },
+      { code: 'OUTSOURCE_ORDER', label: '委外加工单' },
+      { code: 'OUTSOURCE_ISSUE', label: '委外发料单' },
+      { code: 'OUTSOURCE_IN', label: '委外入库单' },
+      { code: 'OUTSOURCE_FEE', label: '委外加工费用单' },
+    ],
+    edges: [
+      { from: 'SO_ORDER', to: 'OUTSOURCE_ORDER' },
+      { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_ISSUE' },
+      { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_IN' },
+      { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_FEE' },
+    ],
+    pos: {
+      SO_ORDER: [40, 170], OUTSOURCE_ORDER: [290, 170],
+      OUTSOURCE_ISSUE: [540, 60], OUTSOURCE_IN: [540, 170], OUTSOURCE_FEE: [540, 280],
+    },
+    docs: [
+      { code: 'OUTSOURCE_ORDER', label: '委外加工单' }, { code: 'OUTSOURCE_ISSUE', label: '委外发料单' },
+      { code: 'OUTSOURCE_IN', label: '委外入库单' }, { code: 'OUTSOURCE_FEE', label: '委外加工费用单' },
+      { code: 'SO_ORDER', label: '销售订单' }, { code: 'PU_REQ', label: '请购单' }, { code: 'PU_ORDER', label: '采购订单' },
+    ],
+    archives: [
+      { code: 'INV', label: '存货' }, { code: 'UOM', label: '计量单位' }, { code: 'PARTNER', label: '往来单位' },
+      { code: 'DEPT', label: '部门' }, { code: 'EMP', label: '员工' }, { code: 'WH', label: '仓库' },
+      { code: 'PROJ', label: '项目' }, { code: 'TEAM', label: '班组' }, { code: 'OP', label: '工序' },
+      { code: 'ROUTE', label: '工艺路线' },
+    ],
+    reports: [
+      { code: 'OUTSOURCE_ISSUE_BALANCE', label: '委外发料耗用结存表' },
+      { code: 'OUTSOURCE_ORDER_EXEC', label: '委外加工单执行表' },
+      { code: 'OUTSOURCE_ORDER_PRODUCT_DETAIL', label: '委外加工单产成品明细表' },
+      { code: 'OUTSOURCE_ORDER_MATERIAL_DETAIL', label: '委外加工单材料明细表' },
+      { code: 'OUTSOURCE_FEE_DETAIL', label: '委外加工费用单明细表' },
+      { code: 'OUTSOURCE_ORDER_PRODUCT_STATS', label: '委外加工单产成品统计表' },
+      { code: 'OUTSOURCE_ORDER_MATERIAL_STATS', label: '委外加工单材料统计表' },
+      { code: 'OUTSOURCE_FEE_STATS', label: '委外加工费用单统计表' },
+    ],
+  },
+  {
     code: 'sales', name: '销售管理', icon: 'ShoppingCart',
     nodes: [
       { code: 'SO_ORDER', label: '销售订单' },
