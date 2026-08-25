@@ -1,6 +1,8 @@
-fix: 服务器 BOM 数据按 CL 存货体系重建 + init.sql 种子对齐（本地 YL 体系迁移保持）
+fix: 存货回归单单据面板 + 物料清单多单据化（新增可用）+ 计量单位下拉动态并入 UOM
 
-- 服务器实际存货为 CL 体系（CP001-005 + CL001-005 共 10 物品，旧单单据遗留）——按服务器真实存货重建 BOM children 12 行（CL002 6061铝锭/CL003 6063铝棒/CL004 切削液/CL005 包装木箱/CL001 45#圆钢），INV 恢复 4 张类别单据（10 物品，无 _bom 键），残留 _bom 键彻底清除
-- init.sql BOM children 改回 CL 体系（与 init.sql 自身 INV/MO 种子一致，原误写本地 YL 体系已修正）
-- 开发规范 §3.3 记录三套存货编码体系差异（本地 YL/服务器 CL/init.sql CL），部署 SQL 前须核对目标库存货体系
-- 验证（服务器 API）：BOM 12 行、INV 4 单据 10 物品、BOM_FWD CP004=CL001/CL004/CL005、SO(CP001)→MO 材料=CL002+CL004
+- INV：panel_config 加 singleDoc（items 行带所属类别字段/列），数据合并为 1 张单单据（本地 17 物品 / 服务器 CL 体系 10 物品），存货回归纯档案管理
+- BOM：去 singleDoc 改多单据（可新增多张物料清单），generateFormNo 加 BOM- 前缀；children 按物料清单编码拆分（本地 9 张 BOM-001~009 / 服务器 6 张）；列表页「新增」创建 BOM-2026-08-2501 草稿可填写保存（原单单据下新增被拦截"没反应"）
+- 计量单位：PxService.injectUnitOptions 运行时把 UOM 面板计量单位并入所有「单位」下拉 options（30s 缓存，UOM 保存即时清缓存）——UOM 新增单位后其他面板下拉自动显示完整（如吨）
+- init.sql 同步：INV 配置 singleDoc/所属类别、INV 数据 1 行单单据（CL 体系）、BOM 配置去 singleDoc、BOM 数据 6 张单
+- 迁移 SQL：run/migrate2-local.sql（本地）、run/migrate2-server.sql（服务器，已执行）
+- 验证：BOM 新增成功（BOM-2026-08-2501）、INV 单单据 17 物品+所属类别、MANU 计量单位 options 含吨

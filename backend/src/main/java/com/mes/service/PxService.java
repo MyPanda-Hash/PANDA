@@ -62,6 +62,8 @@ public class PxService {
         normalizeFieldDefinitions(config);
         ensureSelectAction(config);
         ensureSelectDetailCodeMap(config);
+        // 2026-08-25：计量单位类下拉框动态并入 UOM 面板数据（UOM 新增单位后所有面板下拉自动显示完整）
+        injectUnitOptions(config);
         if ("MANU_ORDER".equals(panelCode)) {
             upgradeDetailReference(config, "products", "产品编码",
                     List.of("存货编码", "存货名称", "规格型号", "所属类别", "品牌", "计量单位", "属性", "停用"),
@@ -198,10 +200,85 @@ public class PxService {
         }
     }
 
+    /** 单位下拉缓存（30s TTL）：UOM 面板数据 → 所有「单位」下拉 options 动态并入 */
+    private static volatile long unitOptionsCacheAt = 0;
+    private static volatile List<String> unitOptionsCache = null;
+
+    /**
+     * 2026-08-25：计量单位类下拉框动态并入 UOM 面板数据（UOM 新增单位后所有面板下拉自动显示完整，
+     * 如 UOM 有「吨」而静态 options 只有 件/kg/套/升/台——修复新增单位下拉不显示）。
+     */
+    @SuppressWarnings("unchecked")
+    private void injectUnitOptions(Map<String, Object> config) {
+        List<String> units = unitNames();
+        if (units.isEmpty()) return;
+        List<Map<String, Object>> fields = new ArrayList<>();
+        Object schemaObj = config.get("dataSchema");
+        if (schemaObj instanceof Map<?, ?> schema) {
+            Object f = schema.get("fields");
+            if (f instanceof List<?>) fields.addAll((List<Map<String, Object>>) f);
+        }
+        Object detailObj = config.get("detail");
+        if (detailObj instanceof Map<?, ?> detail) {
+            Object tabs = detail.get("tabs");
+            if (tabs instanceof List<?> tabList) {
+                for (Object t : tabList) {
+                    if (t instanceof Map<?, ?> tab) {
+                        Object f = tab.get("fields");
+                        if (f instanceof List<?>) fields.addAll((List<Map<String, Object>>) f);
+                    }
+                }
+            }
+        }
+        for (Map<String, Object> field : fields) {
+            if (!"下拉框".equals(field.get("dataType"))) continue;
+            String dn = String.valueOf(field.getOrDefault("dataName", ""));
+            if (!dn.contains("单位")) continue;
+            List<String> opts = new ArrayList<>();
+            Object o = field.get("options");
+            if (o instanceof List<?>) {
+                for (Object v : (List<?>) o) if (v != null) opts.add(String.valueOf(v));
+            }
+            boolean changed = false;
+            for (String u : units) {
+                if (!opts.contains(u)) {
+                    opts.add(u);
+                    changed = true;
+                }
+            }
+            if (changed) field.put("options", opts);
+        }
+    }
+
+    private List<String> unitNames() {
+        long now = System.currentTimeMillis();
+        if (unitOptionsCache != null && now - unitOptionsCacheAt < 30000) return unitOptionsCache;
+        List<String> names = new ArrayList<>();
+        try {
+            List<FormData> rows = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                    .eq(FormData::getPanelCode, "UOM"));
+            for (FormData fd : rows) {
+                Map<String, Object> detail = parseData(fd.getDetailData());
+                Object uoms = detail.get("uoms");
+                if (uoms instanceof List) {
+                    for (Object o : (List<?>) uoms) {
+                        if (o instanceof Map<?, ?> u && u.get("计量单位名称") != null) {
+                            String n = String.valueOf(u.get("计量单位名称"));
+                            if (!n.isBlank() && !names.contains(n)) names.add(n);
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignore) {
+        }
+        unitOptionsCache = names;
+        unitOptionsCacheAt = now;
+        return names;
+    }
+
     /** 旧配置存在 selectConfig 但遗漏工具栏动作时，补齐可用的选单入口。 */
     @SuppressWarnings("unchecked")
-    private void ensureSelectAction(Map<String, Object> config) {
-        Object selectObject = config.get("selectConfig");
+    private void ensureSelectAction(Map<String, Object> config) {        Object selectObject = config.get("selectConfig");
         if (!(selectObject instanceof Map<?, ?> selectConfig) || selectConfig.isEmpty()) return;
         Object metadataObject = config.get("metadata");
         if (!(metadataObject instanceof Map<?, ?>)) return;
@@ -807,6 +884,7 @@ public class PxService {
             case "保存新增":
             case "保存为草稿":
             case "提交":
+                if ("UOM".equals(panelCode)) unitOptionsCache = null; // 计量单位变更后即时刷新单位下拉缓存
                 return save(panelCode, formData, null);
             case "删除": {
                 Object no = formData.get("编号");
@@ -2371,6 +2449,7 @@ public class PxService {
         else if ("STOCK_CHECK".equals(panelCode)) biz = "PD-";    // 库存盘点单（T+ 盘点惯例 PD）
         else if ("LOCATION_ADJUST".equals(panelCode)) biz = "HW-"; // 货位调整单（T+ 货位惯例 HW）
         else if ("SERIAL_NO".equals(panelCode)) biz = "XL-";     // 序列号登记（T+ 序列号惯例 XL）
+        else if ("BOM".equals(panelCode)) biz = "BOM-";          // 物料清单（2026-08-25 多单据化：可新增多张 BOM）
         else if ("INV".equals(panelCode)) biz = "INV-"; // 存货类别单据
         else biz = "MO-";
         String base = biz + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
