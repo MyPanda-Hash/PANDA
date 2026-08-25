@@ -865,19 +865,23 @@ async function loadBomFor(code) {
   if (!code || bomLoaded.has(code)) return
   bomLoaded.add(code)
   try {
-    // 新结构：存货按类别分组（一类一单据，物品为明细行），BOM 存物品行 _bom
-    const res = await engine.queryFormDataList({ panelCode: 'INV', condition: {}, pageNo: 1, pageSize: 100 })
-    const docs = res.list || []
-    let item = null
-    for (const d of docs) {
-      const it = ((d.detail && d.detail.items) || []).find((r) => r['存货编码'] === code)
-      if (it) { item = it; break }
+    // BOM 数据源：BOM 面板 children（父件编码 → 子件行）；INV 物品行 _bom 为空数组时无数据
+    const res = await engine.queryFormDataList({ panelCode: 'BOM', condition: {}, pageNo: 1, pageSize: 100 })
+    const bom = []
+    for (const d of res.list || []) {
+      for (const it of (d.detail && d.detail.children) || []) {
+        if (String(it['父件编码']) !== code) continue
+        bom.push({
+          材料编码: it['子件编码'],
+          材料名称: it['子件名称'],
+          规格型号: it['规格型号'] || '',
+          计量单位: it['子件计量单位'] || '件',
+          定额需用数量: it['定额数量'] ?? 0,
+          '损耗率%': it['损耗率%'] ?? 0,
+        })
+      }
     }
-    let bom = []
-    if (item && item['_bom']) {
-      try { bom = typeof item['_bom'] === 'string' ? JSON.parse(item['_bom']) : item['_bom'] } catch (e) { bom = [] }
-    }
-    if (!Array.isArray(bom) || !bom.length) return
+    if (!bom.length) return
     const mats = detailData['materials'] || (detailData['materials'] = [])
     for (const b of bom) mats.push(bomRowFrom(b, code))
     ElMessage.success('已按 BOM 带入 ' + bom.length + ' 行材料（' + code + '）')

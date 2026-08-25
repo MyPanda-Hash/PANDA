@@ -88,6 +88,13 @@ public class PxService {
                             Map.of("from", "数量", "to", "数量"),
                             Map.of("from", "报价单价", "to", "单价")));
         }
+        // 存货类参照字段 refMap 互带（编码↔名称 + 规格/单位带出），修复参照选择后字段缺失（2026-08-25）
+        upgradeInvPairRef(config, "products", "产品编码", "产品名称", "规格型号", "计量单位");
+        upgradeInvPairRef(config, "materials", "材料编码", "材料名称", "规格型号", "计量单位");
+        upgradeInvPairRef(config, "items", "存货编码", "存货名称", "规格型号", "计量单位");
+        upgradeInvPairRef(config, "items", "材料编码", "材料名称", "规格型号", "计量单位");
+        upgradeInvPairRef(config, "items", "产品编码", "产品名称", "规格型号", "计量单位");
+        upgradeInvPairRef(config, null, "存货编码", "存货", "规格型号", "计量单位");
     }
 
     /** 为既有面板注入拉式选单 selectConfig（运行时升级，缺才注入；同时补齐「选单」工具栏动作） */
@@ -107,6 +114,52 @@ public class PxService {
         sc.put("detailMap", detailMap);
         config.put("selectConfig", sc);
         ensureSelectAction(config);
+    }
+
+    /**
+     * 为存货类参照字段注入 refMap 互带（编码↔名称 + 规格/单位带出）。
+     * 修复：参照选择只写 displayField（如只有材料名称没材料编码，或反之）——2026-08-25。
+     * tabKey 为 null 时作用于表头 dataSchema.fields（如序列号登记单的 存货/存货编码）。
+     */
+    @SuppressWarnings("unchecked")
+    private void upgradeInvPairRef(Map<String, Object> config, String tabKey,
+                                   String codeField, String nameField, String specField, String unitField) {
+        List<Map<String, Object>> fields = new ArrayList<>();
+        if (tabKey != null) {
+            Object detailObj = config.get("detail");
+            if (detailObj instanceof Map<?, ?> detail) {
+                Object tabsObj = detail.get("tabs");
+                if (tabsObj instanceof List<?> tabs) {
+                    for (Object t : tabs) {
+                        if (t instanceof Map<?, ?> tab && tabKey.equals(tab.get("key"))) {
+                            Object f = tab.get("fields");
+                            if (f instanceof List<?>) fields.addAll((List<Map<String, Object>>) f);
+                        }
+                    }
+                }
+            }
+        } else {
+            Object schemaObj = config.get("dataSchema");
+            if (schemaObj instanceof Map<?, ?> schema) {
+                Object f = schema.get("fields");
+                if (f instanceof List<?>) fields.addAll((List<Map<String, Object>>) f);
+            }
+        }
+        for (Map<String, Object> field : fields) {
+            if (!"参照".equals(field.get("dataType")) || field.containsKey("refMap")) continue;
+            String dn = String.valueOf(field.get("dataName"));
+            if (codeField.equals(dn)) {
+                field.put("refMap", List.of(
+                        Map.of("from", "存货名称", "to", nameField),
+                        Map.of("from", "规格型号", "to", specField),
+                        Map.of("from", "计量单位", "to", unitField)));
+            } else if (nameField.equals(dn)) {
+                field.put("refMap", List.of(
+                        Map.of("from", "存货编码", "to", codeField),
+                        Map.of("from", "规格型号", "to", specField),
+                        Map.of("from", "计量单位", "to", unitField)));
+            }
+        }
     }
 
     /** 旧配置存在 selectConfig 但遗漏工具栏动作时，补齐可用的选单入口。 */
