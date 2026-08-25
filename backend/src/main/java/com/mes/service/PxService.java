@@ -61,6 +61,7 @@ public class PxService {
     private void applyRuntimeConfigUpgrades(String panelCode, Map<String, Object> config) {
         normalizeFieldDefinitions(config);
         ensureSelectAction(config);
+        ensureSelectDetailCodeMap(config);
         if ("MANU_ORDER".equals(panelCode)) {
             upgradeDetailReference(config, "products", "产品编码",
                     List.of("存货编码", "存货名称", "规格型号", "所属类别", "品牌", "计量单位", "属性", "停用"),
@@ -114,6 +115,41 @@ public class PxService {
         sc.put("detailMap", detailMap);
         config.put("selectConfig", sc);
         ensureSelectAction(config);
+        ensureSelectDetailCodeMap(config);
+    }
+
+    /**
+     * 选单明细映射编码补全（2026-08-25）：detailMap 存在「X名称→Y名称」时补齐「X编码→Y编码」与规格型号，
+     * 修复选单生成的产品/材料明细缺少编码（如委外加工单选销售订单后产品编码为空 → BOM 无法展开）。
+     */
+    @SuppressWarnings("unchecked")
+    private void ensureSelectDetailCodeMap(Map<String, Object> config) {
+        Object scObj = config.get("selectConfig");
+        if (!(scObj instanceof Map)) return;
+        Map<String, Object> sc = (Map<String, Object>) scObj;
+        Object dmObj = sc.get("detailMap");
+        if (!(dmObj instanceof List<?> raw)) return;
+        List<Map<String, Object>> dm = new ArrayList<>();
+        for (Object o : raw) if (o instanceof Map<?, ?>) dm.add(new HashMap<>((Map<String, Object>) o));
+        Set<String> tos = new HashSet<>();
+        for (Map<String, Object> m : dm) tos.add(String.valueOf(m.get("to")));
+        List<Map<String, Object>> adds = new ArrayList<>();
+        for (Map<String, Object> m : dm) {
+            String from = String.valueOf(m.getOrDefault("from", ""));
+            String to = String.valueOf(m.getOrDefault("to", ""));
+            if (from.endsWith("名称") && to.endsWith("名称")) {
+                String fromCode = from.substring(0, from.length() - 2) + "编码";
+                String toCode = to.substring(0, to.length() - 2) + "编码";
+                if (!tos.contains(toCode)) adds.add(Map.<String, Object>of("from", fromCode, "to", toCode));
+            }
+        }
+        if (tos.stream().anyMatch(t -> t.endsWith("名称")) && !tos.contains("规格型号")) {
+            adds.add(Map.<String, Object>of("from", "规格型号", "to", "规格型号"));
+        }
+        if (!adds.isEmpty()) {
+            dm.addAll(adds);
+            sc.put("detailMap", dm);
+        }
     }
 
     /**
