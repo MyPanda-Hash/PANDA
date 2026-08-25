@@ -448,7 +448,15 @@ function confirmSelect() {
     return out
   })
   if (rows.length && detailDef.value?.tabs?.[0]) {
-    detailData[detailDef.value.tabs[0].key] = rows
+    const targetTab = detailDef.value.tabs[0]
+    detailData[targetTab.key] = rows
+    // BOM 展开：目标单含 materials 明细且带入的是产成品明细 → 逐产品带出 BOM 材料（对齐 T+ 选单/生单联动）
+    if (targetTab.key === 'products' && detailDef.value.tabs.some((t) => t.key === 'materials')) {
+      for (const r of rows) {
+        const code = r['产品编码'] || r['存货编码'] || ''
+        if (code) loadBomFor(code)
+      }
+    }
   }
   selectVisible.value = false
   ElMessage.success('已带入 ' + rows.length + ' 行明细')
@@ -861,6 +869,19 @@ function bomRowFrom(b, code) {
   return row
 }
 
+/** BOM 自动展开：面板含 products+materials 明细、产品明细有行而材料明细为空时，按产品 BOM 带出材料 */
+async function autoExpandBom() {
+  const tabsDef = tabs.value || []
+  if (!tabsDef.some((t) => t.key === 'products') || !tabsDef.some((t) => t.key === 'materials')) return
+  const products = detailData['products'] || []
+  const mats = detailData['materials'] || []
+  if (!products.length || mats.length) return
+  for (const p of products) {
+    const code = p['产品编码'] || p['存货编码'] || ''
+    if (code) await loadBomFor(code)
+  }
+}
+
 async function loadBomFor(code) {
   if (!code || bomLoaded.has(code)) return
   bomLoaded.add(code)
@@ -971,6 +992,9 @@ async function load() {
     // 产成品→材料联动：默认不选中（点击产成品明细行才过滤材料明细），加载后重置
     selectedProduct.value = null
     selectedBomCodes.value = []
+    // BOM 自动展开：草稿单已有产品明细但材料明细为空时，按产品 BOM 带出材料
+    // （覆盖列表页选单生成、推式生单、历史草稿等所有入口；材料非空不重复展开）
+    autoExpandBom()
     // 页签标题 = 面板名-单据号（新单显示 面板名-新增），便于多单据区分（弹窗嵌入模式跳过）
     if (!props.embedded) {
       const no = isEdit.value ? (form['单据编号'] || form['锭号'] || form['编号'] || '') : '新增'

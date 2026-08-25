@@ -1212,6 +1212,50 @@ async function saveInlineDraft(buttonName = '保存') {
   }
 }
 
+/** BOM 展开：产品明细行带出材料明细（从 BOM 面板 children 按父件编码取子件，对齐表单页 loadBomFor） */
+async function expandBomMaterials(detail, productRows) {
+  const matTab = (cfgCache.value?.detail?.tabs || []).find((t) => t.key === 'materials')
+  if (!matTab) return
+  try {
+    const res = await engine.queryFormDataList({ panelCode: 'BOM', condition: {}, pageNo: 1, pageSize: 100 })
+    const bom = []
+    for (const d of res.list || []) {
+      for (const it of (d.detail && d.detail.children) || []) {
+        const parent = String(it['父件编码'] || '')
+        if (!parent || !productRows.some((r) => String(r['产品编码'] || '') === parent)) continue
+        bom.push({
+          材料编码: it['子件编码'],
+          材料名称: it['子件名称'],
+          规格型号: it['规格型号'] || '',
+          计量单位: it['子件计量单位'] || '件',
+          定额需用数量: it['定额数量'] ?? 0,
+          '损耗率%': it['损耗率%'] ?? 0,
+          parent,
+        })
+      }
+    }
+    if (!bom.length) return
+    const mats = detail.materials || (detail.materials = [])
+    const existing = new Set(mats.map((m) => m['材料编码'] + ':' + m['子件BOM']))
+    for (const b of bom) {
+      const key = b['材料编码'] + ':' + b.parent
+      if (existing.has(key)) continue
+      const row = newDetailRow('materials')
+      row['材料编码'] = b['材料编码']
+      row['材料名称'] = b['材料名称']
+      row['规格型号'] = b['规格型号']
+      row['计量单位'] = b['计量单位']
+      row['定额需用数量'] = b['定额需用数量']
+      row['损耗率%'] = b['损耗率%']
+      row['子件BOM'] = b.parent
+      mats.push(row)
+      existing.add(key)
+    }
+  } catch (e) {
+    // BOM 查询失败不阻塞参照导入
+  }
+}
+
 async function onDetailRefConfirm(selectedRows) {
   const pick = detailRefPick.value
   if (!pick || !selectedRows?.length || detailRefSaving.value) return
@@ -1239,6 +1283,11 @@ async function onDetailRefConfirm(selectedRows) {
     applyDetailReference(row, pick.field, selectedRows[index])
     calculateDetailRow(pick.tabKey, row)
     targetRows.push(row)
+  }
+
+  // BOM 展开：产品明细选产品 → 从 BOM 面板 children 带出材料明细（与表单页 loadBomFor 一致）
+  if (pick.tabKey === 'products' && pick.field.dataName === '产品编码') {
+    await expandBomMaterials(detail, targetRows)
   }
 
   detailRefSaving.value = true
