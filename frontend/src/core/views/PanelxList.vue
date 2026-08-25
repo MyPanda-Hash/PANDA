@@ -1755,6 +1755,13 @@ async function load() {
     list.value = res.list || []
     total.value = res.totalSize || 0
     if (curIdx.value >= list.value.length) curIdx.value = 0
+    // 2026-08-25：?focus=单号 定位（选单/生单从表单页跳转过来时直接显示目标单据）
+    const focus = route.query.focus
+    if (focus) {
+      const fi = list.value.findIndex((r) => (r['编号'] || r['单据编号'] || r['锭号']) === String(focus))
+      if (fi >= 0) curIdx.value = fi
+      router.replace({ path: route.path, query: { ...route.query, focus: undefined } })
+    }
   } catch (e) {
     const msg = engine.errMsg(e) || '加载失败'
     if (msg.includes('未登录')) loginVisible.value = true
@@ -1782,13 +1789,14 @@ function onNewSaved() {
 
 function onSelGenerated(generated) {
   const first = generated && generated[0]
-  if (first) {
-    // 2026-08-20：选单生成的新单用面板弹窗显示（不再跳新页签）
-    formPanel.value = first.panel
-    formCode.value = first.no
-    formVisible.value = true
+  const finish = () => {
+    if (first) {
+      // 2026-08-25：选单生成后不再弹窗，直接定位到列表页新选入单据（一屏一单流览）
+      const idx = list.value.findIndex((r) => (r['编号'] || r['单据编号'] || r['锭号']) === first.no)
+      curIdx.value = idx >= 0 ? idx : 0
+    }
   }
-  load()
+  load().then(finish)
 }
 
 // Excel 导入完成：单据面板追加到当前单明细并保存；档案面板（无明细 tab）逐行新建档案

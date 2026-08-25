@@ -1,1 +1,6 @@
-fix: 计量单位注入匹配收窄为 endsWith("单位")——「单位类型」下拉不再混入计量单位名称（仅 单计量/多计量）
+feat: 选单生成后去掉弹窗——直接到列表页定位新选入单据
+
+- PanelxList onSelGenerated：选单生成后不再弹 VoucherFormDialog 面板弹窗，load() 后按新单编号定位（一屏一单流览直接显示）
+- PanelxForm onSelGenerated：选单生成后不再弹 genVisible 弹窗，跳转目标面板列表页 ?focus=单号 定位；移除 genVisible/VoucherFormDialog 引用
+- PanelxList load() 支持 ?focus= 单号定位（定位后清理 query）
+- 验证：列表页选单→无弹窗定位新 MO；表单页选单→跳列表页 focus 定位新 MO

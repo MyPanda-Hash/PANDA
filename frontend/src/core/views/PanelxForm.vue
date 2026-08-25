@@ -281,7 +281,6 @@
     <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
     <ImportDialog v-model="impVisible" :fields="impFields" :target-label="impLabel" @imported="onImported" />
     <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
-    <VoucherFormDialog v-model="genVisible" :panel-code="genPanel" :code="genNo" @saved="onGenSaved" />
   </div>
 </template>
 
@@ -307,7 +306,6 @@ import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
 import ImportDialog from './ImportDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
-import VoucherFormDialog from './VoucherFormDialog.vue'
 const { SHORTCUTS } = engine
 
 const loginVisible = ref(false)
@@ -1203,20 +1201,13 @@ function onImported(rows) {
   ElMessage.success('已导入 ' + rows.length + ' 行到「' + (tab.label || tab.key) + '」，请点击保存落库')
 }
 
-// 新选单弹窗生单完成：用面板弹窗显示第一张生成的单据（2026-08-20 不再跳新页签）
-const genVisible = ref(false)
-const genPanel = ref('')
-const genNo = ref('')
+// 新选单弹窗生单完成：2026-08-25 不再弹窗展示，直接跳目标面板列表页并定位新选入单据
 function onSelGenerated(generated) {
   const first = generated && generated[0]
-  if (first) {
-    genPanel.value = first.panel
-    genNo.value = first.no
-    genVisible.value = true
-  }
-}
-function onGenSaved() {
-  genVisible.value = false
+  if (!first) return
+  const path = '/panelx/list/' + first.panel
+  router.push({ path, query: { focus: first.no } })
+  tabsStore.open({ path, title: first.panel, query: { focus: first.no } })
 }
 
 onMounted(() => {
