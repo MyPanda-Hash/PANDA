@@ -17,6 +17,18 @@ export const menuTree = [
         icon: 'Connection',
       },
       {
+        code: 'mobileWarehouse',
+        title: '移动仓管',
+        path: '/scm/mobileWarehouse',
+        icon: 'Iphone',
+      },
+      {
+        code: 'serialNumber',
+        title: '序列号管理',
+        path: '/scm/serialNumber',
+        icon: 'Sort',
+      },
+      {
         code: 'sales',
         title: '销售管理',
         icon: 'ShoppingCart',
@@ -115,6 +127,8 @@ export const menuTree = [
               { code: 'otherOut', title: '其他出库单', path: '/panelx/list/OTHER_OUT', icon: 'Upload', panelCode: 'OTHER_OUT', operationName: '新增流程' },
               { code: 'materialReq', title: '领料申请单', path: '/panelx/list/MATERIAL_REQ', icon: 'Upload', panelCode: 'MATERIAL_REQ', operationName: '新增流程' },
               { code: 'transfer', title: '调拨单', path: '/panelx/list/TRANSFER', icon: 'RefreshRight', panelCode: 'TRANSFER', operationName: '新增流程' },
+              { code: 'stockCheck', title: '库存盘点单', path: '/panelx/list/STOCK_CHECK', icon: 'List', panelCode: 'STOCK_CHECK', operationName: '新增流程' },
+              { code: 'locationAdjust', title: '货位调整单', path: '/panelx/list/LOCATION_ADJUST', icon: 'Position', panelCode: 'LOCATION_ADJUST', operationName: '新增流程' },
             ],
           },
           {
@@ -147,6 +161,13 @@ export const menuTree = [
               { code: 'stockStatus', title: '库存状况表', path: '/panelx/list/STOCK_STATUS', panelCode: 'STOCK_STATUS', icon: 'DataAnalysis' },
               { code: 'stockSummary', title: '收发存汇总表', path: '/panelx/list/STOCK_SUMMARY', panelCode: 'STOCK_SUMMARY', icon: 'DataAnalysis' },
               { code: 'stockLedger', title: '库存台账', path: '/panelx/list/STOCK_LEDGER', panelCode: 'STOCK_LEDGER', icon: 'Notebook' },
+            ],
+          },
+          {
+            code: 'serial', title: '序列号', children: [
+              { code: 'serialNo', title: '序列号登记单', path: '/panelx/list/SERIAL_NO', panelCode: 'SERIAL_NO', operationName: '新增流程', icon: 'Tickets' },
+              { code: 'serialStatus', title: '序列号状况表', path: '/panelx/list/SERIAL_STATUS', panelCode: 'SERIAL_STATUS', icon: 'DataAnalysis' },
+              { code: 'serialTrace', title: '序列号跟踪表', path: '/panelx/list/SERIAL_TRACE', panelCode: 'SERIAL_TRACE', icon: 'Search' },
             ],
           },
         ],

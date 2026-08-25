@@ -425,6 +425,10 @@ public class PxService {
         if ("PU_REQ_ANALYSIS".equals(panelCode)) {
             return queryPurchaseReqAnalysis(keyword, condition);
         }
+        // 序列号状况表（SERIAL_STATUS）/序列号跟踪表（SERIAL_TRACE）：从 SERIAL_NO 面板明细展平查询
+        if ("SERIAL_STATUS".equals(panelCode) || "SERIAL_TRACE".equals(panelCode)) {
+            return querySerialFlatten(panelCode, keyword, condition);
+        }
         LambdaQueryWrapper<FormData> qw = new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, panelCode)
                 .orderByDesc(FormData::getCreateTime)
@@ -611,6 +615,64 @@ public class PxService {
         Map<String, Object> out = new HashMap<>();
         out.put("totalSize", hit.size());
         out.put("list", hit);
+        return out;
+    }
+
+    /**
+     * 序列号状况表（SERIAL_STATUS）/序列号跟踪表（SERIAL_TRACE）（对齐真实 T+ 序列号管理 SN 模块）：
+     * 从 SERIAL_NO 面板 form_data 的 items 明细展平为序列号行；状况表按序列号状态（在库/已出库）输出，
+     * 跟踪表携带入库单号/出库单号/出入库日期供追溯。
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> querySerialFlatten(String panelCode, String keyword, Map<String, Object> condition) {
+        List<FormData> docs = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "SERIAL_NO")
+                .orderByDesc(FormData::getCreateTime));
+        List<Map<String, Object>> flat = new ArrayList<>();
+        for (FormData fd : docs) {
+            Map<String, Object> head = parseData(fd.getData());
+            Map<String, Object> dm = parseData(fd.getDetailData());
+            Object items = dm.get("items");
+            if (!(items instanceof List)) continue;
+            String status = fd.getStatus() == null ? "" : fd.getStatus();
+            for (Object o : (List<?>) items) {
+                if (!(o instanceof Map)) continue;
+                Map<String, Object> row = new HashMap<>((Map<String, Object>) o);
+                row.put("登记单号", fd.getFormNo());
+                row.put("单据状态", status);
+                row.putIfAbsent("存货编码", head.getOrDefault("存货编码", ""));
+                row.putIfAbsent("存货", head.getOrDefault("存货", ""));
+                row.putIfAbsent("规格型号", head.getOrDefault("规格型号", ""));
+                row.putIfAbsent("计量单位", head.getOrDefault("计量单位", ""));
+                row.putIfAbsent("仓库", head.getOrDefault("仓库", ""));
+                row.putIfAbsent("入库单号", head.getOrDefault("入库单号", ""));
+                row.putIfAbsent("出库单号", head.getOrDefault("出库单号", ""));
+                flat.add(row);
+            }
+        }
+        // 状况表：仅展示在库（未出库）序列号；跟踪表：全部（携带出入库追溯信息）
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> row : flat) {
+            String snStatus = String.valueOf(row.getOrDefault("状态", "在库"));
+            if ("SERIAL_STATUS".equals(panelCode) && !"在库".equals(snStatus)) continue;
+            boolean hit = true;
+            if (condition != null) {
+                for (Map.Entry<String, Object> e : condition.entrySet()) {
+                    Object v = e.getValue();
+                    if (v == null || "".equals(String.valueOf(v))) continue;
+                    Object rv = row.get(e.getKey());
+                    if (rv == null || !String.valueOf(rv).contains(String.valueOf(v))) { hit = false; break; }
+                }
+            }
+            if (hit && keyword != null && !keyword.isBlank()) {
+                hit = row.values().stream().anyMatch(value -> value != null
+                        && String.valueOf(value).contains(keyword));
+            }
+            if (hit) rows.add(row);
+        }
+        Map<String, Object> out = new HashMap<>();
+        out.put("totalSize", rows.size());
+        out.put("list", rows);
         return out;
     }
 
@@ -2158,6 +2220,9 @@ public class PxService {
         else if ("SALE_COST_ALLOC".equals(panelCode)) biz = "FT-"; // 销售费用分摊单（T+ 分摊惯例 FT）
         else if ("PU_INVOICE".equals(panelCode)) biz = "PI-";     // 采购发票（进项发票）
         else if ("PU_COST_ALLOC".equals(panelCode)) biz = "PC-";  // 采购费用分摊单
+        else if ("STOCK_CHECK".equals(panelCode)) biz = "PD-";    // 库存盘点单（T+ 盘点惯例 PD）
+        else if ("LOCATION_ADJUST".equals(panelCode)) biz = "HW-"; // 货位调整单（T+ 货位惯例 HW）
+        else if ("SERIAL_NO".equals(panelCode)) biz = "XL-";     // 序列号登记（T+ 序列号惯例 XL）
         else if ("INV".equals(panelCode)) biz = "INV-"; // 存货类别单据
         else biz = "MO-";
         String base = biz + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
@@ -2188,7 +2253,8 @@ public class PxService {
             "SO_ORDER", "PURCHASE_IN", "FINISH_IN", "OTHER_IN", "SALE_OUT", "MATERIAL_OUT", "OTHER_OUT",
             "MANU_ORDER", "PROCESS_REPORT", "INIT_AP", "INIT_AR", "INIT_BALANCE", "BOM", "ROUTE", "PU_REQ",
             "TRANSFER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_IN", "OUTSOURCE_FEE",
-            "QUOTE_ORDER", "SALE_INVOICE", "EXPENSE", "SALE_COST_ALLOC", "PU_INVOICE", "PU_COST_ALLOC");
+            "QUOTE_ORDER", "SALE_INVOICE", "EXPENSE", "SALE_COST_ALLOC", "PU_INVOICE", "PU_COST_ALLOC",
+            "STOCK_CHECK", "LOCATION_ADJUST", "SERIAL_NO");
 
     /**
      * 审批面板审核类动作（审核/提交审批/审批通过）时自动补表头：

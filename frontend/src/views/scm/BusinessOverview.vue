@@ -292,6 +292,63 @@ const modules = [
     ],
   },
   {
+    code: 'pda', name: '移动仓管', icon: 'Iphone',
+    nodes: [
+      { code: 'PURCHASE_IN', label: '采购入库单' },
+      { code: 'FINISH_IN', label: '产成品入库单' },
+      { code: 'SALE_OUT', label: '销售出库单' },
+      { code: 'MATERIAL_OUT', label: '材料出库单' },
+      { code: 'TRANSFER', label: '调拨单' },
+      { code: 'STOCK_CHECK', label: '库存盘点单' },
+      { code: 'LOCATION_ADJUST', label: '货位调整单' },
+    ],
+    edges: [
+      { from: 'PURCHASE_IN', to: 'STOCK_CHECK' },
+      { from: 'FINISH_IN', to: 'STOCK_CHECK' },
+      { from: 'STOCK_CHECK', to: 'LOCATION_ADJUST' },
+      { from: 'TRANSFER', to: 'LOCATION_ADJUST' },
+    ],
+    pos: {
+      PURCHASE_IN: [30, 50], FINISH_IN: [230, 50], TRANSFER: [430, 50],
+      SALE_OUT: [30, 200], MATERIAL_OUT: [230, 200],
+      STOCK_CHECK: [430, 200], LOCATION_ADJUST: [630, 200],
+    },
+    docs: [
+      { code: 'PURCHASE_IN', label: '采购入库单' }, { code: 'FINISH_IN', label: '产成品入库单' },
+      { code: 'SALE_OUT', label: '销售出库单' }, { code: 'MATERIAL_OUT', label: '材料出库单' },
+      { code: 'TRANSFER', label: '调拨单' }, { code: 'STOCK_CHECK', label: '库存盘点单' },
+      { code: 'LOCATION_ADJUST', label: '货位调整单' },
+    ],
+    archives: [{ code: 'INV', label: '存货' }, { code: 'UOM', label: '计量单位' }, { code: 'DEPT', label: '部门' }, { code: 'EMP', label: '员工' }, { code: 'WH', label: '仓库' }],
+    reports: [
+      { code: 'STOCK_STATUS', label: '库存状况表' }, { code: 'STOCK_SUMMARY', label: '收发存汇总表' },
+      { code: 'STOCK_LEDGER', label: '库存台账' },
+    ],
+  },
+  {
+    code: 'sn', name: '序列号管理', icon: 'Sort',
+    nodes: [
+      { code: 'INV', label: '存货(启用序列号)' },
+      { code: 'SERIAL_NO', label: '序列号登记单' },
+      { code: 'SERIAL_STATUS', label: '序列号状况表' },
+      { code: 'SERIAL_TRACE', label: '序列号跟踪表' },
+    ],
+    edges: [
+      { from: 'INV', to: 'SERIAL_NO' },
+      { from: 'SERIAL_NO', to: 'SERIAL_STATUS' },
+      { from: 'SERIAL_NO', to: 'SERIAL_TRACE' },
+    ],
+    pos: {
+      INV: [40, 170], SERIAL_NO: [290, 170], SERIAL_STATUS: [540, 100], SERIAL_TRACE: [540, 240],
+    },
+    docs: [
+      { code: 'SERIAL_NO', label: '序列号登记单' }, { code: 'SERIAL_STATUS', label: '序列号状况表' },
+      { code: 'SERIAL_TRACE', label: '序列号跟踪表' },
+    ],
+    archives: [{ code: 'INV', label: '存货' }, { code: 'WH', label: '仓库' }],
+    reports: [],
+  },
+  {
     code: 'qc', name: '质量管理', icon: 'View',
     nodes: [
       { code: 'ARRIVAL_IN', label: '到货单' },
