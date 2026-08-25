@@ -2182,6 +2182,7 @@ public class PxService {
         if (fd == null) throw new IllegalArgumentException("表单数据不存在：" + no);
         if ("审核".equals(action)) {
             if (!"草稿".equals(fd.getStatus())) throw new IllegalStateException("仅草稿状态可审核");
+            validateBomForApproval(panelCode, fd);
             // 人工审核：审核人 = 当前登录人（不再硬编码 admin）
             String operator = currentUserName();
             fd.setStatus("已审核");
@@ -2278,6 +2279,7 @@ public class PxService {
     private Map<String, Object> submitApproval(String panelCode, Map<String, Object> formData) {
         FormData fd = formOf(panelCode, formData.get("编号"));
         if (!"草稿".equals(fd.getStatus())) throw new IllegalStateException("仅草稿状态可提交审批");
+        validateBomForApproval(panelCode, fd);
         String operator = currentUserName();
         String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         fd.setStatus("审批中");
@@ -2301,6 +2303,7 @@ public class PxService {
     private Map<String, Object> approveApproval(String panelCode, Map<String, Object> formData) {
         FormData fd = formOf(panelCode, formData.get("编号"));
         if (!"审批中".equals(fd.getStatus())) throw new IllegalStateException("仅审批中状态可审批通过");
+        validateBomForApproval(panelCode, fd);
         String operator = currentUserName();
         String opinion = opinionOf(formData);
         fd.setStatus("已审核");
@@ -2320,6 +2323,29 @@ public class PxService {
         out.put("编号", fd.getFormNo());
         out.put("单据状态", "已审核");
         return out;
+    }
+
+    /** BOM 进入审核/审批状态前必须已有完整父件和至少一条子件，防止空草稿变成不可编辑的已审核单。 */
+    @SuppressWarnings("unchecked")
+    private void validateBomForApproval(String panelCode, FormData fd) {
+        if (!"BOM".equals(panelCode)) return;
+        Object childrenObject = parseData(fd.getDetailData()).get("children");
+        if (!(childrenObject instanceof List<?> children) || children.isEmpty()) {
+            throw new IllegalStateException("物料清单必须填写父件并至少添加一条子件后才能审核");
+        }
+        for (int index = 0; index < children.size(); index++) {
+            Object childObject = children.get(index);
+            if (!(childObject instanceof Map<?, ?> child)) {
+                throw new IllegalStateException("物料清单第 " + (index + 1) + " 条子件数据无效");
+            }
+            Object parentCodeValue = child.get("父件编码");
+            Object childCodeValue = child.get("子件编码");
+            String parentCode = String.valueOf(parentCodeValue == null ? "" : parentCodeValue).trim();
+            String childCode = String.valueOf(childCodeValue == null ? "" : childCodeValue).trim();
+            if (parentCode.isEmpty()) throw new IllegalStateException("物料清单父件编码不能为空");
+            if (childCode.isEmpty()) throw new IllegalStateException("物料清单第 " + (index + 1) + " 条子件编码不能为空");
+            if (parentCode.equals(childCode)) throw new IllegalStateException("物料清单父件和子件不能相同");
+        }
     }
 
     /** 审批驳回：仅审批中 → 草稿（意见必填，驳回后修改可重新提交） */

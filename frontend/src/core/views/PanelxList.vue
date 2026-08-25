@@ -176,9 +176,19 @@
       </el-table>
     </div>
 
-    <div v-else class="body" :class="{ 'draft-body': draftEditable && !isBomMasterPanel }" v-loading="loading && !isBomMasterPanel">
+    <div v-else class="body" :class="{ 'draft-body': draftEditable }" v-loading="loading && !isBomMasterPanel">
       <!-- ══════════ 物料清单专用：父件表格 + 子件表格联动（BOM/BOM_FWD/BOM_REV） ══════════ -->
-      <BomMasterDetail v-if="isBomMasterPanel" :rows="bomMasterRows" :reverse="panelCode === 'BOM_REV'" :loading="loading" />
+      <BomMasterDetail
+        v-if="isBomMasterPanel"
+        ref="bomMasterRef"
+        :rows="bomMasterRows"
+        :fields="bomMasterFields"
+        :document-no="cur['编号'] || ''"
+        :reverse="panelCode === 'BOM_REV'"
+        :editable="panelCode === 'BOM' && draftEditable"
+        :loading="loading"
+        @update:rows="onBomRowsUpdate"
+      />
       <template v-else>
       <!-- ══════════ ③b 主表预览表格（配置 mainTable 时显示：主表字段列，点行切换当前单据，明细联动） -->
       <div v-if="mainGrid" class="main-grid">
@@ -397,12 +407,22 @@ const panelCode = computed(() => route.params.panelCode)
 const operationName = computed(() => route.meta.operationName || route.query.operationName || '新增流程')
 const invalidPanel = computed(() => !panelCode.value || panelCode.value === 'undefined')
 
-// 物料清单（BOM/BOM_FWD/BOM_REV）：父件表格 + 子件表格联动视图
+// 物料清单维护和正反向查询统一使用父件/子件主从视图；仅 BOM 草稿开放编辑。
 const isBomMasterPanel = computed(() => ['BOM', 'BOM_FWD', 'BOM_REV'].includes(String(panelCode.value)))
 const bomMasterRows = computed(() => {
   if (panelCode.value === 'BOM') return cur.value?.detail?.['children'] || []
   return list.value || [] // BOM_FWD/BOM_REV：后端返回的展平行（父件-子件对）
 })
+const bomMasterFields = computed(() => (
+  (cfgCache.value?.detail?.tabs || []).find((tab) => tab.key === 'children')?.fields || []
+))
+const bomMasterRef = ref(null)
+
+function onBomRowsUpdate(rows) {
+  if (panelCode.value !== 'BOM' || !draftEditable.value) return
+  if (!cur.value.detail) cur.value.detail = {}
+  cur.value.detail.children = rows
+}
 
 const query = reactive({ keyword: '', pageNo: 1, pageSize: 20 })
 const condition = reactive({})
@@ -476,7 +496,7 @@ const queryDialogFields = computed(() => {
   return fields.filter((field) => headerFieldKey(field) !== '备注')
 })
 const draftEditable = computed(() => {
-  if (reportMode.value || isBomMasterPanel.value) return false
+  if (reportMode.value || ['BOM_FWD', 'BOM_REV'].includes(String(panelCode.value))) return false
   const st = cur.value?.['单据状态']
   if (st === '草稿') return true
   // 档案/单单据面板（存货档案、员工、部门、工艺路线等）：启用/停用状态列表页同样内联可编辑（2026-08-24）
@@ -1158,6 +1178,10 @@ function emptyFieldValue(value) {
 }
 
 function validateInlineDraft() {
+  if (panelCode.value === 'BOM' && bomMasterRef.value) {
+    const validation = bomMasterRef.value.validate()
+    if (validation) return validation
+  }
   for (const field of headerFields.value) {
     if (field.isRequired && emptyFieldValue(cur.value[headerFieldKey(field)])) {
       return `${headerFieldLabel(field)}不能为空`
@@ -1177,7 +1201,7 @@ function validateInlineDraft() {
   return ''
 }
 
-async function saveInlineDraft(buttonName = '保存') {
+async function saveInlineDraft(buttonName = '保存', { silent = false } = {}) {
   if (!draftEditable.value || inlineSaving.value) return false
   const validation = validateInlineDraft()
   if (validation) {
@@ -1199,7 +1223,7 @@ async function saveInlineDraft(buttonName = '保存') {
     await load()
     const index = list.value.findIndex((item) => item['编号'] === documentNo)
     if (index >= 0) curIdx.value = index
-    ElMessage.success(`「${buttonName}」成功`)
+    if (!silent) ElMessage.success(`「${buttonName}」成功`)
     return true
   } catch (error) {
     ElMessage.error(engine.errMsg(error) || '保存失败')
@@ -1709,6 +1733,12 @@ async function onButton(action) {
       approvalVisible.value = true
       return
     }
+    const actionDocumentNo = current.value?.['编号'] || current.value?.['单据编号'] || ''
+    // 列表页草稿是前端内联编辑态；审核/提交审批前必须先落库，否则状态刷新后会显示数据库中的旧空明细。
+    if (['审核', '提交审批'].includes(action) && draftEditable.value) {
+      const saved = await saveInlineDraft('保存', { silent: true })
+      if (!saved) return
+    }
     const res = await engine.callButton({
       panelCode: panelCode.value,
       buttonName: action,
@@ -1725,7 +1755,11 @@ async function onButton(action) {
       return
     }
     ElMessage.success(`「${action}」执行成功`)
-    load()
+    await load()
+    const actionIndex = list.value.findIndex((item) => (
+      (item['编号'] || item['单据编号'] || item['锭号']) === actionDocumentNo
+    ))
+    if (actionIndex >= 0) curIdx.value = actionIndex
   } catch (e) {
     const msg = engine.errMsg(e) || '按钮执行失败'
     if (msg.includes('演示环境暂未实现')) ElMessage.info(msg)
