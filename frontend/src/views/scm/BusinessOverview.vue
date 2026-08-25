@@ -29,13 +29,13 @@
             </span>
             <span class="bo-flow-tip">节点点击进入 · 箭头为生单/选单流转</span>
           </div>
-          <div class="bo-canvas">
+          <div class="bo-canvas" :style="{ height: canvasH + 'px' }">
             <VueFlow
               v-model:nodes="nodes"
               v-model:edges="edges"
-              :min-zoom="0.35"
+              :min-zoom="0.3"
               :max-zoom="1.8"
-              :default-viewport="{ zoom: 0.95 }"
+              :default-viewport="{ zoom: 0.9 }"
               :nodes-draggable="false"
               :nodes-connectable="false"
               :elements-selectable="false"
@@ -46,7 +46,7 @@
               <Background :gap="20" :size="1.4" variant="dots" />
               <template #node-flowNode="nodeProps">
                 <div class="fn-card" :style="{ '--c': nodeProps.data.color }">
-                  <div class="fn-head">
+                  <div class="fn-icon">
                     <el-icon><component :is="ICONS[nodeProps.data.icon]" /></el-icon>
                   </div>
                   <div class="fn-label">{{ nodeProps.data.label }}</div>
@@ -113,12 +113,13 @@ const modules = [
       { from: 'MATERIAL_REQ', to: 'TRANSFER' },
       { from: 'MATERIAL_REQ', to: 'MATERIAL_OUT' },
       { from: 'TRANSFER', to: 'MATERIAL_OUT' },
-      { from: 'PU_REQ_ANALYSIS', to: 'PU_REQ' },
     ],
     pos: {
-      SO_ORDER: [20, 40], MANU_ORDER: [230, 40], PROCESS_REPORT: [440, 40], TRANSFER: [650, 40],
-      MATERIAL_REQ: [440, 130], MATERIAL_OUT: [650, 130],
-      FINISH_IN: [440, 220], PU_REQ_ANALYSIS: [230, 220], PU_REQ: [440, 310],
+      SO_ORDER: [470, 60],
+      MANU_ORDER: [470, 180],
+      TRANSFER: [20, 330], PROCESS_REPORT: [920, 330], FINISH_IN: [1220, 330],
+      MATERIAL_REQ: [470, 480], PU_REQ_ANALYSIS: [920, 480],
+      MATERIAL_OUT: [20, 630],
     },
     docs: [
       { code: 'MANU_ORDER', label: '生产加工单' }, { code: 'PROCESS_REPORT', label: '工序汇报单' },
@@ -158,8 +159,9 @@ const modules = [
       { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_FEE' },
     ],
     pos: {
-      SO_ORDER: [40, 170], OUTSOURCE_ORDER: [290, 170],
-      OUTSOURCE_ISSUE: [540, 60], OUTSOURCE_IN: [540, 170], OUTSOURCE_FEE: [540, 280],
+      SO_ORDER: [320, 60],
+      OUTSOURCE_ORDER: [320, 230],
+      OUTSOURCE_ISSUE: [20, 400], OUTSOURCE_IN: [320, 400], OUTSOURCE_FEE: [620, 400],
     },
     docs: [
       { code: 'OUTSOURCE_ORDER', label: '委外加工单' }, { code: 'OUTSOURCE_ISSUE', label: '委外发料单' },
@@ -204,8 +206,8 @@ const modules = [
       { from: 'SALE_INVOICE', to: 'SALE_COST_ALLOC' },
     ],
     pos: {
-      QUOTE_ORDER: [40, 40], SO_ORDER: [250, 40], SALE_INV: [460, 40], SALE_INVOICE: [670, 40],
-      SALE_OUT: [460, 160], EXPENSE: [250, 170], SALE_COST_ALLOC: [670, 170],
+      QUOTE_ORDER: [20, 60], SO_ORDER: [320, 60], SALE_INV: [620, 60], SALE_INVOICE: [920, 60],
+      SALE_OUT: [320, 250], SALE_COST_ALLOC: [620, 250], EXPENSE: [920, 250],
     },
     docs: [
       { code: 'QUOTE_ORDER', label: '报价单' }, { code: 'SO_ORDER', label: '销售订单' },
@@ -242,9 +244,9 @@ const modules = [
       { from: 'PU_INVOICE', to: 'PU_COST_ALLOC' },
     ],
     pos: {
-      PU_REQ_ANALYSIS: [30, 60], PU_REQ: [30, 170], PU_ORDER: [260, 140],
-      PURCHASE_IN: [490, 60], PU_IN: [490, 170], PU_INVOICE: [730, 140],
-      EXPENSE: [490, 280], PU_COST_ALLOC: [730, 280],
+      PU_REQ_ANALYSIS: [440, 20], PU_REQ: [440, 190], PU_ORDER: [440, 360],
+      PURCHASE_IN: [120, 360], PU_IN: [760, 360],
+      PU_INVOICE: [440, 530], PU_COST_ALLOC: [440, 700], EXPENSE: [760, 700],
     },
     docs: [
       { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' }, { code: 'PU_REQ', label: '请购单' },
@@ -269,7 +271,7 @@ const modules = [
       { from: 'SO_ORDER', to: 'PICK_ORDER' },
       { from: 'PICK_ORDER', to: 'SALE_OUT' },
     ],
-    pos: { SO_ORDER: [40, 170], PICK_ORDER: [300, 170], SALE_OUT: [560, 170] },
+    pos: { SO_ORDER: [20, 170], PICK_ORDER: [320, 170], SALE_OUT: [620, 170] },
     docs: [
       { code: 'PICK_ORDER', label: '配货单' }, { code: 'OTHER_OUT', label: '其他出库单' },
       { code: 'OTHER_IN', label: '其他入库单' }, { code: 'SO_ORDER', label: '销售订单' },
@@ -293,8 +295,8 @@ const modules = [
     ],
     edges: [],
     pos: {
-      PURCHASE_IN: [30, 60], FINISH_IN: [30, 170], OTHER_IN: [30, 280],
-      SALE_OUT: [500, 60], MATERIAL_OUT: [500, 170], OTHER_OUT: [500, 280],
+      PURCHASE_IN: [40, 60], FINISH_IN: [40, 240], OTHER_IN: [40, 420],
+      SALE_OUT: [640, 60], MATERIAL_OUT: [640, 240], OTHER_OUT: [640, 420],
     },
     docs: [
       { code: 'PURCHASE_IN', label: '采购入库单' }, { code: 'FINISH_IN', label: '产成品入库单' },
@@ -327,9 +329,9 @@ const modules = [
       { from: 'TRANSFER', to: 'LOCATION_ADJUST' },
     ],
     pos: {
-      PURCHASE_IN: [30, 50], FINISH_IN: [230, 50], TRANSFER: [430, 50],
-      SALE_OUT: [30, 200], MATERIAL_OUT: [230, 200],
-      STOCK_CHECK: [430, 200], LOCATION_ADJUST: [630, 200],
+      PURCHASE_IN: [40, 60], FINISH_IN: [420, 60],
+      STOCK_CHECK: [420, 260], TRANSFER: [800, 260],
+      LOCATION_ADJUST: [800, 460], MATERIAL_OUT: [420, 460], SALE_OUT: [40, 460],
     },
     docs: [
       { code: 'PURCHASE_IN', label: '采购入库单' }, { code: 'FINISH_IN', label: '产成品入库单' },
@@ -357,7 +359,8 @@ const modules = [
       { from: 'SERIAL_NO', to: 'SERIAL_TRACE' },
     ],
     pos: {
-      INV: [40, 170], SERIAL_NO: [290, 170], SERIAL_STATUS: [540, 100], SERIAL_TRACE: [540, 240],
+      INV: [40, 150], SERIAL_NO: [420, 150], SERIAL_STATUS: [800, 150],
+      SERIAL_TRACE: [420, 330],
     },
     docs: [
       { code: 'SERIAL_NO', label: '序列号登记单' }, { code: 'SERIAL_STATUS', label: '序列号状况表' },
@@ -376,7 +379,7 @@ const modules = [
     edges: [
       { from: 'ARRIVAL_IN', to: 'INSPECTION' },
     ],
-    pos: { ARRIVAL_IN: [40, 170], INSPECTION: [300, 140], FINISH_INSPECT: [300, 260] },
+    pos: { ARRIVAL_IN: [40, 170], INSPECTION: [420, 170], FINISH_INSPECT: [800, 170] },
     docs: [
       { code: 'ARRIVAL_IN', label: '到货单' }, { code: 'INSPECTION', label: '来料/成品检验单' },
       { code: 'FINISH_INSPECT', label: '成品报检单' }, { code: 'DISPATCH', label: '工序派工单' },
@@ -388,6 +391,17 @@ const modules = [
 
 const active = ref('prod')
 const cur = computed(() => modules.find((m) => m.code === active.value) || modules[0])
+
+// 画布高度按当前模块节点最大纵坐标自适应（卡片高 80 + 边距）
+const canvasH = computed(() => {
+  const m = cur.value
+  let maxY = 300
+  for (const n of m.nodes || []) {
+    const y = m.pos && m.pos[n.code] ? m.pos[n.code][1] : 0
+    if (y + 80 > maxY) maxY = y + 80
+  }
+  return maxY + 40
+})
 
 // ---------- Vue Flow 图数据（按当前模块构建） ----------
 const nodes = ref([])
@@ -406,7 +420,8 @@ function buildFlow() {
     id: 'e' + i + '-' + e.from + '-' + e.to,
     source: e.from,
     target: e.to,
-    type: 'smoothstep',
+    ...(e.sourceHandle ? { sourceHandle: e.sourceHandle } : {}),
+    ...(e.targetHandle ? { targetHandle: e.targetHandle } : {}),
     markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: m.color },
     style: { stroke: m.color, strokeWidth: 1.8 },
   }))
@@ -414,7 +429,7 @@ function buildFlow() {
 
 watch(cur, () => {
   buildFlow()
-  setTimeout(() => fitView({ padding: 0.2, maxZoom: 1.2 }), 80)
+  setTimeout(() => fitView({ padding: 0.18, maxZoom: 1 }), 80)
 }, { immediate: true })
 
 function onNodeClick({ node }) {
@@ -526,7 +541,6 @@ function go(code) {
   color: #909399;
 }
 .bo-canvas {
-  height: 430px;
   border: 1px solid #eef1f5;
   border-radius: 8px;
   background: #fbfcfe;
@@ -536,35 +550,40 @@ function go(code) {
   width: 100%;
   height: 100%;
 }
-/* 自定义节点卡片（商务风） */
+/* 自定义节点卡片（对齐真实 T+ 卡片尺寸 211×83 → 200×80，左侧图标条 + 名称） */
 .fn-card {
-  width: 158px;
-  border-radius: 9px;
+  width: 200px;
+  height: 80px;
+  display: flex;
+  align-items: stretch;
+  border-radius: 10px;
   background: #fff;
   border: 1.5px solid var(--c, #2f6fed);
-  box-shadow: 0 2px 10px rgba(31, 45, 61, .10);
+  box-shadow: 0 3px 10px rgba(31, 45, 61, .12);
   cursor: pointer;
   overflow: hidden;
-  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  transition: transform .16s ease, box-shadow .16s ease;
 }
 .fn-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(31, 45, 61, .18);
-  border-color: var(--c, #2f6fed);
+  box-shadow: 0 10px 22px rgba(31, 45, 61, .20);
 }
-.fn-head {
-  height: 30px;
+.fn-icon {
+  width: 52px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 15px;
-  background: linear-gradient(135deg, var(--c, #2f6fed), rgba(0, 0, 0, .18) 130%);
+  font-size: 22px;
+  background: linear-gradient(160deg, var(--c, #2f6fed), rgba(0, 0, 0, .16) 135%);
 }
 .fn-label {
-  padding: 7px 6px;
-  text-align: center;
-  font-size: 12.5px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
   font-weight: 600;
   color: #1f2d3d;
   white-space: nowrap;
