@@ -603,7 +603,7 @@ public class PxService {
                 .orderByDesc(FormData::getId);
         List<FormData> all = formMapper.selectList(qw);
         // 单据级行（一单一行，单号不重复）：明细挂在 detail 对象，key 与 detail.tabs 一致。
-        // 对齐 docs/页面开发规范.md 数据契约；前端渲染器/选单弹窗按此结构消费。
+        // 对齐 docs/frontend/前端面板设计.md 数据契约；前端渲染器和选单弹窗按此结构消费。
         List<Map<String, Object>> flat = new ArrayList<>();
         for (FormData fd : all) {
             Map<String, Object> head = parseData(fd.getData());

@@ -44,7 +44,7 @@
         </el-card>
       </el-col>
     </el-row>
-    <div v-if="!data" class="hint">看板数据仅在 mock 模式提供（真实模式请使用 PanelX 报表面板）</div>
+    <div v-if="!data" class="hint">生产看板数据接口尚未接入 SQL 后端</div>
   </div>
 </template>
 

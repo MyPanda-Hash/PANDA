@@ -26,11 +26,3 @@ mes:
     # 生产环境必须通过环境变量 MES_JWT_SECRET 注入随机值（历史版本曾提交真实密钥且已公开，须轮换）
     secret: "CHANGE_ME_RANDOM_HEX_64"
     expire-hours: 24
-  panelx:
-    base-url: https://demo.kwaidoo.com/VF_DEV/
-    bus-domain-code: SdkTest
-    app-code: SdkTest
-    username: CHANGE_ME
-    password: "CHANGE_ME"
-    panel-map:
-      MANU_ORDER: SdkTest_IML_00002

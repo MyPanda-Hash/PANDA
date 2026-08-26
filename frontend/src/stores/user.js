@@ -23,7 +23,7 @@ export const useUserStore = defineStore('user', {
     factoryName: (s) => s.factory?.name || '',
     // T+ 顶栏中区：登录日期（登录时记录）
     loginDateText: (s) => s.loginDate || localStorage.getItem('mes_login_date') || '--',
-    // T+ 顶栏中区：服务到期时间（mock 默认一年有效期）
+    // T+ 顶栏中区：服务到期时间（后续由 SQL 后端账号信息提供）
     serviceEnd: (s) => s.userInfo?.serviceEnd || '2027-08-13',
     account: (s) => s.userInfo?.userName || '',
   },

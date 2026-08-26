@@ -321,12 +321,9 @@ INSERT INTO sys_menu (id, parent_id, code, title, path, icon, sort) VALUES
 
 (400, 0,   'top',                 'TOP应用',            NULL,                             'Platform',       40),
 (401, 400, 'solution',            '方案中心',           NULL,                             'Compass',        1),
-(402, 401, 'solutionCenter',      '方案中心',           '/top/solution',                  'Compass',        1)
-,
-(412, 161, 'puReq', '请购单', '/scm/purchase/puReq', 'Tickets', 0)
-,
-(422, 100, 'businessOverview', '业务总览', '/scm/businessOverview', 'Connection', 0)
-);;;
+(402, 401, 'solutionCenter',      '方案中心',           '/top/solution',                  'Compass',        1),
+(412, 161, 'puReq', '请购单', '/scm/purchase/puReq', 'Tickets', 0),
+(422, 100, 'businessOverview', '业务总览', '/scm/businessOverview', 'Connection', 0);
 
 -- 生产加工单种子数据（演示用）
 INSERT INTO manu_order (id, order_no, order_date, factory_code, contract_no, ingot_no, batch_no, workshop, plan_start, plan_end, sale_order_no, customer_code, customer_name, test_program, prod_order_customer, status, remark, create_by, create_time, audit_by, audit_time) VALUES

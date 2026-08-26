@@ -326,7 +326,6 @@
       <div class="ctx-item" v-for="it in ctxItems" :key="it" @click="onCtxItem(it)">{{ it }}</div>
     </div>
 
-    <PanelxLogin v-model="loginVisible" @success="onPanelxLogin" />
     <RefPickDialog v-model="queryRefVisible" :field="queryRefField" mode="query" @confirm="onQueryRefConfirm" />
     <RefPickDialog v-model="headerRefVisible" :field="headerRefField" mode="header" @confirm="onHeaderRefConfirm" />
     <RefPickDialog v-model="detailRefVisible" :field="detailRefPick?.field" mode="detail" @confirm="onDetailRefConfirm" />
@@ -381,7 +380,6 @@ import { Plus, Search } from '@element-plus/icons-vue'
 import { useTabsStore } from '@/stores/tabs'
 import { useUserStore } from '@/stores/user'
 import * as engine from '@/business/engine'
-import PanelxLogin from './PanelxLogin.vue'
 import RefPickDialog from './RefPickDialog.vue'
 import NewVoucherDialog from './NewVoucherDialog.vue'
 import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
@@ -391,12 +389,6 @@ import BomMasterDetail from './BomMasterDetail.vue'
 import ImportDialog from './ImportDialog.vue'
 import DetailMaintainDialog from './DetailMaintainDialog.vue'
 import VoucherFormDialog from './VoucherFormDialog.vue'
-
-const loginVisible = ref(false)
-function onPanelxLogin() {
-  loginVisible.value = false
-  load()
-}
 
 const route = useRoute()
 const router = useRouter()
@@ -596,7 +588,7 @@ async function pageLast() {
   curIdx.value = list.value.length - 1
 }
 
-// ══════════ 明细区块模型（配置驱动，见 docs/页面开发规范.md）══════════
+// ══════════ 明细区块模型（配置驱动，见 docs/frontend/前端面板设计.md）══════════
 // 视图状态：view[blockId + ':tab'] = 当前页签 key；view[blockId + ':' + tabKey + ':view'] = 'detail' | 'summary'
 const view = reactive({})
 const blocks = computed(() => buildBlocks(cfgCache.value))
@@ -726,7 +718,7 @@ function summaryRows(rows, b) {
   return out
 }
 
-// 所有表格固定展示 5 行：不足补空占位行（{_placeholder:true}），超出 5 行鼠标滚动（见 docs/页面开发规范.md）
+// 所有表格固定展示 5 行：不足补空占位行（{_placeholder:true}），超出 5 行鼠标滚动（见 docs/frontend/前端面板设计.md）
 const MIN_ROWS = 5
 const ROW_H = 31
 const HEAD_H = 32
@@ -1774,12 +1766,6 @@ async function load() {
     ElMessage.error('面板编号无效，请从菜单重新进入')
     return
   }
-  try {
-    await engine.ensurePanelx()
-  } catch (e) {
-    loginVisible.value = true
-    return
-  }
   loading.value = true
   try {
     await loadCrg()
@@ -1798,8 +1784,7 @@ async function load() {
     }
   } catch (e) {
     const msg = engine.errMsg(e) || '加载失败'
-    if (msg.includes('未登录')) loginVisible.value = true
-    else ElMessage.error(msg)
+    ElMessage.error(msg)
   } finally {
     loading.value = false
   }
@@ -2073,7 +2058,6 @@ onDeactivated(() => {
   detailRefVisible.value = false
   detailRefPick.value = null
   impVisible.value = false
-  loginVisible.value = false
   maintainVisible.value = false
   selVisible.value = false
 })

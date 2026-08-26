@@ -275,7 +275,6 @@
         </template>
       </el-dialog>
     </div>
-    <PanelxLogin v-model="loginVisible" @success="onPanelxLogin" />
     <RefPickDialog v-model="refVisible" :field="refPick?.field" :mode="refPick?.mode" @confirm="onRefConfirm" />
     <ApprovalHistoryDialog v-model="approvalVisible" :panelCode="panelCode" :formNo="approvalNo" />
     <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
@@ -300,20 +299,12 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Back, Plus, Delete, ArrowDown, Search } from '@element-plus/icons-vue'
 import * as engine from '@/business/engine'
-import PanelxLogin from './PanelxLogin.vue'
 import RefPickDialog from './RefPickDialog.vue'
 import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
 import ImportDialog from './ImportDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
 const { SHORTCUTS } = engine
-
-const loginVisible = ref(false)
-
-function onPanelxLogin() {
-  loginVisible.value = false
-  load()
-}
 
 const route = useRoute()
 const router = useRouter()
@@ -959,12 +950,6 @@ function validate() {
 }
 
 async function load() {
-  try {
-    await engine.ensurePanelx()
-  } catch (e) {
-    loginVisible.value = true
-    return
-  }
   loading.value = true
   try {
     let payload
@@ -1222,7 +1207,6 @@ onDeactivated(() => {
   selVisible.value = false
   refVisible.value = false
   impVisible.value = false
-  loginVisible.value = false
 })
 
 // 从列表页「选单」入口（?select=1）跳转而来：load 完成后自动弹出选单对话框（payloadCache 异步赋值）
@@ -1238,7 +1222,6 @@ watch(() => [panelCode.value, code.value], () => {
   selVisible.value = false
   refVisible.value = false
   impVisible.value = false
-  loginVisible.value = false
   load()
 })
 </script>

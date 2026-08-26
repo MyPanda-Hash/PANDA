@@ -456,10 +456,10 @@ CREATE TABLE IF NOT EXISTS form_approval (
 ) COMMENT '审批记录表';
 
 
--- ==================== 报表面板配置（生成器补齐，见 tools/gen-panel-sql.mjs） ====================
+-- ==================== 报表面板配置（SQL 固化） ====================
 
 -- 报表面板配置（28 个：16 库存核算 + 12 生产/销售）
--- 由 tools/gen-panel-sql.mjs 从 frontend/src/business/engine.js 自动生成，请勿手改
+-- 当前以 SQL 为准；旧前端 Mock 配置生成器已移除
 -- 生成时间：2026-08-20T03:05:51.609Z
 INSERT INTO panel_config (panel_code, panel_name, category, config) VALUES
 ('PURCHASE_IN_DETAIL', '采购入库单明细表', '报表',

@@ -3,10 +3,10 @@
   light-mes 增量部署（2026-08-25）：只更新 jar + dist + 增量面板 SQL，不触碰服务器业务数据
 #>
 param(
-  [string]$ServerIp = "8.134.255.221",
-  [string]$Password = "Xtf5201314@",
-  [string]$ProjectRoot = "F:\INCER\light-mes",
-  [string]$WorkDir = "C:\Users\R7000P\light-mes-incr-deploy"
+  [Parameter(Mandatory=$true)][string]$ServerIp,
+  [Parameter(Mandatory=$true)][string]$Password,
+  [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
+  [string]$WorkDir = (Join-Path ([System.IO.Path]::GetTempPath()) 'light-mes-incr-deploy')
 )
 $ErrorActionPreference = 'Stop'
 function Log($m) { Write-Host "[$(Get-Date -Format HH:mm:ss)] $m" }

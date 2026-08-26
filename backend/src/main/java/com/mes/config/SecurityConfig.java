@@ -40,9 +40,6 @@ public class SecurityConfig {
                     .requestMatchers("/api/auth/login").permitAll()
                     // 登录页加载工厂下拉需要（未登录时调用）
                     .requestMatchers("/api/base/factory/list").permitAll()
-                    // PanelX 代理接口放行：网关在服务端持有平台凭据并自动登录；
-                    // 生产环境如需收紧，可改为 .authenticated() 并要求前端先登录本系统
-                    .requestMatchers("/api/panelx/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .anyRequest().authenticated())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

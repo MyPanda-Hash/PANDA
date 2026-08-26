@@ -1,4 +1,4 @@
-// 生成请购单 PU_REQ 面板配置 SQL（对齐 docs/design/T+请购单-真实面板设计.md）
+// 生成请购单 PU_REQ 面板配置 SQL（历史调研见 docs/archive/research/tplus/T+请购单-真实面板设计.md）
 import fs from 'node:fs'
 const invRef = (name, field, display, extra = {}) => ({ dataName: name, dataType: '参照', refPanel: 'INV', refField: field, displayField: display, filter: { 停用: false }, defaultValue: '', ...extra })
 const cfg = {

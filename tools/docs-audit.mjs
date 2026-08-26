@@ -7,16 +7,14 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const documentCenter = path.join(repoRoot, 'docs', 'README.md')
 const roots = [
   'README.md',
-  '工作记录.md',
   'docs',
   'frontend/src/core/README.md',
-  'frontend/src/core/sdk/README.md',
   'tools/README.md',
   'tools/panels',
   'tools/tplus-grab/README.md',
 ]
 
-const excluded = /[\\/](?:ref)(?:[\\/]|$)/
+const excluded = /[\\/](?:archive|ref)(?:[\\/]|$)/
 const errors = []
 
 function collect(entry, files = []) {
@@ -102,10 +100,24 @@ function auditLinks(file, content) {
 }
 
 const files = [...new Set(roots.flatMap((entry) => collect(path.join(repoRoot, entry))))].sort()
-const centerContent = fs.readFileSync(documentCenter, 'utf8')
-const classified = new Set([documentCenter])
-for (const match of centerContent.matchAll(/\[[^\]]*\]\(([^)]+\.md)(?:#[^)]+)?\)/g)) {
-  classified.add(path.resolve(path.dirname(documentCenter), decodeURIComponent(match[1])))
+const managed = new Set(files.map((file) => path.resolve(file)))
+const classified = new Set()
+const queue = [documentCenter]
+
+// A topic page may classify its own child documents. This keeps the main
+// document center concise while still rejecting orphaned active documents.
+while (queue.length) {
+  const file = path.resolve(queue.shift())
+  if (classified.has(file) || !managed.has(file)) continue
+  classified.add(file)
+  const content = fs.readFileSync(file, 'utf8')
+  for (const match of content.matchAll(/!?\[[^\]]*\]\(([^)]+)\)/g)) {
+    const raw = match[1].trim().replace(/^<|>$/g, '')
+    const target = raw.split('#')[0]
+    if (!target || /^(?:https?:|mailto:|data:)/i.test(target)) continue
+    const resolved = path.resolve(path.dirname(file), decodeURIComponent(target))
+    if (resolved.toLowerCase().endsWith('.md') && managed.has(resolved)) queue.push(resolved)
+  }
 }
 
 for (const file of files) {

@@ -47,3 +47,11 @@ docs/deploy/light_mes_full.sql
 docs/deploy/base.sql
 docs/deploy/local-panels.sql
 docs/deploy/pc-table.sql
+
+# Local database exports (contain environment data; never commit)
+/db-backup-local-before-20260825.sql
+/light_mes_full.sql
+/light_mes_full_fixed.sql
+
+# Local documentation archive (may contain historical environment details)
+/docs/archive/
