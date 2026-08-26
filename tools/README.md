@@ -26,6 +26,8 @@ node tools/docs-audit.mjs
 
 项目使用 Milens 在本机解析代码，并将符号、引用和依赖关系保存到仓库根目录的 `.milens/milens.db`。该目录已加入 `.gitignore`，不会上传源码或图谱数据到外部服务，也不会进入 GitHub。
 
+建议在 Node.js 20 或 22 LTS 下运行 Milens 0.7.3；其 SQLite 原生依赖在 Windows + Node.js 24 下可能触发兼容性错误。
+
 首次构建或代码结构有较大变化时执行：
 
 ```powershell
@@ -39,9 +41,9 @@ milens status -p .
 milens search PxService -p .
 milens inspect PxService -p .
 milens impact PxService -p .
-milens serve -p .
+milens serve -p . --http --port 3100
 ```
 
-`milens serve` 仅启动本地查询服务；停止服务后，索引仍保存在 `.milens/milens.db`。外部参考资料 `docs/ref/` 和内置 Maven `tools/apache-maven-3.9.9/` 不属于项目代码，已从图谱扫描范围排除。
+HTTP 查询入口为 `http://127.0.0.1:3100/mcp`。`milens serve` 仅启动本地查询服务；停止服务后，索引仍保存在 `.milens/milens.db`。外部参考资料 `docs/ref/` 和内置 Maven `tools/apache-maven-3.9.9/` 不属于项目代码，已从图谱扫描范围排除。
 
 临时探针、一次性回归脚本和重复扫描脚本不纳入版本库；需要新增诊断工具时，应使用有业务含义的名称，并在本文件补充用途。
