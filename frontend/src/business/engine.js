@@ -31,7 +31,6 @@ const _platformCfgCache = {}
 async function platformConfig(panelCode) {
   const code = resolvePanelCode(panelCode)
   if (_platformCfgCache[code]) return _platformCfgCache[code]
-  const sdk = await requireAuthed()
   // 注意：SDK 的 getPanelConfig 接收字符串面板码（传对象会被序列化进 query，后端 400）；
   // 返回 {state,msg,data:{metadata,dataSchema}} 包装，需取 .data
   const cfg = (await platformCall((sd) => sd.api.getPanelConfig(code)))?.data
@@ -164,7 +163,6 @@ export async function getPanelConfig(panelCode) {
 
 export async function getPermMatrix(panelCode) {
   if (USE_PANELX) {
-    const sdk = await requireAuthed()
     return unwrap(await platformCall((sd) => sd.api.getPermMatrix({ panelCode: resolvePanelCode(panelCode) })))
   }
   return unwrap(await request.get('/px/getPermMatrix', { params: { panelCode } }))
@@ -172,7 +170,6 @@ export async function getPermMatrix(panelCode) {
 
 export async function getNewFormPermMatrix({ panelCode, operationName }) {
   if (USE_PANELX) {
-    const sdk = await requireAuthed()
     const p = unwrap(await platformCall((sd) => sd.api.getNewFormPermMatrix({ panelCode: resolvePanelCode(panelCode), operationName })))
     const cfg = await platformConfig(panelCode)
     const fp = cfg.metadata.panelPageDto.formPages?.[0] || {}
@@ -189,7 +186,6 @@ export async function getNewFormPermMatrix({ panelCode, operationName }) {
 
 export async function getFormDescriptor({ panelCode, code }) {
   if (USE_PANELX) {
-    const sdk = await requireAuthed()
     const p = unwrap(await platformCall((sd) => sd.api.getFormDescriptor({ panelCode: resolvePanelCode(panelCode), code })))
     const cfg = await platformConfig(panelCode)
     const fp = cfg.metadata.panelPageDto.formPages?.[0] || {}
@@ -206,7 +202,6 @@ export async function getFormDescriptor({ panelCode, code }) {
 
 export async function queryFormDataList(params) {
   if (USE_PANELX) {
-    const sdk = await requireAuthed()
     const p = unwrap(await platformCall((sd) => sd.api.queryFormDataList({ ...params, panelCode: resolvePanelCode(params.panelCode) })))
     return { totalSize: p.totalSize ?? 0, list: p.list || [] }
   }
@@ -215,7 +210,6 @@ export async function queryFormDataList(params) {
 
 export async function callButton({ panelCode, buttonName, formData, buttonParam }) {
   if (USE_PANELX) {
-    const sdk = await requireAuthed()
     const res = await platformCall((sd) => sd.api.callButton({ panelCode: resolvePanelCode(panelCode), buttonName, formData, buttonParam }))
     return unwrap(res)
   }
@@ -226,7 +220,6 @@ export async function callButton({ panelCode, buttonName, formData, buttonParam 
 
 export async function deleteForms({ panelCode, rowCodes }) {
   if (USE_PANELX) {
-    const sdk = await requireAuthed()
     const res = await platformCall((sd) => sd.api.deleteForms({ panelCode: resolvePanelCode(panelCode), rowCodes }))
     return unwrap(res)
   }

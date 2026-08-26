@@ -22,12 +22,12 @@ if not exist "%ROOT%frontend\dist\index.html" (
   goto :fail
 )
 
-netstat -ano | findstr ":3306" | findstr "LISTENING" >nul 2>&1
+netstat -ano | findstr ":3308" | findstr "LISTENING" >nul 2>&1
 if errorlevel 1 (
-  echo [错误] MySQL 未在 3306 端口运行，请先启动 MySQL。
+  echo [错误] MySQL 未在 3308 端口运行，请先启动 MySQL。
   goto :fail
 )
-echo [1/3] MySQL 已运行（3306）
+echo [1/3] MySQL 已运行（3308）
 
 netstat -ano | findstr ":8080" | findstr "LISTENING" >nul 2>&1
 if errorlevel 1 (

@@ -20,6 +20,14 @@ tools/tplus-grab/profile/
 tools/tplus-grab/profile-*/
 .tplus-grab-out/
 .dsh-vision-toolkit/
+tools/tmp-*.cjs
+tools/dup-scan*.cjs
+
+# === Milens 本地知识图谱 ===
+.milens/
+# 以下为外部参考资料和内置工具，不纳入代码知识图谱扫描。
+docs/ref/
+tools/apache-maven-3.9.9/
 
 # === 绯荤粺 ===
 Thumbs.db

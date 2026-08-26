@@ -10,3 +10,6 @@ trim_trailing_whitespace = true
 
 [*.{json,yml,yaml,js,mjs,cjs,vue,java,xml,sql}]
 trim_trailing_whitespace = true
+
+[*.{bat,cmd}]
+end_of_line = crlf

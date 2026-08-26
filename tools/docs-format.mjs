@@ -28,6 +28,7 @@ const documents = {
   'docs/design/T+报表类28面板-真实后端与前端设计.md': ['场景设计', '报表', '生效'],
   'frontend/src/core/README.md': ['包说明', '通用架构与 SDK', '生效'],
   'frontend/src/core/sdk/README.md': ['SDK 说明', '通用架构与 SDK', '生效'],
+  'tools/README.md': ['工具说明', '测试、问题与工作日志', '生效'],
   'tools/tplus-grab/README.md': ['工具说明', '测试、问题与工作日志', '生效'],
   'tools/panels/PURCHASE_IN/PURCHASE_IN.design.md': ['场景设计', '库存与供应链', '调研基线'],
   'tools/panels/PURCHASE_IN/PURCHASE_IN.select.md': ['场景设计', '库存与供应链', '调研基线'],

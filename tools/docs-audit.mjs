@@ -11,6 +11,7 @@ const roots = [
   'docs',
   'frontend/src/core/README.md',
   'frontend/src/core/sdk/README.md',
+  'tools/README.md',
   'tools/panels',
   'tools/tplus-grab/README.md',
 ]
