@@ -20,7 +20,7 @@ import java.util.Map;
 @Component
 public class SalesFinancePanelRegistry {
 
-    static final String VERSION = "sales-finance-2.0";
+    static final String VERSION = "SF2.0";
 
     private final PanelConfigMapper panelMapper;
     private final ObjectMapper json;

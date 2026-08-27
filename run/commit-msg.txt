@@ -1,0 +1,6 @@
+fix: 面板注册表 version 值超 varchar(10) 导致启动失败——全部改短（MP1.0/SF2.0/QF1.0/QT01xx/MB1.0）
+
+- MenuPanelRegistry: menu-panel-1.0 → MP1.0
+- SalesFinancePanelRegistry: sales-finance-2.0 → SF2.0
+- QualityPanelRegistry: quality-flow-1.0 → QF1.0；1.0-live-QT0101/2/3 → QT0101/2/3；1.0-menu-baseline → MB1.0
+- 服务器部署后验证：服务 active、form_data 168 条零丢失、业务面板数据完整（SO 21/MO 10/BOM 8/INV 10 物品等）、质量面板由注册表补齐（PANEL_CFG 116→143 为新增面板）
