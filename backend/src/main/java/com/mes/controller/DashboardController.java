@@ -276,15 +276,22 @@ public class DashboardController {
     /** 质量看板：检验单结果分布与合格率 */
     private Map<String, Object> qualityStats() {
         Map<String, Integer> byResult = new LinkedHashMap<>();
+        Map<String, Integer> byType = new LinkedHashMap<>();
         int total = 0, pass = 0;
         for (FormData fd : formMapper.selectList(new LambdaQueryWrapper<FormData>()
-                .in(FormData::getPanelCode, "INSPECTION", "FINISH_INSPECT"))) {
+                .in(FormData::getPanelCode, "ARRIVAL_IN", "FINISH_INSPECT", "FIRST_INSPECT",
+                        "PROCESS_INSPECT_APPLY", "INSPECTION", "PROCESS_INSPECTION"))) {
             try {
+                Map<String, Object> head = parse(fd.getData());
+                String type = str(head.get("业务类型"));
+                if (type.isEmpty()) type = fd.getPanelCode();
                 Map<String, Object> d = json.readValue(fd.getDetailData(), new TypeReference<Map<String, Object>>() {});
                 Object items = d.get("items");
                 if (items instanceof List) {
                     for (Object io : (List<?>) items) {
                         if (!(io instanceof Map)) continue;
+                        byType.put(type, byType.getOrDefault(type, 0) + 1);
+                        if (!"INSPECTION".equals(fd.getPanelCode()) && !"PROCESS_INSPECTION".equals(fd.getPanelCode())) continue;
                         String r = str(((Map<?, ?>) io).get("检验结果判定"));
                         if (r.isEmpty()) r = str(((Map<?, ?>) io).get("检验结果"));
                         if (r.isEmpty()) r = "待检";
@@ -297,6 +304,7 @@ public class DashboardController {
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("byResult", toKv(byResult));
+        out.put("byType", toKv(byType));
         out.put("total", total);
         out.put("pass", pass);
         out.put("passRate", total == 0 ? 0 : Math.round(pass * 1000.0 / total) / 10.0);

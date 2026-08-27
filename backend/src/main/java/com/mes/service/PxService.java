@@ -10,6 +10,10 @@ import com.mes.entity.PanelConfig;
 import com.mes.mapper.FormApprovalMapper;
 import com.mes.mapper.FormDataMapper;
 import com.mes.mapper.PanelConfigMapper;
+import com.mes.panel.PanelActionContext;
+import com.mes.panel.PanelActionRegistry;
+import com.mes.panel.PanelRuntimeService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,23 +26,38 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Service
-public class PxService {
+public class PxService implements PanelRuntimeService {
+
+    private static final Set<String> EFFECTIVE_STATUSES = Set.of("已审核", "生产中", "已完工", "已关闭");
+    private static final Set<String> QUALITY_REPORT_PANELS = Set.of(
+            "ARRIVAL_IN", "FINISH_INSPECT", "FIRST_INSPECT", "PROCESS_INSPECT_APPLY");
+    private static final Set<String> QUALITY_INSPECTION_PANELS = Set.of("INSPECTION", "PROCESS_INSPECTION");
 
     private final PanelConfigMapper panelMapper;
     private final FormDataMapper formMapper;
     private final FormApprovalMapper approvalMapper;
     private final ReportQueryService reportQueryService;
+    private final PanelActionRegistry panelActionRegistry;
     private final ObjectMapper json = new ObjectMapper();
 
+    @Autowired
     public PxService(PanelConfigMapper panelMapper, FormDataMapper formMapper,
-                     FormApprovalMapper approvalMapper, ReportQueryService reportQueryService) {
+                     FormApprovalMapper approvalMapper, ReportQueryService reportQueryService,
+                     PanelActionRegistry panelActionRegistry) {
         this.panelMapper = panelMapper;
         this.formMapper = formMapper;
         this.approvalMapper = approvalMapper;
         this.reportQueryService = reportQueryService;
+        this.panelActionRegistry = panelActionRegistry;
+    }
+
+    PxService(PanelConfigMapper panelMapper, FormDataMapper formMapper,
+              FormApprovalMapper approvalMapper, ReportQueryService reportQueryService) {
+        this(panelMapper, formMapper, approvalMapper, reportQueryService, new PanelActionRegistry(List.of()));
     }
 
     // ---------- 配置 ----------
@@ -60,6 +79,7 @@ public class PxService {
     @SuppressWarnings("unchecked")
     private void applyRuntimeConfigUpgrades(String panelCode, Map<String, Object> config) {
         normalizeFieldDefinitions(config);
+        normalizeApprovalWorkflow(panelCode, config);
         ensureSelectAction(config);
         ensureSelectDetailCodeMap(config);
         // 2026-08-25：计量单位类下拉框动态并入 UOM 面板数据（UOM 新增单位后所有面板下拉自动显示完整）
@@ -90,6 +110,8 @@ public class PxService {
                             Map.of("from", "计量单位", "to", "销售单位"),
                             Map.of("from", "数量", "to", "数量"),
                             Map.of("from", "报价单价", "to", "单价")));
+        } else if ("QUOTE_ORDER".equals(panelCode)) {
+            upgradeQuoteOrderConfig(config);
         }
         // 存货类参照字段 refMap 互带（编码↔名称 + 规格/单位带出），修复参照选择后字段缺失（2026-08-25）
         upgradeInvPairRef(config, "products", "产品编码", "产品名称", "规格型号", "计量单位");
@@ -98,6 +120,135 @@ public class PxService {
         upgradeInvPairRef(config, "items", "材料编码", "材料名称", "规格型号", "计量单位");
         upgradeInvPairRef(config, "items", "产品编码", "产品名称", "规格型号", "计量单位");
         upgradeInvPairRef(config, null, "存货编码", "存货", "规格型号", "计量单位");
+    }
+
+    /** 报价单金额链与销售订单保持一致：报价单价/税率 -> 含税单价 -> 金额/含税金额。 */
+    @SuppressWarnings("unchecked")
+    private void upgradeQuoteOrderConfig(Map<String, Object> config) {
+        Object metadataObject = config.get("metadata");
+        if (metadataObject instanceof Map<?, ?> metadata) {
+            Object pageDtoObject = metadata.get("panelPageDto");
+            if (pageDtoObject instanceof Map<?, ?> pageDto) {
+                Object tablePagesObject = pageDto.get("tablePages");
+                if (tablePagesObject instanceof List<?> tablePages && !tablePages.isEmpty()
+                        && tablePages.get(0) instanceof Map<?, ?> tablePage) {
+                    Object queryFieldsObject = tablePage.get("queryFields");
+                    if (queryFieldsObject instanceof List<?> queryFields) {
+                        for (Object fieldObject : queryFields) {
+                            if (fieldObject instanceof Map<?, ?> rawField
+                                    && "PARTNER".equals(rawField.get("refPanel"))
+                                    && rawField.get("dataName") == null) {
+                                ((Map<String, Object>) rawField).put("dataName", "客户");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Object detailObject = config.get("detail");
+        if (!(detailObject instanceof Map<?, ?> detail)) return;
+        Object tabsObject = detail.get("tabs");
+        if (!(tabsObject instanceof List<?> tabs)) return;
+        for (Object tabObject : tabs) {
+            if (!(tabObject instanceof Map<?, ?> rawTab) || !"items".equals(rawTab.get("key"))) continue;
+            Map<String, Object> tab = (Map<String, Object>) rawTab;
+            tab.put("calc", List.of(
+                    Map.of("target", "含税单价", "formula", "报价单价 * (1 + 税率% / 100)", "round", 2),
+                    Map.of("target", "金额", "formula", "数量 * 报价单价", "round", 2),
+                    Map.of("target", "含税金额", "formula", "数量 * 含税单价", "round", 2)));
+            tab.put("summaryItems", List.of(
+                    Map.of("label", "数量合计", "field", "数量"),
+                    Map.of("label", "金额合计", "field", "金额"),
+                    Map.of("label", "含税金额合计", "field", "含税金额")));
+            Object fieldsObject = tab.get("fields");
+            if (fieldsObject instanceof List<?> fields) {
+                for (Object fieldObject : fields) {
+                    if (!(fieldObject instanceof Map<?, ?> rawField)) continue;
+                    Map<String, Object> field = (Map<String, Object>) rawField;
+                    String name = String.valueOf(field.getOrDefault("dataName", ""));
+                    if (Set.of("含税单价", "金额", "含税金额", "现存量").contains(name)) {
+                        field.put("computed", true);
+                        field.remove("defaultValue");
+                    }
+                }
+            }
+            return;
+        }
+    }
+
+    /**
+     * 旧配置同时存在「审核」和「审批」组，且「审核」首动作会绕过审批留痕。
+     * 只要面板声明了提交审批，就统一为一个审批组，主按钮固定执行提交审批。
+     */
+    @SuppressWarnings("unchecked")
+    private void normalizeApprovalWorkflow(String panelCode, Map<String, Object> config) {
+        Object metadataObject = config.get("metadata");
+        if (!(metadataObject instanceof Map<?, ?>)) return;
+        Map<String, Object> metadata = (Map<String, Object>) metadataObject;
+        Object groupsObject = metadata.get("buttonGroups");
+        if (!(groupsObject instanceof List<?> rawGroups)
+                || (!APPROVAL_PANELS.contains(panelCode) && !configUsesApprovalWorkflow(config))) return;
+
+        List<Map<String, Object>> groups = new ArrayList<>();
+        Map<String, Object> approvalGroup = null;
+        int approvalIndex = -1;
+        for (Object rawGroup : rawGroups) {
+            if (!(rawGroup instanceof Map<?, ?>)) continue;
+            Map<String, Object> group = new LinkedHashMap<>((Map<String, Object>) rawGroup);
+            String name = String.valueOf(group.getOrDefault("name", ""));
+            List<String> actions = actionNames(group.get("actions"));
+            boolean workflowGroup = actions.contains("提交审批")
+                    || (Set.of("审核", "审批", "审批情况", "弃审").contains(name)
+                    && actions.stream().anyMatch(action -> "审核".equals(action)
+                    || "驳回审批".equals(action) || APPROVAL_WORKFLOW_ACTIONS.contains(action)));
+            if (workflowGroup) {
+                if (approvalIndex < 0) approvalIndex = groups.size();
+                if (approvalGroup == null) approvalGroup = group;
+                continue;
+            }
+            group.put("actions", actions.stream()
+                    .map(action -> "驳回审批".equals(action) ? "审批驳回" : action)
+                    .distinct().toList());
+            groups.add(group);
+        }
+        if (approvalGroup == null) approvalGroup = new LinkedHashMap<>();
+        approvalGroup.put("name", "审批");
+        approvalGroup.put("actions", APPROVAL_WORKFLOW_ACTIONS);
+        groups.add(approvalIndex < 0 ? groups.size() : approvalIndex, approvalGroup);
+        metadata.put("buttonGroups", groups);
+
+        List<Map<String, Object>> buttons = new ArrayList<>();
+        Set<String> buttonNames = new HashSet<>();
+        Object buttonsObject = metadata.get("panelButtons");
+        if (buttonsObject instanceof List<?> rawButtons) {
+            for (Object value : rawButtons) {
+                if (!(value instanceof Map<?, ?> rawButton)) continue;
+                String buttonName = String.valueOf(rawButton.get("buttonName"));
+                if ("审核".equals(buttonName) || "驳回审批".equals(buttonName) || !buttonNames.add(buttonName)) continue;
+                buttons.add(new LinkedHashMap<>((Map<String, Object>) rawButton));
+            }
+        }
+        for (String action : APPROVAL_WORKFLOW_ACTIONS) {
+            if (buttonNames.add(action)) buttons.add(new LinkedHashMap<>(Map.of("buttonName", action)));
+        }
+        metadata.put("panelButtons", buttons);
+    }
+
+    private boolean configUsesApprovalWorkflow(Map<String, Object> config) {
+        Object metadataObject = config.get("metadata");
+        if (!(metadataObject instanceof Map<?, ?> metadata)) return false;
+        Object groupsObject = metadata.get("buttonGroups");
+        if (!(groupsObject instanceof List<?> groups)) return false;
+        for (Object value : groups) {
+            if (value instanceof Map<?, ?> group && actionNames(group.get("actions")).contains("提交审批")) return true;
+        }
+        return false;
+    }
+
+    private List<String> actionNames(Object actionsObject) {
+        if (!(actionsObject instanceof List<?> actions)) return new ArrayList<>();
+        return actions.stream().map(String::valueOf).toList();
     }
 
     /** 为既有面板注入拉式选单 selectConfig（运行时升级，缺才注入；同时补齐「选单」工具栏动作） */
@@ -533,6 +684,7 @@ public class PxService {
         out.put("buttonGroups", buttonGroupsOf(panelCode));
         out.put("panelName", panelNameOf(panelCode));
         out.put("selectConfig", selectConfigOf(panelCode));
+        out.put("selectConfigs", selectConfigsOf(panelCode));
         return out;
     }
 
@@ -557,10 +709,15 @@ public class PxService {
         privilege.put("groupPrivileges", new ArrayList<>());
         out.put("privilege", privilege);
         out.put("detail", fieldsOf(panelCode).get("detail"));
-        out.put("detailData", parseData(fd.getDetailData()));
+        Map<String, Object> detailData = parseData(fd.getDetailData());
+        if (hasCurrentStockField(detailData)) {
+            refreshCurrentStock(detailData, reportQueryService.currentStockRows());
+        }
+        out.put("detailData", detailData);
         out.put("buttonGroups", buttonGroupsOf(panelCode));
         out.put("panelName", panelNameOf(panelCode));
         out.put("selectConfig", selectConfigOf(panelCode));
+        out.put("selectConfigs", selectConfigsOf(panelCode));
         return out;
     }
 
@@ -575,6 +732,22 @@ public class PxService {
         Map<String, Object> cfg = loadConfig(panelCode);
         Object sc = cfg.get("selectConfig");
         return sc == null ? new HashMap<>() : sc;
+    }
+
+    /** 多来源选单契约；旧面板仍通过 selectConfig 返回首个来源保持兼容。 */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> selectConfigsOf(String panelCode) {
+        Map<String, Object> cfg = loadConfig(panelCode);
+        Object multiple = cfg.get("selectConfigs");
+        if (multiple instanceof Map<?, ?>) return (Map<String, Object>) multiple;
+        Object legacy = cfg.get("selectConfig");
+        if (legacy instanceof Map<?, ?> map && !map.isEmpty()) {
+            Object title = map.get("title");
+            Map<String, Object> out = new LinkedHashMap<>();
+            out.put(title == null ? "选单" : String.valueOf(title), map);
+            return out;
+        }
+        return new LinkedHashMap<>();
     }
 
     // ---------- 列表 ----------
@@ -605,6 +778,7 @@ public class PxService {
         // 单据级行（一单一行，单号不重复）：明细挂在 detail 对象，key 与 detail.tabs 一致。
         // 对齐 docs/frontend/前端面板设计.md 数据契约；前端渲染器和选单弹窗按此结构消费。
         List<Map<String, Object>> flat = new ArrayList<>();
+        List<Map<String, Object>> currentStock = null;
         for (FormData fd : all) {
             Map<String, Object> head = parseData(fd.getData());
             head.put("编号", fd.getFormNo());
@@ -613,6 +787,10 @@ public class PxService {
             head.put("更新时间", fd.getUpdateTime());
             head.put("发起人编号", fd.getCreateBy());
             Map<String, Object> detail = parseData(fd.getDetailData());
+            if (hasCurrentStockField(detail)) {
+                if (currentStock == null) currentStock = reportQueryService.currentStockRows();
+                refreshCurrentStock(detail, currentStock);
+            }
             if (!detail.isEmpty()) head.put("detail", detail);
             flat.add(head);
         }
@@ -895,7 +1073,10 @@ public class PxService {
                 return new HashMap<>();
             }
             case "审核":
-                return changeStatus(panelCode, formData, "审核");
+                // 审批面板兼容旧客户端动作名：不得绕过提交节点，必须进入审批中并写 SUBMIT 留痕。
+                return requiresApprovalWorkflow(panelCode)
+                        ? submitApproval(panelCode, formData)
+                        : changeStatus(panelCode, formData, "审核");
             case "弃审":
                 return changeStatus(panelCode, formData, "弃审");
             case "关闭":
@@ -915,11 +1096,17 @@ public class PxService {
             case "生成采购订单":       // 推式生单：请购单 → 采购订单
                 return createPuOrderFromReq(panelCode, formData);
             case "生成采购入库单":     // 推式生单：采购订单 → 采购入库单
-                return createPurchaseInFromPo(panelCode, formData);
+                return "INSPECTION".equals(panelCode)
+                        ? createInventoryInFromInspection(panelCode, formData, "PURCHASE_IN")
+                        : createPurchaseInFromPo(panelCode, formData);
             case "生成进货单":         // 推式生单：采购订单 → 进货单（对齐真实 T+ 采购订单「生单-生成进货单」）
                 return createPuInFromPo(panelCode, formData);
             case "生成产成品入库单":   // 推式生单：生产加工单 → 产成品入库单
-                return createFinishInFromMo(panelCode, formData);
+                return "INSPECTION".equals(panelCode) || "PROCESS_INSPECTION".equals(panelCode)
+                        ? createInventoryInFromInspection(panelCode, formData, "FINISH_IN")
+                        : createFinishInFromMo(panelCode, formData);
+            case "生成检验单":
+                return createInspectionFromReport(panelCode, formData);
             case "生成材料出库单":     // 推式生单：领料申请单/生产加工单/调拨单 → 材料出库单
                 return createMaterialOut(panelCode, formData);
             case "生成调拨单":         // 推式生单：领料申请单 → 调拨单（对齐真实 T+ 领料申请单「生单-生成调拨单」）
@@ -929,7 +1116,9 @@ public class PxService {
             case "生成委外发料单(分单)":
                 return createOutsourceIssue(panelCode, formData);
             case "生成委外入库单":     // 推式生单：委外加工单 → 委外入库单
-                return createOutsourceInFromOrder(panelCode, formData);
+                return "INSPECTION".equals(panelCode) || "PROCESS_INSPECTION".equals(panelCode)
+                        ? createInventoryInFromInspection(panelCode, formData, "OUTSOURCE_IN")
+                        : createOutsourceInFromOrder(panelCode, formData);
             case "生成委外加工费用单": // 推式生单：委外加工单 → 委外加工费用单
                 return createOutsourceFeeFromOrder(panelCode, formData);
             case "生成销售订单":       // 推式生单：报价单 → 销售订单（对齐真实 T+ 报价单「生单-生成销售订单」）
@@ -956,11 +1145,15 @@ public class PxService {
             case "审批通过":
                 return approveApproval(panelCode, formData);
             case "审批驳回":
+            case "驳回审批":
                 return rejectApproval(panelCode, formData);
             case "审批情况":
                 return approvalHistory(panelCode, formData);
             default:
-                throw new IllegalStateException("未定义按钮规则：" + buttonName + "（可在 PxService 扩展）");
+                return panelActionRegistry.dispatch(new PanelActionContext(
+                                panelCode, buttonName, formData, buttonParam, currentUserName()))
+                        .orElseThrow(() -> new IllegalStateException(
+                                "未定义按钮规则：" + buttonName + "（请注册 PanelActionHandler）"));
         }
     }
 
@@ -1251,6 +1444,7 @@ public class PxService {
     @SuppressWarnings("unchecked")
     private Map<String, Object> insertGenerated(String targetPanel, String sourcePanel, String sourceNo,
                                                 Map<String, Object> head, Map<String, Object> detail) {
+        validateSourceLinks(targetPanel, null, detail);
         String newNo = generateFormNo(targetPanel);
         // 新建兜底：字段默认值 + 单据日期=当天 + 单据编号/锭号=form_no（修复：生单目标单必填字段缺失无法保存草稿）
         fillNewDefaults(targetPanel, head, newNo);
@@ -1271,6 +1465,180 @@ public class PxService {
         out.put("gotoPanel", targetPanel);
         out.put("编号", newNo);
         return out;
+    }
+
+    /**
+     * 用库存状况表当前值覆盖单据展示层的现存量。带仓库的行取对应仓库；报价单、销售订单等
+     * 无仓库行取全部仓库合计。这里只刷新响应对象，不改历史单据存储。
+     */
+    @SuppressWarnings("unchecked")
+    private void refreshCurrentStock(Map<String, Object> detail, List<Map<String, Object>> stockRows) {
+        if (detail == null || detail.isEmpty() || stockRows == null) return;
+        for (Object rowsObject : detail.values()) {
+            if (!(rowsObject instanceof List<?> rows)) continue;
+            for (Object rowObject : rows) {
+                if (!(rowObject instanceof Map<?, ?> rawRow)) continue;
+                Map<String, Object> row = (Map<String, Object>) rawRow;
+                if (!row.containsKey("现存量")) continue;
+                String code = firstNonBlank(row, "存货编码", "产品编码", "材料编码");
+                String name = firstNonBlank(row, "存货名称", "产品名称", "材料名称", "存货");
+                String warehouse = firstNonBlank(row, "仓库", "预出仓库", "出库仓库");
+                if (code.isBlank() && name.isBlank()) continue;
+                double quantity = 0;
+                for (Map<String, Object> stock : stockRows) {
+                    String stockCode = String.valueOf(stock.getOrDefault("存货编码", "")).trim();
+                    String stockName = String.valueOf(stock.getOrDefault("存货", "")).trim();
+                    String stockWarehouse = String.valueOf(stock.getOrDefault("仓库", "")).trim();
+                    boolean itemMatches = !code.isBlank() ? code.equals(stockCode) : name.equals(stockName);
+                    if (!itemMatches || (!warehouse.isBlank() && !warehouse.equals(stockWarehouse))) continue;
+                    quantity += num(stock.get("现存量(主)"));
+                }
+                row.put("现存量", Math.round(quantity * 100) / 100.0);
+                if (row.containsKey("现存量说明")) {
+                    row.put("现存量说明", warehouse.isBlank() ? "库存状况表（全部仓库）" : "库存状况表（" + warehouse + "）");
+                }
+            }
+        }
+    }
+
+    private boolean hasCurrentStockField(Map<String, Object> detail) {
+        if (detail == null) return false;
+        for (Object rowsObject : detail.values()) {
+            if (!(rowsObject instanceof List<?> rows)) continue;
+            for (Object rowObject : rows) {
+                if (rowObject instanceof Map<?, ?> row && row.containsKey("现存量")) return true;
+            }
+        }
+        return false;
+    }
+
+    private String firstNonBlank(Map<String, Object> row, String... keys) {
+        for (String key : keys) {
+            Object value = row.get(key);
+            if (value != null && !String.valueOf(value).isBlank()) return String.valueOf(value).trim();
+        }
+        return "";
+    }
+
+    /** 报检单 → 检验单。到货/成品/首件进入 QM15，工序报检进入生产过程检验。 */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createInspectionFromReport(String panelCode, Map<String, Object> formData) {
+        if (!Set.of("ARRIVAL_IN", "FINISH_INSPECT", "FIRST_INSPECT", "PROCESS_INSPECT_APPLY").contains(panelCode)) {
+            throw new IllegalStateException("当前单据不能生成检验单：" + panelCode);
+        }
+        FormData source = formOf(panelCode, formData.get("编号"));
+        if (!"已审核".equals(source.getStatus())) throw new IllegalStateException("仅已审核报检单可生成检验单");
+        Map<String, Object> sourceHead = parseData(source.getData());
+        Map<String, Object> sourceDetail = parseData(source.getDetailData());
+        List<Map<String, Object>> sourceRows = firstDetailRows(sourceDetail);
+        if (sourceRows.isEmpty()) throw new IllegalStateException("报检单没有可检验明细");
+
+        String targetPanel = "PROCESS_INSPECT_APPLY".equals(panelCode) ? "PROCESS_INSPECTION" : "INSPECTION";
+        Map<String, Object> head = new HashMap<>();
+        head.put("业务类型", switch (panelCode) {
+            case "ARRIVAL_IN" -> "来料检验";
+            case "PROCESS_INSPECT_APPLY" -> "生产过程检验";
+            default -> "成品检验";
+        });
+        head.put("检验类别", head.get("业务类型"));
+        copyFirst(sourceHead, head, "供应商编码", "供应商", "仓库", "生产车间", "加工单号", "部门", "项目", "经手人");
+        head.put("来源单号", source.getFormNo());
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (int index = 0; index < sourceRows.size(); index++) {
+            Map<String, Object> sourceRow = sourceRows.get(index);
+            double quantity = sourceQuantity(sourceRow);
+            if (quantity <= 0) continue;
+            Map<String, Object> row = new HashMap<>();
+            row.put("存货编码", firstValue(sourceRow, "存货编码", "产品编码", "物料编码"));
+            row.put("存货名称", firstValue(sourceRow, "存货名称", "产品名称", "物料名称"));
+            row.put("规格型号", sourceRow.getOrDefault("规格型号", ""));
+            row.put("工序编码", sourceRow.getOrDefault("工序编码", ""));
+            row.put("工序名称", sourceRow.getOrDefault("工序名称", ""));
+            row.put("仓库", firstValue(sourceRow, "仓库", "预入仓库"));
+            row.put("计量单位", firstValue(sourceRow, "计量单位", "采购单位", "生产单位", "单位", "工序单位"));
+            row.put("报检数量", quantity);
+            row.put("检验数量", quantity);
+            row.put("合格数量", 0);
+            row.put("不合格数量", 0);
+            row.put("合格率", 0);
+            row.put("检验方式", "全检");
+            row.put("检验结果判定", "");
+            stampSource(row, panelCode, source.getFormNo(), index + 1, quantity);
+            items.add(row);
+        }
+        if (items.isEmpty()) throw new IllegalStateException("报检单没有大于零的报检数量");
+        return insertGenerated(targetPanel, panelCode, source.getFormNo(), head, Map.of("items", items));
+    }
+
+    /** 已审核检验单 → 合格品采购/产成品/委外入库草稿。 */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createInventoryInFromInspection(String panelCode, Map<String, Object> formData,
+                                                                 String targetPanel) {
+        FormData source = formOf(panelCode, formData.get("编号"));
+        if (!"已审核".equals(source.getStatus())) throw new IllegalStateException("仅已审核检验单可生成入库单");
+        Map<String, Object> sourceHead = parseData(source.getData());
+        List<Map<String, Object>> sourceRows = firstDetailRows(parseData(source.getDetailData()));
+        Map<String, Object> head = new HashMap<>();
+        copyFirst(sourceHead, head, "供应商编码", "供应商", "仓库", "生产车间", "加工单号", "部门", "项目", "经手人", "委外供应商");
+        head.put("业务类型", switch (targetPanel) {
+            case "PURCHASE_IN" -> "采购入库";
+            case "OUTSOURCE_IN" -> "委外入库";
+            default -> "产成品入库";
+        });
+        head.put("入库类别", targetPanel.equals("PURCHASE_IN") ? "采购入库" : "检验合格入库");
+        head.put("检验单号", source.getFormNo());
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (int index = 0; index < sourceRows.size(); index++) {
+            Map<String, Object> sourceRow = sourceRows.get(index);
+            double inspected = num(sourceRow.get("检验数量"));
+            double qualified = num(sourceRow.get("合格数量"));
+            String result = String.valueOf(sourceRow.getOrDefault("检验结果判定", ""));
+            double accepted = "让步接收".equals(result) ? inspected : qualified;
+            if (accepted <= 0 || "报废".equals(result)) continue;
+            Map<String, Object> row = new HashMap<>();
+            Object code = firstValue(sourceRow, "存货编码", "产品编码");
+            Object name = firstValue(sourceRow, "存货名称", "产品名称");
+            row.put("存货编码", code);
+            row.put("产品编码", code);
+            row.put("存货名称", name);
+            row.put("产品名称", name);
+            row.put("规格型号", sourceRow.getOrDefault("规格型号", ""));
+            Object warehouse = sourceRow.get("仓库");
+            row.put("仓库", warehouse == null || String.valueOf(warehouse).isBlank()
+                    ? (targetPanel.equals("PURCHASE_IN") ? "原料仓" : "成品仓") : warehouse);
+            Object unit = sourceRow.get("计量单位");
+            row.put("计量单位", unit == null || String.valueOf(unit).isBlank() ? "件" : unit);
+            row.put("实收数量", accepted);
+            row.put("数量", accepted);
+            row.put("单价", 0);
+            row.put("金额", 0);
+            stampSource(row, panelCode, source.getFormNo(), index + 1, accepted);
+            items.add(row);
+        }
+        if (items.isEmpty()) throw new IllegalStateException("检验单没有可入库的合格或让步接收数量");
+        return insertGenerated(targetPanel, panelCode, source.getFormNo(), head, Map.of("items", items));
+    }
+
+    private void stampSource(Map<String, Object> row, String panel, String no, int rowNo, double quantity) {
+        row.put("来源面板", panel);
+        row.put("来源单号", no);
+        row.put("来源行号", rowNo);
+        row.put("来源数量", quantity);
+    }
+
+    private void copyFirst(Map<String, Object> source, Map<String, Object> target, String... fields) {
+        for (String field : fields) if (source.containsKey(field)) target.put(field, source.get(field));
+    }
+
+    private Object firstValue(Map<String, Object> row, Object... keys) {
+        for (Object key : keys) {
+            if (!(key instanceof String name)) continue;
+            Object value = row.get(name);
+            if (value != null && !String.valueOf(value).isBlank()) return value;
+        }
+        return keys.length > 0 && !(keys[keys.length - 1] instanceof String) ? keys[keys.length - 1] : "";
     }
 
     /** 推式生单：请购单（PU_REQ）→ 采购订单（PU_ORDER）；表头带建议供应商，明细带存货/数量/价格 */
@@ -1303,7 +1671,8 @@ public class PxService {
         poData.put("付款方式", "现付");
         poData.put("数据来源", "请购单");
         List<Map<String, Object>> rows = new ArrayList<>();
-        for (Map<String, Object> it : items) {
+        for (int index = 0; index < items.size(); index++) {
+            Map<String, Object> it = items.get(index);
             Map<String, Object> r = new HashMap<>();
             r.put("物料编码", it.getOrDefault("存货编码", ""));
             r.put("物料名称", it.getOrDefault("存货名称", ""));
@@ -1347,7 +1716,8 @@ public class PxService {
         piData.put("采购订单号", String.valueOf(no));
         piData.put("数据来源", "采购订单");
         List<Map<String, Object>> rows = new ArrayList<>();
-        for (Map<String, Object> it : items) {
+        for (int index = 0; index < items.size(); index++) {
+            Map<String, Object> it = items.get(index);
             Map<String, Object> r = new HashMap<>();
             r.put("仓库", "原料仓");
             r.put("存货名称", it.getOrDefault("物料名称", ""));
@@ -1360,6 +1730,7 @@ public class PxService {
             r.put("金额", it.getOrDefault("金额", 0));
             r.put("含税金额", it.getOrDefault("含税金额", 0));
             r.put("现存量", it.getOrDefault("现存量", 0));
+            stampSource(r, "PU_ORDER", String.valueOf(no), index + 1, num(it.getOrDefault("数量", 0)));
             rows.add(r);
         }
         Map<String, Object> detail = new HashMap<>();
@@ -1445,7 +1816,8 @@ public class PxService {
         fiData.put("入库类别", "自制加工入库");
         fiData.put("生产车间", head.getOrDefault("生产车间", ""));
         List<Map<String, Object>> rows = new ArrayList<>();
-        for (Map<String, Object> p : products) {
+        for (int index = 0; index < products.size(); index++) {
+            Map<String, Object> p = products.get(index);
             Map<String, Object> r = new HashMap<>();
             r.put("产品名称", p.getOrDefault("产品名称", ""));
             r.put("仓库", "成品仓");
@@ -1456,6 +1828,7 @@ public class PxService {
             r.put("金额", 0);
             r.put("现存量", p.getOrDefault("现存量", 0));
             r.put("图号", p.getOrDefault("图号", ""));
+            stampSource(r, "MANU_ORDER", String.valueOf(no), index + 1, num(p.getOrDefault("数量", 0)));
             rows.add(r);
         }
         Map<String, Object> detail = new HashMap<>();
@@ -2109,6 +2482,9 @@ public class PxService {
         Object detail = formData.remove("detail");
         FormData fd;
         Object no = formData.get("编号");
+        if (detail instanceof Map<?, ?> map) {
+            validateSourceLinks(panelCode, no == null ? null : String.valueOf(no), (Map<String, Object>) map);
+        }
         String stateField = (String) fieldsOf(panelCode).get("stateFieldName");
         formData.remove("编号");
         formData.remove("创建时间");
@@ -2181,8 +2557,13 @@ public class PxService {
                 .eq(FormData::getFormNo, String.valueOf(no)));
         if (fd == null) throw new IllegalArgumentException("表单数据不存在：" + no);
         if ("审核".equals(action)) {
+            if (requiresApprovalWorkflow(panelCode)) {
+                throw new IllegalStateException("该面板必须先提交审批，不能直接审核");
+            }
             if (!"草稿".equals(fd.getStatus())) throw new IllegalStateException("仅草稿状态可审核");
             validateBomForApproval(panelCode, fd);
+            validateQualityForApproval(panelCode, fd);
+            validateSourceLinks(panelCode, fd.getFormNo(), parseData(fd.getDetailData()));
             // 人工审核：审核人 = 当前登录人（不再硬编码 admin）
             String operator = currentUserName();
             fd.setStatus("已审核");
@@ -2199,6 +2580,7 @@ public class PxService {
             fd.setData(toJson(head));
         } else if ("弃审".equals(action)) {
             if (!"已审核".equals(fd.getStatus())) throw new IllegalStateException("仅已审核状态可弃审");
+            ensureNoEffectiveChildren(panelCode, fd.getFormNo(), "弃审");
             Map<String, Object> head = parseData(fd.getData());
             head.remove("审核人");
             head.remove("审核时间");
@@ -2212,6 +2594,10 @@ public class PxService {
                     .set(FormData::getAuditTime, null)
                     .set(FormData::getData, toJson(head))
                     .set(FormData::getUpdateTime, LocalDateTime.now()));
+            if (requiresApprovalWorkflow(panelCode)) {
+                recordApproval(panelCode, fd.getFormNo(), "UNAUDIT", "PENDING", opinionOf(formData));
+            }
+            refreshSourceExecution(fd);
             return new HashMap<String, Object>() {{
                 put("编号", fd.getFormNo());
                 put("单据状态", "草稿");
@@ -2240,10 +2626,212 @@ public class PxService {
         }
         fd.setUpdateTime(LocalDateTime.now());
         formMapper.updateById(fd);
+        if ("审核".equals(action)) refreshSourceExecution(fd);
         Map<String, Object> out = new HashMap<>();
         out.put("编号", fd.getFormNo());
         out.put("单据状态", fd.getStatus());
         return out;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> firstDetailRows(Map<String, Object> detail) {
+        for (String key : List.of("items", "products", "detail", "rows", "materials", "processes")) {
+            Object value = detail.get(key);
+            if (!(value instanceof List<?> list)) continue;
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (Object item : list) if (item instanceof Map<?, ?>) rows.add((Map<String, Object>) item);
+            return rows;
+        }
+        for (Object value : detail.values()) {
+            if (!(value instanceof List<?> list)) continue;
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (Object item : list) if (item instanceof Map<?, ?>) rows.add((Map<String, Object>) item);
+            if (!rows.isEmpty()) return rows;
+        }
+        return new ArrayList<>();
+    }
+
+    private double sourceQuantity(Map<String, Object> row) {
+        for (String field : List.of("报检数量", "到货数量", "数量", "派工数量", "报工数量", "检验数量", "实收数量")) {
+            if (row.containsKey(field)) return num(row.get(field));
+        }
+        return 0;
+    }
+
+    private double executedQuantity(Map<String, Object> row) {
+        for (String field : List.of("检验数量", "实收数量", "入库数量", "处理数量", "报检数量", "到货数量", "数量")) {
+            if (row.containsKey(field)) return num(row.get(field));
+        }
+        return num(row.get("来源数量"));
+    }
+
+    /**
+     * Validates persisted source links. Drafts reserve a source quantity so two
+     * users cannot select the same source line and later over-execute it.
+     */
+    private void validateSourceLinks(String targetPanel, String targetNo, Map<String, Object> detail) {
+        List<Map<String, Object>> rows = firstDetailRows(detail);
+        Set<String> localKeys = new HashSet<>();
+        for (int index = 0; index < rows.size(); index++) {
+            Map<String, Object> row = rows.get(index);
+            String sourcePanel = String.valueOf(row.getOrDefault("来源面板", "")).trim();
+            String sourceNo = String.valueOf(row.getOrDefault("来源单号", "")).trim();
+            int sourceRowNo = (int) Math.round(num(row.get("来源行号")));
+            if (sourcePanel.isEmpty() && sourceNo.isEmpty()) continue;
+            if (sourcePanel.isEmpty() || sourceNo.isEmpty() || sourceRowNo <= 0) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行来源信息不完整");
+            }
+            FormData source = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                    .eq(FormData::getPanelCode, sourcePanel).eq(FormData::getFormNo, sourceNo));
+            if (source == null) throw new IllegalStateException("来源单据不存在：" + sourcePanel + "/" + sourceNo);
+            if (!EFFECTIVE_STATUSES.contains(source.getStatus())) {
+                throw new IllegalStateException("来源单据必须已审核且有效：" + sourceNo);
+            }
+            List<Map<String, Object>> sourceRows = firstDetailRows(parseData(source.getDetailData()));
+            if (sourceRowNo > sourceRows.size()) throw new IllegalStateException("来源明细行不存在：" + sourceNo + " 第 " + sourceRowNo + " 行");
+            String key = sourcePanel + "|" + sourceNo + "|" + sourceRowNo;
+            if (!localKeys.add(key)) throw new IllegalStateException("同一来源明细不能重复选入：" + sourceNo + " 第 " + sourceRowNo + " 行");
+
+            double limit = QUALITY_INSPECTION_PANELS.contains(sourcePanel)
+                    ? num(sourceRows.get(sourceRowNo - 1).get("检验数量"))
+                    : sourceQuantity(sourceRows.get(sourceRowNo - 1));
+            double current = executedQuantity(row);
+            double reserved = reservedQuantity(targetPanel, targetNo, sourcePanel, sourceNo, sourceRowNo);
+            if (current <= 0) throw new IllegalStateException("第 " + (index + 1) + " 行执行数量必须大于 0");
+            if (reserved > 0.000001) {
+                throw new IllegalStateException("来源明细已被其他下游单据选入：" + sourceNo + " 第 " + sourceRowNo + " 行");
+            }
+            if (current + reserved > limit + 0.000001) {
+                throw new IllegalStateException("来源明细超量：" + sourceNo + " 第 " + sourceRowNo
+                        + " 行，可执行 " + limit + "，已占用 " + reserved + "，本次 " + current);
+            }
+        }
+    }
+
+    private double reservedQuantity(String targetPanel, String targetNo, String sourcePanel, String sourceNo, int sourceRowNo) {
+        double total = 0;
+        for (FormData document : formMapper.selectList(new LambdaQueryWrapper<FormData>())) {
+            if (targetNo != null && targetPanel.equals(document.getPanelCode()) && targetNo.equals(document.getFormNo())) continue;
+            if ("已中止".equals(document.getStatus())) continue;
+            for (Map<String, Object> row : firstDetailRows(parseData(document.getDetailData()))) {
+                if (sourcePanel.equals(String.valueOf(row.getOrDefault("来源面板", "")))
+                        && sourceNo.equals(String.valueOf(row.getOrDefault("来源单号", "")))
+                        && sourceRowNo == (int) Math.round(num(row.get("来源行号")))) {
+                    total += executedQuantity(row);
+                }
+            }
+        }
+        return total;
+    }
+
+    private void validateQualityForApproval(String panelCode, FormData document) {
+        if (!QUALITY_REPORT_PANELS.contains(panelCode) && !QUALITY_INSPECTION_PANELS.contains(panelCode)) return;
+        Map<String, Object> detail = parseData(document.getDetailData());
+        List<Map<String, Object>> rows = firstDetailRows(detail);
+        if (rows.isEmpty()) throw new IllegalStateException("质量单据至少需要一条明细");
+        if (QUALITY_REPORT_PANELS.contains(panelCode)) {
+            for (int index = 0; index < rows.size(); index++) {
+                if (num(rows.get(index).get("报检数量")) <= 0 && sourceQuantity(rows.get(index)) <= 0) {
+                    throw new IllegalStateException("第 " + (index + 1) + " 行报检数量必须大于 0");
+                }
+            }
+            return;
+        }
+
+        Map<Integer, Double> treatmentByLine = new HashMap<>();
+        Object treatmentsObject = detail.get("unqualified");
+        if (treatmentsObject instanceof List<?> treatments) {
+            for (Object value : treatments) {
+                if (!(value instanceof Map<?, ?> treatment)) continue;
+                int lineNo = (int) Math.round(num(treatment.get("关联明细行号")));
+                String reason = String.valueOf(treatment.get("不合格原因") == null ? "" : treatment.get("不合格原因")).trim();
+                String method = String.valueOf(treatment.get("处理方式") == null ? "" : treatment.get("处理方式")).trim();
+                double quantity = num(treatment.get("处理数量"));
+                if (lineNo <= 0 || lineNo > rows.size()) throw new IllegalStateException("不合格处理关联的明细行号无效");
+                if (reason.isEmpty()) throw new IllegalStateException("不合格处理必须选择不合格原因");
+                if (method.isEmpty()) throw new IllegalStateException("不合格处理必须选择处理方式");
+                if (quantity <= 0) throw new IllegalStateException("不合格处理数量必须大于 0");
+                treatmentByLine.merge(lineNo, quantity, Double::sum);
+            }
+        }
+        for (int index = 0; index < rows.size(); index++) {
+            Map<String, Object> row = rows.get(index);
+            double reported = num(row.get("报检数量"));
+            double inspected = num(row.get("检验数量"));
+            double qualified = num(row.get("合格数量"));
+            double unqualified = num(row.get("不合格数量"));
+            String result = String.valueOf(row.getOrDefault("检验结果判定", "")).trim();
+            if (reported <= 0 || inspected <= 0) throw new IllegalStateException("第 " + (index + 1) + " 行报检/检验数量必须大于 0");
+            if (inspected > reported + 0.000001) throw new IllegalStateException("第 " + (index + 1) + " 行检验数量不能超过报检数量");
+            if (Math.abs(qualified + unqualified - inspected) > 0.000001) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行合格数量 + 不合格数量必须等于检验数量");
+            }
+            if (result.isEmpty()) throw new IllegalStateException("第 " + (index + 1) + " 行必须填写检验结果判定");
+            if (unqualified <= 0 && !"合格".equals(result)) throw new IllegalStateException("第 " + (index + 1) + " 行无不合格数量时结果应为合格");
+            if (unqualified > 0) {
+                if ("合格".equals(result)) throw new IllegalStateException("第 " + (index + 1) + " 行有不合格数量时不能判定合格");
+                double treated = treatmentByLine.getOrDefault(index + 1, 0.0);
+                if (Math.abs(treated - unqualified) > 0.000001) {
+                    throw new IllegalStateException("第 " + (index + 1) + " 行不合格处理数量必须等于不合格数量");
+                }
+            }
+        }
+    }
+
+    private void ensureNoEffectiveChildren(String sourcePanel, String sourceNo, String action) {
+        for (FormData document : formMapper.selectList(new LambdaQueryWrapper<FormData>())) {
+            if ("已中止".equals(document.getStatus())) continue;
+            for (Map<String, Object> row : firstDetailRows(parseData(document.getDetailData()))) {
+                if (sourcePanel.equals(String.valueOf(row.getOrDefault("来源面板", "")))
+                        && sourceNo.equals(String.valueOf(row.getOrDefault("来源单号", "")))) {
+                    throw new IllegalStateException("单据已被下游单据 " + document.getFormNo() + " 使用，不能" + action);
+                }
+            }
+        }
+    }
+
+    /** Recalculates accumulated quantities on every source row from effective downstream documents. */
+    private void refreshSourceExecution(FormData downstream) {
+        Set<String> sources = new HashSet<>();
+        for (Map<String, Object> row : firstDetailRows(parseData(downstream.getDetailData()))) {
+            String sourcePanel = String.valueOf(row.getOrDefault("来源面板", ""));
+            String sourceNo = String.valueOf(row.getOrDefault("来源单号", ""));
+            if (!sourcePanel.isBlank() && !sourceNo.isBlank()) sources.add(sourcePanel + "\n" + sourceNo);
+        }
+        for (String key : sources) {
+            String[] parts = key.split("\n", 2);
+            FormData source = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                    .eq(FormData::getPanelCode, parts[0]).eq(FormData::getFormNo, parts[1]));
+            if (source == null) continue;
+            Map<String, Object> sourceDetail = parseData(source.getDetailData());
+            List<Map<String, Object>> sourceRows = firstDetailRows(sourceDetail);
+            for (Map<String, Object> row : sourceRows) {
+                row.put("累计执行数量", 0);
+                row.put("累计检验数量", 0);
+                row.put("累计入库数量", 0);
+            }
+            for (FormData target : formMapper.selectList(new LambdaQueryWrapper<FormData>())) {
+                if (!EFFECTIVE_STATUSES.contains(target.getStatus())) continue;
+                for (Map<String, Object> row : firstDetailRows(parseData(target.getDetailData()))) {
+                    if (!parts[0].equals(String.valueOf(row.getOrDefault("来源面板", "")))
+                            || !parts[1].equals(String.valueOf(row.getOrDefault("来源单号", "")))) continue;
+                    int line = (int) Math.round(num(row.get("来源行号")));
+                    if (line <= 0 || line > sourceRows.size()) continue;
+                    Map<String, Object> sourceRow = sourceRows.get(line - 1);
+                    double quantity = executedQuantity(row);
+                    sourceRow.put("累计执行数量", num(sourceRow.get("累计执行数量")) + quantity);
+                    if (QUALITY_INSPECTION_PANELS.contains(target.getPanelCode())) {
+                        sourceRow.put("累计检验数量", num(sourceRow.get("累计检验数量")) + quantity);
+                    }
+                    if (Set.of("PURCHASE_IN", "FINISH_IN", "OUTSOURCE_IN").contains(target.getPanelCode())) {
+                        sourceRow.put("累计入库数量", num(sourceRow.get("累计入库数量")) + quantity);
+                    }
+                }
+            }
+            source.setDetailData(toJson(sourceDetail));
+            source.setUpdateTime(LocalDateTime.now());
+            formMapper.updateById(source);
+        }
     }
 
     // ---------- 审批流：提交审批 → 审批中 → 审批通过/审批驳回（全留痕，可扩展多级） ----------
@@ -2275,11 +2863,25 @@ public class PxService {
         approvalMapper.insert(rec);
     }
 
+    /** 审批通过/驳回必须紧跟一次有效提交，防止仅修改状态后伪造审批结果。 */
+    private void requirePendingSubmission(String panelCode, String formNo) {
+        FormApproval latest = approvalMapper.selectOne(new LambdaQueryWrapper<FormApproval>()
+                .eq(FormApproval::getPanelCode, panelCode)
+                .eq(FormApproval::getFormNo, formNo)
+                .orderByDesc(FormApproval::getId)
+                .last("LIMIT 1"));
+        if (latest == null || !"SUBMIT".equals(latest.getAction()) || !"PENDING".equals(latest.getResult())) {
+            throw new IllegalStateException("单据尚未提交审批，不能审批通过或驳回");
+        }
+    }
+
     /** 提交审批：仅草稿 → 审批中 */
     private Map<String, Object> submitApproval(String panelCode, Map<String, Object> formData) {
         FormData fd = formOf(panelCode, formData.get("编号"));
         if (!"草稿".equals(fd.getStatus())) throw new IllegalStateException("仅草稿状态可提交审批");
         validateBomForApproval(panelCode, fd);
+        validateQualityForApproval(panelCode, fd);
+        validateSourceLinks(panelCode, fd.getFormNo(), parseData(fd.getDetailData()));
         String operator = currentUserName();
         String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         fd.setStatus("审批中");
@@ -2303,7 +2905,10 @@ public class PxService {
     private Map<String, Object> approveApproval(String panelCode, Map<String, Object> formData) {
         FormData fd = formOf(panelCode, formData.get("编号"));
         if (!"审批中".equals(fd.getStatus())) throw new IllegalStateException("仅审批中状态可审批通过");
+        requirePendingSubmission(panelCode, fd.getFormNo());
         validateBomForApproval(panelCode, fd);
+        validateQualityForApproval(panelCode, fd);
+        validateSourceLinks(panelCode, fd.getFormNo(), parseData(fd.getDetailData()));
         String operator = currentUserName();
         String opinion = opinionOf(formData);
         fd.setStatus("已审核");
@@ -2319,6 +2924,7 @@ public class PxService {
         fd.setData(toJson(head));
         formMapper.updateById(fd);
         recordApproval(panelCode, fd.getFormNo(), "APPROVE", "APPROVED", opinion);
+        refreshSourceExecution(fd);
         Map<String, Object> out = new HashMap<>();
         out.put("编号", fd.getFormNo());
         out.put("单据状态", "已审核");
@@ -2352,6 +2958,7 @@ public class PxService {
     private Map<String, Object> rejectApproval(String panelCode, Map<String, Object> formData) {
         FormData fd = formOf(panelCode, formData.get("编号"));
         if (!"审批中".equals(fd.getStatus())) throw new IllegalStateException("仅审批中状态可审批驳回");
+        requirePendingSubmission(panelCode, fd.getFormNo());
         String opinion = opinionOf(formData);
         if (opinion.isEmpty()) throw new IllegalStateException("审批驳回必须填写审批意见");
         fd.setStatus("草稿");
@@ -2413,6 +3020,7 @@ public class PxService {
         if (!"草稿".equals(st1) && !"启用".equals(st1) && !"停用".equals(st1)) {
             throw new IllegalStateException("仅草稿状态可删除");
         }
+        ensureNoEffectiveChildren(panelCode, code, "删除");
         formMapper.deleteById(fd.getId());
     }
 
@@ -2462,6 +3070,9 @@ public class PxService {
         else if ("ARRIVAL_IN".equals(panelCode)) biz = "DH-";        // 到货单
         else if ("FINISH_INSPECT".equals(panelCode)) biz = "BJ-";   // 成品报检单
         else if ("INSPECTION".equals(panelCode)) biz = "JY-";       // 来料成品检验单
+        else if ("FIRST_INSPECT".equals(panelCode)) biz = "SJ-";    // 首件报检单
+        else if ("PROCESS_INSPECT_APPLY".equals(panelCode)) biz = "GB-"; // 工序报检单
+        else if ("PROCESS_INSPECTION".equals(panelCode)) biz = "GCJ-";   // 生产过程检验单
         else if ("DISPATCH".equals(panelCode)) biz = "PG-";         // 工序派工单
         else if ("TRANSFER".equals(panelCode)) biz = "DB-";        // 调拨单（T+ 调拨惯例 DB）
         else if ("OUTSOURCE_ORDER".equals(panelCode)) biz = "WW-"; // 委外加工单（T+ 委外惯例 WW）
@@ -2507,9 +3118,17 @@ public class PxService {
     private static final Set<String> APPROVAL_PANELS = Set.of(
             "SO_ORDER", "PURCHASE_IN", "FINISH_IN", "OTHER_IN", "SALE_OUT", "MATERIAL_OUT", "OTHER_OUT",
             "MANU_ORDER", "PROCESS_REPORT", "INIT_AP", "INIT_AR", "INIT_BALANCE", "BOM", "ROUTE", "PU_REQ",
+            "ARRIVAL_IN", "DISPATCH", "FINISH_INSPECT", "INSPECTION", "MATERIAL_REQ", "PICK_ORDER",
+            "PU_IN", "PU_ORDER", "SALE_INV",
             "TRANSFER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_IN", "OUTSOURCE_FEE",
             "QUOTE_ORDER", "SALE_INVOICE", "EXPENSE", "SALE_COST_ALLOC", "PU_INVOICE", "PU_COST_ALLOC",
             "STOCK_CHECK", "LOCATION_ADJUST", "SERIAL_NO");
+    private static final List<String> APPROVAL_WORKFLOW_ACTIONS = List.of(
+            "提交审批", "审批通过", "审批驳回", "审批情况", "弃审");
+
+    private boolean requiresApprovalWorkflow(String panelCode) {
+        return APPROVAL_PANELS.contains(panelCode) || configUsesApprovalWorkflow(loadConfig(panelCode));
+    }
 
     /**
      * 审批面板审核类动作（审核/提交审批/审批通过）时自动补表头：
@@ -2555,7 +3174,7 @@ public class PxService {
         if ("INV".equals(panelCode)) return true;
         // 审批面板（BOM/ROUTE/INIT_* 等）：保存保留草稿，走 草稿→审核 链路（2026-08-20 单单据改造连带修复）
         if (APPROVAL_PANELS.contains(panelCode)) return false;
-        if ("基础档案".equals(categoryOf(panelCode))) return true;
+        if (Set.of("基础档案", "设置").contains(categoryOf(panelCode))) return true;
         String autoField = autoCodeFieldOf(panelCode);
         if (autoField == null || autoField.isBlank() || "单据编号".equals(autoField)) return false;
         return true; // 自编码面板（工艺路线编码/物料清单编码/期初*号）

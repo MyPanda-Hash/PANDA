@@ -96,7 +96,7 @@
               <span class="dt-ic">批量修改</span>
               <span class="dt-ic" v-if="ti === 0">销售订单查询</span>
               <span class="dt-ic">存货中心</span>
-              <span class="dt-ic" v-if="ti === 1">现存量提取</span>
+              <span class="dt-ic" v-if="visibleFields(tab).some((field) => field.dataName === '现存量')" @click="refreshTabCurrentStock(tab)">现存量提取</span>
               <span class="dt-ic">更多</span>
               <span v-if="tab.key === 'materials' && selectedProduct" class="filter-hint">当前产品：{{ selectedProduct }} 的 BOM 子件</span>
               <span class="tab-hint">{{ tabHint(tab) }}</span>
@@ -298,12 +298,14 @@ import { useTabsStore } from '@/stores/tabs'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Back, Plus, Delete, ArrowDown, Search } from '@element-plus/icons-vue'
-import * as engine from '@/business/engine'
+import { usePanelRuntime } from '@core/panel-runtime'
 import RefPickDialog from './RefPickDialog.vue'
 import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
 import ImportDialog from './ImportDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
+
+const engine = usePanelRuntime()
 const { SHORTCUTS } = engine
 
 const route = useRoute()
@@ -361,8 +363,15 @@ const selectRows = ref([])
 const selectCrg = ref(null)
 const selectCols = computed(() => selectCrg.value?.columns || [])
 
-async function openSelectDialog() {
-  const cfg = payloadCache.value?.selectConfig
+function selectConfigFor(action = '选单') {
+  const payload = payloadCache.value || {}
+  const configs = payload.selectConfigs || {}
+  if (configs[action]) return configs[action]
+  if (action === '选单') return payload.selectConfig || Object.values(configs)[0]
+  return null
+}
+
+async function openSelectDialog(cfg = selectConfigFor()) {
   if (!cfg) {
     ElMessage.info('演示环境暂未实现「选单」，界面与 T+ 保持一致')
     return
@@ -373,7 +382,8 @@ async function openSelectDialog() {
   selectRows.value = []
   try {
     // 对齐 T+ 选单前提：已生效（已审核）且未中止的来源单据
-    const res = await engine.queryFormDataList({ panelCode: cfg.source, condition: { 单据状态: '已审核' }, pageNo: 1, pageSize: 100 })
+    const condition = { ...(cfg.condition || {}), 单据状态: '已审核' }
+    const res = await engine.queryFormDataList({ panelCode: cfg.source, condition, pageNo: 1, pageSize: 100 })
     let rows = res.list || []
     // 来源列表返回单据级行（带 detail）时展开为明细行（对齐 T+ 选单按明细行展示/带出；有 detailRows 配置则保持单据粒度）
     if (!cfg.detailRows && rows.some((r) => r.detail)) {
@@ -381,7 +391,14 @@ async function openSelectDialog() {
       for (const r of rows) {
         const d = r.detail
         const key = cfg.detailKey || (d ? Object.keys(d)[0] : null)
-        if (key && Array.isArray(d[key])) for (const it of d[key]) flat.push({ ...r, ...it })
+        if (key && Array.isArray(d[key])) {
+          d[key].forEach((it, index) => flat.push({
+            ...r,
+            ...it,
+            _sourceFormNo: r['编号'] || r['单据编号'] || r['锭号'] || '',
+            _sourceRowNo: index + 1,
+          }))
+        }
       }
       if (flat.length) rows = flat
     }
@@ -434,6 +451,15 @@ function confirmSelect() {
     for (const m of cfg.detailMap || []) {
       out[m.to] = r[m.from] ?? ''
     }
+    const sourceNo = r._sourceFormNo || r['编号'] || r['单据编号'] || r['锭号'] || sourceNos[0] || ''
+    const sourceQtyField = cfg.sourceQuantityField || '数量'
+    const targetQtyField = cfg.targetQuantityField || ''
+    out['来源面板'] = cfg.source || ''
+    out['来源单号'] = sourceNo
+    out['来源行号'] = r._sourceRowNo || 1
+    out['来源数量'] = targetQtyField && out[targetQtyField] !== undefined
+      ? out[targetQtyField]
+      : (r[sourceQtyField] ?? 0)
     return out
   })
   if (rows.length && detailDef.value?.tabs?.[0]) {
@@ -588,6 +614,7 @@ async function onRefConfirm(rows) {
   } else {
     const row = p.row
     const tab = p.tab
+    const changedRows = []
     const maps = rp.map || rp.refMap || []
     const applyMap = (target, srcRow) => {
       for (const m of maps) {
@@ -599,6 +626,7 @@ async function onRefConfirm(rows) {
     const rillRow = (target, srcRow) => {
       target[r.dataName] = srcRow[refField]
       applyMap(target, srcRow)
+      changedRows.push(target)
     }
     // 明细行参照：勾选 N 行一次导入 → 当前行填第一行，其余每行生成一条明细（含 refMap 带出）
     rillRow(row, rows[0] || {})
@@ -611,6 +639,7 @@ async function onRefConfirm(rows) {
     if (tab?.key === 'products' && r.dataName === '产品编码') {
       for (const selected of rows) loadBomFor(selected[refField])
     }
+    await engine.fillCurrentStock(changedRows)
   }
   refVisible.value = false
   applyCalc()
@@ -824,7 +853,7 @@ function applyCalc() {
         } catch (e) {
           v = 0
         }
-        if (rule.round != null) v = Math.round(v * 10 ** rule.round) / 10 ** rule.round
+        if (rule.round != null) v = engine.roundDecimal(v, rule.round)
         if (row[rule.target] !== v) row[rule.target] = v
       }
     }
@@ -836,9 +865,21 @@ watch(detailData, applyCalc, { deep: true })
 // ---------- BOM 联动：产成品明细选产品 → 从存货面板（INV）BOM 子表带出材料明细 ----------
 const bomLoaded = new Set()
 
-function onDetailChange(dr, row, tab) {
+async function onDetailChange(dr, row, tab) {
   if (tab && tab.key === 'products' && dr.dataName === '产品编码') {
     loadBomFor(row[dr.dataName])
+  }
+  if (['存货编码', '存货名称', '产品编码', '产品名称', '材料编码', '材料名称', '仓库', '预出仓库', '出库仓库'].includes(dr.dataName)) {
+    try { await engine.fillCurrentStock(row) } catch (error) { ElMessage.error(engine.errMsg(error) || '现存量刷新失败') }
+  }
+}
+
+async function refreshTabCurrentStock(tab) {
+  try {
+    const count = await engine.fillCurrentStock(detailData[tab.key] || [])
+    ElMessage.success(`已按库存状况表刷新 ${count} 行现存量`)
+  } catch (error) {
+    ElMessage.error(engine.errMsg(error) || '现存量提取失败')
   }
 }
 
@@ -1021,14 +1062,14 @@ async function onButton(action) {
     return
   }
   // 拉式选单（配置驱动：selectConfig.generateButton 存在 → 新弹窗直接生单；否则旧带入流程）
-  if (action === '选单' || (action.startsWith('选') && payloadCache.value?.selectConfig)) {
-    const sc = payloadCache.value?.selectConfig
+  if (action === '选单' || action.startsWith('选')) {
+    const sc = selectConfigFor(action)
     if (sc) {
       if (sc.generateButton) {
         selCfg.value = sc
         selVisible.value = true
       } else {
-        openSelectDialog()
+        openSelectDialog(sc)
       }
       return
     }

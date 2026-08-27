@@ -26,6 +26,8 @@
 | 了解和启动项目 | [项目说明](../README.md) -> [开发与质量](development/开发与质量.md) |
 | 新增或修改面板 | [前端面板设计](frontend/前端面板设计.md) -> [后端逻辑设计](backend/后端逻辑设计.md) |
 | 修改接口或业务流转 | [后端逻辑设计](backend/后端逻辑设计.md) -> [开发与质量](development/开发与质量.md) |
+| 从 MES 能力演进 PLM | [前端面板设计](frontend/前端面板设计.md#10-plm-复用边界) -> [后端逻辑设计](backend/后端逻辑设计.md#11-plm-领域落地原则) -> [开发与质量](development/开发与质量.md) |
+| 调研真实 T+ 页面 | [T+ 抓取工具说明](../tools/tplus-grab/README.md) -> 对应主题设计 -> `docs/ref/` 原始证据 |
 | 上线服务器 | [服务器部署](deploy/服务器部署.md) |
 | 查阅旧设计和取证 | 本地 `docs/archive/`（如存在）或 `docs/ref/` |
 

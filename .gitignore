@@ -16,6 +16,7 @@ target/
 *.iml
 
 # === 宸ュ叿杩愯鏃? ===
+runtime-logs/
 tools/tplus-grab/profile/
 tools/tplus-grab/profile-*/
 .tplus-grab-out/

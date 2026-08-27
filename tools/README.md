@@ -16,18 +16,28 @@
 |---|---|
 | `verify-project.mjs` | 文档审计、前端生产构建和后端 Maven 打包 |
 | `docs-audit.mjs` | 当前文档的编码、结构、链接和导航检查 |
+| `architecture-audit.mjs` | 检查通用面板核心不反向依赖 MES/PLM 业务适配器 |
 | `docs-format.mjs` | 统一当前文档元信息和换行格式 |
 | `detect-jdk.bat` | 查找本机可用的 JDK 17+ |
 | `apache-maven-3.9.9/`、`settings.xml` | 固定 Maven 版本和镜像配置 |
 | `tplus-grab/` | 真实 T+ 页面结构、截图和交互取证 |
 | `e2e-*.cjs`、`regression-*.cjs` | 本地 SQL 模式回归 |
 | `build-deploy-sql.mjs` | 生成部署所需 SQL 产物 |
+| `repair-db-question-marks.cjs` | 检查或修复错误文本管道造成的数据库中文 `??` 污染；应用修复前自动备份 |
 
 常用命令：
 
 ```powershell
 node tools/docs-audit.mjs
+node tools/architecture-audit.mjs
 node tools/verify-project.mjs
+```
+
+数据库 UTF-8 检查与修复（默认连接 `127.0.0.1:3306/light_mes`，密码从 `MES_DB_PASSWORD` 读取）：
+
+```powershell
+node tools/repair-db-question-marks.cjs --check
+node tools/repair-db-question-marks.cjs --apply
 ```
 
 ## 面板资料

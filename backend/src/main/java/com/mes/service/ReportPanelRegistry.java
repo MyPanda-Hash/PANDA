@@ -379,6 +379,57 @@ public class ReportPanelRegistry {
                 c("仓库", "存货编码", "存货名称", "规格型号", "配货单数", "配货数量", "销售出库数量", "未出库数量"),
                 query("开始日期", "结束日期", "仓库", "存货")));
 
+        // ---------- 质检管理报表（T+ QM 菜单码基线） ----------
+        List<String> qualityDetailColumns = c("单据日期", "单据编号", "单据状态", "业务类型", "来源单号",
+                "供应商", "生产车间", "加工单号", "存货编码", "存货名称", "规格型号", "工序编码", "工序名称",
+                "计量单位", "报检数量", "检验数量", "合格数量", "不合格数量", "检验结果判定", "检验员", "检验日期");
+        List<String> qualityStatsColumns = c("业务类型", "存货编码", "存货名称", "规格型号", "计量单位", "单据数",
+                "报检数量", "检验数量", "合格数量", "不合格数量", "合格率%");
+        List<String> qualityExecColumns = c("单据编号", "单据日期", "单据状态", "存货编码", "存货名称", "规格型号",
+                "计量单位", "报检数量", "累计检验数量", "未检验数量", "检验执行率%", "累计入库数量", "入库执行率%");
+        out.put("ARRIVAL_IN_DETAIL", d("ARRIVAL_IN_DETAIL", "到货单明细表", qualityDetailColumns,
+                query("开始日期", "结束日期", "单据编号", "单据状态", "供应商", "存货")));
+        out.put("ARRIVAL_IN_STATS", d("ARRIVAL_IN_STATS", "到货单统计表", qualityStatsColumns,
+                query("开始日期", "结束日期", "供应商", "存货")));
+        out.put("ARRIVAL_IN_EXEC", d("ARRIVAL_IN_EXEC", "到货单执行表", qualityExecColumns,
+                query("开始日期", "结束日期", "单据编号", "单据状态", "供应商", "存货")));
+        out.put("FINISH_INSPECT_DETAIL", d("FINISH_INSPECT_DETAIL", "成品报检单明细表", qualityDetailColumns,
+                query("开始日期", "结束日期", "单据编号", "单据状态", "生产车间", "存货")));
+        out.put("FINISH_INSPECT_STATS", d("FINISH_INSPECT_STATS", "成品报检单统计表", qualityStatsColumns,
+                query("开始日期", "结束日期", "生产车间", "存货")));
+        out.put("FINISH_INSPECT_EXEC", d("FINISH_INSPECT_EXEC", "成品报检单执行表", qualityExecColumns,
+                query("开始日期", "结束日期", "单据编号", "单据状态", "生产车间", "存货")));
+        out.put("FIRST_INSPECT_DETAIL", d("FIRST_INSPECT_DETAIL", "首件报检单明细表", qualityDetailColumns,
+                query("开始日期", "结束日期", "单据编号", "单据状态", "生产车间", "存货")));
+        out.put("FIRST_INSPECT_STATS", d("FIRST_INSPECT_STATS", "首件报检单统计表", qualityStatsColumns,
+                query("开始日期", "结束日期", "生产车间", "存货")));
+        out.put("FIRST_INSPECT_EXEC", d("FIRST_INSPECT_EXEC", "首件报检单执行表", qualityExecColumns,
+                query("开始日期", "结束日期", "单据编号", "单据状态", "生产车间", "存货")));
+        out.put("PROCESS_INSPECT_APPLY_DETAIL", d("PROCESS_INSPECT_APPLY_DETAIL", "工序报检单明细表", qualityDetailColumns,
+                query("开始日期", "结束日期", "单据编号", "单据状态", "生产车间", "工序名称")));
+        out.put("PROCESS_INSPECT_APPLY_STATS", d("PROCESS_INSPECT_APPLY_STATS", "工序报检单统计表", qualityStatsColumns,
+                query("开始日期", "结束日期", "生产车间", "工序名称", "存货")));
+        out.put("PROCESS_INSPECT_APPLY_EXEC", d("PROCESS_INSPECT_APPLY_EXEC", "工序报检单执行表", qualityExecColumns,
+                query("开始日期", "结束日期", "单据编号", "单据状态", "生产车间", "工序名称")));
+        out.put("INSPECTION_DETAIL", d("INSPECTION_DETAIL", "检验单综合明细表", qualityDetailColumns,
+                query("开始日期", "结束日期", "单据编号", "单据状态", "供应商", "生产车间", "存货")));
+        out.put("INSPECTION_STATS", d("INSPECTION_STATS", "检验单综合统计表", qualityStatsColumns,
+                query("开始日期", "结束日期", "业务类型", "供应商", "生产车间", "存货")));
+        out.put("QUALITY_STATS_ANALYSIS", d("QUALITY_STATS_ANALYSIS", "质量统计分析表", qualityStatsColumns,
+                query("开始日期", "结束日期", "业务类型", "存货")));
+        out.put("QC_ITEM_LIST", d("QC_ITEM_LIST", "检验项目列表",
+                c("项目编码", "项目名称", "检验内容", "检验标准", "数据类型", "计量单位", "判定规则", "标准下限", "标准上限", "停用"),
+                query("项目编码", "项目名称")));
+        out.put("QC_ITEM_STATS", d("QC_ITEM_STATS", "检验项目综合统计表",
+                c("检验项目", "检验单数", "检验数量", "合格数量", "不合格数量", "合格率%"),
+                query("开始日期", "结束日期", "检验项目")));
+        List<String> traceColumns = c("方向", "来源面板", "来源单号", "来源行号", "目标面板", "目标单号", "目标状态",
+                "存货编码", "存货名称", "规格型号", "批号", "数量", "检验结果判定", "单据日期");
+        out.put("PRODUCT_FORWARD_TRACE", d("PRODUCT_FORWARD_TRACE", "产品正向追溯报表", traceColumns,
+                query("开始日期", "结束日期", "来源单号", "目标单号", "存货")));
+        out.put("MATERIAL_REVERSE_TRACE", d("MATERIAL_REVERSE_TRACE", "材料反向追溯报表", traceColumns,
+                query("开始日期", "结束日期", "来源单号", "目标单号", "存货")));
+
         return out;
     }
 }

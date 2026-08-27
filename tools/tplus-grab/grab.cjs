@@ -7,10 +7,10 @@
  *
  * 选项：
  *   --url      必填。单据页 URL，如
- *              https://h2t.chanjet.com/tplus/BAPView/Voucher.aspx?sysId=mp&mId=mp05&pId=voucherView
+ *              https://h4t.chanjet.com/tplus/BAPView/Voucher.aspx?sysId=QM&mId=QM05&pId=voucherView
  *   --name     输出前缀（默认 dom）
  *   --out      输出目录（默认 ./.tplus-grab-out）
- *   --login    走「立即体验 → 轻MES」演示账号登录流程（首次或会话失效时用）
+ *   --login    走「立即体验 → 机械行业」演示账号登录流程（首次或会话失效时用）
  *   --port     CDP 端口（默认 9222）
  *   --profile  Edge 会话目录（默认本目录下 ./profile，登录态跨次保留）
  *   --width/--height  视口（默认 1600x1000）
@@ -141,23 +141,28 @@ async function loginFlow(cdp, args) {
         const w = await cdp.send('Page.createIsolatedWorld', { frameId: fr.id, worldName: 'tplus-probe', grantUniveralAccess: true })
         ctxId = w.executionContextId
       }
-      // 默认选择「机械行业」；找不到时回退「轻MES」（向后兼容）
       const hit = await cdp.evalIn(`(() => {
-        const pick = ['机械行业', '轻MES'].map(t => [...document.querySelectorAll('*')].find(e => e.textContent.trim() === t)).find(Boolean)
-        if (pick) { pick.click(); return pick.textContent.trim(); }
-        return null;
+        const pick = document.querySelector('#machine')
+        if (!pick) return null
+        pick.click()
+        return pick.textContent.trim() || '机械行业'
       })()`, ctxId)
       if (hit) { chosen = true; console.log('[login] 已选「' + hit + '」，等待门户'); break }
     }
     await sleep(1500)
   }
-  if (!chosen) throw new Error('登录流程未点到目标行业（机械行业/轻MES）')
+  if (!chosen) throw new Error('登录流程未找到机械行业入口 #machine')
+  let portalUrl = ''
   for (let i = 0; i < 80; i++) {
     const tree = await cdp.send('Page.getFrameTree')
-    // 机械行业 → h4t.chanjet.com；轻MES → h2t.chanjet.com；统一按 chanjet.com 门户判定
-    if (tree.frameTree.frame.url.includes('chanjet.com/tplus/view/portal')) break
+    portalUrl = tree.frameTree.frame.url
+    if (portalUrl.includes('https://h4t.chanjet.com/') && portalUrl.includes('/tplus/view/portal')) break
     await sleep(1500)
   }
+  if (!portalUrl.includes('https://h4t.chanjet.com/') || !portalUrl.includes('/tplus/view/portal')) {
+    throw new Error('机械行业登录未进入 h4t 门户，当前地址：' + portalUrl)
+  }
+  console.log('[login] 已进入机械行业门户: ' + portalUrl)
   await sleep(4000)
 }
 

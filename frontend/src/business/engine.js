@@ -4,12 +4,87 @@ import { unwrap, errMsg } from '@core/panel-engine'
 // 通用层函数继续对外导出（保持既有调用方兼容）
 export { unwrap, errMsg }
 
+/** 财务字段十进制四舍五入，修正 15.5 * 1.13 = 17.514999... 一类二进制浮点边界。 */
+export function roundDecimal(value, digits = 2) {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return 0
+  const factor = 10 ** digits
+  const scaled = number * factor
+  const tolerance = Number.EPSILON * Math.max(1, Math.abs(scaled)) * 4
+  const rounded = scaled >= 0
+    ? Math.floor(scaled + 0.5 + tolerance)
+    : Math.ceil(scaled - 0.5 - tolerance)
+  return rounded / factor
+}
+
 // 数据访问固定为 SQL 后端：/api/px/* -> Spring Boot -> MySQL。
+
+const APPROVAL_WORKFLOW_ACTIONS = ['提交审批', '审批通过', '审批驳回', '审批情况', '弃审']
+/**
+ * 兼容历史面板配置：审批面板只保留一个审批组，主按钮直接提交审批。
+ * 后端也会执行同样的归一化，这里兼容数据库中的旧配置。
+ */
+export function normalizeApprovalGroups(rawGroups, forceWorkflow = false) {
+  const groups = Array.isArray(rawGroups) ? rawGroups : []
+  const hasWorkflow = forceWorkflow
+    || groups.some((group) => (group.actions || group.items || []).includes('提交审批'))
+  if (!hasWorkflow) {
+    return groups.map((group) => ({
+      ...group,
+      actions: [...new Set((group.actions || group.items || []).map((action) => (
+        action === '驳回审批' ? '审批驳回' : action
+      )))],
+    }))
+  }
+
+  const result = []
+  let approvalGroup = null
+  let insertAt = -1
+  for (const group of groups) {
+    const actions = group.actions || group.items || []
+    const isWorkflowGroup = actions.includes('提交审批')
+      || (['审核', '审批', '审批情况', '弃审'].includes(group.name)
+        && actions.some((action) => ['审核', ...APPROVAL_WORKFLOW_ACTIONS, '驳回审批'].includes(action)))
+    if (isWorkflowGroup) {
+      if (insertAt < 0) insertAt = result.length
+      approvalGroup ||= group
+      continue
+    }
+    result.push({
+      ...group,
+      actions: [...new Set(actions.map((action) => (action === '驳回审批' ? '审批驳回' : action)))],
+    })
+  }
+  result.splice(insertAt < 0 ? result.length : insertAt, 0, {
+    ...(approvalGroup || {}),
+    name: '审批',
+    actions: [...APPROVAL_WORKFLOW_ACTIONS],
+  })
+  return result
+}
+
+function normalizeApprovalConfig(config) {
+  if (!config?.metadata) return config
+  return {
+    ...config,
+    metadata: {
+      ...config.metadata,
+      buttonGroups: normalizeApprovalGroups(config.metadata.buttonGroups),
+    },
+  }
+}
+
+function normalizeApprovalPayload(payload) {
+  if (!payload) return payload
+  return {
+    ...payload,
+    buttonGroups: normalizeApprovalGroups(payload.buttonGroups),
+  }
+}
 
 // ==================== 单单据面板（metadata.singleDoc）：参照展平 ====================
 // 列表/表单查询返回 1 张单据行（form_no=面板名，明细在 detail.<tabKey>）；
 // 参照弹窗需把明细行展平后在前端应用 filter/keyword（单据行顶层无明细字段，后端过滤不到明细）
-const SINGLE_DOC_CODES = new Set(['EMP', 'DEPT', 'INV', 'INV_PRICE', 'EQUIP', 'WC', 'OP', 'WH', 'REGION', 'PROJ', 'UOM', 'REJECT', 'ROUTE', 'BOM'])
 
 // ==================== 参照字段：弹窗拉取面板数据（开发约束十一-1） ====================
 // 字段约定：{ dataType: '参照', refPanel, refField, displayField, filter, refMap, refMulti, refColumns }
@@ -62,25 +137,31 @@ export async function queryRefRows(field, { keyword = '', pageSize = 200 } = {})
   const r = normRef(field)
   const filter = r.filter || {}
   const hasAlternativeFilter = Object.values(filter).some(Array.isArray)
+  let refConfig = null
+  try {
+    refConfig = await getPanelConfig(r.refPanel)
+  } catch (e) {
+    /* 配置不可得时按普通多单据面板查询 */
+  }
+  const singleDoc = refConfig?.metadata?.singleDoc === true
   // 单单据面板：condition 不带 filter——单据行顶层无明细字段，后端过滤不到明细；
   // filter/keyword 在展平后的明细行上应用
-  const cond = SINGLE_DOC_CODES.has(r.refPanel) || hasAlternativeFilter ? {} : filter
+  const cond = singleDoc || hasAlternativeFilter ? {} : { ...filter }
   // 2026-08-25：参照面板有「审核」流程（单据类面板）时，仅已审核来源单据可选（对齐 T+：已审核才能选择生单）
   if (!cond['单据状态']) {
     try {
-      const cfg = await getPanelConfig(r.refPanel)
-      const hasAudit = (cfg?.metadata?.buttonGroups || []).some((g) =>
-        (g.actions || []).some((a) => a === '审核'))
+      const hasAudit = (refConfig?.metadata?.buttonGroups || []).some((g) =>
+        (g.actions || []).some((a) => ['审核', '提交审批'].includes(a)))
       if (hasAudit) cond['单据状态'] = '已审核'
     } catch (e) {
       /* 配置不可得时不强制过滤 */
     }
   }
   // 单单据面板：keyword 也不传后端（单据行无明细字段，后端匹配不到），前端展平后过滤
-  const res = await queryFormDataList({ panelCode: r.refPanel, condition: cond, keyword: SINGLE_DOC_CODES.has(r.refPanel) ? '' : keyword, pageNo: 1, pageSize })
+  const res = await queryFormDataList({ panelCode: r.refPanel, condition: cond, keyword: singleDoc ? '' : keyword, pageNo: 1, pageSize })
   let list = res.list || []
-  if (SINGLE_DOC_CODES.has(r.refPanel) && list.some((row) => row?.detail)) {
-    const tabKey = (await getPanelConfig(r.refPanel))?.detail?.tabs?.[0]?.key || 'items'
+  if (singleDoc && list.some((row) => row?.detail)) {
+    const tabKey = refConfig?.detail?.tabs?.[0]?.key || 'items'
     list = list.flatMap((doc) => (doc?.detail?.[tabKey] || []).map((row) => (
       r.refPanel === 'INV' ? { 所属类别: doc['类别'] || '', ...row } : row
     )))
@@ -117,7 +198,7 @@ export function fieldOptions(field) {
 // ==================== SQL 后端接口 ====================
 
 export async function getPanelConfig(panelCode) {
-  return unwrap(await request.get('/px/getPanelConfig', { params: { panelCode } }))
+  return normalizeApprovalConfig(unwrap(await request.get('/px/getPanelConfig', { params: { panelCode } })))
 }
 
 export async function getPermMatrix(panelCode) {
@@ -125,15 +206,52 @@ export async function getPermMatrix(panelCode) {
 }
 
 export async function getNewFormPermMatrix({ panelCode, operationName }) {
-  return unwrap(await request.get('/px/getNewFormPermMatrix', { params: { panelCode, operationName } }))
+  return normalizeApprovalPayload(
+    unwrap(await request.get('/px/getNewFormPermMatrix', { params: { panelCode, operationName } })),
+  )
 }
 
 export async function getFormDescriptor({ panelCode, code }) {
-  return unwrap(await request.get('/px/getFormDescriptor', { params: { panelCode, code } }))
+  return normalizeApprovalPayload(
+    unwrap(await request.get('/px/getFormDescriptor', { params: { panelCode, code } })),
+  )
 }
 
 export async function queryFormDataList(params) {
   return unwrap(await request.post('/px/queryFormDataList', params))
+}
+
+/**
+ * 按库存状况表口径回填明细现存量：有仓库取仓库库存，无仓库取全部仓库合计。
+ * 选择存货后即时调用，避免引用存货档案中的静态值。
+ */
+export async function fillCurrentStock(rows) {
+  const targets = (Array.isArray(rows) ? rows : [rows]).filter((row) => (
+    row && Object.prototype.hasOwnProperty.call(row, '现存量')
+      && (row['存货编码'] || row['产品编码'] || row['材料编码'] || row['存货名称'] || row['产品名称'] || row['材料名称'])
+  ))
+  if (!targets.length) return 0
+  const result = await queryFormDataList({ panelCode: 'STOCK_STATUS', condition: {}, pageNo: 1, pageSize: 500 })
+  const stockRows = result.list || []
+  for (const row of targets) {
+    const code = String(row['存货编码'] || row['产品编码'] || row['材料编码'] || '').trim()
+    const name = String(row['存货名称'] || row['产品名称'] || row['材料名称'] || row['存货'] || '').trim()
+    const warehouse = String(row['仓库'] || row['预出仓库'] || row['出库仓库'] || '').trim()
+    const quantity = stockRows.reduce((sum, stock) => {
+      const stockCode = String(stock['存货编码'] || '').trim()
+      const stockName = String(stock['存货'] || '').trim()
+      const stockWarehouse = String(stock['仓库'] || '').trim()
+      const itemMatches = code ? code === stockCode : name === stockName
+      if (!itemMatches || (warehouse && warehouse !== stockWarehouse)) return sum
+      const value = Number(stock['现存量(主)'])
+      return sum + (Number.isFinite(value) ? value : 0)
+    }, 0)
+    row['现存量'] = Math.round(quantity * 100) / 100
+    if (Object.prototype.hasOwnProperty.call(row, '现存量说明')) {
+      row['现存量说明'] = warehouse ? `库存状况表（${warehouse}）` : '库存状况表（全部仓库）'
+    }
+  }
+  return targets.length
 }
 
 export async function callButton({ panelCode, buttonName, formData, buttonParam }) {

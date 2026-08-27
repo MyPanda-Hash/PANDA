@@ -1,7 +1,7 @@
 package com.mes.controller;
 
 import com.mes.dto.ApiResult;
-import com.mes.service.PxService;
+import com.mes.panel.PanelRuntimeService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,9 +16,9 @@ import java.util.Map;
 @RequestMapping("/api/px")
 public class PxController {
 
-    private final PxService service;
+    private final PanelRuntimeService service;
 
-    public PxController(PxService service) {
+    public PxController(PanelRuntimeService service) {
         this.service = service;
     }
 

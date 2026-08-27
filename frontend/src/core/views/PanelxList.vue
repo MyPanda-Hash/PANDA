@@ -258,7 +258,7 @@
                   filterable
                   clearable
                   allow-create
-                  @change="onInlineDetailChange(activeTab(b).key, row)"
+                  @change="onInlineDetailChange(activeTab(b).key, row, c.field)"
                 >
                   <el-option v-for="option in fieldOptions(c.field)" :key="option.value" :label="option.label" :value="option.value" />
                 </el-select>
@@ -268,26 +268,26 @@
                   :disabled="c.field.computed"
                   type="date"
                   value-format="YYYY-MM-DD"
-                  @change="onInlineDetailChange(activeTab(b).key, row)"
+                  @change="onInlineDetailChange(activeTab(b).key, row, c.field)"
                 />
                 <el-input-number
                   v-else-if="isNumberField(c.field)"
                   v-model="row[c.prop]"
                   :disabled="c.field.computed"
                   :controls="false"
-                  @change="onInlineDetailChange(activeTab(b).key, row)"
+                  @change="onInlineDetailChange(activeTab(b).key, row, c.field)"
                 />
                 <el-switch
                   v-else-if="isBooleanField(c.field)"
                   v-model="row[c.prop]"
                   :disabled="c.field.computed"
-                  @change="onInlineDetailChange(activeTab(b).key, row)"
+                  @change="onInlineDetailChange(activeTab(b).key, row, c.field)"
                 />
                 <el-input
                   v-else
                   v-model="row[c.prop]"
                   :disabled="c.field.computed"
-                  @change="onInlineDetailChange(activeTab(b).key, row)"
+                  @change="onInlineDetailChange(activeTab(b).key, row, c.field)"
                 />
               </template>
               <span v-else-if="c.prop === '材料编码' && activeTab(b).key === 'materials'" class="mat-cell">
@@ -379,7 +379,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search } from '@element-plus/icons-vue'
 import { useTabsStore } from '@/stores/tabs'
 import { useUserStore } from '@/stores/user'
-import * as engine from '@/business/engine'
+import { usePanelRuntime } from '@core/panel-runtime'
 import RefPickDialog from './RefPickDialog.vue'
 import NewVoucherDialog from './NewVoucherDialog.vue'
 import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
@@ -390,6 +390,7 @@ import ImportDialog from './ImportDialog.vue'
 import DetailMaintainDialog from './DetailMaintainDialog.vue'
 import VoucherFormDialog from './VoucherFormDialog.vue'
 
+const engine = usePanelRuntime()
 const route = useRoute()
 const router = useRouter()
 const tabs = useTabsStore()
@@ -492,7 +493,7 @@ const draftEditable = computed(() => {
   const st = cur.value?.['单据状态']
   if (st === '草稿') return true
   // 档案/单单据面板（存货档案、员工、部门、工艺路线等）：启用/停用状态列表页同样内联可编辑（2026-08-24）
-  if (cfgCache.value?.metadata?.singleDoc && (st === '启用' || st === '停用')) return true
+  if ((cfgCache.value?.metadata?.singleDoc || cfgCache.value?.metadata?.panelCategory === '设置') && (st === '启用' || st === '停用')) return true
   return false
 })
 const newVisible = ref(false)
@@ -503,6 +504,14 @@ const impVisible = ref(false)
 const impFields = ref([])
 const impLabel = ref('明细')
 const selCfg = ref(null)
+
+function selectConfigFor(action = '选单') {
+  const cfg = cfgCache.value || {}
+  const configs = cfg.selectConfigs || {}
+  if (configs[action]) return configs[action]
+  if (action === '选单') return cfg.selectConfig || Object.values(configs)[0]
+  return null
+}
 const delMode = ref(false)
 const delSel = ref([])
 
@@ -902,7 +911,7 @@ function exportActive() {
   ElMessage.success('已导出 ' + a.download)
 }
 
-function onIcon(it, b) {
+async function onIcon(it, b) {
   ctxBlock.value = b
   if (it === '复制到剪贴板') {
     copyActive()
@@ -913,7 +922,12 @@ function onIcon(it, b) {
     return
   }
   if (it === '现存量提取') {
-    ElMessage.success('现存量已提取到「现存量」列')
+    try {
+      const count = await engine.fillCurrentStock(blockData(b))
+      ElMessage.success(`已按库存状况表刷新 ${count} 行现存量`)
+    } catch (error) {
+      ElMessage.error(engine.errMsg(error) || '现存量提取失败')
+    }
     return
   }
   ElMessage.info(`演示环境暂未实现「${it}」，界面与 T+ 保持一致`)
@@ -1123,8 +1137,11 @@ function discardCreatedDetailRefRow(pick) {
   if (index >= 0) rows.splice(index, 1)
 }
 
-function onInlineDetailChange(tabKey, row) {
+async function onInlineDetailChange(tabKey, row, field) {
   calculateDetailRow(tabKey, row)
+  if (['存货编码', '存货名称', '产品编码', '产品名称', '材料编码', '材料名称', '仓库', '预出仓库', '出库仓库'].includes(field?.dataName)) {
+    try { await engine.fillCurrentStock(row) } catch (error) { ElMessage.error(engine.errMsg(error) || '现存量刷新失败') }
+  }
 }
 
 function applyDetailReference(target, field, source) {
@@ -1149,7 +1166,7 @@ function calculateDetailRow(tabKey, row) {
     let value
     try { value = Function(`"use strict"; return (${expression})`)() } catch (error) { value = 0 }
     if (!Number.isFinite(value)) value = 0
-    if (rule.round != null) value = Math.round(value * 10 ** rule.round) / 10 ** rule.round
+    if (rule.round != null) value = engine.roundDecimal(value, rule.round)
     row[rule.target] = value
   }
 }
@@ -1285,10 +1302,12 @@ async function onDetailRefConfirm(selectedRows) {
   const sourceRows = cur.value.detail?.[pick.tabKey] || []
   const targetRows = detail[pick.tabKey] || (detail[pick.tabKey] = [])
   const targetIndex = pick.row ? sourceRows.indexOf(pick.row) : -1
+  const changedRows = []
   let offset = 0
   if (targetIndex >= 0) {
     applyDetailReference(targetRows[targetIndex], pick.field, selectedRows[0])
     calculateDetailRow(pick.tabKey, targetRows[targetIndex])
+    changedRows.push(targetRows[targetIndex])
     offset = 1
   }
   for (let index = offset; index < selectedRows.length; index++) {
@@ -1296,7 +1315,10 @@ async function onDetailRefConfirm(selectedRows) {
     applyDetailReference(row, pick.field, selectedRows[index])
     calculateDetailRow(pick.tabKey, row)
     targetRows.push(row)
+    changedRows.push(row)
   }
+
+  await engine.fillCurrentStock(changedRows)
 
   // BOM 展开：产品明细选产品 → 从 BOM 面板 children 带出材料明细（与表单页 loadBomFor 一致）
   if (pick.tabKey === 'products' && pick.field.dataName === '产品编码') {
@@ -1535,8 +1557,13 @@ async function onButton(action) {
     exportReport()
     return
   }
-  if (reportMode.value && (action === '打印' || action === '预览')) {
+  if (action === '预览' || (reportMode.value && action === '打印')) {
     window.print()
+    return
+  }
+  if (action === '恢复') {
+    await load()
+    ElMessage.success('已恢复为最近一次保存的数据')
     return
   }
   if (reportMode.value && action === '发送邮件') {
@@ -1563,8 +1590,8 @@ async function onButton(action) {
     return
   }
   // 选单通用化：任意 选X 动作且配置有 selectConfig 即走选单（对齐 PanelxForm 的通用分支）
-  if (action === '选单' || (action.startsWith('选') && cfgCache.value?.selectConfig)) {
-    const sc = cfgCache.value?.selectConfig
+  if (action === '选单' || action.startsWith('选')) {
+    const sc = selectConfigFor(action)
     if (sc) {
       // 选单通用化：列表页内嵌小弹窗勾选已审核源单据，确定后生成目标单据并打开表单（对齐 T+ 选单生单语义，不再跳转「新增」页面）
       selCfg.value = sc
@@ -1574,7 +1601,7 @@ async function onButton(action) {
     ElMessage.info('演示环境暂未实现「选单」，界面与 T+ 保持一致')
     return
   }
-  if (action === '新增' || action === '新增流程') {
+  if (action === '新增' || action === '新建' || action === '新增流程') {
     if (cfgCache.value?.metadata?.singleDoc && current.value && current.value['编号']) {
       // 档案/单单据面板（存货档案、员工、部门等）：直接在当前单据页填写（列表页已内联可编辑），不弹新增弹窗
       ElMessage.info('请在下方列表页直接填写并保存')

@@ -51,6 +51,13 @@ public class ReportQueryService {
         return result;
     }
 
+    /**
+     * 单据中的「现存量」与库存状况表共用同一聚合结果，避免各面板保存静态库存快照后长期失真。
+     */
+    public List<Map<String, Object>> currentStockRows() {
+        return stockStatus();
+    }
+
     private List<Map<String, Object>> build(String code, Map<String, Object> condition) {
         return switch (code) {
             case "PURCHASE_IN_DETAIL" -> inventoryDetail("PURCHASE_IN", "PURCHASE");
@@ -98,6 +105,24 @@ public class ReportQueryService {
             case "PICK_ORDER_DETAIL" -> pickOrderDetail();
             case "PICK_ORDER_STATS" -> pickOrderStats();
             case "PICK_ORDER_SUMMARY" -> pickOrderSummary();
+            case "ARRIVAL_IN_DETAIL" -> qualityDetail("ARRIVAL_IN");
+            case "ARRIVAL_IN_STATS" -> qualityStats(List.of("ARRIVAL_IN"));
+            case "ARRIVAL_IN_EXEC" -> qualityExecution("ARRIVAL_IN");
+            case "FINISH_INSPECT_DETAIL" -> qualityDetail("FINISH_INSPECT");
+            case "FINISH_INSPECT_STATS" -> qualityStats(List.of("FINISH_INSPECT"));
+            case "FINISH_INSPECT_EXEC" -> qualityExecution("FINISH_INSPECT");
+            case "FIRST_INSPECT_DETAIL" -> qualityDetail("FIRST_INSPECT");
+            case "FIRST_INSPECT_STATS" -> qualityStats(List.of("FIRST_INSPECT"));
+            case "FIRST_INSPECT_EXEC" -> qualityExecution("FIRST_INSPECT");
+            case "PROCESS_INSPECT_APPLY_DETAIL" -> qualityDetail("PROCESS_INSPECT_APPLY");
+            case "PROCESS_INSPECT_APPLY_STATS" -> qualityStats(List.of("PROCESS_INSPECT_APPLY"));
+            case "PROCESS_INSPECT_APPLY_EXEC" -> qualityExecution("PROCESS_INSPECT_APPLY");
+            case "INSPECTION_DETAIL" -> qualityDetail(List.of("INSPECTION", "PROCESS_INSPECTION"));
+            case "INSPECTION_STATS", "QUALITY_STATS_ANALYSIS" -> qualityStats(List.of("INSPECTION", "PROCESS_INSPECTION"));
+            case "QC_ITEM_LIST" -> qualityItemList();
+            case "QC_ITEM_STATS" -> qualityItemStats();
+            case "PRODUCT_FORWARD_TRACE" -> qualityTrace(false);
+            case "MATERIAL_REVERSE_TRACE" -> qualityTrace(true);
             default -> List.of();
         };
     }
@@ -1003,6 +1028,143 @@ public class ReportQueryService {
             target.put("未出库数量", number(target.get("配货数量")).subtract(number(target.get("销售出库数量"))));
         }
         return new ArrayList<>(groups.values());
+    }
+
+    // ---------- 质检管理报表 ----------
+
+    private List<Map<String, Object>> qualityDetail(String panel) {
+        return qualityDetail(List.of(panel));
+    }
+
+    private List<Map<String, Object>> qualityDetail(List<String> panels) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (String panel : panels) {
+            for (Doc doc : docs(panel)) {
+                int line = 0;
+                for (Map<String, Object> item : detailRows(doc, "items")) {
+                    line++;
+                    BigDecimal reported = number(first(item, Map.of(), "报检数量", "到货数量", "数量"));
+                    BigDecimal inspected = number(first(item, Map.of(), "检验数量", "累计检验数量"));
+                    BigDecimal qualified = number(item.get("合格数量"));
+                    BigDecimal unqualified = number(item.get("不合格数量"));
+                    out.add(row(
+                            "面板", panel, "单据日期", value(doc, "单据日期"), "单据编号", documentNo(doc),
+                            "单据状态", doc.entity().getStatus(), "业务类型", value(doc, "业务类型"),
+                            "来源单号", first(item, doc.head(), "来源单号"), "来源行号", first(item, Map.of(), "来源行号"),
+                            "供应商", first(item, doc.head(), "供应商"), "生产车间", first(item, doc.head(), "生产车间"),
+                            "加工单号", first(item, doc.head(), "加工单号"),
+                            "存货编码", first(item, Map.of(), "存货编码", "产品编码", "物料编码"),
+                            "存货名称", first(item, Map.of(), "存货名称", "产品名称", "物料名称"),
+                            "规格型号", item.getOrDefault("规格型号", ""), "工序编码", item.getOrDefault("工序编码", ""),
+                            "工序名称", item.getOrDefault("工序名称", ""),
+                            "计量单位", first(item, Map.of(), "计量单位", "采购单位", "生产单位", "单位"),
+                            "报检数量", reported, "检验数量", inspected, "合格数量", qualified,
+                            "不合格数量", unqualified, "合格率%", percent(qualified, inspected),
+                            "累计检验数量", number(item.get("累计检验数量")), "累计入库数量", number(item.get("累计入库数量")),
+                            "检验结果判定", item.getOrDefault("检验结果判定", ""),
+                            "检验员", first(item, doc.head(), "检验员"), "检验日期", item.getOrDefault("检验日期", ""),
+                            "检验项目", item.getOrDefault("检验项目", ""), "行号", line));
+                }
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> qualityStats(List<String> panels) {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : qualityDetail(panels)) {
+            String key = join(source.get("业务类型"), source.get("存货编码"), source.get("存货名称"), source.get("工序名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "业务类型", source.get("业务类型"), "存货编码", source.get("存货编码"),
+                    "存货名称", source.get("存货名称"), "规格型号", source.get("规格型号"),
+                    "工序名称", source.get("工序名称"), "计量单位", source.get("计量单位"),
+                    "单据数", BigDecimal.ZERO, "报检数量", BigDecimal.ZERO, "检验数量", BigDecimal.ZERO,
+                    "合格数量", BigDecimal.ZERO, "不合格数量", BigDecimal.ZERO, "合格率%", BigDecimal.ZERO));
+            add(target, "单据数", BigDecimal.ONE);
+            add(target, "报检数量", source.get("报检数量"));
+            add(target, "检验数量", source.get("检验数量"));
+            add(target, "合格数量", source.get("合格数量"));
+            add(target, "不合格数量", source.get("不合格数量"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("合格率%", percent(number(target.get("合格数量")), number(target.get("检验数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> qualityExecution(String panel) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> source : qualityDetail(panel)) {
+            BigDecimal reported = number(source.get("报检数量"));
+            BigDecimal inspected = number(source.get("累计检验数量"));
+            if (inspected.signum() == 0) inspected = number(source.get("检验数量"));
+            BigDecimal inbound = number(source.get("累计入库数量"));
+            Map<String, Object> target = new LinkedHashMap<>(source);
+            target.put("未检验数量", reported.subtract(inspected).max(BigDecimal.ZERO));
+            target.put("检验执行率%", percent(inspected, reported));
+            target.put("入库执行率%", percent(inbound, reported));
+            out.add(target);
+        }
+        return out;
+    }
+
+    private List<Map<String, Object>> qualityItemList() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("QC_ITEM")) {
+            if (doc.detail().isEmpty()) out.add(new LinkedHashMap<>(doc.head()));
+            else for (Map<String, Object> item : allDetailRows(doc)) {
+                Map<String, Object> row = new LinkedHashMap<>(doc.head());
+                row.putAll(item);
+                out.add(row);
+            }
+        }
+        return out;
+    }
+
+    private List<Map<String, Object>> qualityItemStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : qualityDetail(List.of("INSPECTION", "PROCESS_INSPECTION"))) {
+            String configuredItem = text(source.get("检验项目"));
+            final String item = configuredItem.isBlank() ? "未指定项目" : configuredItem;
+            Map<String, Object> target = groups.computeIfAbsent(item, ignored -> row(
+                    "检验项目", item, "检验单数", BigDecimal.ZERO, "检验数量", BigDecimal.ZERO,
+                    "合格数量", BigDecimal.ZERO, "不合格数量", BigDecimal.ZERO, "合格率%", BigDecimal.ZERO));
+            add(target, "检验单数", BigDecimal.ONE);
+            add(target, "检验数量", source.get("检验数量"));
+            add(target, "合格数量", source.get("合格数量"));
+            add(target, "不合格数量", source.get("不合格数量"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("合格率%", percent(number(target.get("合格数量")), number(target.get("检验数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> qualityTrace(boolean reverse) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (FormData targetEntity : formMapper.selectList(new LambdaQueryWrapper<FormData>())) {
+            Doc target = new Doc(targetEntity, parse(targetEntity.getData()), parse(targetEntity.getDetailData()));
+            for (Map<String, Object> item : allDetailRows(target)) {
+                String sourcePanel = text(item.get("来源面板"));
+                String sourceNo = text(item.get("来源单号"));
+                if (sourcePanel.isBlank() || sourceNo.isBlank()) continue;
+                out.add(row(
+                        "方向", reverse ? "反向" : "正向", "来源面板", sourcePanel, "来源单号", sourceNo,
+                        "来源行号", item.getOrDefault("来源行号", ""), "目标面板", targetEntity.getPanelCode(),
+                        "目标单号", targetEntity.getFormNo(), "目标状态", targetEntity.getStatus(),
+                        "存货编码", first(item, Map.of(), "存货编码", "产品编码", "材料编码"),
+                        "存货名称", first(item, Map.of(), "存货名称", "产品名称", "材料名称"),
+                        "规格型号", item.getOrDefault("规格型号", ""),
+                        "批号", first(item, Map.of(), "检验批号", "批号"),
+                        "数量", first(item, Map.of(), "检验数量", "实收数量", "报检数量", "来源数量", "数量"),
+                        "检验结果判定", item.getOrDefault("检验结果判定", ""), "单据日期", value(target, "单据日期")));
+            }
+        }
+        out.sort(reverse
+                ? Comparator.comparing(row -> text(row.get("目标单号")))
+                : Comparator.comparing(row -> text(row.get("来源单号"))));
+        return out;
     }
 
     // ---------- cross-report indexes ----------

@@ -170,23 +170,6 @@ export const menuTree = [
     ],
   },
   {
-    code: 'qc',
-    title: '质量管理',
-    icon: 'Aim',
-    children: [
-      {
-        code: 'qcDoc',
-        title: '单据',
-        icon: 'Document',
-        children: [
-          { code: 'arrivalIn', title: '到货单', path: '/panelx/list/ARRIVAL_IN', icon: 'Van', panelCode: 'ARRIVAL_IN', operationName: '新增流程' },
-          { code: 'finishInspect', title: '成品报检单', path: '/panelx/list/FINISH_INSPECT', icon: 'Checked', panelCode: 'FINISH_INSPECT', operationName: '新增流程' },
-          { code: 'inspection', title: '来料/成品检验单', path: '/panelx/list/INSPECTION', icon: 'View', panelCode: 'INSPECTION', operationName: '新增流程' },
-        ],
-      },
-    ],
-  },
-  {
     code: 'mfg',
     title: '新生产',
     icon: 'Odometer',
@@ -244,6 +227,91 @@ export const menuTree = [
     ],
   },
   {
+    code: 'qc',
+    title: '质量管理',
+    icon: 'Aim',
+    tplusCode: 'NQM',
+    children: [
+      {
+        code: 'qcManagement',
+        title: '质检管理',
+        icon: 'DocumentChecked',
+        tplusCode: 'QM',
+        children: [
+          {
+            code: 'inspectionApply', title: '报检单', tplusCode: 'QM20', children: [
+              {
+                code: 'arrivalIn', title: '到货单', path: '/panelx/list/ARRIVAL_IN', icon: 'Van', panelCode: 'ARRIVAL_IN', operationName: '新增流程', tplusCode: 'QM05', children: [
+                  { code: 'arrivalStats', title: '统计表', fullTitle: '到货单统计表', path: '/panelx/list/ARRIVAL_IN_STATS', icon: 'Histogram', panelCode: 'ARRIVAL_IN_STATS', tplusCode: 'QM6005' },
+                  { code: 'arrivalDetail', title: '明细表', fullTitle: '到货单明细表', path: '/panelx/list/ARRIVAL_IN_DETAIL', icon: 'List', panelCode: 'ARRIVAL_IN_DETAIL', tplusCode: 'QM4005' },
+                ],
+              },
+              {
+                code: 'finishInspect', title: '成品报检单', path: '/panelx/list/FINISH_INSPECT', icon: 'Checked', panelCode: 'FINISH_INSPECT', operationName: '新增流程', tplusCode: 'QM10', children: [
+                  { code: 'finishInspectStats', title: '统计表', fullTitle: '成品报检单统计表', path: '/panelx/list/FINISH_INSPECT_STATS', icon: 'Histogram', panelCode: 'FINISH_INSPECT_STATS', tplusCode: 'QM6010' },
+                  { code: 'finishInspectDetail', title: '明细表', fullTitle: '成品报检单明细表', path: '/panelx/list/FINISH_INSPECT_DETAIL', icon: 'List', panelCode: 'FINISH_INSPECT_DETAIL', tplusCode: 'QM4010' },
+                ],
+              },
+              {
+                code: 'firstInspect', title: '首件报检单', path: '/panelx/list/FIRST_INSPECT', icon: 'Select', panelCode: 'FIRST_INSPECT', operationName: '新增流程', tplusCode: 'QM07', children: [
+                  { code: 'firstInspectStats', title: '统计表', fullTitle: '首件报检单统计表', path: '/panelx/list/FIRST_INSPECT_STATS', icon: 'Histogram', panelCode: 'FIRST_INSPECT_STATS', tplusCode: 'QM6007' },
+                  { code: 'firstInspectDetail', title: '明细表', fullTitle: '首件报检单明细表', path: '/panelx/list/FIRST_INSPECT_DETAIL', icon: 'List', panelCode: 'FIRST_INSPECT_DETAIL', tplusCode: 'QM4007' },
+                ],
+              },
+              {
+                code: 'processInspectApply', title: '工序报检单', path: '/panelx/list/PROCESS_INSPECT_APPLY', icon: 'Finished', panelCode: 'PROCESS_INSPECT_APPLY', operationName: '新增流程', tplusCode: 'QM09', children: [
+                  { code: 'processInspectStats', title: '统计表', fullTitle: '工序报检单统计表', path: '/panelx/list/PROCESS_INSPECT_APPLY_STATS', icon: 'Histogram', panelCode: 'PROCESS_INSPECT_APPLY_STATS', tplusCode: 'QM6009' },
+                  { code: 'processInspectDetail', title: '明细表', fullTitle: '工序报检单明细表', path: '/panelx/list/PROCESS_INSPECT_APPLY_DETAIL', icon: 'List', panelCode: 'PROCESS_INSPECT_APPLY_DETAIL', tplusCode: 'QM4009' },
+                ],
+              },
+              { code: 'qualityAnalysisSystem', title: '质量统计分析表-系统方案', path: '/panelx/list/QUALITY_STATS_ANALYSIS', icon: 'TrendCharts', panelCode: 'QUALITY_STATS_ANALYSIS', tplusCode: 'RMenu0002' },
+            ],
+          },
+          {
+            code: 'inspectionDoc', title: '检验单', tplusCode: 'QM30', children: [
+              { code: 'inspection', title: '来料/成品检验单', path: '/panelx/list/INSPECTION', icon: 'View', panelCode: 'INSPECTION', operationName: '新增流程', tplusCode: 'QM15' },
+              { code: 'processInspection', title: '生产过程检验单', path: '/panelx/list/PROCESS_INSPECTION', icon: 'DataLine', panelCode: 'PROCESS_INSPECTION', operationName: '新增流程', tplusCode: 'QM16' },
+            ],
+          },
+          {
+            code: 'qualityReport', title: '报表', tplusCode: 'QM40', children: [
+              { code: 'arrivalExec', title: '到货单执行表', path: '/panelx/list/ARRIVAL_IN_EXEC', icon: 'Operation', panelCode: 'ARRIVAL_IN_EXEC', tplusCode: 'QM8005' },
+              { code: 'finishInspectExec', title: '成品报检单执行表', path: '/panelx/list/FINISH_INSPECT_EXEC', icon: 'Operation', panelCode: 'FINISH_INSPECT_EXEC', tplusCode: 'QM8010' },
+              { code: 'firstInspectExec', title: '首件报检单执行表', path: '/panelx/list/FIRST_INSPECT_EXEC', icon: 'Operation', panelCode: 'FIRST_INSPECT_EXEC', tplusCode: 'QM8007' },
+              { code: 'processInspectExec', title: '工序报检单执行表', path: '/panelx/list/PROCESS_INSPECT_APPLY_EXEC', icon: 'Operation', panelCode: 'PROCESS_INSPECT_APPLY_EXEC', tplusCode: 'QM8009' },
+              { code: 'qualityAnalysis', title: '质量统计分析表', path: '/panelx/list/QUALITY_STATS_ANALYSIS', icon: 'TrendCharts', panelCode: 'QUALITY_STATS_ANALYSIS', tplusCode: 'QM8016' },
+              { code: 'inspectionDetail', title: '检验单综合明细表', path: '/panelx/list/INSPECTION_DETAIL', icon: 'List', panelCode: 'INSPECTION_DETAIL', tplusCode: 'QM4015' },
+              { code: 'inspectionStats', title: '检验单综合统计表', path: '/panelx/list/INSPECTION_STATS', icon: 'Histogram', panelCode: 'INSPECTION_STATS', tplusCode: 'QM6015' },
+              { code: 'qcItemList', title: '检验项目列表', path: '/panelx/list/QC_ITEM_LIST', icon: 'List', panelCode: 'QC_ITEM_LIST', tplusCode: 'QM1501' },
+              { code: 'qcItemStats', title: '检验项目综合统计表', path: '/panelx/list/QC_ITEM_STATS', icon: 'Histogram', panelCode: 'QC_ITEM_STATS', tplusCode: 'QM6016' },
+            ],
+          },
+        ],
+      },
+      {
+        code: 'qualityTrace',
+        title: '质量追溯',
+        icon: 'Connection',
+        tplusCode: 'QT',
+        children: [
+          {
+            code: 'traceSettings', title: '基础设置', tplusCode: 'QT01', children: [
+              { code: 'companyTraceSettings', title: '企业移动追溯设置', path: '/panelx/list/COMPANY_TRACE_SETTINGS', icon: 'Setting', panelCode: 'COMPANY_TRACE_SETTINGS', operationName: '新增流程', tplusCode: 'QT0101' },
+              { code: 'customerTraceSettings', title: '客户移动追溯设置', path: '/panelx/list/CUSTOMER_TRACE_SETTINGS', icon: 'Setting', panelCode: 'CUSTOMER_TRACE_SETTINGS', operationName: '新增流程', tplusCode: 'QT0102' },
+              { code: 'tracePrintTemplate', title: '追溯打印模板设置', path: '/panelx/list/TRACE_PRINT_TEMPLATE', icon: 'Printer', panelCode: 'TRACE_PRINT_TEMPLATE', operationName: '新增流程', tplusCode: 'QT0103' },
+            ],
+          },
+          {
+            code: 'traceReport', title: '报表', tplusCode: 'QT40', children: [
+              { code: 'forwardTrace', title: '产品正向追溯报表', path: '/panelx/list/PRODUCT_FORWARD_TRACE', icon: 'Right', panelCode: 'PRODUCT_FORWARD_TRACE', tplusCode: 'QT4005' },
+              { code: 'reverseTrace', title: '材料反向追溯报表', path: '/panelx/list/MATERIAL_REVERSE_TRACE', icon: 'Back', panelCode: 'MATERIAL_REVERSE_TRACE', tplusCode: 'QT4015' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
     code: 'foundation',
     title: '基础设置',
     icon: 'Setting',
@@ -273,6 +341,8 @@ export const menuTree = [
               { code: 'region', title: '地区', path: '/panelx/list/REGION', icon: 'Location', panelCode: 'REGION' },
               { code: 'proj', title: '项目', path: '/panelx/list/PROJ', icon: 'Flag', panelCode: 'PROJ' },
               { code: 'reject', title: '不合格原因', path: '/panelx/list/REJECT', icon: 'CircleClose', panelCode: 'REJECT' },
+              { code: 'qcItem', title: '检验项目', path: '/panelx/list/QC_ITEM', icon: 'List', panelCode: 'QC_ITEM' },
+              { code: 'qcPlan', title: '检验方案', path: '/panelx/list/QC_PLAN', icon: 'DocumentChecked', panelCode: 'QC_PLAN' },
             ],
           },
           {
@@ -396,13 +466,24 @@ export function filterMenuTree(tree, visiblePanels, isAdmin) {
   const filterNode = (nodes) => {
     const out = []
     for (const n of nodes) {
+      const children = n.children?.length ? filterNode(n.children) : []
       if (n.panelCode) {
-        if (vis.includes(n.panelCode)) out.push({ ...n })
+        const ownVisible = vis.includes(n.panelCode)
+        if (ownVisible || children.length) {
+          const copy = { ...n }
+          if (children.length) copy.children = children
+          else delete copy.children
+          if (!ownVisible) {
+            delete copy.path
+            delete copy.panelCode
+            delete copy.operationName
+          }
+          out.push(copy)
+        }
         continue
       }
-      if (n.children && n.children.length) {
-        const c = filterNode(n.children)
-        if (c.length) out.push({ ...n, children: c })
+      if (children.length) {
+        out.push({ ...n, children })
         continue
       }
       if (n.path) out.push({ ...n }) // 非面板固定路由（生产看板等）默认可见

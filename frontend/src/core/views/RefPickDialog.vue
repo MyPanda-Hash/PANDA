@@ -38,7 +38,9 @@
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
-import * as engine from '@/business/engine'
+import { usePanelRuntime } from '@core/panel-runtime'
+
+const engine = usePanelRuntime()
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

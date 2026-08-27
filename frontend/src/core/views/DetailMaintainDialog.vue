@@ -79,7 +79,9 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import * as engine from '@/business/engine'
+import { usePanelRuntime } from '@core/panel-runtime'
+
+const engine = usePanelRuntime()
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

@@ -64,13 +64,18 @@ export const useUserStore = defineStore('user', {
     async fetchUserInfo() {
       const info = await apiGetUserInfo()
       this.userInfo = info
+      this.applyPerms(info)
       localStorage.setItem('mes_user', JSON.stringify(info))
     },
     async fetchFactories() {
       const { apiGetFactories } = await import('@/business/api')
       this.factories = await apiGetFactories()
-      if (!this.factory && this.factories.length) {
-        this.factory = this.factories[0]
+      const currentCode = this.factory?.code || this.userInfo?.factoryCode
+      const latest = this.factories.find((item) => item.code === currentCode) || this.factories[0]
+      if (latest) {
+        // Replace the whole cached object so corrected names/addresses take effect
+        // after a database repair without requiring users to clear localStorage.
+        this.factory = latest
         localStorage.setItem('mes_factory', JSON.stringify(this.factory))
       }
     },

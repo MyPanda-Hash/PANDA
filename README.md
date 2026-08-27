@@ -8,7 +8,7 @@
 | 最后整理 | 2026-08-27 |
 | 文档导航 | [文档中心](docs/README.md) |
 
-轻 MES 是参考畅捷通 T+ 工作台形态实现的网页端制造执行系统。前端使用 Vue 3，后端使用 Spring Boot，面板配置和业务数据统一存储在 MySQL。
+轻 MES 当前提供可运行的制造业务基线，并开始作为需求驱动 PLM 的技术底座演进。前端使用 Vue 3，后端使用 Spring Boot，面板配置和业务数据统一存储在 MySQL。既有 T+ 形态只作为交互参考，新功能以实际 PLM 需求、领域模型和验收条件为准。
 
 ## 系统结构
 
@@ -50,6 +50,8 @@ light-mes/
 └── tools/              # 项目校验、JDK 探测、Maven 和维护工具
 ```
 
+通用列表、表单、明细、参照、选单和权限入口通过 `PanelRuntime` 复用；MES 库存、生单、质量规则与后续 PLM 修订、BOM、文档和变更规则分别保留在业务层。PLM 领域数据不会仅以现有 `form_data` JSON 改名实现，具体结构在需求确认后建立。
+
 ## 本地启动
 
 前置条件：Node.js、JDK 17+、MySQL 运行在本机 3308。
@@ -57,8 +59,10 @@ light-mes/
 1. 初始化数据库：
 
    ```powershell
-   mysql -uroot -p < backend/src/main/resources/db/init.sql
+   mysql -uroot -p --default-character-set=utf8mb4 --execute="source backend/src/main/resources/db/init.sql"
    ```
+
+   不要使用 `Get-Content init.sql | mysql`，Windows PowerShell 文本管道可能把中文替换为字面量 `?`。初始化后可运行 `node tools/repair-db-question-marks.cjs --check` 检查数据库编码。
 
 2. 在当前终端注入本地凭据：
 

@@ -116,8 +116,10 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Delete, Search } from '@element-plus/icons-vue'
-import * as engine from '@/business/engine'
+import { usePanelRuntime } from '@core/panel-runtime'
 import RefPickDialog from './RefPickDialog.vue'
+
+const engine = usePanelRuntime()
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -272,7 +274,7 @@ function applyCalc() {
       for (const rule of tab.calc || []) {
         let v
         try { v = evaluateExpr(rule.formula, vars) } catch (e) { v = 0 }
-        if (rule.round != null) v = Math.round(v * 10 ** rule.round) / 10 ** rule.round
+      if (rule.round != null) v = engine.roundDecimal(v, rule.round)
         if (row[rule.target] !== v) row[rule.target] = v
       }
     }

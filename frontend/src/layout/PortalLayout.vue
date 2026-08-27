@@ -46,7 +46,9 @@ const route = useRoute()
 
 onMounted(() => {
   if (app.dark) document.documentElement.classList.add('dark')
-  user.fetchFactories()
+  // Login data is cached for fast startup; refresh it so server-side corrections
+  // and permission changes replace stale localStorage values on the next load.
+  Promise.allSettled([user.fetchUserInfo(), user.fetchFactories()])
   // T+ 行业化配置向导：首次登录自动弹出
   if (!app.initDone) app.openInitWizard()
 })

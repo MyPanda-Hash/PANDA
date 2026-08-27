@@ -44,7 +44,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import * as engine from '@/business/engine'
+import { usePanelRuntime } from '@core/panel-runtime'
+
+const engine = usePanelRuntime()
 
 const props = defineProps({
   modelValue: Boolean,
@@ -108,7 +110,7 @@ async function load(p) {
     // 对齐 T+ 选单前提：仅已审核来源单据
     const res = await engine.queryFormDataList({
       panelCode: props.config.source,
-      condition: { 单据状态: '已审核' },
+      condition: { ...(props.config.condition || {}), 单据状态: '已审核' },
       pageNo: pageNo.value,
       pageSize: pageSize.value,
     })
@@ -152,6 +154,13 @@ async function generate() {
       const items = srcArr.map((row) => {
         const o = {}
         for (const m of cfg.detailMap || []) o[m.to] = row[m.from]
+        const sourceNo = r['编号'] || r['单据编号'] || r['锭号'] || ''
+        o['来源面板'] = cfg.source || ''
+        o['来源单号'] = sourceNo
+        o['来源行号'] = srcArr.indexOf(row) + 1
+        const sourceQty = cfg.sourceQuantityField || '数量'
+        const targetQty = cfg.targetQuantityField || ''
+        o['来源数量'] = targetQty && o[targetQty] !== undefined ? o[targetQty] : (row[sourceQty] ?? 0)
         return o
       })
       // 目标明细键 = 目标面板 detail.tabs[0].key（2026-08-20 修复：FINISH_IN tabs=items 但 detailKey=products

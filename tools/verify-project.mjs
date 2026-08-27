@@ -62,6 +62,7 @@ function findJavaHome() {
 
 try {
   run(process.execPath, ['tools/docs-audit.mjs'], root)
+  run(process.execPath, ['tools/architecture-audit.mjs'], root)
   run(command('npm'), ['run', 'build'], frontend)
 
   const java = findJavaHome()

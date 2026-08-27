@@ -56,7 +56,15 @@
         <div v-for="cat in cardColumns" :key="cat.title" class="card-group">
           <div class="card-group-title">{{ cat.title }}</div>
           <div class="card-items">
-            <div v-for="leaf in cat.items" :key="leaf.code" class="card-item" :title="leaf.title" @click="go(leaf)">
+            <div
+              v-for="leaf in cat.items"
+              :key="leaf.code"
+              class="card-item"
+              :class="{ 'is-parent': leaf.children?.length, nested: leaf.depth > 0 }"
+              :style="{ '--card-depth': leaf.depth || 0 }"
+              :title="leaf.fullTitle || leaf.title"
+              @click="go(leaf)"
+            >
               <span>{{ leaf.title }}</span>
             </div>
           </div>
@@ -67,9 +75,9 @@
     <el-dialog v-model="billSearchVisible" title="单据查询" width="560px" append-to-body>
       <el-input v-model="billKeyword" placeholder="输入单据名称关键字" :prefix-icon="Search" clearable />
       <div class="bill-list">
-        <div v-for="b in billMatches" :key="b.path" class="bill-item" @click="goBill(b)">
+        <div v-for="b in billMatches" :key="`${b.code}:${b.path}`" class="bill-item" @click="goBill(b)">
           <el-icon><component :is="b.icon || 'Tickets'" /></el-icon>
-          <span>{{ b.title }}</span>
+          <span>{{ b.fullTitle || b.title }}</span>
           <span class="module">{{ b.module }}</span>
         </div>
         <el-empty v-if="!billMatches.length" description="无匹配单据" :image-size="60" />
@@ -79,9 +87,9 @@
     <el-dialog v-model="billAddVisible" title="新增单据" width="560px" append-to-body>
       <el-alert type="info" :closable="false" show-icon title="选择单据类型，进入新增页（当前为占位页，后续接入真实单据表单）" />
       <div class="bill-list mt12">
-        <div v-for="b in billMatches" :key="b.path" class="bill-item" @click="goBill(b, true)">
+        <div v-for="b in billMatches" :key="`${b.code}:${b.path}`" class="bill-item" @click="goBill(b, true)">
           <el-icon><component :is="b.icon || 'Tickets'" /></el-icon>
-          <span>{{ b.title }}</span>
+          <span>{{ b.fullTitle || b.title }}</span>
           <span class="module">{{ b.module }}</span>
         </div>
         <el-empty v-if="!billMatches.length" description="无匹配单据" :image-size="60" />
@@ -105,6 +113,12 @@
           <div v-for="n in mnLevel" :key="n.code" class="mn-item" @click="mnClick(n)">
             <el-icon class="mn-ic"><component :is="n.icon || 'Folder'" /></el-icon>
             <span class="mn-label">{{ n.title }}</span>
+            <el-icon
+              v-if="n.path && n.children?.length"
+              class="mn-open"
+              :title="`打开${n.title}`"
+              @click.stop="go(n)"
+            ><Document /></el-icon>
             <el-icon v-if="n.children && n.children.length" class="mn-arrow"><ArrowRight /></el-icon>
           </div>
         </template>
@@ -147,11 +161,14 @@ const bills = computed(() => {
   const out = []
   for (const g of menuTree.value) {
     for (const m of g.children || []) {
-      const walk = (n) => {
-        if (n.path) out.push({ ...n, module: m.title })
-        if (n.children) n.children.forEach(walk)
+      const walk = (n, parents = []) => {
+        if (n.path) {
+          const fullTitle = n.fullTitle || [...parents, n.title].join(' / ')
+          out.push({ ...n, fullTitle, module: `${g.title} / ${m.title}` })
+        }
+        if (n.children) n.children.forEach((child) => walk(child, [...parents, n.title]))
       }
-      m.children?.forEach(walk)
+      m.children?.forEach((child) => walk(child))
     }
   }
   return out.filter((b) => b.path)
@@ -160,7 +177,7 @@ const bills = computed(() => {
 const billMatches = computed(() => {
   const k = billKeyword.value.trim().toLowerCase()
   if (!k) return bills.value
-  return bills.value.filter((b) => b.title.toLowerCase().includes(k))
+  return bills.value.filter((b) => `${b.fullTitle} ${b.module}`.toLowerCase().includes(k))
 })
 
 function isExpanded(g) {
@@ -296,18 +313,18 @@ const cardColumns = computed(() => {
   if (!m) return []
   if (!m.children) return [{ title: m.title, items: [m] }]
   if (m.children[0]?.children) {
-    return m.children.map((cat) => ({ title: cat.title, items: cat.children || [cat] }))
+    return m.children.map((cat) => ({ title: cat.title, items: flattenCardItems(cat.children || [cat]) }))
   }
-  return m.children.map((mod) => ({ title: mod.title, items: flattenLeaves(mod) }))
+  return m.children.map((mod) => ({ title: mod.title, items: flattenCardItems([mod]) }))
 })
 
-function flattenLeaves(n) {
+function flattenCardItems(nodes) {
   const out = []
-  const walk = (x) => {
-    if (x.path) out.push(x)
-    if (x.children) x.children.forEach(walk)
+  const walk = (node, depth) => {
+    if (node.path) out.push({ ...node, depth })
+    if (node.children) node.children.forEach((child) => walk(child, node.path ? depth + 1 : depth))
   }
-  walk(n)
+  nodes.forEach((node) => walk(node, 0))
   return out
 }
 
@@ -551,6 +568,14 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
   cursor: pointer;
   white-space: nowrap;
   transition: color 0.15s, background-color 0.15s, padding-left 0.15s;
+  margin-left: calc(var(--card-depth, 0) * 14px);
+}
+.card-item.is-parent {
+  font-weight: 600;
+}
+.card-item.nested {
+  color: var(--t-text-2);
+  font-size: 13px;
 }
 .card-item span {
   overflow: hidden;
@@ -724,6 +749,12 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
   .mn-arrow {
     font-size: 14px;
     color: var(--t-text-3);
+    flex-shrink: 0;
+  }
+  .mn-open {
+    font-size: 16px;
+    color: var(--t-primary);
+    cursor: pointer;
     flex-shrink: 0;
   }
   .mn-empty {
