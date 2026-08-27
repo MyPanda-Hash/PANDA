@@ -85,7 +85,7 @@ watch(
   flex: 1;
   overflow: auto;
   background: var(--t-content-bg);
-  padding: 12px;
+  padding: 16px;
 }
 
 /* 移动端：抽屉遮罩 */
@@ -106,7 +106,7 @@ watch(
 
 @media (max-width: 768px) {
   .portal-content {
-    padding: 8px;
+    padding: 10px;
   }
 }
 </style>

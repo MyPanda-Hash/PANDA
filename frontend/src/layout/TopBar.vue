@@ -6,7 +6,11 @@
       <div class="logo">轻<span>MES</span></div>
       <div class="t-split"></div>
       <el-dropdown @command="(f) => user.switchFactory(f)">
-        <span class="factory">
+        <span
+          class="factory"
+          :aria-label="user.factoryName || '选择工厂'"
+          :title="user.factoryName || '选择工厂'"
+        >
           <el-icon><OfficeBuilding /></el-icon>
           <span class="factory-name">{{ user.factoryName || '选择工厂' }}</span>
           <el-icon class="caret"><ArrowDown /></el-icon>
@@ -58,9 +62,14 @@
         <div v-if="searchOpen" class="search-drop">
           <template v-if="matched.length">
             <div v-for="m in matched" :key="m.path" class="search-item" @mousedown.prevent @click="go(m)">
-              <el-icon><component :is="m.icon || 'Folder'" /></el-icon>
-              <span class="s-title">{{ m.title }}</span>
-              <span class="s-path">{{ m.path }}</span>
+              <el-icon class="s-icon"><component :is="m.icon || 'Folder'" /></el-icon>
+              <span class="s-content">
+                <span class="s-title">{{ m.fullTitle || m.title }}</span>
+                <span class="s-meta">
+                  <span v-if="m.panelCode" class="s-code">{{ m.panelCode }}</span>
+                  <span class="s-path" :title="m.path">{{ m.path }}</span>
+                </span>
+              </span>
             </div>
           </template>
           <div v-else class="search-empty">无匹配菜单</div>
@@ -224,7 +233,12 @@ const matched = computed(() => {
   const k = keyword.value.trim().toLowerCase()
   if (!k) return []
   return flatMenus(filterMenuTree(rawMenuTree, user.visiblePanels, user.isAdmin))
-    .filter((m) => m.path && (m.title.toLowerCase().includes(k) || m.path.toLowerCase().includes(k)))
+    .filter((m) => {
+      if (!m.path) return false
+      return [m.title, m.fullTitle, m.panelCode, m.path]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(k))
+    })
     .slice(0, 10)
 })
 
@@ -321,14 +335,14 @@ function changePwd() {
 
 <style scoped>
 .topbar {
-  height: 49px;
+  height: 52px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  padding: 0 10px;
+  padding: 0 14px;
   background: var(--t-navbar-bg);
   color: var(--t-navbar-text);
-  border-bottom: 1px solid var(--t-navbar-bg);
+  border-bottom: 1px solid var(--t-border);
 }
 
 /* ---------- 左 ---------- */
@@ -342,7 +356,7 @@ function changePwd() {
   font-size: 19px;
   font-weight: 700;
   color: var(--t-primary);
-  letter-spacing: 1px;
+  letter-spacing: 0;
   cursor: default;
 }
 .logo span {
@@ -435,8 +449,11 @@ function changePwd() {
   width: 190px;
 }
 .search-input :deep(.el-input__wrapper) {
-  border-radius: 3px;
+  border: 1px solid var(--t-border);
+  border-radius: 5px;
   height: 32px;
+  background: var(--t-sidebar-bg);
+  box-shadow: none;
 }
 .search-icon {
   color: var(--t-text-1);
@@ -445,22 +462,25 @@ function changePwd() {
 .search-drop {
   position: absolute;
   top: 34px;
-  left: 0;
   right: 0;
+  width: min(420px, calc(100vw - 24px));
   background: var(--t-card-bg);
   border: 1px solid var(--t-border);
-  border-radius: 4px;
+  border-radius: 6px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
   z-index: 4000;
-  max-height: 320px;
+  max-height: min(420px, calc(100vh - 72px));
   overflow: auto;
-  padding: 4px 0;
+  padding: 6px;
 }
 .search-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  min-height: 54px;
+  padding: 8px 10px;
+  border-radius: 4px;
   font-size: 13px;
   color: var(--t-text-1);
   cursor: pointer;
@@ -469,13 +489,44 @@ function changePwd() {
   background: var(--t-hover-bg);
   color: var(--t-primary);
 }
+.s-icon {
+  margin-top: 2px;
+  font-size: 16px;
+  color: var(--t-primary);
+}
+.s-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 .s-title {
+  display: block;
+  line-height: 20px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.s-meta {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  line-height: 16px;
+}
+.s-code {
+  flex-shrink: 0;
+  padding: 0 4px;
+  border: 1px solid var(--t-border-light);
+  border-radius: 3px;
+  color: var(--t-text-2);
+  background: var(--t-content-bg);
+  font-size: 10px;
+}
+.s-path {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.s-path {
-  margin-left: auto;
   font-size: 11px;
   color: var(--t-text-3);
 }
@@ -658,10 +709,48 @@ function changePwd() {
   color: var(--t-primary);
 }
 
-@media (max-width: 768px) {
-  .hamburger {
-    display: inline-flex;
+@media (min-width: 769px) and (max-width: 900px) {
+  .search-drop {
+    position: fixed;
+    top: 44px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
   }
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    height: 54px;
+    padding: 0 8px;
+  }
+
+  .hamburger {
+    width: 32px;
+    height: 32px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+  }
+
+  .t-left {
+    min-width: 0;
+    gap: 4px;
+  }
+
+  .logo {
+    font-size: 17px;
+    white-space: nowrap;
+  }
+
+  .logo span {
+    font-size: 11px;
+  }
+
+  .t-split {
+    display: none;
+  }
+
   /* 中段信息（账号/认证/登录日期/到期）手机隐藏 */
   .t-center {
     display: none;
@@ -676,11 +765,62 @@ function changePwd() {
   .bar-icon {
     display: none;
   }
-  .t-left .factory-name {
-    max-width: 88px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+
+  .factory {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--t-border);
+    border-radius: 5px;
+    background: var(--t-sidebar-bg);
+    font-size: 16px;
+  }
+
+  .factory-name,
+  .factory .caret {
+    display: none;
+  }
+
+  .t-right {
+    gap: 6px;
+  }
+
+  .user {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--t-border);
+    border-radius: 5px;
+    background: var(--t-sidebar-bg);
+  }
+
+  .user-img {
+    font-size: 17px;
+  }
+
+  .show-name {
+    display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .topbar {
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+
+  .t-left {
+    gap: 2px;
+  }
+
+  .logo span {
+    display: none;
+  }
+
+  .t-right {
+    gap: 4px;
   }
 }
 </style>

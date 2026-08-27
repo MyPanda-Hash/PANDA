@@ -61,11 +61,11 @@ defineProps({
 }
 .tl-ic {
   font-size: 15px;
-  color: #f59e0b;
+  color: #b87816;
   flex-shrink: 0;
 }
 .tl-ic.leaf {
-  color: #22c55e;
+  color: #116a5b;
   font-size: 13px;
 }
 .tl-name {

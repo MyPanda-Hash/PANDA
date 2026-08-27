@@ -34,7 +34,7 @@ import { computed } from 'vue'
 const props = defineProps({
   data: { type: Array, default: () => [] },
   sub: { type: String, default: '合计' },
-  colors: { type: Array, default: () => ['#289be5', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'] },
+  colors: { type: Array, default: () => ['#116a5b', '#d79a2b', '#537786', '#8a9a92', '#3b8978', '#b94d3f', '#9c7650', '#708575'] },
 })
 
 const C = 2 * Math.PI * 48

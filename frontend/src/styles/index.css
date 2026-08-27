@@ -1,60 +1,64 @@
-/* ============================================================
- * 轻MES 全局样式 & 设计 token
- * 配色对齐畅捷通 T+ 门户（h2t.chanjet.com/tplus/view/portal）
- *   --t-primary    #289be5  主蓝（搜索 hover / 链接 / 主按钮）
- *   --t-tab-active #663ECF  页签激活下划线（T+ 紫色）
- *   --t-badge      #fc5c5e  角标红（待办/消息/预警）
- *   --t-navbar-bg  #f0f0f0  顶栏背景
- *   --t-sidebar-bg #fafafa  左侧栏背景
- *   --t-content-bg #f9f9f9  内容区背景
- *   --t-text-1/2/3 #343a42 / #76808f / #a7adb6  文字三级
- * ============================================================ */
+/* 轻 MES 全局设计 token：制造绿 + 安全黄 + 中性钢灰。 */
 
 :root {
-  /* T+ 主题 token */
-  --t-primary: #289be5;
-  --t-primary-dark: #207cb7;
-  --t-tab-active: #663ecf;
-  --t-badge: #fc5c5e;
-  --t-navbar-bg: #f0f0f0;
-  --t-navbar-text: #666666;
-  --t-navbar-info: #999999;
-  --t-sidebar-bg: #fafafa;
-  --t-content-bg: #f9f9f9;
+  --t-primary: #116a5b;
+  --t-primary-dark: #0d584c;
+  --t-tab-active: #116a5b;
+  --t-badge: #c84d3f;
+  --t-navbar-bg: #ffffff;
+  --t-navbar-text: #40504b;
+  --t-navbar-info: #7b8984;
+  --t-sidebar-bg: #f7f9f8;
+  --t-content-bg: #f2f5f4;
   --t-card-bg: #ffffff;
-  --t-text-1: #343a42;
-  --t-text-2: #76808f;
-  --t-text-3: #a7adb6;
-  --t-border: #e7e9f1;
-  --t-border-light: #f0f1f3;
-  --t-hover-bg: #eef6fc;
+  --t-text-1: #1e2b27;
+  --t-text-2: #5d6c67;
+  --t-text-3: #8b9893;
+  --t-border: #dce4e1;
+  --t-border-light: #edf1ef;
+  --t-hover-bg: #e9f3f0;
 
-  /* Element Plus 主色对齐 T+ 主蓝 */
-  --el-color-primary: #289be5;
-  --el-color-primary-light-3: #69b9ed;
-  --el-color-primary-light-5: #94cdf2;
-  --el-color-primary-light-7: #bfe1f7;
-  --el-color-primary-light-8: #d4ebfa;
-  --el-color-primary-light-9: #eaf5fd;
-  --el-color-primary-dark-2: #207cb7;
+  --el-color-primary: #116a5b;
+  --el-color-primary-light-3: #58958a;
+  --el-color-primary-light-5: #88b4ac;
+  --el-color-primary-light-7: #b8d3ce;
+  --el-color-primary-light-8: #cfe1de;
+  --el-color-primary-light-9: #e8f1ef;
+  --el-color-primary-dark-2: #0d584c;
 }
 
 html.dark {
-  --t-primary: #289be5;
-  --t-primary-dark: #207cb7;
-  --t-tab-active: #8f7bff;
-  --t-navbar-bg: #26272e;
-  --t-navbar-text: #cccccc;
-  --t-navbar-info: #9ca3af;
-  --t-sidebar-bg: #26272e;
-  --t-content-bg: #1d1e23;
-  --t-card-bg: #26272e;
-  --t-text-1: #e5e7eb;
-  --t-text-2: #b3bac4;
-  --t-text-3: #6b7280;
-  --t-border: #3a3b42;
-  --t-border-light: #3a3b42;
-  --t-hover-bg: #2c3140;
+  --t-primary: #58b09e;
+  --t-primary-dark: #76c2b2;
+  --t-tab-active: #58b09e;
+  --t-navbar-bg: #202925;
+  --t-navbar-text: #d1d9d6;
+  --t-navbar-info: #8f9c97;
+  --t-sidebar-bg: #202925;
+  --t-content-bg: #18201d;
+  --t-card-bg: #222c28;
+  --t-text-1: #e2e8e5;
+  --t-text-2: #b3bfba;
+  --t-text-3: #7f8e88;
+  --t-border: #35423d;
+  --t-border-light: #303c37;
+  --t-hover-bg: #293a34;
+
+  --el-bg-color: #222c28;
+  --el-bg-color-page: #18201d;
+  --el-bg-color-overlay: #27322e;
+  --el-text-color-primary: #e2e8e5;
+  --el-text-color-regular: #b3bfba;
+  --el-text-color-secondary: #8f9c97;
+  --el-text-color-placeholder: #73817b;
+  --el-border-color: #35423d;
+  --el-border-color-light: #3b4943;
+  --el-border-color-lighter: #303c37;
+  --el-fill-color: #2c3933;
+  --el-fill-color-light: #293630;
+  --el-fill-color-lighter: #27332e;
+  --el-fill-color-dark: #303f39;
+  --el-fill-color-blank: #222c28;
 }
 
 html,
@@ -202,11 +206,5 @@ body,
   }
   .el-message-box {
     --el-messagebox-width: 90vw !important;
-  }
-  /* 登录页卡片自适应 */
-  .login-box {
-    width: 88vw;
-    max-width: 380px;
-    padding: 28px 20px 22px;
   }
 }

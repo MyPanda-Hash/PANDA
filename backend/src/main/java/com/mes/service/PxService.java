@@ -1303,7 +1303,7 @@ public class PxService implements PanelRuntimeService {
         mo.setData(toJson(moData));
         mo.setDetailData(toJson(detail));
         mo.setStatus("草稿");
-        mo.setCreateBy("admin");
+        mo.setCreateBy(currentUserName());
         mo.setCreateTime(LocalDateTime.now());
         mo.setUpdateTime(LocalDateTime.now());
         formMapper.insert(mo);
@@ -1422,7 +1422,7 @@ public class PxService implements PanelRuntimeService {
         pr.setData(toJson(prData));
         pr.setDetailData(toJson(detail));
         pr.setStatus("草稿");
-        pr.setCreateBy("admin");
+        pr.setCreateBy(currentUserName());
         pr.setCreateTime(LocalDateTime.now());
         formMapper.insert(pr);
 
@@ -1456,7 +1456,7 @@ public class PxService implements PanelRuntimeService {
         fd.setData(toJson(head));
         fd.setDetailData(toJson(detail));
         fd.setStatus("草稿");
-        fd.setCreateBy("admin");
+        fd.setCreateBy(currentUserName());
         fd.setCreateTime(LocalDateTime.now());
         fd.setUpdateTime(LocalDateTime.now());
         formMapper.insert(fd);
@@ -2652,14 +2652,14 @@ public class PxService implements PanelRuntimeService {
     }
 
     private double sourceQuantity(Map<String, Object> row) {
-        for (String field : List.of("报检数量", "到货数量", "数量", "派工数量", "报工数量", "检验数量", "实收数量")) {
+        for (String field : List.of("报检数量", "到货数量", "数量", "派工数量", "报工数量", "检验数量", "实收数量", "金额")) {
             if (row.containsKey(field)) return num(row.get(field));
         }
         return 0;
     }
 
     private double executedQuantity(Map<String, Object> row) {
-        for (String field : List.of("检验数量", "实收数量", "入库数量", "处理数量", "报检数量", "到货数量", "数量")) {
+        for (String field : List.of("检验数量", "实收数量", "入库数量", "处理数量", "报检数量", "到货数量", "数量", "分摊金额", "金额")) {
             if (row.containsKey(field)) return num(row.get(field));
         }
         return num(row.get("来源数量"));

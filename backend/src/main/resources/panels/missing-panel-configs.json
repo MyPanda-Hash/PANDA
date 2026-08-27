@@ -1,0 +1,5196 @@
+[
+  {
+    "panelCode": "LOCATION_ADJUST",
+    "panelName": "货位调整单",
+    "category": "单据",
+    "version": "menu-panel-1.0",
+    "config": {
+      "metadata": {
+        "panelCode": "LOCATION_ADJUST",
+        "panelName": "货位调整单",
+        "panelCategory": "单据",
+        "autoCodeField": "单据编号",
+        "panelState": {
+          "dataName": "单据状态",
+          "dataType": "STRING",
+          "defaultOptions": [
+            "草稿",
+            "已审核",
+            "审批中",
+            "已中止"
+          ]
+        },
+        "panelPageDto": {
+          "tablePages": [
+            {
+              "tableName": "货位调整单列表",
+              "queryFields": [
+                {
+                  "dataName": "单据日期",
+                  "dataType": "日期"
+                },
+                {
+                  "dataName": "单据编号",
+                  "dataType": "文本"
+                },
+                {
+                  "dataName": "业务类型",
+                  "dataType": "下拉框",
+                  "options": [
+                    "货位调整"
+                  ]
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "WH",
+                  "refField": "仓库名称",
+                  "displayField": "仓库名称",
+                  "filter": {
+                    "停用": false
+                  },
+                  "refColumns": [
+                    "仓库编码",
+                    "仓库名称",
+                    "仓库地址",
+                    "负责人"
+                  ]
+                }
+              ],
+              "gridTabs": [
+                {
+                  "label": "明细",
+                  "rowSource": "detail",
+                  "columns": [
+                    "存货编码",
+                    "存货名称",
+                    "规格型号",
+                    "计量单位",
+                    "数量",
+                    "原货位",
+                    "新货位",
+                    "行中止"
+                  ]
+                }
+              ],
+              "topBarBtn": [
+                {
+                  "buttonName": "新增流程"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "刷新"
+                }
+              ],
+              "rowOperationBarBtn": [],
+              "events": []
+            }
+          ],
+          "formPages": [
+            {
+              "formName": "货位调整单",
+              "fieldNames": "单据日期,单据编号,业务类型,仓库,经手人,备注",
+              "bottomOperationBarBtn": [
+                {
+                  "buttonName": "保存"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "审核"
+                },
+                {
+                  "buttonName": "弃审"
+                },
+                {
+                  "buttonName": "放弃"
+                }
+              ],
+              "events": []
+            }
+          ]
+        },
+        "panelButtons": [
+          {
+            "buttonName": "新增流程"
+          },
+          {
+            "buttonName": "删除"
+          },
+          {
+            "buttonName": "刷新"
+          },
+          {
+            "buttonName": "保存"
+          },
+          {
+            "buttonName": "审核"
+          },
+          {
+            "buttonName": "弃审"
+          },
+          {
+            "buttonName": "放弃"
+          },
+          {
+            "buttonName": "提交审批"
+          },
+          {
+            "buttonName": "审批通过"
+          },
+          {
+            "buttonName": "驳回审批"
+          }
+        ],
+        "buttonGroups": [
+          {
+            "name": "新增",
+            "actions": [
+              "新增"
+            ]
+          },
+          {
+            "name": "保存",
+            "actions": [
+              "保存",
+              "保存新增",
+              "保存为草稿",
+              "保存打印"
+            ]
+          },
+          {
+            "name": "删除",
+            "actions": [
+              "删除",
+              "删除单据"
+            ]
+          },
+          {
+            "name": "审核",
+            "actions": [
+              "审核",
+              "弃审",
+              "审批情况",
+              "提交审批",
+              "审批通过",
+              "审批驳回"
+            ]
+          },
+          {
+            "name": "工具",
+            "actions": [
+              "现存量查询",
+              "联查",
+              "生单流程联查"
+            ]
+          },
+          {
+            "name": "打印",
+            "actions": [
+              "直接打印",
+              "打印",
+              "预览",
+              "打印模板设置",
+              "导出"
+            ]
+          },
+          {
+            "name": "更多",
+            "actions": [
+              "复制",
+              "导出",
+              "退出"
+            ]
+          }
+        ],
+        "version": "1.0"
+      },
+      "dataSchema": {
+        "type": "object",
+        "fields": [
+          {
+            "dataName": "单据日期",
+            "dataType": "日期",
+            "isRequired": true,
+            "defaultValue": "2026-08-25"
+          },
+          {
+            "dataName": "单据编号",
+            "dataType": "文本",
+            "isRequired": true,
+            "defaultValue": "",
+            "autoCode": true
+          },
+          {
+            "dataName": "业务类型",
+            "dataType": "下拉框",
+            "isRequired": true,
+            "defaultValue": "货位调整",
+            "options": [
+              "货位调整"
+            ]
+          },
+          {
+            "dataName": "仓库",
+            "dataType": "参照",
+            "refPanel": "WH",
+            "refField": "仓库名称",
+            "displayField": "仓库名称",
+            "filter": {
+              "停用": false
+            },
+            "refColumns": [
+              "仓库编码",
+              "仓库名称",
+              "仓库地址",
+              "负责人"
+            ],
+            "isRequired": true,
+            "defaultValue": "原料仓"
+          },
+          {
+            "dataName": "经手人",
+            "dataType": "参照",
+            "refPanel": "EMP",
+            "refField": "员工名称",
+            "displayField": "员工名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "备注",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          }
+        ]
+      },
+      "detail": {
+        "tabs": [
+          {
+            "key": "items",
+            "label": "明细",
+            "isRequired": true,
+            "summaryItems": [
+              {
+                "label": "数量合计",
+                "field": "数量"
+              }
+            ],
+            "fields": [
+              {
+                "dataName": "存货编码",
+                "dataType": "参照",
+                "isRequired": false,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货编码",
+                "displayField": "存货编码",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "存货名称",
+                "dataType": "参照",
+                "isRequired": true,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货名称",
+                "displayField": "存货名称",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "规格型号",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "计量单位",
+                "dataType": "下拉框",
+                "isRequired": true,
+                "defaultValue": "kg",
+                "options": [
+                  "件",
+                  "kg",
+                  "套",
+                  "升"
+                ]
+              },
+              {
+                "dataName": "数量",
+                "dataType": "小数",
+                "isRequired": true,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "原货位",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "新货位",
+                "dataType": "文本",
+                "isRequired": true,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "行中止",
+                "dataType": "是否",
+                "isRequired": false,
+                "defaultValue": false
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "panelCode": "OUTSOURCE_FEE",
+    "panelName": "委外加工费用单",
+    "category": "单据",
+    "version": "menu-panel-1.0",
+    "config": {
+      "metadata": {
+        "panelCode": "OUTSOURCE_FEE",
+        "panelName": "委外加工费用单",
+        "panelCategory": "单据",
+        "autoCodeField": "单据编号",
+        "panelState": {
+          "dataName": "单据状态",
+          "dataType": "STRING",
+          "defaultOptions": [
+            "草稿",
+            "已审核",
+            "审批中",
+            "已中止"
+          ]
+        },
+        "panelPageDto": {
+          "tablePages": [
+            {
+              "tableName": "委外加工费用单列表",
+              "queryFields": [
+                {
+                  "dataName": "单据日期",
+                  "dataType": "日期"
+                },
+                {
+                  "dataName": "单据编号",
+                  "dataType": "文本"
+                },
+                {
+                  "dataName": "业务类型",
+                  "dataType": "下拉框",
+                  "options": [
+                    "委外加工费用"
+                  ]
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "PARTNER",
+                  "refField": "往来单位名称",
+                  "displayField": "往来单位名称",
+                  "filter": {
+                    "停用": false,
+                    "性质": [
+                      "供应商",
+                      "两者"
+                    ]
+                  },
+                  "refColumns": [
+                    "往来单位编码",
+                    "往来单位名称",
+                    "往来单位简称",
+                    "性质",
+                    "停用"
+                  ]
+                }
+              ],
+              "gridTabs": [
+                {
+                  "label": "明细",
+                  "rowSource": "detail",
+                  "columns": [
+                    "费用项目",
+                    "产品名称",
+                    "计量单位",
+                    "数量",
+                    "委外单价",
+                    "费用金额",
+                    "备注"
+                  ]
+                }
+              ],
+              "topBarBtn": [
+                {
+                  "buttonName": "新增流程"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "刷新"
+                }
+              ],
+              "rowOperationBarBtn": [],
+              "events": []
+            }
+          ],
+          "formPages": [
+            {
+              "formName": "委外加工费用单",
+              "fieldNames": "单据日期,单据编号,业务类型,委外供应商,委外加工单号,经手人,费用合计,备注,来源单据,来源单号",
+              "bottomOperationBarBtn": [
+                {
+                  "buttonName": "保存"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "审核"
+                },
+                {
+                  "buttonName": "弃审"
+                },
+                {
+                  "buttonName": "放弃"
+                }
+              ],
+              "events": []
+            }
+          ]
+        },
+        "panelButtons": [
+          {
+            "buttonName": "新增流程"
+          },
+          {
+            "buttonName": "删除"
+          },
+          {
+            "buttonName": "刷新"
+          },
+          {
+            "buttonName": "保存"
+          },
+          {
+            "buttonName": "审核"
+          },
+          {
+            "buttonName": "弃审"
+          },
+          {
+            "buttonName": "放弃"
+          },
+          {
+            "buttonName": "提交审批"
+          },
+          {
+            "buttonName": "审批通过"
+          },
+          {
+            "buttonName": "驳回审批"
+          },
+          {
+            "buttonName": "选单"
+          },
+          {
+            "buttonName": "选委外加工单"
+          }
+        ],
+        "buttonGroups": [
+          {
+            "name": "新增",
+            "actions": [
+              "新增"
+            ]
+          },
+          {
+            "name": "选单",
+            "actions": [
+              "选单",
+              "选委外加工单"
+            ]
+          },
+          {
+            "name": "保存",
+            "actions": [
+              "保存",
+              "保存新增",
+              "保存为草稿",
+              "保存打印"
+            ]
+          },
+          {
+            "name": "删除",
+            "actions": [
+              "删除",
+              "删除单据"
+            ]
+          },
+          {
+            "name": "审核",
+            "actions": [
+              "审核",
+              "弃审",
+              "审批情况",
+              "提交审批",
+              "审批通过",
+              "审批驳回"
+            ]
+          },
+          {
+            "name": "工具",
+            "actions": [
+              "现存量查询",
+              "联查",
+              "生单流程联查"
+            ]
+          },
+          {
+            "name": "打印",
+            "actions": [
+              "直接打印",
+              "打印",
+              "预览",
+              "打印模板设置",
+              "导出"
+            ]
+          },
+          {
+            "name": "更多",
+            "actions": [
+              "复制",
+              "导出",
+              "退出"
+            ]
+          }
+        ],
+        "version": "1.0"
+      },
+      "dataSchema": {
+        "type": "object",
+        "fields": [
+          {
+            "dataName": "单据日期",
+            "dataType": "日期",
+            "isRequired": true,
+            "defaultValue": "2026-08-25"
+          },
+          {
+            "dataName": "单据编号",
+            "dataType": "文本",
+            "isRequired": true,
+            "defaultValue": "",
+            "autoCode": true
+          },
+          {
+            "dataName": "业务类型",
+            "dataType": "下拉框",
+            "isRequired": true,
+            "defaultValue": "委外加工费用",
+            "options": [
+              "委外加工费用"
+            ]
+          },
+          {
+            "dataName": "委外供应商",
+            "dataType": "参照",
+            "refPanel": "PARTNER",
+            "refField": "往来单位名称",
+            "displayField": "往来单位名称",
+            "filter": {
+              "停用": false,
+              "性质": [
+                "供应商",
+                "两者"
+              ]
+            },
+            "refColumns": [
+              "往来单位编码",
+              "往来单位名称",
+              "往来单位简称",
+              "性质",
+              "停用"
+            ],
+            "isRequired": true,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "委外加工单号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "经手人",
+            "dataType": "参照",
+            "refPanel": "EMP",
+            "refField": "员工名称",
+            "displayField": "员工名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "费用合计",
+            "dataType": "小数",
+            "isRequired": false,
+            "defaultValue": 0
+          },
+          {
+            "dataName": "备注",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "来源单据",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "来源单号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          }
+        ]
+      },
+      "detail": {
+        "tabs": [
+          {
+            "key": "items",
+            "label": "明细",
+            "isRequired": true,
+            "summaryItems": [
+              {
+                "label": "数量合计",
+                "field": "数量"
+              },
+              {
+                "label": "金额合计",
+                "field": "金额"
+              }
+            ],
+            "calc": [
+              {
+                "target": "金额",
+                "formula": "数量 * 单价",
+                "round": 2
+              }
+            ],
+            "fields": [
+              {
+                "dataName": "费用项目",
+                "dataType": "下拉框",
+                "isRequired": true,
+                "defaultValue": "委外加工费",
+                "options": [
+                  "委外加工费",
+                  "委外运费",
+                  "其他费用"
+                ]
+              },
+              {
+                "dataName": "产品名称",
+                "dataType": "参照",
+                "isRequired": false,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货名称",
+                "displayField": "存货名称",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "计量单位",
+                "dataType": "下拉框",
+                "isRequired": false,
+                "defaultValue": "件",
+                "options": [
+                  "件",
+                  "kg",
+                  "套",
+                  "升"
+                ]
+              },
+              {
+                "dataName": "数量",
+                "dataType": "小数",
+                "isRequired": false,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "委外单价",
+                "dataType": "小数",
+                "isRequired": false,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "费用金额",
+                "dataType": "小数",
+                "isRequired": true,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "备注",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": ""
+              }
+            ]
+          }
+        ]
+      },
+      "selectConfig": {
+        "source": "OUTSOURCE_ORDER",
+        "title": "选委外加工单",
+        "tip": "仅显示已审核且未中止的委外加工单，选中后按产成品委外金额汇总费用明细",
+        "columns": [
+          "单据编号",
+          "单据日期",
+          "委外供应商",
+          "产品名称",
+          "数量",
+          "委外单价"
+        ],
+        "detailKey": "products",
+        "headerMap": [
+          {
+            "from": "单据编号",
+            "to": "委外加工单号"
+          },
+          {
+            "from": "委外供应商",
+            "to": "委外供应商"
+          }
+        ],
+        "detailMap": [
+          {
+            "from": "产品名称",
+            "to": "产品名称"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "panelCode": "OUTSOURCE_IN",
+    "panelName": "委外入库单",
+    "category": "单据",
+    "version": "menu-panel-1.0",
+    "config": {
+      "metadata": {
+        "panelCode": "OUTSOURCE_IN",
+        "panelName": "委外入库单",
+        "panelCategory": "单据",
+        "autoCodeField": "单据编号",
+        "panelState": {
+          "dataName": "单据状态",
+          "dataType": "STRING",
+          "defaultOptions": [
+            "草稿",
+            "已审核",
+            "审批中",
+            "已中止"
+          ]
+        },
+        "panelPageDto": {
+          "tablePages": [
+            {
+              "tableName": "委外入库单列表",
+              "queryFields": [
+                {
+                  "dataName": "单据日期",
+                  "dataType": "日期"
+                },
+                {
+                  "dataName": "单据编号",
+                  "dataType": "文本"
+                },
+                {
+                  "dataName": "业务类型",
+                  "dataType": "下拉框",
+                  "options": [
+                    "委外入库"
+                  ]
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "PARTNER",
+                  "refField": "往来单位名称",
+                  "displayField": "往来单位名称",
+                  "filter": {
+                    "停用": false,
+                    "性质": [
+                      "供应商",
+                      "两者"
+                    ]
+                  },
+                  "refColumns": [
+                    "往来单位编码",
+                    "往来单位名称",
+                    "往来单位简称",
+                    "性质",
+                    "停用"
+                  ]
+                }
+              ],
+              "gridTabs": [
+                {
+                  "label": "明细",
+                  "rowSource": "detail",
+                  "columns": [
+                    "产品编码",
+                    "产品名称",
+                    "规格型号",
+                    "计量单位",
+                    "实收数量",
+                    "单价",
+                    "金额",
+                    "现存量",
+                    "行中止"
+                  ]
+                }
+              ],
+              "topBarBtn": [
+                {
+                  "buttonName": "新增流程"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "刷新"
+                }
+              ],
+              "rowOperationBarBtn": [],
+              "events": []
+            }
+          ],
+          "formPages": [
+            {
+              "formName": "委外入库单",
+              "fieldNames": "单据日期,单据编号,业务类型,委外供应商,委外加工单号,仓库,经手人,备注,来源单据,来源单号",
+              "bottomOperationBarBtn": [
+                {
+                  "buttonName": "保存"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "审核"
+                },
+                {
+                  "buttonName": "弃审"
+                },
+                {
+                  "buttonName": "放弃"
+                }
+              ],
+              "events": []
+            }
+          ]
+        },
+        "panelButtons": [
+          {
+            "buttonName": "新增流程"
+          },
+          {
+            "buttonName": "删除"
+          },
+          {
+            "buttonName": "刷新"
+          },
+          {
+            "buttonName": "保存"
+          },
+          {
+            "buttonName": "审核"
+          },
+          {
+            "buttonName": "弃审"
+          },
+          {
+            "buttonName": "放弃"
+          },
+          {
+            "buttonName": "提交审批"
+          },
+          {
+            "buttonName": "审批通过"
+          },
+          {
+            "buttonName": "驳回审批"
+          },
+          {
+            "buttonName": "选单"
+          },
+          {
+            "buttonName": "选委外加工单"
+          }
+        ],
+        "buttonGroups": [
+          {
+            "name": "新增",
+            "actions": [
+              "新增"
+            ]
+          },
+          {
+            "name": "选单",
+            "actions": [
+              "选单",
+              "选委外加工单"
+            ]
+          },
+          {
+            "name": "保存",
+            "actions": [
+              "保存",
+              "保存新增",
+              "保存为草稿",
+              "保存打印"
+            ]
+          },
+          {
+            "name": "删除",
+            "actions": [
+              "删除",
+              "删除单据"
+            ]
+          },
+          {
+            "name": "审核",
+            "actions": [
+              "审核",
+              "弃审",
+              "审批情况",
+              "提交审批",
+              "审批通过",
+              "审批驳回"
+            ]
+          },
+          {
+            "name": "工具",
+            "actions": [
+              "现存量查询",
+              "联查",
+              "生单流程联查"
+            ]
+          },
+          {
+            "name": "打印",
+            "actions": [
+              "直接打印",
+              "打印",
+              "预览",
+              "打印模板设置",
+              "导出"
+            ]
+          },
+          {
+            "name": "更多",
+            "actions": [
+              "复制",
+              "导出",
+              "退出"
+            ]
+          }
+        ],
+        "version": "1.0"
+      },
+      "dataSchema": {
+        "type": "object",
+        "fields": [
+          {
+            "dataName": "单据日期",
+            "dataType": "日期",
+            "isRequired": true,
+            "defaultValue": "2026-08-25"
+          },
+          {
+            "dataName": "单据编号",
+            "dataType": "文本",
+            "isRequired": true,
+            "defaultValue": "",
+            "autoCode": true
+          },
+          {
+            "dataName": "业务类型",
+            "dataType": "下拉框",
+            "isRequired": true,
+            "defaultValue": "委外入库",
+            "options": [
+              "委外入库",
+              "委外退库"
+            ]
+          },
+          {
+            "dataName": "委外供应商",
+            "dataType": "参照",
+            "refPanel": "PARTNER",
+            "refField": "往来单位名称",
+            "displayField": "往来单位名称",
+            "filter": {
+              "停用": false,
+              "性质": [
+                "供应商",
+                "两者"
+              ]
+            },
+            "refColumns": [
+              "往来单位编码",
+              "往来单位名称",
+              "往来单位简称",
+              "性质",
+              "停用"
+            ],
+            "isRequired": true,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "委外加工单号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "仓库",
+            "dataType": "参照",
+            "refPanel": "WH",
+            "refField": "仓库名称",
+            "displayField": "仓库名称",
+            "filter": {
+              "停用": false
+            },
+            "refColumns": [
+              "仓库编码",
+              "仓库名称",
+              "仓库地址",
+              "负责人"
+            ],
+            "isRequired": false,
+            "defaultValue": "原料仓"
+          },
+          {
+            "dataName": "经手人",
+            "dataType": "参照",
+            "refPanel": "EMP",
+            "refField": "员工名称",
+            "displayField": "员工名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "备注",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "来源单据",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "来源单号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          }
+        ]
+      },
+      "detail": {
+        "tabs": [
+          {
+            "key": "items",
+            "label": "明细",
+            "isRequired": true,
+            "summaryItems": [
+              {
+                "label": "数量合计",
+                "field": "数量"
+              },
+              {
+                "label": "金额合计",
+                "field": "金额"
+              }
+            ],
+            "calc": [
+              {
+                "target": "金额",
+                "formula": "数量 * 单价",
+                "round": 2
+              }
+            ],
+            "fields": [
+              {
+                "dataName": "产品编码",
+                "dataType": "参照",
+                "isRequired": false,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货编码",
+                "displayField": "存货编码",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "产品名称",
+                "dataType": "参照",
+                "isRequired": true,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货名称",
+                "displayField": "存货名称",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "规格型号",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "计量单位",
+                "dataType": "下拉框",
+                "isRequired": true,
+                "defaultValue": "件",
+                "options": [
+                  "件",
+                  "kg",
+                  "套",
+                  "升"
+                ]
+              },
+              {
+                "dataName": "实收数量",
+                "dataType": "小数",
+                "isRequired": true,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "单价",
+                "dataType": "小数",
+                "isRequired": false,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "金额",
+                "dataType": "小数",
+                "computed": true
+              },
+              {
+                "dataName": "现存量",
+                "dataType": "小数",
+                "computed": true
+              },
+              {
+                "dataName": "行中止",
+                "dataType": "是否",
+                "isRequired": false,
+                "defaultValue": false
+              }
+            ]
+          }
+        ]
+      },
+      "selectConfig": {
+        "source": "OUTSOURCE_ORDER",
+        "title": "选委外加工单",
+        "tip": "仅显示已审核且未中止的委外加工单，选中后产成品明细带入委外入库单",
+        "columns": [
+          "单据编号",
+          "单据日期",
+          "委外供应商",
+          "产品名称",
+          "数量"
+        ],
+        "detailKey": "products",
+        "headerMap": [
+          {
+            "from": "单据编号",
+            "to": "委外加工单号"
+          },
+          {
+            "from": "委外供应商",
+            "to": "委外供应商"
+          }
+        ],
+        "detailMap": [
+          {
+            "from": "产品名称",
+            "to": "产品名称"
+          },
+          {
+            "from": "计量单位",
+            "to": "计量单位"
+          },
+          {
+            "from": "数量",
+            "to": "实收数量"
+          },
+          {
+            "from": "委外单价",
+            "to": "单价"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "panelCode": "OUTSOURCE_ISSUE",
+    "panelName": "委外发料单",
+    "category": "单据",
+    "version": "menu-panel-1.0",
+    "config": {
+      "metadata": {
+        "panelCode": "OUTSOURCE_ISSUE",
+        "panelName": "委外发料单",
+        "panelCategory": "单据",
+        "autoCodeField": "单据编号",
+        "panelState": {
+          "dataName": "单据状态",
+          "dataType": "STRING",
+          "defaultOptions": [
+            "草稿",
+            "已审核",
+            "审批中",
+            "已中止"
+          ]
+        },
+        "panelPageDto": {
+          "tablePages": [
+            {
+              "tableName": "委外发料单列表",
+              "queryFields": [
+                {
+                  "dataName": "单据日期",
+                  "dataType": "日期"
+                },
+                {
+                  "dataName": "单据编号",
+                  "dataType": "文本"
+                },
+                {
+                  "dataName": "业务类型",
+                  "dataType": "下拉框",
+                  "options": [
+                    "委外发料"
+                  ]
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "PARTNER",
+                  "refField": "往来单位名称",
+                  "displayField": "往来单位名称",
+                  "filter": {
+                    "停用": false,
+                    "性质": [
+                      "供应商",
+                      "两者"
+                    ]
+                  },
+                  "refColumns": [
+                    "往来单位编码",
+                    "往来单位名称",
+                    "往来单位简称",
+                    "性质",
+                    "停用"
+                  ]
+                }
+              ],
+              "gridTabs": [
+                {
+                  "label": "明细",
+                  "rowSource": "detail",
+                  "columns": [
+                    "材料编码",
+                    "材料名称",
+                    "规格型号",
+                    "计量单位",
+                    "数量",
+                    "单价",
+                    "金额",
+                    "仓库",
+                    "行中止"
+                  ]
+                }
+              ],
+              "topBarBtn": [
+                {
+                  "buttonName": "新增流程"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "刷新"
+                }
+              ],
+              "rowOperationBarBtn": [],
+              "events": []
+            }
+          ],
+          "formPages": [
+            {
+              "formName": "委外发料单",
+              "fieldNames": "单据日期,单据编号,业务类型,委外供应商,委外加工单号,仓库,部门,经手人,备注,来源单据,来源单号",
+              "bottomOperationBarBtn": [
+                {
+                  "buttonName": "保存"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "审核"
+                },
+                {
+                  "buttonName": "弃审"
+                },
+                {
+                  "buttonName": "放弃"
+                }
+              ],
+              "events": []
+            }
+          ]
+        },
+        "panelButtons": [
+          {
+            "buttonName": "新增流程"
+          },
+          {
+            "buttonName": "删除"
+          },
+          {
+            "buttonName": "刷新"
+          },
+          {
+            "buttonName": "保存"
+          },
+          {
+            "buttonName": "审核"
+          },
+          {
+            "buttonName": "弃审"
+          },
+          {
+            "buttonName": "放弃"
+          },
+          {
+            "buttonName": "提交审批"
+          },
+          {
+            "buttonName": "审批通过"
+          },
+          {
+            "buttonName": "驳回审批"
+          },
+          {
+            "buttonName": "选单"
+          },
+          {
+            "buttonName": "选委外加工单"
+          }
+        ],
+        "buttonGroups": [
+          {
+            "name": "新增",
+            "actions": [
+              "新增"
+            ]
+          },
+          {
+            "name": "选单",
+            "actions": [
+              "选单",
+              "选委外加工单"
+            ]
+          },
+          {
+            "name": "保存",
+            "actions": [
+              "保存",
+              "保存新增",
+              "保存为草稿",
+              "保存打印"
+            ]
+          },
+          {
+            "name": "删除",
+            "actions": [
+              "删除",
+              "删除单据"
+            ]
+          },
+          {
+            "name": "审核",
+            "actions": [
+              "审核",
+              "弃审",
+              "审批情况",
+              "提交审批",
+              "审批通过",
+              "审批驳回"
+            ]
+          },
+          {
+            "name": "工具",
+            "actions": [
+              "现存量查询",
+              "联查",
+              "生单流程联查"
+            ]
+          },
+          {
+            "name": "打印",
+            "actions": [
+              "直接打印",
+              "打印",
+              "预览",
+              "打印模板设置",
+              "导出"
+            ]
+          },
+          {
+            "name": "更多",
+            "actions": [
+              "复制",
+              "导出",
+              "退出"
+            ]
+          }
+        ],
+        "version": "1.0"
+      },
+      "dataSchema": {
+        "type": "object",
+        "fields": [
+          {
+            "dataName": "单据日期",
+            "dataType": "日期",
+            "isRequired": true,
+            "defaultValue": "2026-08-25"
+          },
+          {
+            "dataName": "单据编号",
+            "dataType": "文本",
+            "isRequired": true,
+            "defaultValue": "",
+            "autoCode": true
+          },
+          {
+            "dataName": "业务类型",
+            "dataType": "下拉框",
+            "isRequired": true,
+            "defaultValue": "委外发料",
+            "options": [
+              "委外发料",
+              "委外退料"
+            ]
+          },
+          {
+            "dataName": "委外供应商",
+            "dataType": "参照",
+            "refPanel": "PARTNER",
+            "refField": "往来单位名称",
+            "displayField": "往来单位名称",
+            "filter": {
+              "停用": false,
+              "性质": [
+                "供应商",
+                "两者"
+              ]
+            },
+            "refColumns": [
+              "往来单位编码",
+              "往来单位名称",
+              "往来单位简称",
+              "性质",
+              "停用"
+            ],
+            "isRequired": true,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "委外加工单号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "仓库",
+            "dataType": "参照",
+            "refPanel": "WH",
+            "refField": "仓库名称",
+            "displayField": "仓库名称",
+            "filter": {
+              "停用": false
+            },
+            "refColumns": [
+              "仓库编码",
+              "仓库名称",
+              "仓库地址",
+              "负责人"
+            ],
+            "isRequired": false,
+            "defaultValue": "原料仓"
+          },
+          {
+            "dataName": "部门",
+            "dataType": "参照",
+            "refPanel": "DEPT",
+            "refField": "部门名称",
+            "displayField": "部门名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "经手人",
+            "dataType": "参照",
+            "refPanel": "EMP",
+            "refField": "员工名称",
+            "displayField": "员工名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "备注",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "来源单据",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "来源单号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          }
+        ]
+      },
+      "detail": {
+        "tabs": [
+          {
+            "key": "items",
+            "label": "明细",
+            "isRequired": true,
+            "summaryItems": [
+              {
+                "label": "数量合计",
+                "field": "数量"
+              },
+              {
+                "label": "金额合计",
+                "field": "金额"
+              }
+            ],
+            "calc": [
+              {
+                "target": "金额",
+                "formula": "数量 * 单价",
+                "round": 2
+              }
+            ],
+            "fields": [
+              {
+                "dataName": "材料编码",
+                "dataType": "参照",
+                "isRequired": false,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货编码",
+                "displayField": "存货编码",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "材料名称",
+                "dataType": "参照",
+                "isRequired": true,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货名称",
+                "displayField": "存货名称",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "规格型号",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "计量单位",
+                "dataType": "下拉框",
+                "isRequired": true,
+                "defaultValue": "kg",
+                "options": [
+                  "件",
+                  "kg",
+                  "套",
+                  "升"
+                ]
+              },
+              {
+                "dataName": "数量",
+                "dataType": "小数",
+                "isRequired": true,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "单价",
+                "dataType": "小数",
+                "isRequired": false,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "金额",
+                "dataType": "小数",
+                "computed": true
+              },
+              {
+                "dataName": "仓库",
+                "dataType": "参照",
+                "isRequired": false,
+                "defaultValue": "原料仓",
+                "refPanel": "WH",
+                "refField": "仓库名称",
+                "displayField": "仓库名称",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "仓库编码",
+                  "仓库名称",
+                  "仓库地址",
+                  "负责人"
+                ]
+              },
+              {
+                "dataName": "行中止",
+                "dataType": "是否",
+                "isRequired": false,
+                "defaultValue": false
+              }
+            ]
+          }
+        ]
+      },
+      "selectConfig": {
+        "source": "OUTSOURCE_ORDER",
+        "title": "选委外加工单",
+        "tip": "仅显示已审核且未中止的委外加工单，选中后委外材料明细带入委外发料单",
+        "columns": [
+          "单据编号",
+          "单据日期",
+          "委外供应商",
+          "产品名称",
+          "数量"
+        ],
+        "detailKey": "materials",
+        "headerMap": [
+          {
+            "from": "单据编号",
+            "to": "委外加工单号"
+          },
+          {
+            "from": "委外供应商",
+            "to": "委外供应商"
+          }
+        ],
+        "detailMap": [
+          {
+            "from": "材料名称",
+            "to": "材料名称"
+          },
+          {
+            "from": "计量单位",
+            "to": "计量单位"
+          },
+          {
+            "from": "计划数量",
+            "to": "数量"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "panelCode": "OUTSOURCE_ORDER",
+    "panelName": "委外加工单",
+    "category": "单据",
+    "version": "menu-panel-1.0",
+    "config": {
+      "metadata": {
+        "panelCode": "OUTSOURCE_ORDER",
+        "panelName": "委外加工单",
+        "panelCategory": "单据",
+        "autoCodeField": "单据编号",
+        "panelState": {
+          "dataName": "单据状态",
+          "dataType": "STRING",
+          "defaultOptions": [
+            "草稿",
+            "已审核",
+            "审批中",
+            "已中止"
+          ]
+        },
+        "panelPageDto": {
+          "tablePages": [
+            {
+              "tableName": "委外加工单列表",
+              "queryFields": [
+                {
+                  "dataName": "单据日期",
+                  "dataType": "日期"
+                },
+                {
+                  "dataName": "单据编号",
+                  "dataType": "文本"
+                },
+                {
+                  "dataName": "业务类型",
+                  "dataType": "下拉框",
+                  "options": [
+                    "委外加工"
+                  ]
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "PARTNER",
+                  "refField": "往来单位名称",
+                  "displayField": "往来单位名称",
+                  "filter": {
+                    "停用": false,
+                    "性质": [
+                      "供应商",
+                      "两者"
+                    ]
+                  },
+                  "refColumns": [
+                    "往来单位编码",
+                    "往来单位名称",
+                    "往来单位简称",
+                    "性质",
+                    "停用"
+                  ]
+                }
+              ],
+              "gridTabs": [
+                {
+                  "label": "明细",
+                  "rowSource": "detail",
+                  "columns": [
+                    "产品编码",
+                    "产品名称",
+                    "规格型号",
+                    "计量单位",
+                    "数量",
+                    "委外单价",
+                    "金额",
+                    "现存量",
+                    "行中止"
+                  ]
+                }
+              ],
+              "topBarBtn": [
+                {
+                  "buttonName": "新增流程"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "刷新"
+                }
+              ],
+              "rowOperationBarBtn": [],
+              "events": []
+            }
+          ],
+          "formPages": [
+            {
+              "formName": "委外加工单",
+              "fieldNames": "单据日期,单据编号,业务类型,委外供应商,生产车间,部门,经手人,交货日期,预完工日,备注,来源单据,来源单号",
+              "bottomOperationBarBtn": [
+                {
+                  "buttonName": "保存"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "审核"
+                },
+                {
+                  "buttonName": "弃审"
+                },
+                {
+                  "buttonName": "放弃"
+                }
+              ],
+              "events": []
+            }
+          ]
+        },
+        "panelButtons": [
+          {
+            "buttonName": "新增流程"
+          },
+          {
+            "buttonName": "删除"
+          },
+          {
+            "buttonName": "刷新"
+          },
+          {
+            "buttonName": "保存"
+          },
+          {
+            "buttonName": "审核"
+          },
+          {
+            "buttonName": "弃审"
+          },
+          {
+            "buttonName": "放弃"
+          },
+          {
+            "buttonName": "提交审批"
+          },
+          {
+            "buttonName": "审批通过"
+          },
+          {
+            "buttonName": "驳回审批"
+          },
+          {
+            "buttonName": "选单"
+          },
+          {
+            "buttonName": "选销售订单"
+          },
+          {
+            "buttonName": "生成委外发料单"
+          },
+          {
+            "buttonName": "生成委外入库单"
+          },
+          {
+            "buttonName": "生成委外加工费用单"
+          }
+        ],
+        "buttonGroups": [
+          {
+            "name": "新增",
+            "actions": [
+              "新增"
+            ]
+          },
+          {
+            "name": "选单",
+            "actions": [
+              "选单",
+              "选销售订单"
+            ]
+          },
+          {
+            "name": "保存",
+            "actions": [
+              "保存",
+              "保存新增",
+              "保存为草稿",
+              "保存打印"
+            ]
+          },
+          {
+            "name": "删除",
+            "actions": [
+              "删除",
+              "删除单据"
+            ]
+          },
+          {
+            "name": "审核",
+            "actions": [
+              "审核",
+              "弃审",
+              "审批情况",
+              "提交审批",
+              "审批通过",
+              "审批驳回"
+            ]
+          },
+          {
+            "name": "生单",
+            "actions": [
+              "生成委外发料单",
+              "生成委外入库单",
+              "生成委外加工费用单"
+            ]
+          },
+          {
+            "name": "工具",
+            "actions": [
+              "现存量查询",
+              "联查",
+              "生单流程联查"
+            ]
+          },
+          {
+            "name": "打印",
+            "actions": [
+              "直接打印",
+              "打印",
+              "预览",
+              "打印模板设置",
+              "导出"
+            ]
+          },
+          {
+            "name": "更多",
+            "actions": [
+              "复制",
+              "导出",
+              "退出"
+            ]
+          }
+        ],
+        "version": "1.0"
+      },
+      "dataSchema": {
+        "type": "object",
+        "fields": [
+          {
+            "dataName": "单据日期",
+            "dataType": "日期",
+            "isRequired": true,
+            "defaultValue": "2026-08-25"
+          },
+          {
+            "dataName": "单据编号",
+            "dataType": "文本",
+            "isRequired": true,
+            "defaultValue": "",
+            "autoCode": true
+          },
+          {
+            "dataName": "业务类型",
+            "dataType": "下拉框",
+            "isRequired": true,
+            "defaultValue": "委外加工",
+            "options": [
+              "委外加工",
+              "委外返工"
+            ]
+          },
+          {
+            "dataName": "委外供应商",
+            "dataType": "参照",
+            "refPanel": "PARTNER",
+            "refField": "往来单位名称",
+            "displayField": "往来单位名称",
+            "filter": {
+              "停用": false,
+              "性质": [
+                "供应商",
+                "两者"
+              ]
+            },
+            "refColumns": [
+              "往来单位编码",
+              "往来单位名称",
+              "往来单位简称",
+              "性质",
+              "停用"
+            ],
+            "isRequired": true,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "生产车间",
+            "dataType": "下拉框",
+            "isRequired": false,
+            "defaultValue": "",
+            "options": [
+              "熔铸车间",
+              "轧制车间",
+              "精整车间",
+              "测试车间"
+            ]
+          },
+          {
+            "dataName": "部门",
+            "dataType": "参照",
+            "refPanel": "DEPT",
+            "refField": "部门名称",
+            "displayField": "部门名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "经手人",
+            "dataType": "参照",
+            "refPanel": "EMP",
+            "refField": "员工名称",
+            "displayField": "员工名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "交货日期",
+            "dataType": "日期",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "预完工日",
+            "dataType": "日期",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "备注",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "来源单据",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "来源单号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          }
+        ]
+      },
+      "detail": {
+        "tabs": [
+          {
+            "key": "products",
+            "label": "明细",
+            "isRequired": true,
+            "summaryItems": [
+              {
+                "label": "数量合计",
+                "field": "数量"
+              },
+              {
+                "label": "金额合计",
+                "field": "金额"
+              }
+            ],
+            "calc": [
+              {
+                "target": "金额",
+                "formula": "数量 * 单价",
+                "round": 2
+              }
+            ],
+            "fields": [
+              {
+                "dataName": "产品编码",
+                "dataType": "参照",
+                "isRequired": false,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货编码",
+                "displayField": "存货编码",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ],
+                "refMap": [
+                  {
+                    "from": "存货名称",
+                    "to": "产品名称"
+                  },
+                  {
+                    "from": "计量单位",
+                    "to": "计量单位"
+                  }
+                ]
+              },
+              {
+                "dataName": "产品名称",
+                "dataType": "参照",
+                "isRequired": true,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货名称",
+                "displayField": "存货名称",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "规格型号",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "计量单位",
+                "dataType": "下拉框",
+                "isRequired": true,
+                "defaultValue": "件",
+                "options": [
+                  "件",
+                  "kg",
+                  "套",
+                  "升"
+                ]
+              },
+              {
+                "dataName": "数量",
+                "dataType": "小数",
+                "isRequired": true,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "委外单价",
+                "dataType": "小数",
+                "isRequired": false,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "金额",
+                "dataType": "小数",
+                "computed": true
+              },
+              {
+                "dataName": "现存量",
+                "dataType": "小数",
+                "computed": true
+              },
+              {
+                "dataName": "行中止",
+                "dataType": "是否",
+                "isRequired": false,
+                "defaultValue": false
+              }
+            ]
+          },
+          {
+            "key": "materials",
+            "label": "委外材料",
+            "isRequired": false,
+            "fields": [
+              {
+                "dataName": "材料编码",
+                "dataType": "参照",
+                "isRequired": false,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货编码",
+                "displayField": "存货编码",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "材料名称",
+                "dataType": "参照",
+                "isRequired": true,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货名称",
+                "displayField": "存货名称",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "规格型号",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "计量单位",
+                "dataType": "下拉框",
+                "isRequired": true,
+                "defaultValue": "kg",
+                "options": [
+                  "件",
+                  "kg",
+                  "套",
+                  "升"
+                ]
+              },
+              {
+                "dataName": "计划数量",
+                "dataType": "小数",
+                "isRequired": true,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "预出仓库",
+                "dataType": "参照",
+                "isRequired": false,
+                "defaultValue": "原料仓",
+                "refPanel": "WH",
+                "refField": "仓库名称",
+                "displayField": "仓库名称",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "仓库编码",
+                  "仓库名称",
+                  "仓库地址",
+                  "负责人"
+                ]
+              },
+              {
+                "dataName": "现存量",
+                "dataType": "小数",
+                "computed": true
+              },
+              {
+                "dataName": "可用量",
+                "dataType": "小数",
+                "computed": true
+              }
+            ]
+          }
+        ]
+      },
+      "selectConfig": {
+        "source": "SO_ORDER",
+        "title": "选销售订单",
+        "tip": "仅显示已审核且未中止的销售订单，选中后产品明细带入委外加工单（对齐 T+ 选单前提）",
+        "columns": [
+          "单据编号",
+          "单据日期",
+          "客户",
+          "存货名称",
+          "数量",
+          "销售单位",
+          "预计交货日期"
+        ],
+        "detailKey": "items",
+        "headerMap": [
+          {
+            "from": "单据编号",
+            "to": "来源单号"
+          }
+        ],
+        "detailMap": [
+          {
+            "from": "存货名称",
+            "to": "产品名称"
+          },
+          {
+            "from": "计量单位",
+            "to": "计量单位"
+          },
+          {
+            "from": "数量",
+            "to": "数量"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "panelCode": "PU_COST_ALLOC",
+    "panelName": "采购费用分摊单",
+    "category": "单据",
+    "version": "menu-panel-1.0",
+    "config": {
+      "metadata": {
+        "panelCode": "PU_COST_ALLOC",
+        "panelName": "采购费用分摊单",
+        "panelCategory": "单据",
+        "autoCodeField": "单据编号",
+        "panelState": {
+          "dataName": "单据状态",
+          "dataType": "STRING",
+          "defaultOptions": [
+            "草稿",
+            "已审核",
+            "审批中",
+            "已中止"
+          ]
+        },
+        "panelPageDto": {
+          "tablePages": [
+            {
+              "tableName": "采购费用分摊单列表",
+              "queryFields": [
+                {
+                  "dataName": "单据日期",
+                  "dataType": "日期"
+                },
+                {
+                  "dataName": "单据编号",
+                  "dataType": "文本"
+                },
+                {
+                  "dataName": "业务类型",
+                  "dataType": "下拉框",
+                  "options": [
+                    "采购费用分摊"
+                  ]
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "PARTNER",
+                  "refField": "往来单位名称",
+                  "displayField": "往来单位名称",
+                  "filter": {
+                    "停用": false,
+                    "性质": [
+                      "供应商",
+                      "两者"
+                    ]
+                  },
+                  "refColumns": [
+                    "往来单位编码",
+                    "往来单位名称",
+                    "往来单位简称",
+                    "性质",
+                    "停用"
+                  ]
+                }
+              ],
+              "gridTabs": [
+                {
+                  "label": "明细",
+                  "rowSource": "detail",
+                  "columns": [
+                    "费用单号",
+                    "费用项目",
+                    "分摊金额",
+                    "备注"
+                  ]
+                }
+              ],
+              "topBarBtn": [
+                {
+                  "buttonName": "新增流程"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "刷新"
+                }
+              ],
+              "rowOperationBarBtn": [],
+              "events": []
+            }
+          ],
+          "formPages": [
+            {
+              "formName": "采购费用分摊单",
+              "fieldNames": "单据日期,单据编号,业务类型,供应商,费用类型,部门,经手人,分摊合计,备注",
+              "bottomOperationBarBtn": [
+                {
+                  "buttonName": "保存"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "审核"
+                },
+                {
+                  "buttonName": "弃审"
+                },
+                {
+                  "buttonName": "放弃"
+                }
+              ],
+              "events": []
+            }
+          ]
+        },
+        "panelButtons": [
+          {
+            "buttonName": "新增流程"
+          },
+          {
+            "buttonName": "删除"
+          },
+          {
+            "buttonName": "刷新"
+          },
+          {
+            "buttonName": "保存"
+          },
+          {
+            "buttonName": "审核"
+          },
+          {
+            "buttonName": "弃审"
+          },
+          {
+            "buttonName": "放弃"
+          },
+          {
+            "buttonName": "提交审批"
+          },
+          {
+            "buttonName": "审批通过"
+          },
+          {
+            "buttonName": "驳回审批"
+          },
+          {
+            "buttonName": "选单"
+          },
+          {
+            "buttonName": "选费用单"
+          }
+        ],
+        "buttonGroups": [
+          {
+            "name": "新增",
+            "actions": [
+              "新增"
+            ]
+          },
+          {
+            "name": "选单",
+            "actions": [
+              "选单",
+              "选费用单"
+            ]
+          },
+          {
+            "name": "保存",
+            "actions": [
+              "保存",
+              "保存新增",
+              "保存为草稿",
+              "保存打印"
+            ]
+          },
+          {
+            "name": "删除",
+            "actions": [
+              "删除",
+              "删除单据"
+            ]
+          },
+          {
+            "name": "审核",
+            "actions": [
+              "审核",
+              "弃审",
+              "审批情况",
+              "提交审批",
+              "审批通过",
+              "审批驳回"
+            ]
+          },
+          {
+            "name": "工具",
+            "actions": [
+              "现存量查询",
+              "联查",
+              "生单流程联查"
+            ]
+          },
+          {
+            "name": "打印",
+            "actions": [
+              "直接打印",
+              "打印",
+              "预览",
+              "打印模板设置",
+              "导出"
+            ]
+          },
+          {
+            "name": "更多",
+            "actions": [
+              "复制",
+              "导出",
+              "退出"
+            ]
+          }
+        ],
+        "version": "1.0"
+      },
+      "dataSchema": {
+        "type": "object",
+        "fields": [
+          {
+            "dataName": "单据日期",
+            "dataType": "日期",
+            "isRequired": true,
+            "defaultValue": "2026-08-25"
+          },
+          {
+            "dataName": "单据编号",
+            "dataType": "文本",
+            "isRequired": true,
+            "defaultValue": "",
+            "autoCode": true
+          },
+          {
+            "dataName": "业务类型",
+            "dataType": "下拉框",
+            "isRequired": true,
+            "defaultValue": "采购费用分摊",
+            "options": [
+              "采购费用分摊"
+            ]
+          },
+          {
+            "dataName": "供应商",
+            "dataType": "参照",
+            "refPanel": "PARTNER",
+            "refField": "往来单位名称",
+            "displayField": "往来单位名称",
+            "filter": {
+              "停用": false,
+              "性质": [
+                "供应商",
+                "两者"
+              ]
+            },
+            "refColumns": [
+              "往来单位编码",
+              "往来单位名称",
+              "往来单位简称",
+              "性质",
+              "停用"
+            ],
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "费用类型",
+            "dataType": "下拉框",
+            "isRequired": false,
+            "defaultValue": "采购费用",
+            "options": [
+              "采购费用",
+              "其他费用"
+            ]
+          },
+          {
+            "dataName": "部门",
+            "dataType": "参照",
+            "refPanel": "DEPT",
+            "refField": "部门名称",
+            "displayField": "部门名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "经手人",
+            "dataType": "参照",
+            "refPanel": "EMP",
+            "refField": "员工名称",
+            "displayField": "员工名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "分摊合计",
+            "dataType": "小数",
+            "isRequired": false,
+            "defaultValue": 0
+          },
+          {
+            "dataName": "备注",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          }
+        ]
+      },
+      "detail": {
+        "tabs": [
+          {
+            "key": "items",
+            "label": "明细",
+            "isRequired": true,
+            "summaryItems": [
+              {
+                "label": "数量合计",
+                "field": "数量"
+              },
+              {
+                "label": "金额合计",
+                "field": "价税合计"
+              }
+            ],
+            "fields": [
+              {
+                "dataName": "费用单号",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "费用项目",
+                "dataType": "下拉框",
+                "isRequired": true,
+                "defaultValue": "运费",
+                "options": [
+                  "运费",
+                  "装卸费",
+                  "包装费",
+                  "其他"
+                ]
+              },
+              {
+                "dataName": "分摊金额",
+                "dataType": "小数",
+                "isRequired": true,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "备注",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": ""
+              }
+            ]
+          }
+        ]
+      },
+      "selectConfig": {
+        "source": "EXPENSE",
+        "title": "选费用单",
+        "tip": "仅显示已审核且未中止、费用类型为「采购费用」的费用单，选中后费用明细带入分摊单",
+        "columns": [
+          "单据编号",
+          "单据日期",
+          "费用类型",
+          "费用项目",
+          "金额"
+        ],
+        "detailKey": "items",
+        "headerMap": [
+          {
+            "from": "单据编号",
+            "to": "来源单号"
+          },
+          {
+            "from": "费用类型",
+            "to": "费用类型"
+          }
+        ],
+        "detailMap": [
+          {
+            "from": "费用项目",
+            "to": "费用项目"
+          },
+          {
+            "from": "金额",
+            "to": "分摊金额"
+          },
+          {
+            "from": "备注",
+            "to": "备注"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "panelCode": "PU_INVOICE",
+    "panelName": "采购发票",
+    "category": "单据",
+    "version": "menu-panel-1.0",
+    "config": {
+      "metadata": {
+        "panelCode": "PU_INVOICE",
+        "panelName": "采购发票",
+        "panelCategory": "单据",
+        "autoCodeField": "单据编号",
+        "panelState": {
+          "dataName": "单据状态",
+          "dataType": "STRING",
+          "defaultOptions": [
+            "草稿",
+            "已审核",
+            "审批中",
+            "已中止"
+          ]
+        },
+        "panelPageDto": {
+          "tablePages": [
+            {
+              "tableName": "采购发票列表",
+              "queryFields": [
+                {
+                  "dataName": "单据日期",
+                  "dataType": "日期"
+                },
+                {
+                  "dataName": "单据编号",
+                  "dataType": "文本"
+                },
+                {
+                  "dataName": "业务类型",
+                  "dataType": "下拉框",
+                  "options": [
+                    "采购发票"
+                  ]
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "PARTNER",
+                  "refField": "往来单位名称",
+                  "displayField": "往来单位名称",
+                  "filter": {
+                    "停用": false,
+                    "性质": [
+                      "供应商",
+                      "两者"
+                    ]
+                  },
+                  "refColumns": [
+                    "往来单位编码",
+                    "往来单位名称",
+                    "往来单位简称",
+                    "性质",
+                    "停用"
+                  ]
+                }
+              ],
+              "gridTabs": [
+                {
+                  "label": "明细",
+                  "rowSource": "detail",
+                  "columns": [
+                    "存货编码",
+                    "存货名称",
+                    "规格型号",
+                    "计量单位",
+                    "数量",
+                    "无税单价",
+                    "税率%",
+                    "税额",
+                    "价税合计"
+                  ]
+                }
+              ],
+              "topBarBtn": [
+                {
+                  "buttonName": "新增流程"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "刷新"
+                }
+              ],
+              "rowOperationBarBtn": [],
+              "events": []
+            }
+          ],
+          "formPages": [
+            {
+              "formName": "采购发票",
+              "fieldNames": "单据日期,单据编号,业务类型,供应商,供应商编码,部门,业务员,开票类型,进货单号,采购订单号,价税合计,备注",
+              "bottomOperationBarBtn": [
+                {
+                  "buttonName": "保存"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "审核"
+                },
+                {
+                  "buttonName": "弃审"
+                },
+                {
+                  "buttonName": "放弃"
+                }
+              ],
+              "events": []
+            }
+          ]
+        },
+        "panelButtons": [
+          {
+            "buttonName": "新增流程"
+          },
+          {
+            "buttonName": "删除"
+          },
+          {
+            "buttonName": "刷新"
+          },
+          {
+            "buttonName": "保存"
+          },
+          {
+            "buttonName": "审核"
+          },
+          {
+            "buttonName": "弃审"
+          },
+          {
+            "buttonName": "放弃"
+          },
+          {
+            "buttonName": "提交审批"
+          },
+          {
+            "buttonName": "审批通过"
+          },
+          {
+            "buttonName": "驳回审批"
+          },
+          {
+            "buttonName": "选单"
+          },
+          {
+            "buttonName": "选进货单"
+          }
+        ],
+        "buttonGroups": [
+          {
+            "name": "新增",
+            "actions": [
+              "新增"
+            ]
+          },
+          {
+            "name": "选单",
+            "actions": [
+              "选单",
+              "选进货单"
+            ]
+          },
+          {
+            "name": "保存",
+            "actions": [
+              "保存",
+              "保存新增",
+              "保存为草稿",
+              "保存打印"
+            ]
+          },
+          {
+            "name": "删除",
+            "actions": [
+              "删除",
+              "删除单据"
+            ]
+          },
+          {
+            "name": "审核",
+            "actions": [
+              "审核",
+              "弃审",
+              "审批情况",
+              "提交审批",
+              "审批通过",
+              "审批驳回"
+            ]
+          },
+          {
+            "name": "工具",
+            "actions": [
+              "现存量查询",
+              "联查",
+              "生单流程联查"
+            ]
+          },
+          {
+            "name": "打印",
+            "actions": [
+              "直接打印",
+              "打印",
+              "预览",
+              "打印模板设置",
+              "导出"
+            ]
+          },
+          {
+            "name": "更多",
+            "actions": [
+              "复制",
+              "导出",
+              "退出"
+            ]
+          }
+        ],
+        "version": "1.0"
+      },
+      "dataSchema": {
+        "type": "object",
+        "fields": [
+          {
+            "dataName": "单据日期",
+            "dataType": "日期",
+            "isRequired": true,
+            "defaultValue": "2026-08-25"
+          },
+          {
+            "dataName": "单据编号",
+            "dataType": "文本",
+            "isRequired": true,
+            "defaultValue": "",
+            "autoCode": true
+          },
+          {
+            "dataName": "业务类型",
+            "dataType": "下拉框",
+            "isRequired": true,
+            "defaultValue": "采购发票",
+            "options": [
+              "采购发票",
+              "采购发票(退货)"
+            ]
+          },
+          {
+            "dataName": "供应商",
+            "dataType": "参照",
+            "refPanel": "PARTNER",
+            "refField": "往来单位名称",
+            "displayField": "往来单位名称",
+            "filter": {
+              "停用": false,
+              "性质": [
+                "供应商",
+                "两者"
+              ]
+            },
+            "refColumns": [
+              "往来单位编码",
+              "往来单位名称",
+              "往来单位简称",
+              "性质",
+              "停用"
+            ],
+            "isRequired": true,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "供应商编码",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "部门",
+            "dataType": "参照",
+            "refPanel": "DEPT",
+            "refField": "部门名称",
+            "displayField": "部门名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "业务员",
+            "dataType": "参照",
+            "refPanel": "EMP",
+            "refField": "员工名称",
+            "displayField": "员工名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "开票类型",
+            "dataType": "下拉框",
+            "isRequired": true,
+            "defaultValue": "增值税专用发票",
+            "options": [
+              "增值税专用发票",
+              "增值税普通发票"
+            ]
+          },
+          {
+            "dataName": "进货单号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "采购订单号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "价税合计",
+            "dataType": "小数",
+            "isRequired": false,
+            "defaultValue": 0
+          },
+          {
+            "dataName": "备注",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          }
+        ]
+      },
+      "detail": {
+        "tabs": [
+          {
+            "key": "items",
+            "label": "明细",
+            "isRequired": true,
+            "summaryItems": [
+              {
+                "label": "数量合计",
+                "field": "数量"
+              },
+              {
+                "label": "金额合计",
+                "field": "价税合计"
+              }
+            ],
+            "fields": [
+              {
+                "dataName": "存货编码",
+                "dataType": "参照",
+                "isRequired": false,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货编码",
+                "displayField": "存货编码",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "存货名称",
+                "dataType": "参照",
+                "isRequired": true,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货名称",
+                "displayField": "存货名称",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "规格型号",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "计量单位",
+                "dataType": "下拉框",
+                "isRequired": true,
+                "defaultValue": "件",
+                "options": [
+                  "件",
+                  "kg",
+                  "套",
+                  "升"
+                ]
+              },
+              {
+                "dataName": "数量",
+                "dataType": "小数",
+                "isRequired": true,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "无税单价",
+                "dataType": "小数",
+                "isRequired": false,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "税率%",
+                "dataType": "小数",
+                "isRequired": false,
+                "defaultValue": 13
+              },
+              {
+                "dataName": "税额",
+                "dataType": "小数",
+                "computed": true
+              },
+              {
+                "dataName": "价税合计",
+                "dataType": "小数",
+                "computed": true
+              }
+            ]
+          }
+        ]
+      },
+      "selectConfig": {
+        "source": "PU_IN",
+        "title": "选进货单",
+        "tip": "仅显示已审核且未中止的进货单，选中后明细按含税单价拆分税额/价税合计生成采购发票",
+        "columns": [
+          "单据编号",
+          "单据日期",
+          "供应商",
+          "存货名称",
+          "数量",
+          "含税单价",
+          "含税金额"
+        ],
+        "detailKey": "items",
+        "headerMap": [
+          {
+            "from": "单据编号",
+            "to": "进货单号"
+          },
+          {
+            "from": "供应商",
+            "to": "供应商"
+          },
+          {
+            "from": "供应商编码",
+            "to": "供应商编码"
+          }
+        ],
+        "detailMap": [
+          {
+            "from": "存货名称",
+            "to": "存货名称"
+          },
+          {
+            "from": "规格型号",
+            "to": "规格型号"
+          },
+          {
+            "from": "数量",
+            "to": "数量"
+          },
+          {
+            "from": "税率%",
+            "to": "税率%"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "panelCode": "PU_REQ_ANALYSIS",
+    "panelName": "采购需求分析",
+    "category": "查询",
+    "version": "menu-panel-1.0",
+    "config": {
+      "metadata": {
+        "panelCode": "PU_REQ_ANALYSIS",
+        "panelName": "采购需求分析",
+        "panelCategory": "查询",
+        "panelState": {
+          "dataName": "单据状态",
+          "dataType": "STRING",
+          "defaultOptions": []
+        },
+        "panelPageDto": {
+          "tablePages": [
+            {
+              "tableName": "采购需求分析",
+              "queryFields": [
+                {
+                  "dataName": "材料名称",
+                  "dataType": "参照",
+                  "refPanel": "INV",
+                  "refField": "存货名称",
+                  "displayField": "存货名称",
+                  "filter": {
+                    "停用": false
+                  },
+                  "refColumns": [
+                    "存货编码",
+                    "存货名称",
+                    "规格型号",
+                    "计量单位",
+                    "停用"
+                  ]
+                }
+              ],
+              "gridTabs": [
+                {
+                  "label": "需求分析",
+                  "rowSource": "rows",
+                  "columns": [
+                    "材料编码",
+                    "材料名称",
+                    "规格型号",
+                    "计量单位",
+                    "需用数量",
+                    "现存量",
+                    "已请购数量",
+                    "已出库数量",
+                    "建议请购数量",
+                    "需求来源"
+                  ]
+                }
+              ],
+              "topBarBtn": [
+                {
+                  "buttonName": "查询"
+                },
+                {
+                  "buttonName": "刷新"
+                },
+                {
+                  "buttonName": "退出"
+                }
+              ],
+              "rowOperationBarBtn": [],
+              "pageSize": 50,
+              "events": []
+            }
+          ],
+          "formPages": []
+        },
+        "panelButtons": [
+          {
+            "buttonName": "查询"
+          },
+          {
+            "buttonName": "刷新"
+          },
+          {
+            "buttonName": "退出"
+          }
+        ],
+        "buttonGroups": [
+          {
+            "name": "查询",
+            "actions": [
+              "查询"
+            ]
+          },
+          {
+            "name": "刷新",
+            "actions": [
+              "刷新"
+            ]
+          },
+          {
+            "name": "退出",
+            "actions": [
+              "退出"
+            ]
+          }
+        ],
+        "version": "1.0"
+      },
+      "dataSchema": {
+        "type": "object",
+        "fields": [
+          {
+            "dataName": "材料编码",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "材料名称",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "规格型号",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "计量单位",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "需用数量",
+            "dataType": "小数"
+          },
+          {
+            "dataName": "现存量",
+            "dataType": "小数"
+          },
+          {
+            "dataName": "已请购数量",
+            "dataType": "小数"
+          },
+          {
+            "dataName": "已出库数量",
+            "dataType": "小数"
+          },
+          {
+            "dataName": "建议请购数量",
+            "dataType": "小数"
+          },
+          {
+            "dataName": "需求来源",
+            "dataType": "文本"
+          }
+        ]
+      },
+      "detail": {
+        "tabs": []
+      }
+    }
+  },
+  {
+    "panelCode": "SERIAL_NO",
+    "panelName": "序列号登记单",
+    "category": "单据",
+    "version": "menu-panel-1.0",
+    "config": {
+      "metadata": {
+        "panelCode": "SERIAL_NO",
+        "panelName": "序列号登记单",
+        "panelCategory": "单据",
+        "autoCodeField": "单据编号",
+        "panelState": {
+          "dataName": "单据状态",
+          "dataType": "STRING",
+          "defaultOptions": [
+            "草稿",
+            "已审核",
+            "审批中",
+            "已中止"
+          ]
+        },
+        "panelPageDto": {
+          "tablePages": [
+            {
+              "tableName": "序列号登记单列表",
+              "queryFields": [
+                {
+                  "dataName": "单据日期",
+                  "dataType": "日期"
+                },
+                {
+                  "dataName": "单据编号",
+                  "dataType": "文本"
+                },
+                {
+                  "dataName": "业务类型",
+                  "dataType": "下拉框",
+                  "options": [
+                    "序列号登记"
+                  ]
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "WH",
+                  "refField": "仓库名称",
+                  "displayField": "仓库名称",
+                  "filter": {
+                    "停用": false
+                  },
+                  "refColumns": [
+                    "仓库编码",
+                    "仓库名称",
+                    "仓库地址",
+                    "负责人"
+                  ]
+                }
+              ],
+              "gridTabs": [
+                {
+                  "label": "明细",
+                  "rowSource": "detail",
+                  "columns": [
+                    "序列号",
+                    "状态",
+                    "入库日期",
+                    "出库日期",
+                    "备注"
+                  ]
+                }
+              ],
+              "topBarBtn": [
+                {
+                  "buttonName": "新增流程"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "刷新"
+                }
+              ],
+              "rowOperationBarBtn": [],
+              "events": []
+            }
+          ],
+          "formPages": [
+            {
+              "formName": "序列号登记单",
+              "fieldNames": "单据日期,单据编号,业务类型,存货,存货编码,规格型号,计量单位,仓库,入库单号,出库单号,状态,备注",
+              "bottomOperationBarBtn": [
+                {
+                  "buttonName": "保存"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "审核"
+                },
+                {
+                  "buttonName": "弃审"
+                },
+                {
+                  "buttonName": "放弃"
+                }
+              ],
+              "events": []
+            }
+          ]
+        },
+        "panelButtons": [
+          {
+            "buttonName": "新增流程"
+          },
+          {
+            "buttonName": "删除"
+          },
+          {
+            "buttonName": "刷新"
+          },
+          {
+            "buttonName": "保存"
+          },
+          {
+            "buttonName": "审核"
+          },
+          {
+            "buttonName": "弃审"
+          },
+          {
+            "buttonName": "放弃"
+          },
+          {
+            "buttonName": "提交审批"
+          },
+          {
+            "buttonName": "审批通过"
+          },
+          {
+            "buttonName": "驳回审批"
+          }
+        ],
+        "buttonGroups": [
+          {
+            "name": "新增",
+            "actions": [
+              "新增"
+            ]
+          },
+          {
+            "name": "保存",
+            "actions": [
+              "保存",
+              "保存新增",
+              "保存为草稿",
+              "保存打印"
+            ]
+          },
+          {
+            "name": "删除",
+            "actions": [
+              "删除",
+              "删除单据"
+            ]
+          },
+          {
+            "name": "审核",
+            "actions": [
+              "审核",
+              "弃审",
+              "审批情况",
+              "提交审批",
+              "审批通过",
+              "审批驳回"
+            ]
+          },
+          {
+            "name": "工具",
+            "actions": [
+              "现存量查询",
+              "联查",
+              "生单流程联查"
+            ]
+          },
+          {
+            "name": "打印",
+            "actions": [
+              "直接打印",
+              "打印",
+              "预览",
+              "打印模板设置",
+              "导出"
+            ]
+          },
+          {
+            "name": "更多",
+            "actions": [
+              "复制",
+              "导出",
+              "退出"
+            ]
+          }
+        ],
+        "version": "1.0"
+      },
+      "dataSchema": {
+        "type": "object",
+        "fields": [
+          {
+            "dataName": "单据日期",
+            "dataType": "日期",
+            "isRequired": true,
+            "defaultValue": "2026-08-25"
+          },
+          {
+            "dataName": "单据编号",
+            "dataType": "文本",
+            "isRequired": true,
+            "defaultValue": "",
+            "autoCode": true
+          },
+          {
+            "dataName": "业务类型",
+            "dataType": "下拉框",
+            "isRequired": true,
+            "defaultValue": "序列号登记",
+            "options": [
+              "序列号登记",
+              "序列号出库"
+            ]
+          },
+          {
+            "dataName": "存货",
+            "dataType": "参照",
+            "refPanel": "INV",
+            "refField": "存货名称",
+            "displayField": "存货名称",
+            "filter": {
+              "停用": false
+            },
+            "refColumns": [
+              "存货编码",
+              "存货名称",
+              "规格型号",
+              "所属类别",
+              "品牌",
+              "计量单位",
+              "停用"
+            ],
+            "isRequired": true,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "存货编码",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "规格型号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "计量单位",
+            "dataType": "下拉框",
+            "isRequired": true,
+            "defaultValue": "件",
+            "options": [
+              "件",
+              "kg",
+              "套",
+              "升"
+            ]
+          },
+          {
+            "dataName": "仓库",
+            "dataType": "参照",
+            "refPanel": "WH",
+            "refField": "仓库名称",
+            "displayField": "仓库名称",
+            "filter": {
+              "停用": false
+            },
+            "refColumns": [
+              "仓库编码",
+              "仓库名称",
+              "仓库地址",
+              "负责人"
+            ],
+            "isRequired": false,
+            "defaultValue": "成品仓"
+          },
+          {
+            "dataName": "入库单号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "出库单号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "状态",
+            "dataType": "下拉框",
+            "isRequired": true,
+            "defaultValue": "在库",
+            "options": [
+              "在库",
+              "已出库"
+            ]
+          },
+          {
+            "dataName": "备注",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          }
+        ]
+      },
+      "detail": {
+        "tabs": [
+          {
+            "key": "items",
+            "label": "明细",
+            "isRequired": true,
+            "summaryItems": [
+              {
+                "label": "数量合计",
+                "field": "数量"
+              }
+            ],
+            "fields": [
+              {
+                "dataName": "序列号",
+                "dataType": "文本",
+                "isRequired": true,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "状态",
+                "dataType": "下拉框",
+                "isRequired": true,
+                "defaultValue": "在库",
+                "options": [
+                  "在库",
+                  "已出库"
+                ]
+              },
+              {
+                "dataName": "入库日期",
+                "dataType": "日期",
+                "isRequired": false,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "出库日期",
+                "dataType": "日期",
+                "isRequired": false,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "备注",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": ""
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "panelCode": "SERIAL_STATUS",
+    "panelName": "序列号状况表",
+    "category": "查询",
+    "version": "menu-panel-1.0",
+    "config": {
+      "metadata": {
+        "panelCode": "SERIAL_STATUS",
+        "panelName": "序列号状况表",
+        "panelCategory": "查询",
+        "panelState": {
+          "dataName": "单据状态",
+          "dataType": "STRING",
+          "defaultOptions": []
+        },
+        "panelPageDto": {
+          "tablePages": [
+            {
+              "tableName": "序列号状况表",
+              "queryFields": [
+                {
+                  "dataName": "序列号",
+                  "dataType": "文本"
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "INV",
+                  "refField": "存货名称",
+                  "displayField": "存货名称",
+                  "filter": {
+                    "停用": false
+                  },
+                  "refColumns": [
+                    "存货编码",
+                    "存货名称",
+                    "规格型号",
+                    "所属类别",
+                    "品牌",
+                    "计量单位",
+                    "停用"
+                  ]
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "WH",
+                  "refField": "仓库名称",
+                  "displayField": "仓库名称",
+                  "filter": {
+                    "停用": false
+                  },
+                  "refColumns": [
+                    "仓库编码",
+                    "仓库名称",
+                    "仓库地址",
+                    "负责人"
+                  ]
+                }
+              ],
+              "gridTabs": [
+                {
+                  "label": "序列号",
+                  "rowSource": "rows",
+                  "columns": [
+                    "登记单号",
+                    "序列号",
+                    "存货编码",
+                    "存货",
+                    "规格型号",
+                    "计量单位",
+                    "仓库",
+                    "状态",
+                    "入库单号",
+                    "入库日期"
+                  ]
+                }
+              ],
+              "topBarBtn": [
+                {
+                  "buttonName": "查询"
+                },
+                {
+                  "buttonName": "刷新"
+                },
+                {
+                  "buttonName": "退出"
+                }
+              ],
+              "rowOperationBarBtn": [],
+              "pageSize": 50,
+              "events": []
+            }
+          ],
+          "formPages": []
+        },
+        "panelButtons": [
+          {
+            "buttonName": "查询"
+          },
+          {
+            "buttonName": "刷新"
+          },
+          {
+            "buttonName": "退出"
+          }
+        ],
+        "buttonGroups": [
+          {
+            "name": "查询",
+            "actions": [
+              "查询"
+            ]
+          },
+          {
+            "name": "刷新",
+            "actions": [
+              "刷新"
+            ]
+          },
+          {
+            "name": "退出",
+            "actions": [
+              "退出"
+            ]
+          }
+        ],
+        "version": "1.0"
+      },
+      "dataSchema": {
+        "type": "object",
+        "fields": [
+          {
+            "dataName": "登记单号",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "序列号",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "存货编码",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "存货",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "规格型号",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "计量单位",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "仓库",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "状态",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "入库单号",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "入库日期",
+            "dataType": "日期"
+          }
+        ]
+      },
+      "detail": {
+        "tabs": []
+      }
+    }
+  },
+  {
+    "panelCode": "SERIAL_TRACE",
+    "panelName": "序列号跟踪表",
+    "category": "查询",
+    "version": "menu-panel-1.0",
+    "config": {
+      "metadata": {
+        "panelCode": "SERIAL_TRACE",
+        "panelName": "序列号跟踪表",
+        "panelCategory": "查询",
+        "panelState": {
+          "dataName": "单据状态",
+          "dataType": "STRING",
+          "defaultOptions": []
+        },
+        "panelPageDto": {
+          "tablePages": [
+            {
+              "tableName": "序列号跟踪表",
+              "queryFields": [
+                {
+                  "dataName": "序列号",
+                  "dataType": "文本"
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "INV",
+                  "refField": "存货名称",
+                  "displayField": "存货名称",
+                  "filter": {
+                    "停用": false
+                  },
+                  "refColumns": [
+                    "存货编码",
+                    "存货名称",
+                    "规格型号",
+                    "所属类别",
+                    "品牌",
+                    "计量单位",
+                    "停用"
+                  ]
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "WH",
+                  "refField": "仓库名称",
+                  "displayField": "仓库名称",
+                  "filter": {
+                    "停用": false
+                  },
+                  "refColumns": [
+                    "仓库编码",
+                    "仓库名称",
+                    "仓库地址",
+                    "负责人"
+                  ]
+                }
+              ],
+              "gridTabs": [
+                {
+                  "label": "序列号",
+                  "rowSource": "rows",
+                  "columns": [
+                    "登记单号",
+                    "序列号",
+                    "存货编码",
+                    "存货",
+                    "规格型号",
+                    "计量单位",
+                    "仓库",
+                    "状态",
+                    "入库单号",
+                    "入库日期",
+                    "出库单号",
+                    "出库日期"
+                  ]
+                }
+              ],
+              "topBarBtn": [
+                {
+                  "buttonName": "查询"
+                },
+                {
+                  "buttonName": "刷新"
+                },
+                {
+                  "buttonName": "退出"
+                }
+              ],
+              "rowOperationBarBtn": [],
+              "pageSize": 50,
+              "events": []
+            }
+          ],
+          "formPages": []
+        },
+        "panelButtons": [
+          {
+            "buttonName": "查询"
+          },
+          {
+            "buttonName": "刷新"
+          },
+          {
+            "buttonName": "退出"
+          }
+        ],
+        "buttonGroups": [
+          {
+            "name": "查询",
+            "actions": [
+              "查询"
+            ]
+          },
+          {
+            "name": "刷新",
+            "actions": [
+              "刷新"
+            ]
+          },
+          {
+            "name": "退出",
+            "actions": [
+              "退出"
+            ]
+          }
+        ],
+        "version": "1.0"
+      },
+      "dataSchema": {
+        "type": "object",
+        "fields": [
+          {
+            "dataName": "登记单号",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "序列号",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "存货编码",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "存货",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "规格型号",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "计量单位",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "仓库",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "状态",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "入库单号",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "入库日期",
+            "dataType": "日期"
+          },
+          {
+            "dataName": "出库单号",
+            "dataType": "文本"
+          },
+          {
+            "dataName": "出库日期",
+            "dataType": "日期"
+          }
+        ]
+      },
+      "detail": {
+        "tabs": []
+      }
+    }
+  },
+  {
+    "panelCode": "STOCK_CHECK",
+    "panelName": "库存盘点单",
+    "category": "单据",
+    "version": "menu-panel-1.0",
+    "config": {
+      "metadata": {
+        "panelCode": "STOCK_CHECK",
+        "panelName": "库存盘点单",
+        "panelCategory": "单据",
+        "autoCodeField": "单据编号",
+        "panelState": {
+          "dataName": "单据状态",
+          "dataType": "STRING",
+          "defaultOptions": [
+            "草稿",
+            "已审核",
+            "审批中",
+            "已中止"
+          ]
+        },
+        "panelPageDto": {
+          "tablePages": [
+            {
+              "tableName": "库存盘点单列表",
+              "queryFields": [
+                {
+                  "dataName": "单据日期",
+                  "dataType": "日期"
+                },
+                {
+                  "dataName": "单据编号",
+                  "dataType": "文本"
+                },
+                {
+                  "dataName": "业务类型",
+                  "dataType": "下拉框",
+                  "options": [
+                    "盘点"
+                  ]
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "WH",
+                  "refField": "仓库名称",
+                  "displayField": "仓库名称",
+                  "filter": {
+                    "停用": false
+                  },
+                  "refColumns": [
+                    "仓库编码",
+                    "仓库名称",
+                    "仓库地址",
+                    "负责人"
+                  ]
+                }
+              ],
+              "gridTabs": [
+                {
+                  "label": "明细",
+                  "rowSource": "detail",
+                  "columns": [
+                    "存货编码",
+                    "存货名称",
+                    "规格型号",
+                    "计量单位",
+                    "账面数量",
+                    "实盘数量",
+                    "盈亏数量",
+                    "行中止"
+                  ]
+                }
+              ],
+              "topBarBtn": [
+                {
+                  "buttonName": "新增流程"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "刷新"
+                }
+              ],
+              "rowOperationBarBtn": [],
+              "events": []
+            }
+          ],
+          "formPages": [
+            {
+              "formName": "库存盘点单",
+              "fieldNames": "单据日期,单据编号,业务类型,仓库,盘点人,备注",
+              "bottomOperationBarBtn": [
+                {
+                  "buttonName": "保存"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "审核"
+                },
+                {
+                  "buttonName": "弃审"
+                },
+                {
+                  "buttonName": "放弃"
+                }
+              ],
+              "events": []
+            }
+          ]
+        },
+        "panelButtons": [
+          {
+            "buttonName": "新增流程"
+          },
+          {
+            "buttonName": "删除"
+          },
+          {
+            "buttonName": "刷新"
+          },
+          {
+            "buttonName": "保存"
+          },
+          {
+            "buttonName": "审核"
+          },
+          {
+            "buttonName": "弃审"
+          },
+          {
+            "buttonName": "放弃"
+          },
+          {
+            "buttonName": "提交审批"
+          },
+          {
+            "buttonName": "审批通过"
+          },
+          {
+            "buttonName": "驳回审批"
+          }
+        ],
+        "buttonGroups": [
+          {
+            "name": "新增",
+            "actions": [
+              "新增"
+            ]
+          },
+          {
+            "name": "保存",
+            "actions": [
+              "保存",
+              "保存新增",
+              "保存为草稿",
+              "保存打印"
+            ]
+          },
+          {
+            "name": "删除",
+            "actions": [
+              "删除",
+              "删除单据"
+            ]
+          },
+          {
+            "name": "审核",
+            "actions": [
+              "审核",
+              "弃审",
+              "审批情况",
+              "提交审批",
+              "审批通过",
+              "审批驳回"
+            ]
+          },
+          {
+            "name": "工具",
+            "actions": [
+              "现存量查询",
+              "联查",
+              "生单流程联查"
+            ]
+          },
+          {
+            "name": "打印",
+            "actions": [
+              "直接打印",
+              "打印",
+              "预览",
+              "打印模板设置",
+              "导出"
+            ]
+          },
+          {
+            "name": "更多",
+            "actions": [
+              "复制",
+              "导出",
+              "退出"
+            ]
+          }
+        ],
+        "version": "1.0"
+      },
+      "dataSchema": {
+        "type": "object",
+        "fields": [
+          {
+            "dataName": "单据日期",
+            "dataType": "日期",
+            "isRequired": true,
+            "defaultValue": "2026-08-25"
+          },
+          {
+            "dataName": "单据编号",
+            "dataType": "文本",
+            "isRequired": true,
+            "defaultValue": "",
+            "autoCode": true
+          },
+          {
+            "dataName": "业务类型",
+            "dataType": "下拉框",
+            "isRequired": true,
+            "defaultValue": "盘点",
+            "options": [
+              "盘点",
+              "盘点(抽盘)"
+            ]
+          },
+          {
+            "dataName": "仓库",
+            "dataType": "参照",
+            "refPanel": "WH",
+            "refField": "仓库名称",
+            "displayField": "仓库名称",
+            "filter": {
+              "停用": false
+            },
+            "refColumns": [
+              "仓库编码",
+              "仓库名称",
+              "仓库地址",
+              "负责人"
+            ],
+            "isRequired": true,
+            "defaultValue": "原料仓"
+          },
+          {
+            "dataName": "盘点人",
+            "dataType": "参照",
+            "refPanel": "EMP",
+            "refField": "员工名称",
+            "displayField": "员工名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "备注",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          }
+        ]
+      },
+      "detail": {
+        "tabs": [
+          {
+            "key": "items",
+            "label": "明细",
+            "isRequired": true,
+            "summaryItems": [
+              {
+                "label": "数量合计",
+                "field": "数量"
+              }
+            ],
+            "fields": [
+              {
+                "dataName": "存货编码",
+                "dataType": "参照",
+                "isRequired": false,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货编码",
+                "displayField": "存货编码",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "存货名称",
+                "dataType": "参照",
+                "isRequired": true,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货名称",
+                "displayField": "存货名称",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "规格型号",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "计量单位",
+                "dataType": "下拉框",
+                "isRequired": true,
+                "defaultValue": "kg",
+                "options": [
+                  "件",
+                  "kg",
+                  "套",
+                  "升"
+                ]
+              },
+              {
+                "dataName": "账面数量",
+                "dataType": "小数",
+                "isRequired": true,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "实盘数量",
+                "dataType": "小数",
+                "isRequired": true,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "盈亏数量",
+                "dataType": "小数",
+                "computed": true
+              },
+              {
+                "dataName": "行中止",
+                "dataType": "是否",
+                "isRequired": false,
+                "defaultValue": false
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "panelCode": "TRANSFER",
+    "panelName": "调拨单",
+    "category": "单据",
+    "version": "menu-panel-1.0",
+    "config": {
+      "metadata": {
+        "panelCode": "TRANSFER",
+        "panelName": "调拨单",
+        "panelCategory": "单据",
+        "autoCodeField": "单据编号",
+        "panelState": {
+          "dataName": "单据状态",
+          "dataType": "STRING",
+          "defaultOptions": [
+            "草稿",
+            "已审核",
+            "审批中",
+            "已中止"
+          ]
+        },
+        "panelPageDto": {
+          "tablePages": [
+            {
+              "tableName": "调拨单列表",
+              "queryFields": [
+                {
+                  "dataName": "单据日期",
+                  "dataType": "日期"
+                },
+                {
+                  "dataName": "单据编号",
+                  "dataType": "文本"
+                },
+                {
+                  "dataName": "业务类型",
+                  "dataType": "下拉框",
+                  "options": [
+                    "调拨",
+                    "调拨(退料)"
+                  ]
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "WH",
+                  "refField": "仓库名称",
+                  "displayField": "仓库名称",
+                  "filter": {
+                    "停用": false
+                  },
+                  "refColumns": [
+                    "仓库编码",
+                    "仓库名称",
+                    "仓库地址",
+                    "负责人",
+                    "允许零库存出库"
+                  ]
+                },
+                {
+                  "dataType": "参照",
+                  "refPanel": "WH",
+                  "refField": "仓库名称",
+                  "displayField": "仓库名称",
+                  "filter": {
+                    "停用": false
+                  },
+                  "refColumns": [
+                    "仓库编码",
+                    "仓库名称",
+                    "仓库地址",
+                    "负责人",
+                    "允许零库存出库"
+                  ]
+                }
+              ],
+              "gridTabs": [
+                {
+                  "label": "明细",
+                  "rowSource": "detail",
+                  "columns": [
+                    "存货编码",
+                    "存货名称",
+                    "规格型号",
+                    "计量单位",
+                    "数量",
+                    "单价",
+                    "金额",
+                    "现存量",
+                    "现存量说明",
+                    "加工单号",
+                    "行中止"
+                  ]
+                },
+                {
+                  "label": "汇总",
+                  "rowSource": "detail",
+                  "summary": true,
+                  "columns": [
+                    "存货编码",
+                    "存货名称",
+                    "计量单位",
+                    "数量",
+                    "金额"
+                  ]
+                }
+              ],
+              "topBarBtn": [
+                {
+                  "buttonName": "新增流程"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "刷新"
+                }
+              ],
+              "rowOperationBarBtn": [],
+              "events": []
+            }
+          ],
+          "formPages": [
+            {
+              "formName": "调拨单",
+              "fieldNames": "单据日期,单据编号,业务类型,调出仓库,调入仓库,经手人,生产车间,部门,项目,备注,来源单据,来源单号",
+              "bottomOperationBarBtn": [
+                {
+                  "buttonName": "保存"
+                },
+                {
+                  "buttonName": "删除"
+                },
+                {
+                  "buttonName": "审核"
+                },
+                {
+                  "buttonName": "弃审"
+                },
+                {
+                  "buttonName": "放弃"
+                }
+              ],
+              "events": []
+            }
+          ]
+        },
+        "panelButtons": [
+          {
+            "buttonName": "新增流程"
+          },
+          {
+            "buttonName": "删除"
+          },
+          {
+            "buttonName": "刷新"
+          },
+          {
+            "buttonName": "保存"
+          },
+          {
+            "buttonName": "审核"
+          },
+          {
+            "buttonName": "弃审"
+          },
+          {
+            "buttonName": "放弃"
+          },
+          {
+            "buttonName": "提交审批"
+          },
+          {
+            "buttonName": "审批通过"
+          },
+          {
+            "buttonName": "驳回审批"
+          },
+          {
+            "buttonName": "选单"
+          },
+          {
+            "buttonName": "选领料申请单"
+          },
+          {
+            "buttonName": "生成材料出库单"
+          }
+        ],
+        "buttonGroups": [
+          {
+            "name": "新增",
+            "actions": [
+              "新增"
+            ]
+          },
+          {
+            "name": "选单",
+            "actions": [
+              "选单",
+              "选领料申请单"
+            ]
+          },
+          {
+            "name": "保存",
+            "actions": [
+              "保存",
+              "保存新增",
+              "保存为草稿",
+              "保存打印"
+            ]
+          },
+          {
+            "name": "删除",
+            "actions": [
+              "删除",
+              "删除单据"
+            ]
+          },
+          {
+            "name": "审核",
+            "actions": [
+              "审核",
+              "弃审",
+              "审批情况",
+              "提交审批",
+              "审批通过",
+              "审批驳回"
+            ]
+          },
+          {
+            "name": "生单",
+            "actions": [
+              "生成材料出库单"
+            ]
+          },
+          {
+            "name": "工具",
+            "actions": [
+              "现存量查询",
+              "联查",
+              "生单流程联查"
+            ]
+          },
+          {
+            "name": "打印",
+            "actions": [
+              "直接打印",
+              "打印",
+              "预览",
+              "打印模板设置",
+              "导出"
+            ]
+          },
+          {
+            "name": "更多",
+            "actions": [
+              "复制",
+              "导出",
+              "退出"
+            ]
+          }
+        ],
+        "version": "1.0"
+      },
+      "dataSchema": {
+        "type": "object",
+        "fields": [
+          {
+            "dataName": "单据日期",
+            "dataType": "日期",
+            "isRequired": true,
+            "defaultValue": "2026-08-24"
+          },
+          {
+            "dataName": "单据编号",
+            "dataType": "文本",
+            "isRequired": true,
+            "defaultValue": "",
+            "autoCode": true
+          },
+          {
+            "dataName": "业务类型",
+            "dataType": "下拉框",
+            "isRequired": true,
+            "defaultValue": "调拨",
+            "options": [
+              "调拨",
+              "调拨(退料)"
+            ]
+          },
+          {
+            "dataName": "调出仓库",
+            "dataType": "参照",
+            "refPanel": "WH",
+            "refField": "仓库名称",
+            "displayField": "仓库名称",
+            "filter": {
+              "停用": false
+            },
+            "refColumns": [
+              "仓库编码",
+              "仓库名称",
+              "仓库地址",
+              "负责人",
+              "允许零库存出库"
+            ],
+            "isRequired": true,
+            "defaultValue": "原料仓"
+          },
+          {
+            "dataName": "调入仓库",
+            "dataType": "参照",
+            "refPanel": "WH",
+            "refField": "仓库名称",
+            "displayField": "仓库名称",
+            "filter": {
+              "停用": false
+            },
+            "refColumns": [
+              "仓库编码",
+              "仓库名称",
+              "仓库地址",
+              "负责人",
+              "允许零库存出库"
+            ],
+            "isRequired": true,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "经手人",
+            "dataType": "参照",
+            "refPanel": "EMP",
+            "refField": "员工名称",
+            "displayField": "员工名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "生产车间",
+            "dataType": "下拉框",
+            "isRequired": false,
+            "defaultValue": "",
+            "options": [
+              "熔铸车间",
+              "轧制车间",
+              "精整车间",
+              "测试车间"
+            ]
+          },
+          {
+            "dataName": "部门",
+            "dataType": "参照",
+            "refPanel": "DEPT",
+            "refField": "部门名称",
+            "displayField": "部门名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "项目",
+            "dataType": "参照",
+            "refPanel": "PROJ",
+            "refField": "项目名称",
+            "displayField": "项目名称",
+            "filter": {
+              "停用": false
+            },
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "备注",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "来源单据",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "来源单号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          }
+        ]
+      },
+      "detail": {
+        "tabs": [
+          {
+            "key": "items",
+            "label": "明细",
+            "isRequired": true,
+            "summaryItems": [
+              {
+                "label": "数量合计",
+                "field": "数量"
+              },
+              {
+                "label": "金额合计",
+                "field": "金额"
+              }
+            ],
+            "calc": [
+              {
+                "target": "金额",
+                "formula": "数量 * 单价",
+                "round": 2
+              }
+            ],
+            "fields": [
+              {
+                "dataName": "存货编码",
+                "dataType": "参照",
+                "isRequired": false,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货编码",
+                "displayField": "存货编码",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "存货名称",
+                "dataType": "参照",
+                "isRequired": true,
+                "defaultValue": "",
+                "refPanel": "INV",
+                "refField": "存货名称",
+                "displayField": "存货名称",
+                "filter": {
+                  "停用": false
+                },
+                "refColumns": [
+                  "存货编码",
+                  "存货名称",
+                  "规格型号",
+                  "所属类别",
+                  "品牌",
+                  "计量单位",
+                  "停用"
+                ]
+              },
+              {
+                "dataName": "规格型号",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "计量单位",
+                "dataType": "下拉框",
+                "isRequired": true,
+                "defaultValue": "kg",
+                "options": [
+                  "件",
+                  "kg",
+                  "套",
+                  "升"
+                ]
+              },
+              {
+                "dataName": "数量",
+                "dataType": "小数",
+                "isRequired": true,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "单价",
+                "dataType": "小数",
+                "isRequired": false,
+                "defaultValue": 0
+              },
+              {
+                "dataName": "金额",
+                "dataType": "小数",
+                "computed": true
+              },
+              {
+                "dataName": "现存量",
+                "dataType": "小数",
+                "computed": true
+              },
+              {
+                "dataName": "现存量说明",
+                "dataType": "文本",
+                "computed": true
+              },
+              {
+                "dataName": "加工单号",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": ""
+              },
+              {
+                "dataName": "行中止",
+                "dataType": "是否",
+                "isRequired": false,
+                "defaultValue": false
+              }
+            ]
+          }
+        ]
+      },
+      "selectConfig": {
+        "source": "MATERIAL_REQ",
+        "title": "选领料申请单",
+        "tip": "仅显示已审核且未中止的领料申请单，选中后材料明细带入调拨单（对齐 T+ 选单前提）",
+        "columns": [
+          "单据编号",
+          "单据日期",
+          "业务类型",
+          "生产车间",
+          "仓库",
+          "材料名称",
+          "数量"
+        ],
+        "detailKey": "items",
+        "headerMap": [
+          {
+            "from": "单据编号",
+            "to": "来源单号"
+          },
+          {
+            "from": "仓库",
+            "to": "调出仓库"
+          }
+        ],
+        "detailMap": [
+          {
+            "from": "材料名称",
+            "to": "存货名称"
+          },
+          {
+            "from": "计量单位",
+            "to": "计量单位"
+          },
+          {
+            "from": "数量",
+            "to": "数量"
+          },
+          {
+            "from": "现存量",
+            "to": "现存量"
+          }
+        ]
+      }
+    }
+  }
+]

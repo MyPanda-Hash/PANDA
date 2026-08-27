@@ -174,11 +174,11 @@ async function quickFind() {
 
 <style scoped>
 .tabsbar {
-  height: 32px;
+  height: 36px;
   flex-shrink: 0;
   display: flex;
   align-items: stfetch;
-  background: var(--t-content-bg);
+  background: var(--t-card-bg);
   border-bottom: 1px solid var(--t-border);
 }
 .tabs {
@@ -192,7 +192,7 @@ async function quickFind() {
   align-items: center;
   gap: 6px;
   padding: 0 14px;
-  height: 32px;
+  height: 36px;
   font-size: 13px;
   color: var(--t-text-2);
   border-bottom: 3px solid transparent;
@@ -204,7 +204,7 @@ async function quickFind() {
   color: var(--t-text-1);
 }
 .tab.active {
-  color: var(--t-text-1);
+  color: var(--t-primary);
   border-bottom-color: var(--t-tab-active);
   font-weight: 600;
 }

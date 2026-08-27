@@ -240,7 +240,7 @@ function skip() {
 .wz-header {
   position: relative;
   padding: 26px 30px 18px;
-  background: linear-gradient(135deg, var(--t-primary), #5fbfee);
+  background: #174c42;
   color: #fff;
   border-radius: 10px 10px 0 0;
 }

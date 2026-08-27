@@ -389,8 +389,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
   background: var(--t-hover-bg);
 }
 .dark .rz-icon:hover {
-  background: #33343c;
-  color: #7ea6ff;
+  background: var(--t-hover-bg);
+  color: var(--t-primary);
 }
 .leftnav.collapsed .func-zone {
   flex-direction: column;
@@ -424,8 +424,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
 }
 .dark .nav-group:hover,
 .dark .nav-group.active {
-  background: #33343c;
-  color: #7ea6ff;
+  background: var(--t-hover-bg);
+  color: var(--t-primary);
 }
 .gi {
   font-size: 16px;
@@ -472,8 +472,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
 }
 .dark .nav-module:hover,
 .dark .nav-module.active {
-  background: #33343c;
-  color: #7ea6ff;
+  background: var(--t-hover-bg);
+  color: var(--t-primary);
 }
 .mi {
   font-size: 12px;
@@ -590,8 +590,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
   color: var(--t-primary);
 }
 .dark .card-item:hover {
-  background: #33343c;
-  color: #7ea6ff;
+  background: var(--t-hover-bg);
+  color: var(--t-primary);
 }
 .bill-list {
   max-height: 400px;

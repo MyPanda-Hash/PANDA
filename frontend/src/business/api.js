@@ -2,6 +2,7 @@ import request from '@core/request'
 
 export async function apiLogin(payload) {
   const res = await request.post('/auth/login', payload)
+  if (res?.code && res.code !== 200) throw new Error(res.message || '登录失败')
   return res?.data ?? res
 }
 

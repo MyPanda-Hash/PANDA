@@ -18,7 +18,7 @@ import { computed } from 'vue'
 
 const props = defineProps({
   data: { type: Array, default: () => [] },
-  colors: { type: Array, default: () => ['#289be5', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'] },
+  colors: { type: Array, default: () => ['#116a5b', '#d79a2b', '#537786', '#8a9a92', '#3b8978', '#b94d3f', '#9c7650', '#708575'] },
 })
 
 const max = computed(() => {
@@ -60,12 +60,12 @@ function colorOf(i) {
   flex: 1;
   height: 16px;
   background: var(--t-border-light);
-  border-radius: 8px;
+  border-radius: 3px;
   overflow: hidden;
 }
 .bar-fill {
   height: 100%;
-  border-radius: 8px;
+  border-radius: 3px;
   transition: width 0.4s ease;
   min-width: 2px;
 }
