@@ -5,7 +5,7 @@ const path = require('node:path')
 
 const PORT = 9225
 const BASE = 'http://127.0.0.1:4173'
-const API_BASE = 'http://127.0.0.1:8080'
+const API_BASE = 'http://127.0.0.1:3308'
 const PROFILE = path.join(process.env.TEMP || 'C:/Windows/Temp', 'light-mes-order-ref-e2e')
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 

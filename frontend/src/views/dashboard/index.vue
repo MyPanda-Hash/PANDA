@@ -3,10 +3,10 @@
     <!-- 欢迎 + 班次（8:00-21:00 白班，其余夜班，到点自动切换） -->
     <div class="welcome card">
       <div class="wl-left">
-        <div class="hello">{{ greeting }}，{{ user.realName }}！</div>
+        <div class="hello">{{ tt(greeting) }}，{{ user.realName }}！</div>
         <div class="meta">
           <span class="shift-badge" :class="shift.key">
-            <span class="shift-ic">{{ shift.icon }}</span>{{ shift.name }}<em>{{ shift.range }}</em>
+            <span class="shift-ic">{{ shift.icon }}</span>{{ tt(shift.name) }}<em>{{ tt(shift.range) }}</em>
           </span>
           <span class="meta-sep">|</span>
           {{ user.factoryName }} · {{ today }} {{ nowTime }}
@@ -18,14 +18,14 @@
           :key="q.key"
           :type="q.key === 'newOrder' ? 'primary' : 'default'"
           @click="go(q.path, q.title)"
-        >{{ q.title }}</el-button>
+        >{{ tt(q.title) }}</el-button>
       </div>
     </div>
 
     <!-- 看板模块切换 -->
     <div class="mod-tabs">
       <span v-for="m in MODULES" :key="m.key" class="mod-tab" :class="{ on: mod === m.key }" @click="mod = m.key">
-        <el-icon><component :is="m.icon" /></el-icon>{{ m.title }}
+        <el-icon><component :is="m.icon" /></el-icon>{{ tt(m.title) }}
       </span>
     </div>
 
@@ -70,10 +70,10 @@
         <section v-if="desk.showProgress" class="card operation-core col-8 reveal-item">
           <div class="panel-heading">
             <div>
-              <div class="card-title">生产执行核心</div>
-              <p>工单生命周期与近 7 天执行脉冲</p>
+              <div class="card-title">{{ tt('生产执行核心') }}</div>
+              <p>{{ tt('工单生命周期与近 7 天执行脉冲') }}</p>
             </div>
-            <div class="live-chip"><i></i>LIVE · {{ lastUpdatedText }}</div>
+            <div class="live-chip"><i></i>LIVE · {{ tt(lastUpdatedText) }}</div>
           </div>
 
           <div class="core-layout">
@@ -91,38 +91,38 @@
                 </svg>
                 <div class="gauge-copy">
                   <strong>{{ completionRate }}%</strong>
-                  <span>工单闭环率</span>
+                  <span>{{ tt('工单闭环率') }}</span>
                 </div>
               </div>
               <div class="gauge-facts">
-                <span><b>{{ productionTotal }}</b>总工单</span>
-                <span><b>{{ productionRunning }}</b>执行中</span>
-                <span><b>{{ productionDone }}</b>已完工</span>
+                <span><b>{{ productionTotal }}</b>{{ tt('总工单') }}</span>
+                <span><b>{{ productionRunning }}</b>{{ tt('执行中') }}</span>
+                <span><b>{{ productionDone }}</b>{{ tt('已完工') }}</span>
               </div>
             </div>
 
             <div class="execution-detail">
               <div class="trend-head">
-                <span>新增 / 完工趋势</span>
-                <span>近 7 天</span>
+                <span>{{ tt('新增 / 完工趋势') }}</span>
+                <span>{{ tt('近 7 天') }}</span>
               </div>
               <SLine :data="prod.trend7 || []" compact />
               <div class="order-queue">
                 <div v-for="order in progress.slice(0, 3)" :key="order['编号']" class="order-row">
                   <div class="order-copy">
-                    <strong>{{ order['产品'] || '未指定产品' }}</strong>
+                    <strong>{{ order['产品'] || tt('未指定产品') }}</strong>
                     <span>{{ order['编号'] }}</span>
                   </div>
-                  <div class="stage-track" :aria-label="`当前状态：${order['状态']}`">
+                  <div class="stage-track" :aria-label="`${tt('当前状态：')}${order['状态']}`">
                     <i
                       v-for="stageIndex in 4"
                       :key="stageIndex"
                       :class="{ active: stageIndex <= orderStage(order['状态']) }"
                     ></i>
                   </div>
-                  <span class="order-status" :class="statusTone(order['状态'])">{{ order['状态'] }}</span>
+                  <span class="order-status" :class="statusTone(order['状态'])">{{ tt(order['状态']) }}</span>
                 </div>
-                <div v-if="!progress.length" class="empty compact-empty">暂无工单执行数据</div>
+                <div v-if="!progress.length" class="empty compact-empty">{{ tt('暂无工单执行数据') }}</div>
               </div>
             </div>
           </div>
@@ -131,10 +131,10 @@
         <section v-if="desk.showTodo" class="card quality-watch col-4 reveal-item">
           <div class="panel-heading">
             <div>
-              <div class="card-title">质量与待办监测</div>
-              <p>检验结果和流程阻塞</p>
+              <div class="card-title">{{ tt('质量与待办监测') }}</div>
+              <p>{{ tt('检验结果和流程阻塞') }}</p>
             </div>
-            <span class="risk-level" :class="qualityRisk.tone">{{ qualityRisk.label }}</span>
+            <span class="risk-level" :class="qualityRisk.tone">{{ tt(qualityRisk.label) }}</span>
           </div>
 
           <div class="quality-summary">
@@ -152,59 +152,59 @@
               </svg>
               <div>
                 <strong>{{ quality.total ? `${qualityRate}%` : '--' }}</strong>
-                <span>检验合格率</span>
+                <span>{{ tt('检验合格率') }}</span>
               </div>
             </div>
             <div class="quality-facts">
-              <div><span>检验明细</span><strong>{{ quality.total || 0 }}</strong></div>
-              <div><span>非合格 / 待判</span><strong class="danger-text">{{ qualityExceptions }}</strong></div>
-              <div><span>流程待办</span><strong>{{ todos.length }}</strong></div>
+              <div><span>{{ tt('检验明细') }}</span><strong>{{ quality.total || 0 }}</strong></div>
+              <div><span>{{ tt('非合格 / 待判') }}</span><strong class="danger-text">{{ qualityExceptions }}</strong></div>
+              <div><span>{{ tt('流程待办') }}</span><strong>{{ todos.length }}</strong></div>
             </div>
           </div>
 
           <div class="result-strip">
             <div v-for="result in qualityResults" :key="result.name">
-              <span><i :class="result.tone"></i>{{ result.name }}</span>
+              <span><i :class="result.tone"></i>{{ tt(result.name) }}</span>
               <strong>{{ result.value }}</strong>
             </div>
           </div>
 
           <div class="watch-message" :class="{ clear: !todos.length }">
             <el-icon><component :is="todos.length ? 'Warning' : 'CircleCheck'" /></el-icon>
-            <span>{{ todos.length ? `${todos.length} 项流程等待处理` : '当前没有审批流程阻塞' }}</span>
+            <span>{{ todos.length ? `${todos.length} ${tt('项流程等待处理')}` : tt('当前没有审批流程阻塞') }}</span>
           </div>
         </section>
 
         <section class="card event-stream col-7 reveal-item">
           <div class="panel-heading">
             <div>
-              <div class="card-title">实时业务事件流</div>
-              <p>来自 SQL 业务单据的最新活动</p>
+              <div class="card-title">{{ tt('实时业务事件流') }}</div>
+              <p>{{ tt('来自 SQL 业务单据的最新活动') }}</p>
             </div>
-            <span class="event-count">{{ latest.length }} 条事件</span>
+            <span class="event-count">{{ latest.length }} {{ tt('条事件') }}</span>
           </div>
           <div class="event-list">
             <div v-for="(event, index) in latest.slice(0, 6)" :key="`${event['编号']}-${index}`" class="event-row">
               <div class="event-axis"><i :class="{ pulse: index === 0 }"></i></div>
               <div class="event-icon"><el-icon><component :is="eventIcon(event.panel)" /></el-icon></div>
               <div class="event-copy">
-                <strong>{{ panelTitle(event.panel) }}</strong>
+                <strong>{{ tt(panelTitle(event.panel)) }}</strong>
                 <span>{{ event['编号'] }}</span>
               </div>
-              <span class="event-status" :class="statusTone(event['状态'])">{{ event['状态'] }}</span>
+              <span class="event-status" :class="statusTone(event['状态'])">{{ tt(event['状态']) }}</span>
               <time>{{ compactTime(event['时间']) }}</time>
             </div>
-            <div v-if="!latest.length" class="empty">暂无业务事件</div>
+            <div v-if="!latest.length" class="empty">{{ tt('暂无业务事件') }}</div>
           </div>
         </section>
 
         <section class="card business-vitals col-5 reveal-item">
           <div class="panel-heading">
             <div>
-              <div class="card-title">业务数据内核</div>
-              <p>单据流量与基础资源覆盖</p>
+              <div class="card-title">{{ tt('业务数据内核') }}</div>
+              <p>{{ tt('单据流量与基础资源覆盖') }}</p>
             </div>
-            <el-tooltip content="数据每 5 分钟自动同步" placement="top">
+            <el-tooltip :content="tt('数据每 5 分钟自动同步')" placement="top">
               <el-button class="sync-button" text circle :loading="loadingStats" @click="load">
                 <el-icon><Refresh /></el-icon>
               </el-button>
@@ -213,7 +213,7 @@
 
           <div class="doc-volume">
             <div v-for="doc in docStats" :key="doc.panelCode" class="doc-row">
-              <span>{{ doc.panelName }}</span>
+              <span>{{ tt(doc.panelName) }}</span>
               <div><i :style="{ width: `${docPercent(doc.count)}%` }"></i></div>
               <strong>{{ doc.count }}</strong>
             </div>
@@ -223,13 +223,13 @@
             <div v-for="resource in resourceStats" :key="resource.label">
               <el-icon><component :is="resource.icon" /></el-icon>
               <strong>{{ resource.value }}</strong>
-              <span>{{ resource.label }}</span>
+              <span>{{ tt(resource.label) }}</span>
             </div>
           </div>
 
           <div class="data-link">
-            <span><i :class="{ error: loadError }"></i>{{ loadError ? '数据同步异常' : 'SQL 数据链路在线' }}</span>
-            <span>{{ loadingStats ? '同步中' : `${refreshLeft}s 后刷新` }}</span>
+            <span><i :class="{ error: loadError }"></i>{{ loadError ? tt('数据同步异常') : tt('SQL 数据链路在线') }}</span>
+            <span>{{ loadingStats ? tt('同步中') : `${refreshLeft}s ${tt('后刷新')}` }}</span>
           </div>
         </section>
       </div>
@@ -239,19 +239,19 @@
     <template v-else-if="mod === 'prod'">
       <div class="dash-grid">
         <div class="card col-4">
-          <div class="card-title">工单状态分布</div>
+          <div class="card-title">{{ tt('工单状态分布') }}</div>
           <div class="chart-box"><SBars :data="prod.statusDist" /></div>
         </div>
         <div class="card col-4">
-          <div class="card-title">车间生产分布</div>
-          <div class="chart-box"><SDonut :data="prod.workshopDist" sub="加工单" /></div>
+          <div class="card-title">{{ tt('车间生产分布') }}</div>
+          <div class="chart-box"><SDonut :data="prod.workshopDist" :sub="tt('加工单')" /></div>
         </div>
         <div class="card col-4">
-          <div class="card-title">近 7 天新增 / 完工</div>
+          <div class="card-title">{{ tt('近 7 天新增 / 完工') }}</div>
           <div class="chart-box"><SLine :data="prod.trend7" /></div>
         </div>
         <div class="card col-12">
-          <div class="card-title">BOM 物料树（产品 → 材料，来自生产加工单真实数据）</div>
+          <div class="card-title">{{ tt('BOM 物料树（产品 → 材料，来自生产加工单真实数据）') }}</div>
           <div class="chart-box tree-box"><STree :data="bomTree" /></div>
         </div>
       </div>
@@ -260,16 +260,16 @@
     <!-- ===== 库存 ===== -->
     <template v-else-if="mod === 'stock'">
       <div class="dash-grid">
-        <div class="card metric-card col-3"><div class="kpi-num tone-primary">{{ stock.totalIn }}</div><div class="kpi-title">入库单量</div></div>
-        <div class="card metric-card col-3"><div class="kpi-num tone-warning">{{ stock.totalOut }}</div><div class="kpi-title">出库单量</div></div>
-        <div class="card metric-card col-3"><div class="kpi-num tone-steel">{{ stockCount }}</div><div class="kpi-title">出入库单据总数</div></div>
-        <div class="card metric-card col-3"><div class="kpi-num tone-neutral">{{ stock.totalLines }}</div><div class="kpi-title">明细行数合计</div></div>
+        <div class="card metric-card col-3"><div class="kpi-num tone-primary">{{ stock.totalIn }}</div><div class="kpi-title">{{ tt('入库单量') }}</div></div>
+        <div class="card metric-card col-3"><div class="kpi-num tone-warning">{{ stock.totalOut }}</div><div class="kpi-title">{{ tt('出库单量') }}</div></div>
+        <div class="card metric-card col-3"><div class="kpi-num tone-steel">{{ stockCount }}</div><div class="kpi-title">{{ tt('出入库单据总数') }}</div></div>
+        <div class="card metric-card col-3"><div class="kpi-num tone-neutral">{{ stock.totalLines }}</div><div class="kpi-title">{{ tt('明细行数合计') }}</div></div>
         <div class="card col-6">
-          <div class="card-title">各单据数量</div>
+          <div class="card-title">{{ tt('各单据数量') }}</div>
           <div class="chart-box"><SBars :data="stockPanels" /></div>
         </div>
         <div class="card col-6">
-          <div class="card-title">各单据明细行数</div>
+          <div class="card-title">{{ tt('各单据明细行数') }}</div>
           <div class="chart-box"><SBars :data="stockLines" :colors="['#537786', '#116a5b', '#d79a2b', '#7a8b84', '#3b8978', '#9c7650']" /></div>
         </div>
       </div>
@@ -278,15 +278,15 @@
     <!-- ===== 销售 ===== -->
     <template v-else-if="mod === 'sales'">
       <div class="dash-grid">
-        <div class="card metric-card col-4"><div class="kpi-num tone-primary">{{ sales.total }}</div><div class="kpi-title">销售订单数</div></div>
-        <div class="card metric-card col-4"><div class="kpi-num tone-warning">{{ sales.amount ?? 0 }}</div><div class="kpi-title">明细金额合计（元）</div></div>
-        <div class="card metric-card col-4"><div class="kpi-num tone-steel">{{ salesDone }}</div><div class="kpi-title">已审核订单</div></div>
+        <div class="card metric-card col-4"><div class="kpi-num tone-primary">{{ sales.total }}</div><div class="kpi-title">{{ tt('销售订单数') }}</div></div>
+        <div class="card metric-card col-4"><div class="kpi-num tone-warning">{{ sales.amount ?? 0 }}</div><div class="kpi-title">{{ tt('明细金额合计（元）') }}</div></div>
+        <div class="card metric-card col-4"><div class="kpi-num tone-steel">{{ salesDone }}</div><div class="kpi-title">{{ tt('已审核订单') }}</div></div>
         <div class="card col-6">
-          <div class="card-title">客户订单分布</div>
-          <div class="chart-box"><SDonut :data="sales.byCustomer" sub="订单" /></div>
+          <div class="card-title">{{ tt('客户订单分布') }}</div>
+          <div class="chart-box"><SDonut :data="sales.byCustomer" :sub="tt('订单')" /></div>
         </div>
         <div class="card col-6">
-          <div class="card-title">订单状态分布</div>
+          <div class="card-title">{{ tt('订单状态分布') }}</div>
           <div class="chart-box"><SBars :data="sales.byStatus" /></div>
         </div>
       </div>
@@ -295,16 +295,16 @@
     <!-- ===== 质量 ===== -->
     <template v-else>
       <div class="dash-grid">
-        <div class="card metric-card col-3"><div class="kpi-num tone-steel">{{ quality.total }}</div><div class="kpi-title">检验明细总数</div></div>
-        <div class="card metric-card col-3"><div class="kpi-num tone-primary">{{ quality.pass }}</div><div class="kpi-title">合格数</div></div>
-        <div class="card metric-card col-3"><div class="kpi-num tone-danger">{{ quality.total - quality.pass }}</div><div class="kpi-title">非合格数</div></div>
-        <div class="card metric-card col-3"><div class="kpi-num tone-warning">{{ quality.passRate }}%</div><div class="kpi-title">合格率</div></div>
+        <div class="card metric-card col-3"><div class="kpi-num tone-steel">{{ quality.total }}</div><div class="kpi-title">{{ tt('检验明细总数') }}</div></div>
+        <div class="card metric-card col-3"><div class="kpi-num tone-primary">{{ quality.pass }}</div><div class="kpi-title">{{ tt('合格数') }}</div></div>
+        <div class="card metric-card col-3"><div class="kpi-num tone-danger">{{ quality.total - quality.pass }}</div><div class="kpi-title">{{ tt('非合格数') }}</div></div>
+        <div class="card metric-card col-3"><div class="kpi-num tone-warning">{{ quality.passRate }}%</div><div class="kpi-title">{{ tt('合格率') }}</div></div>
         <div class="card col-6">
-          <div class="card-title">检验结果分布</div>
-          <div class="chart-box"><SDonut :data="quality.byResult" sub="明细" /></div>
+          <div class="card-title">{{ tt('检验结果分布') }}</div>
+          <div class="chart-box"><SDonut :data="quality.byResult" :sub="tt('明细')" /></div>
         </div>
         <div class="card col-6">
-          <div class="card-title">检验结果对比</div>
+          <div class="card-title">{{ tt('检验结果对比') }}</div>
           <div class="chart-box"><SBars :data="quality.byResult" /></div>
         </div>
       </div>
@@ -313,11 +313,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useTabsStore } from '@/stores/tabs'
 import { useAppStore } from '@/stores/app'
+import { tt } from '@/i18n'
+import { useLocaleStore } from '@/stores/locale'
 import request from '@core/request'
 import { ElNotification } from 'element-plus'
 import SBars from './SBars.vue'
@@ -328,6 +330,7 @@ import STree from './STree.vue'
 const user = useUserStore()
 const tabs = useTabsStore()
 const app = useAppStore()
+const localeStore = useLocaleStore()
 const router = useRouter()
 
 const desk = computed(() => app.deskSettings)
@@ -375,8 +378,8 @@ function startShiftTimer() {
     if (shift.value.key !== lastShift) {
       lastShift = shift.value.key
       ElNotification({
-        title: `已切换至${shift.value.name}`,
-        message: `当前班次时段：${shift.value.range}`,
+        title: `${tt('已切换至')}${tt(shift.value.name)}`,
+        message: `${tt('当前班次时段：')}${tt(shift.value.range)}`,
         type: shift.value.key === 'day' ? 'success' : 'info',
         duration: 4000,
       })
@@ -439,7 +442,7 @@ const prod = computed(() => stats.value.production || {})
 const bomTree = computed(() =>
   (prod.value.bomTree || []).map((p) => ({
     label: p['产品'],
-    meta: p['规格型号'] ? `规格：${p['规格型号']}` : '',
+    meta: p['规格型号'] ? `${tt('规格：')}${p['规格型号']}` : '',
     children: (p.materials || []).map((m) => ({
       label: m['名称'],
       meta: `${m['数量']} ${m['单位']}`.trim(),
@@ -504,25 +507,25 @@ const kpis = computed(() => {
   const amount = Number(sales.value.amount || 0)
   return [
     {
-      title: '生产任务负载', value: Number(stats.value.kpis.moActive || 0), unit: '单', icon: 'Odometer',
-      tone: 'primary', state: '实时', meta: `总计 ${productionTotal.value} 单`, signal: `${productionRunning.value} 单生产中`,
+      title: tt('生产任务负载'), value: Number(stats.value.kpis.moActive || 0), unit: tt('单'), icon: 'Odometer',
+      tone: 'primary', state: tt('实时'), meta: `${tt('总计')} ${productionTotal.value} ${tt('单')}`, signal: `${productionRunning.value} ${tt('单生产中')}`,
       bars: trend.map((item) => Number(item.added || 0)),
     },
     {
-      title: '工单闭环率', value: completionRate.value, unit: '%', icon: 'CircleCheck',
-      tone: 'steel', state: completionRate.value >= 80 ? '稳定' : '推进中',
-      meta: `${productionDone.value} / ${productionTotal.value} 已完工`, signal: '生命周期',
+      title: tt('工单闭环率'), value: completionRate.value, unit: '%', icon: 'CircleCheck',
+      tone: 'steel', state: completionRate.value >= 80 ? tt('稳定') : tt('推进中'),
+      meta: `${productionDone.value} / ${productionTotal.value} ${tt('已完工')}`, signal: tt('生命周期'),
       bars: trend.map((item) => Number(item.done || 0)),
     },
     {
-      title: '检验合格率', value: quality.value.total ? qualityRate.value : '--', unit: quality.value.total ? '%' : '', icon: 'Aim',
-      tone: qualityRate.value < 80 && quality.value.total ? 'danger' : 'warning', state: qualityRisk.value.label,
-      meta: `${quality.value.pass || 0} / ${quality.value.total || 0} 合格`, signal: `${qualityExceptions.value} 项待处理`,
+      title: tt('检验合格率'), value: quality.value.total ? qualityRate.value : '--', unit: quality.value.total ? '%' : '', icon: 'Aim',
+      tone: qualityRate.value < 80 && quality.value.total ? 'danger' : 'warning', state: tt(qualityRisk.value.label),
+      meta: `${quality.value.pass || 0} / ${quality.value.total || 0} ${tt('合格')}`, signal: `${qualityExceptions.value} ${tt('项待处理')}`,
       bars: (quality.value.byResult || []).map((item) => Number(item.value || 0)),
     },
     {
-      title: '销售订单金额', value: formatCompact(amount), unit: '元', icon: 'TrendCharts',
-      tone: 'neutral', state: `${sales.value.total || 0} 张订单`, meta: `${salesDone.value} 张已审核`, signal: '业务流入',
+      title: tt('销售订单金额'), value: formatCompact(amount), unit: tt('元'), icon: 'TrendCharts',
+      tone: 'neutral', state: `${sales.value.total || 0} ${tt('张订单')}`, meta: `${salesDone.value} ${tt('张已审核')}`, signal: tt('业务流入'),
       bars: (sales.value.byCustomer || []).map((item) => Number(item.value || 0)),
     },
   ]
@@ -547,13 +550,14 @@ function eventIcon(panel) {
   if (name.includes('入库') || name.includes('出库')) return 'Box'
   return 'Document'
 }
+const PANEL_TITLES = {
+  PURCHASE_IN: '采购入库单', QUOTE_ORDER: '报价单', CUSTOMER_TRACE_SETTINGS: '客户追溯设置',
+  TRACE_PRINT_TEMPLATE: '追溯打印模板', COMPANY_TRACE_SETTINGS: '企业追溯设置', QC_ITEM: '质检项目',
+  MANU_ORDER: '生产加工单', SO_ORDER: '销售订单', PROCESS_REPORT: '工序汇报单',
+  FINISH_IN: '产成品入库单', SALE_OUT: '销售出库单', DEPT: '部门档案',
+}
 function panelTitle(panel) {
-  return {
-    PURCHASE_IN: '采购入库单', QUOTE_ORDER: '报价单', CUSTOMER_TRACE_SETTINGS: '客户追溯设置',
-    TRACE_PRINT_TEMPLATE: '追溯打印模板', COMPANY_TRACE_SETTINGS: '企业追溯设置', QC_ITEM: '质检项目',
-    MANU_ORDER: '生产加工单', SO_ORDER: '销售订单', PROCESS_REPORT: '工序汇报单',
-    FINISH_IN: '产成品入库单', SALE_OUT: '销售出库单', DEPT: '部门档案',
-  }[panel] || panel || '业务单据'
+  return PANEL_TITLES[panel] || panel || '业务单据'
 }
 function compactTime(value) {
   const text = String(value || '')
@@ -561,7 +565,7 @@ function compactTime(value) {
 }
 function formatCompact(value) {
   if (!Number.isFinite(value)) return '0'
-  if (Math.abs(value) >= 10000) return `${(value / 10000).toFixed(value >= 100000 ? 0 : 1)}万`
+  if (Math.abs(value) >= 10000) return `${(value / 10000).toFixed(value >= 100000 ? 0 : 1)}${tt('万')}`
   return new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 }).format(value)
 }
 function barHeight(values, value) {
@@ -576,6 +580,34 @@ function go(path, title) {
   router.push(path)
   tabs.open({ path, title })
 }
+
+// ---------- 界面语言：切换后补齐本页词条（tt() 在渲染层读 locale ref，切换即时重算） ----------
+const DICT_KEYS = [
+  '凌晨好', '上午好', '下午好', '晚上好', '白班', '夜班', '21:00 - 次日 08:00',
+  ...QUICK_DEFS.map((q) => q.title),
+  ...MODULES.map((m) => m.title),
+  ...Object.values(PANEL_TITLES), '业务单据',
+  '生产执行核心', '工单生命周期与近 7 天执行脉冲', '等待同步', '工单闭环率', '总工单', '执行中', '已完工',
+  '新增 / 完工趋势', '近 7 天', '未指定产品', '当前状态：', '暂无工单执行数据',
+  '质量与待办监测', '检验结果和流程阻塞', '暂无检验', '质量稳定', '需要关注', '质量风险',
+  '检验合格率', '检验明细', '非合格 / 待判', '流程待办', '项流程等待处理', '当前没有审批流程阻塞',
+  '实时业务事件流', '来自 SQL 业务单据的最新活动', '条事件', '暂无业务事件',
+  '业务数据内核', '单据流量与基础资源覆盖', '数据每 5 分钟自动同步', '数据同步异常', 'SQL 数据链路在线', '同步中', '后刷新',
+  '工单状态分布', '车间生产分布', '加工单', '近 7 天新增 / 完工', 'BOM 物料树（产品 → 材料，来自生产加工单真实数据）',
+  '入库单量', '出库单量', '出入库单据总数', '明细行数合计', '各单据数量', '各单据明细行数',
+  '销售订单数', '明细金额合计（元）', '已审核订单', '客户订单分布', '订单', '订单状态分布',
+  '检验明细总数', '合格数', '非合格数', '合格率', '检验结果分布', '明细', '检验结果对比',
+  '生产任务负载', '单', '实时', '总计', '单生产中', '稳定', '推进中', '生命周期', '合格', '项待处理',
+  '张订单', '张已审核', '业务流入', '元', '万', '规格：', '已切换至', '当前班次时段：',
+]
+watch([() => localeStore.current, docStats], async ([locale]) => {
+  if (localeStore.isZh) return
+  await localeStore.ensureDict(locale, [
+    ...DICT_KEYS,
+    ...resourceStats.value.map((r) => r.label),
+    ...docStats.value.map((d) => d.panelName),
+  ].flatMap((k) => String(k || '').split(' / ')))
+}, { immediate: true })
 </script>
 
 <style scoped>

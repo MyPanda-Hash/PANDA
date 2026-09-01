@@ -1,20 +1,20 @@
 <template>
   <div ref="navRef" class="leftnav" :class="{ collapsed: app.collapsed, 'mobile-open': app.mobileNav }" @mouseleave="closeCard">
     <div class="func-zone">
-      <el-tooltip :content="app.collapsed ? '展开菜单' : '折叠菜单'" placement="right">
+      <el-tooltip :content="app.collapsed ? tt('展开菜单') : tt('折叠菜单')" placement="right">
         <el-icon class="rz-icon" @click="app.toggleCollapse()"><Expand /></el-icon>
       </el-tooltip>
-      <el-tooltip content="单据查询" placement="right">
+      <el-tooltip :content="tt('单据查询')" placement="right">
         <el-icon class="rz-icon" @click="billSearchVisible = true"><Search /></el-icon>
       </el-tooltip>
-      <el-tooltip content="新增单据" placement="right">
+      <el-tooltip :content="tt('新增单据')" placement="right">
         <el-icon class="rz-icon" @click="billAddVisible = true"><Plus /></el-icon>
       </el-tooltip>
     </div>
 
     <el-scrollbar class="nav-scroll">
       <template v-for="g in menuTree" :key="g.code">
-        <el-tooltip :content="g.title" placement="right" :disabled="!app.collapsed">
+        <el-tooltip :content="tt(g.title)" placement="right" :disabled="!app.collapsed">
           <div
             class="nav-group"
             :class="{ active: groupOrPath(route.path)?.code === g.code }"
@@ -22,7 +22,7 @@
             @mouseenter="openCard(g, $event)"
           >
             <el-icon class="gi"><component :is="g.icon || 'Folder'" /></el-icon>
-            <span>{{ g.title }}</span>
+            <span>{{ tt(g.title) }}</span>
             <el-icon v-if="g.children" class="arrow" :class="{ down: isExpanded(g) }"><ArrowDown /></el-icon>
           </div>
         </el-tooltip>
@@ -35,7 +35,7 @@
             @mouseenter="openCard(m, $event)"
             @click="toggleCard(m, $event)"
           >
-            <span>{{ m.title }}</span>
+            <span>{{ tt(m.title) }}</span>
             <el-icon class="mi"><ArrowRight /></el-icon>
           </div>
         </div>
@@ -54,7 +54,7 @@
     >
       <div class="card-body">
         <div v-for="cat in cardColumns" :key="cat.title" class="card-group">
-          <div class="card-group-title">{{ cat.title }}</div>
+          <div class="card-group-title">{{ tt(cat.title) }}</div>
           <div class="card-items">
             <div
               v-for="leaf in cat.items"
@@ -62,67 +62,67 @@
               class="card-item"
               :class="{ 'is-parent': leaf.children?.length, nested: leaf.depth > 0 }"
               :style="{ '--card-depth': leaf.depth || 0 }"
-              :title="leaf.fullTitle || leaf.title"
+              :title="tt(leaf.fullTitle || leaf.title)"
               @click="go(leaf)"
             >
-              <span>{{ leaf.title }}</span>
+              <span>{{ tt(leaf.title) }}</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <el-dialog v-model="billSearchVisible" title="单据查询" width="560px" append-to-body>
-      <el-input v-model="billKeyword" placeholder="输入单据名称关键字" :prefix-icon="Search" clearable />
+    <el-dialog v-model="billSearchVisible" :title="tt('单据查询')" width="560px" append-to-body>
+      <el-input v-model="billKeyword" :placeholder="tt('输入单据名称关键字')" :prefix-icon="Search" clearable />
       <div class="bill-list">
         <div v-for="b in billMatches" :key="`${b.code}:${b.path}`" class="bill-item" @click="goBill(b)">
           <el-icon><component :is="b.icon || 'Tickets'" /></el-icon>
-          <span>{{ b.fullTitle || b.title }}</span>
-          <span class="module">{{ b.module }}</span>
+          <span>{{ tt(b.fullTitle || b.title) }}</span>
+          <span class="module">{{ tt(b.module) }}</span>
         </div>
-        <el-empty v-if="!billMatches.length" description="无匹配单据" :image-size="60" />
+        <el-empty v-if="!billMatches.length" :description="tt('无匹配单据')" :image-size="60" />
       </div>
     </el-dialog>
 
-    <el-dialog v-model="billAddVisible" title="新增单据" width="560px" append-to-body>
-      <el-alert type="info" :closable="false" show-icon title="选择单据类型，进入新增页（当前为占位页，后续接入真实单据表单）" />
+    <el-dialog v-model="billAddVisible" :title="tt('新增单据')" width="560px" append-to-body>
+      <el-alert type="info" :closable="false" show-icon :title="tt('选择单据类型，进入新增页（当前为占位页，后续接入真实单据表单）')" />
       <div class="bill-list mt12">
         <div v-for="b in billMatches" :key="`${b.code}:${b.path}`" class="bill-item" @click="goBill(b, true)">
           <el-icon><component :is="b.icon || 'Tickets'" /></el-icon>
-          <span>{{ b.fullTitle || b.title }}</span>
-          <span class="module">{{ b.module }}</span>
+          <span>{{ tt(b.fullTitle || b.title) }}</span>
+          <span class="module">{{ tt(b.module) }}</span>
         </div>
-        <el-empty v-if="!billMatches.length" description="无匹配单据" :image-size="60" />
+        <el-empty v-if="!billMatches.length" :description="tt('无匹配单据')" :image-size="60" />
       </div>
     </el-dialog>
 
     <!-- ===== 移动端：层级堆叠导航（下钻式，仅抽屉打开时显示） ===== -->
     <div v-if="app.mobileNav" class="mobile-nav">
       <div class="mn-head">
-        <span v-if="mStack.length" class="mn-back" @click="mBack">‹ 返回</span>
+        <span v-if="mStack.length" class="mn-back" @click="mBack">‹ {{ tt('返回') }}</span>
         <span v-else class="mn-brand">轻MES</span>
-        <span class="mn-title">{{ mnTitle }}</span>
+        <span class="mn-title">{{ tt(mnTitle) }}</span>
         <span class="mn-close" @click="app.toggleMobileNav()">✕</span>
       </div>
       <div class="mn-quick">
-        <span class="mn-q" @click="billSearchVisible = true"><el-icon><Search /></el-icon>单据查询</span>
-        <span class="mn-q" @click="billAddVisible = true"><el-icon><Plus /></el-icon>新增单据</span>
+        <span class="mn-q" @click="billSearchVisible = true"><el-icon><Search /></el-icon>{{ tt('单据查询') }}</span>
+        <span class="mn-q" @click="billAddVisible = true"><el-icon><Plus /></el-icon>{{ tt('新增单据') }}</span>
       </div>
       <div class="mn-list">
         <template v-if="mnLevel.length">
           <div v-for="n in mnLevel" :key="n.code" class="mn-item" @click="mnClick(n)">
             <el-icon class="mn-ic"><component :is="n.icon || 'Folder'" /></el-icon>
-            <span class="mn-label">{{ n.title }}</span>
+            <span class="mn-label">{{ tt(n.title) }}</span>
             <el-icon
               v-if="n.path && n.children?.length"
               class="mn-open"
-              :title="`打开${n.title}`"
+              :title="`${tt('打开')}${n.title}`"
               @click.stop="go(n)"
             ><Document /></el-icon>
             <el-icon v-if="n.children && n.children.length" class="mn-arrow"><ArrowRight /></el-icon>
           </div>
         </template>
-        <div v-else class="mn-empty">暂无菜单</div>
+        <div v-else class="mn-empty">{{ tt('暂无菜单') }}</div>
       </div>
     </div>
   </div>
@@ -132,6 +132,8 @@
 import { ref, computed, nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { menuTree as rawMenuTree, filterMenuTree } from '@/business/menus'
+import { tt } from '@/i18n'
+import { useLocaleStore } from '@/stores/locale'
 import { useTabsStore } from '@/stores/tabs'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
@@ -141,11 +143,27 @@ const router = useRouter()
 const tabs = useTabsStore()
 const app = useAppStore()
 const user = useUserStore()
+const localeStore = useLocaleStore()
 const navRef = ref(null)
 const cardRef = ref(null)
 
 // 角色权限过滤后的菜单树（操作员仅见被授权面板）
 const menuTree = computed(() => filterMenuTree(rawMenuTree, user.visiblePanels, user.isAdmin))
+
+// 非中文语言：预取可见菜单标题词条（机翻/库表词典，静态包缺失的补齐）
+watch(() => localeStore.current, async () => {
+  if (!localeStore.isZh) {
+    const titles = []
+    for (const g of menuTree.value) {
+      titles.push(g.title)
+      for (const m of g.children || []) {
+        titles.push(m.title)
+        for (const c of m.children || []) titles.push(c.title)
+      }
+    }
+    await localeStore.ensureDict(localeStore.current, titles)
+  }
+}, { immediate: true })
 
 const expandedGroup = ref('')
 const cardModule = ref(null)

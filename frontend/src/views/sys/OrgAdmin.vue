@@ -4,8 +4,8 @@
     <!-- 左：部门 -->
     <div class="org-col dept">
       <div class="col-head">
-        <span class="col-title">部门</span>
-        <el-button type="primary" size="small" @click="newDept(0)">新增部门</el-button>
+        <span class="col-title">{{ tt('部门') }}</span>
+        <el-button type="primary" size="small" @click="newDept(0)">{{ tt('新增部门') }}</el-button>
       </div>
       <el-tree
         class="dept-tree"
@@ -20,281 +20,263 @@
           <div class="dept-node">
             <span>{{ data.deptName }}</span>
             <span class="dept-ops" @click.stop>
-              <el-button size="small" link type="primary" @click="newDept(data.id)">+子</el-button>
-              <el-button size="small" link type="primary" @click="editDept(data)">改</el-button>
-              <el-button v-if="data.id !== 1" size="small" link type="danger" @click="delDept(data)">删</el-button>
+              <el-button size="small" link type="primary" @click="newDept(data.id)">{{ tt('+子') }}</el-button>
+              <el-button size="small" link type="primary" @click="editDept(data)">{{ tt('改') }}</el-button>
+              <el-button v-if="data.id !== 1" size="small" link type="danger" @click="delDept(data)">{{ tt('删') }}</el-button>
             </span>
           </div>
         </template>
       </el-tree>
-      <div class="col-tip">支持多级部门；「+子」新增下级部门</div>
+      <div class="col-tip">{{ tt('支持多级部门；「+子」新增下级部门') }}</div>
     </div>
 
     <!-- 中：用户 -->
     <div class="org-col users">
       <div class="col-head">
-        <span class="col-title">用户（组织调整）</span>
-        <el-button type="primary" size="small" @click="openUser()">新增用户</el-button>
+        <span class="col-title">{{ tt('用户（组织调整）') }}</span>
+        <el-button type="primary" size="small" @click="openUser()">{{ tt('新增用户') }}</el-button>
       </div>
       <el-table :data="users" size="small" border height="620" highlight-current-row @row-click="openUser">
-        <el-table-column prop="userName" label="账号" width="100" />
-        <el-table-column prop="realName" label="姓名" min-width="80" />
-        <el-table-column label="部门" min-width="110">
+        <el-table-column prop="userName" :label="tt('账号')" width="100" />
+        <el-table-column prop="realName" :label="tt('姓名')" min-width="80" />
+        <el-table-column :label="tt('部门')" min-width="110">
           <template #default="{ row }">{{ row.deptName || '-' }}</template>
         </el-table-column>
-        <el-table-column label="角色" min-width="100">
+        <el-table-column :label="tt('角色')" min-width="100">
           <template #default="{ row }">{{ row.roleName || '-' }}</template>
         </el-table-column>
-        <el-table-column label="状态" width="64" align="center">
+        <el-table-column :label="tt('状态')" width="64" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.enabled ? 'success' : 'info'" size="small">{{ row.enabled ? '启用' : '停用' }}</el-tag>
+            <el-tag :type="row.enabled ? 'success' : 'info'" size="small">{{ row.enabled ? tt('启用') : tt('停用') }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="56" align="center">
+        <el-table-column :label="tt('操作')" width="56" align="center">
           <template #default="{ row }">
-            <el-button size="small" link type="primary" @click.stop="openUser(row)">编辑</el-button>
+            <el-button size="small" link type="primary" @click.stop="openUser(row)">{{ tt('编辑') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
-      <div class="col-tip">点击用户行可分配部门 / 角色 / 启停用</div>
+      <div class="col-tip">{{ tt('点击用户行可分配部门 / 角色 / 启停用') }}</div>
     </div>
 
     <!-- 右：角色与面板权限 -->
     <div class="org-col roles">
       <div class="col-head">
-        <span class="col-title">角色与面板权限</span>
-        <el-button type="primary" size="small" @click="newRoleVisible = true">创建角色</el-button>
+        <span class="col-title">{{ tt('角色与面板权限') }}</span>
+        <el-button type="primary" size="small" @click="newRoleVisible = true">{{ tt('创建角色') }}</el-button>
       </div>
       <el-table :data="roles" size="small" border height="200" highlight-current-row @current-change="onRoleSelect">
-        <el-table-column prop="roleName" label="角色名称" min-width="110" />
-        <el-table-column prop="roleCode" label="编码" width="100" />
-        <el-table-column label="类型" width="64" align="center">
+        <el-table-column prop="roleName" :label="tt('角色名称')" min-width="110" />
+        <el-table-column prop="roleCode" :label="tt('编码')" width="100" />
+        <el-table-column :label="tt('类型')" width="64" align="center">
           <template #default="{ row }">
-            <el-tag v-if="row.isAdmin" type="danger" size="small">超级</el-tag>
+            <el-tag v-if="row.isAdmin" type="danger" size="small">{{ tt('超级') }}</el-tag>
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="56" align="center">
+        <el-table-column :label="tt('操作')" width="56" align="center">
           <template #default="{ row }">
-            <el-button v-if="!row.isAdmin" size="small" link type="danger" @click.stop="delRole(row)">删除</el-button>
+            <el-button v-if="!row.isAdmin" size="small" link type="danger" @click.stop="delRole(row)">{{ tt('删除') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
 
       <div v-if="selRole" class="perm-box">
         <div class="perm-head">
-          「{{ selRole.roleName }}」可见面板
-          <span class="perm-sub">（提交审批 / 查看审批历史为公开权限；勾选「审批权限」才能执行审批通过/驳回）</span>
+          「{{ selRole.roleName }}」{{ tt('面板权限矩阵') }}
+          <span class="perm-sub">{{ tt('（11 项权限；勾「查看」才有菜单入口，取消「查看」清空整行；审批列仅审批流面板可勾；复核/调整为预留位）') }}</span>
         </div>
-        <div v-if="selRole.isAdmin" class="admin-tip">管理员为超级权限：默认可见全部面板并拥有全部审批，无需配置。</div>
+        <div v-if="selRole.isAdmin" class="admin-tip">{{ tt('管理员为超级权限：默认全部面板全部权限，无需配置。') }}</div>
         <template v-else>
           <el-collapse v-model="openGroups" class="perm-collapse">
             <el-collapse-item v-for="g in groupedPanels" :key="g.code" :name="g.code">
               <template #title>
-                <span class="g-title">{{ g.name }}</span>
-                <span class="g-count">{{ g.panels.length }} 个面板</span>
+                <span class="g-title">{{ tt(g.name) }}</span>
+                <span class="g-count">{{ g.panels.length }} {{ tt('个面板') }}</span>
                 <span class="g-actions" @click.stop>
-                  <el-button link size="small" type="primary" @click="setGroupVisible(g, true)">全选可见</el-button>
-                  <el-button link size="small" type="success" @click="setGroupApprove(g)">全选审批</el-button>
-                  <el-button link size="small" @click="setGroupVisible(g, false)">清空</el-button>
+                  <el-button link size="small" type="primary" @click="setGroupAll(g, true)">{{ tt('全选') }}</el-button>
+                  <el-button link size="small" @click="setGroupAll(g, false)">{{ tt('清空') }}</el-button>
                 </span>
               </template>
-              <el-table :data="g.panels" size="small" border>
-                <el-table-column label="面板" prop="panelName" min-width="150" />
-                <el-table-column label="可见" width="60" align="center">
-                  <template #default="{ row }"><el-checkbox v-model="row.checked" /></template>
+              <el-table :data="g.panels" size="small" border class="perm-table">
+                <el-table-column :label="tt('面板')" prop="panelName" min-width="130" fixed="left">
+                  <template #default="{ row }">{{ tt(row.panelName) }}</template>
                 </el-table-column>
-                <el-table-column label="审批权限" width="84" align="center">
+                <el-table-column v-for="a in permActions" :key="a.code" width="56" align="center">
+                  <template #header>
+                    <el-checkbox
+                      :model-value="groupColChecked(g, a.code)"
+                      :indeterminate="groupColIndeterminate(g, a.code)"
+                      :disabled="a.reserved || (a.code === 'audit' && !rowsForCol(g, a.code).length)"
+                      @change="(v) => setGroupCol(g, a.code, v)"
+                    >{{ tt(a.name) }}</el-checkbox>
+                  </template>
                   <template #default="{ row }">
-                    <el-checkbox v-if="row.hasApproval" v-model="row.canApprove" :disabled="!row.checked" />
-                    <span v-else>-</span>
+                    <el-tooltip v-if="a.reserved" :content="tt('预留权限位，当前版本暂无对应按钮')" placement="top">
+                      <span class="perm-reserved"><el-checkbox :model-value="false" disabled /></span>
+                    </el-tooltip>
+                    <el-checkbox
+                      v-else
+                      :model-value="!!row.perms[a.code]"
+                      :disabled="a.code === 'audit' && !row.hasApproval"
+                      :title="a.code === 'audit' && !row.hasApproval ? tt('该面板无审批流') : ''"
+                      @change="(v) => togglePerm(row, a.code, v)"
+                    />
                   </template>
                 </el-table-column>
               </el-table>
             </el-collapse-item>
           </el-collapse>
           <div class="perm-actions">
-            <el-button type="primary" size="small" :loading="saving" @click="savePanels">保存面板权限</el-button>
-            <el-button size="small" @click="loadRolePanels(selRole)">刷新</el-button>
+            <el-button type="primary" size="small" :loading="saving" @click="savePanels">{{ tt('保存权限矩阵') }}</el-button>
+            <el-button size="small" @click="loadRolePanels(selRole)">{{ tt('刷新') }}</el-button>
           </div>
         </template>
       </div>
     </div>
 
     <!-- 新增/编辑部门 -->
-    <el-dialog v-model="deptVisible" :title="editingDept ? '编辑部门' : '新增部门'" width="360px" append-to-body>
+    <el-dialog v-model="deptVisible" :title="editingDept ? tt('编辑部门') : tt('新增部门')" width="360px" append-to-body>
       <el-form label-width="80px">
-        <el-form-item label="上级部门">
+        <el-form-item :label="tt('上级部门')">
           <el-tree-select v-model="deptForm.parentId" :data="deptSelectData" check-strictly clearable style="width: 100%" />
         </el-form-item>
-        <el-form-item label="部门名称" required>
-          <el-input v-model="deptForm.deptName" placeholder="如 车间 / 质检部" />
+        <el-form-item :label="tt('部门名称')" required>
+          <el-input v-model="deptForm.deptName" :placeholder="tt('如 车间 / 质检部')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="deptVisible = false">取消</el-button>
-        <el-button type="primary" :loading="savingDept" @click="saveDept">保存</el-button>
+        <el-button @click="deptVisible = false">{{ tt('取消') }}</el-button>
+        <el-button type="primary" :loading="savingDept" @click="saveDept">{{ tt('保存') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 新增/编辑用户 -->
-    <el-dialog v-model="userVisible" :title="editingUser ? '编辑用户：' + editingUser.userName : '新增用户'" width="420px" append-to-body>
+    <el-dialog v-model="userVisible" :title="editingUser ? tt('编辑用户') + '：' + editingUser.userName : tt('新增用户')" width="420px" append-to-body>
       <el-form label-width="80px">
-        <el-form-item label="账号" required>
-          <el-input v-model="userForm.userName" :disabled="!!editingUser" placeholder="登录账号" />
+        <el-form-item :label="tt('账号')" required>
+          <el-input v-model="userForm.userName" :disabled="!!editingUser" :placeholder="tt('登录账号')" />
         </el-form-item>
-        <el-form-item label="姓名">
-          <el-input v-model="userForm.realName" placeholder="真实姓名" />
+        <el-form-item :label="tt('姓名')">
+          <el-input v-model="userForm.realName" :placeholder="tt('真实姓名')" />
         </el-form-item>
-        <el-form-item v-if="!editingUser" label="密码">
-          <el-input v-model="userForm.password" type="password" placeholder="默认 123456" />
+        <el-form-item v-if="!editingUser" :label="tt('密码')">
+          <el-input v-model="userForm.password" type="password" :placeholder="tt('默认 123456')" />
         </el-form-item>
-        <el-form-item label="部门">
+        <el-form-item :label="tt('部门')">
           <el-tree-select v-model="userForm.deptId" :data="deptSelectData" check-strictly clearable style="width: 100%" />
         </el-form-item>
-        <el-form-item label="角色">
-          <el-select v-model="userForm.roleId" placeholder="选择角色" clearable style="width: 100%">
+        <el-form-item :label="tt('角色')">
+          <el-select v-model="userForm.roleId" :placeholder="tt('选择角色')" clearable style="width: 100%">
             <el-option v-for="r in roles" :key="r.id" :label="r.roleName" :value="r.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="启用">
+        <el-form-item :label="tt('启用')">
           <el-switch v-model="userForm.enabled" :active-value="1" :inactive-value="0" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="userVisible = false">取消</el-button>
-        <el-button type="primary" :loading="savingUser" @click="saveUser">保存</el-button>
+        <el-button @click="userVisible = false">{{ tt('取消') }}</el-button>
+        <el-button type="primary" :loading="savingUser" @click="saveUser">{{ tt('保存') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 创建角色 -->
-    <el-dialog v-model="newRoleVisible" title="创建角色" width="400px" append-to-body>
+    <el-dialog v-model="newRoleVisible" :title="tt('创建角色')" width="400px" append-to-body>
       <el-form label-width="80px">
-        <el-form-item label="角色编码" required>
-          <el-input v-model="roleForm.roleCode" placeholder="如 operator / workshop" />
+        <el-form-item :label="tt('角色编码')" required>
+          <el-input v-model="roleForm.roleCode" :placeholder="tt('如 operator / workshop')" />
         </el-form-item>
-        <el-form-item label="角色名称" required>
-          <el-input v-model="roleForm.roleName" placeholder="如 车间操作员" />
+        <el-form-item :label="tt('角色名称')" required>
+          <el-input v-model="roleForm.roleName" :placeholder="tt('如 车间操作员')" />
         </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="roleForm.remark" placeholder="说明该角色的职责范围" />
+        <el-form-item :label="tt('备注')">
+          <el-input v-model="roleForm.remark" :placeholder="tt('说明该角色的职责范围')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="newRoleVisible = false">取消</el-button>
-        <el-button type="primary" :loading="savingRole" @click="saveRole">创建</el-button>
+        <el-button @click="newRoleVisible = false">{{ tt('取消') }}</el-button>
+        <el-button type="primary" :loading="savingRole" @click="saveRole">{{ tt('创建') }}</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@core/request'
+import { tt } from '@/i18n'
 import { useUserStore } from '@/stores/user'
+import { useLocaleStore } from '@/stores/locale'
+import { PERM_ACTIONS } from '@/business/permissions'
 
 const user = useUserStore()
+const localeStore = useLocaleStore()
 
-// 2026-08-25：面板按业务总览模块分组（一层=业务模块，模块内配置具体面板可见/审批权限），
-// 与业务总览 BusinessOverview 9 模块 + 基础档案/查询/系统设置 对齐；未映射面板进「其他」兜底
-const PANEL_GROUPS = [
-  {
-    code: 'prod', name: '生产管理',
-    panels: ['MANU_ORDER', 'PROCESS_REPORT', 'REWORK_REPORT', 'MATERIAL_REQ', 'MATERIAL_OUT', 'FINISH_IN', 'TRANSFER',
-      'MANU_ORDER_EXEC', 'MANU_ORDER_TRACKER', 'MANU_ORDER_PRODUCT_DETAIL', 'MANU_ORDER_MATERIAL_DETAIL', 'MANU_ORDER_DETAIL', 'PROC_DETAIL',
-      'MANU_ORDER_PRODUCT_STATS', 'MANU_ORDER_MATERIAL_STATS', 'MANU_ORDER_STATS', 'MANU_PROC_STATS', 'PROC_STATS', 'SALARY_STATS', 'SALARY_DETAIL',
-      'FINISH_IN_DETAIL', 'FINISH_IN_STATS', 'MATERIAL_OUT_DETAIL', 'MATERIAL_OUT_STATS',
-      'ROUTE', 'OP', 'TEAM', 'WC', 'OP_CONV'],
-  },
-  {
-    code: 'outsource', name: '委外管理',
-    panels: ['OUTSOURCE_ORDER', 'OUTSOURCE_ISSUE', 'OUTSOURCE_IN', 'OUTSOURCE_FEE',
-      'OUTSOURCE_ISSUE_BALANCE', 'OUTSOURCE_ORDER_EXEC', 'OUTSOURCE_ORDER_PRODUCT_DETAIL', 'OUTSOURCE_ORDER_MATERIAL_DETAIL', 'OUTSOURCE_FEE_DETAIL',
-      'OUTSOURCE_ORDER_PRODUCT_STATS', 'OUTSOURCE_ORDER_MATERIAL_STATS', 'OUTSOURCE_FEE_STATS'],
-  },
-  {
-    code: 'sales', name: '销售管理',
-    panels: ['QUOTE_ORDER', 'SO_ORDER', 'SALE_INV', 'SALE_OUT', 'SALE_INVOICE', 'EXPENSE', 'SALE_COST_ALLOC',
-      'SALES_ORDER_DETAIL', 'SALES_ORDER_STATS', 'SALES_ORDER_EXEC', 'SALES_ORDER_PROGRESS', 'SALE_OUT_DETAIL', 'SALE_OUT_STATS'],
-  },
-  {
-    code: 'purchase', name: '采购管理',
-    panels: ['PU_REQ', 'PU_ORDER', 'PURCHASE_IN', 'PU_IN', 'PU_INVOICE', 'PU_COST_ALLOC', 'PU_REQ_ANALYSIS',
-      'PURCHASE_IN_DETAIL', 'PURCHASE_IN_STATS'],
-  },
-  {
-    code: 'distribution', name: '配货管理',
-    panels: ['PICK_ORDER', 'OTHER_IN', 'OTHER_OUT',
-      'PICK_ORDER_DETAIL', 'PICK_ORDER_STATS', 'PICK_ORDER_SUMMARY', 'OTHER_IN_DETAIL', 'OTHER_IN_STATS', 'OTHER_OUT_DETAIL', 'OTHER_OUT_STATS'],
-  },
-  {
-    code: 'inv', name: '库存核算',
-    panels: ['STOCK_STATUS', 'STOCK_SUMMARY', 'STOCK_LEDGER'],
-  },
-  {
-    code: 'pda', name: '移动仓管',
-    panels: ['STOCK_CHECK', 'LOCATION_ADJUST'],
-  },
-  {
-    code: 'sn', name: '序列号管理',
-    panels: ['SERIAL_NO', 'SERIAL_STATUS', 'SERIAL_TRACE'],
-  },
-  {
-    code: 'qc', name: '质量管理',
-    panels: ['ARRIVAL_IN', 'FINISH_INSPECT', 'FIRST_INSPECT', 'PROCESS_INSPECT_APPLY', 'INSPECTION', 'PROCESS_INSPECTION',
-      'ARRIVAL_IN_DETAIL', 'ARRIVAL_IN_STATS', 'ARRIVAL_IN_EXEC',
-      'FINISH_INSPECT_DETAIL', 'FINISH_INSPECT_STATS', 'FINISH_INSPECT_EXEC',
-      'FIRST_INSPECT_DETAIL', 'FIRST_INSPECT_STATS', 'FIRST_INSPECT_EXEC',
-      'PROCESS_INSPECT_APPLY_DETAIL', 'PROCESS_INSPECT_APPLY_STATS', 'PROCESS_INSPECT_APPLY_EXEC',
-      'QUALITY_STATS_ANALYSIS', 'INSPECTION_DETAIL', 'INSPECTION_STATS', 'QC_ITEM_LIST', 'QC_ITEM_STATS',
-      'COMPANY_TRACE_SETTINGS', 'CUSTOMER_TRACE_SETTINGS', 'TRACE_PRINT_TEMPLATE',
-      'PRODUCT_FORWARD_TRACE', 'MATERIAL_REVERSE_TRACE'],
-  },
-  {
-    code: 'archives', name: '基础档案',
-    panels: ['INV', 'INV_PRICE', 'PARTNER', 'PARTNER_INV', 'DEPT', 'EMP', 'EQUIP', 'WH', 'UOM', 'PROJ', 'REGION', 'REJECT', 'QC_ITEM', 'QC_PLAN', 'BOM'],
-  },
-  {
-    code: 'query', name: '查询分析',
-    panels: ['BOM_FWD', 'BOM_REV'],
-  },
-  {
-    code: 'sys', name: '系统设置',
-    panels: ['SYS_ALARM', 'SYS_BILL_DESIGN', 'SYS_BOARD_AUTH', 'SYS_CODE', 'SYS_MOBILE', 'SYS_MOBILE_TPL', 'SYS_OPT', 'SYS_PRINT', 'SYS_PRINT_DEFAULT',
-      'SYS_SCREEN', 'SYS_SCREEN_DL', 'SYS_TASK', 'COST_MAINTAIN', 'INIT_AP', 'INIT_AR', 'INIT_BALANCE'],
-  },
-]
-// 面板码 → 组（加速查找）
-const PANEL_GROUP_MAP = {}
-for (const g of PANEL_GROUPS) for (const p of g.panels) PANEL_GROUP_MAP[p] = g.code
+// 2026-09-01：面板模块分组与 11 项权限矩阵由后端提供（panel_config.module_group + sys_role_panel.perms），
+// 前端不再硬编码分组常量；未迁移库的旧后端返回空时按「其他」单组兜底
+const permActions = ref(PERM_ACTIONS)
+const groupDefs = ref([{ code: 'other', name: '其他' }])
+const openGroups = ref(['other'])
 
-const openGroups = ref(PANEL_GROUPS.map((g) => g.code))
-// 按模块分组渲染（行对象与 panelRows 同引用，勾选联动保存）
+// 按模块分组渲染（行对象与 panelRows 同引用，勾选联动保存）；未映射/空分组归「其他」
 const groupedPanels = computed(() => {
-  const buckets = PANEL_GROUPS.map((g) => ({ code: g.code, name: g.name, panels: [] }))
-  const other = { code: 'other', name: '其他', panels: [] }
+  const buckets = groupDefs.value.map((g) => ({ code: g.code, name: g.name, panels: [] }))
   const byCode = {}
   for (const b of buckets) byCode[b.code] = b
-  byCode.other = other
-  for (const r of panelRows.value) {
-    byCode[PANEL_GROUP_MAP[r.panelCode] || 'other'].panels.push(r)
+  if (!byCode.other) {
+    const other = { code: 'other', name: '其他', panels: [] }
+    byCode.other = other
+    buckets.push(other)
   }
-  return buckets.concat(other)
+  for (const r of panelRows.value) {
+    (byCode[r.moduleGroup] || byCode.other).panels.push(r)
+  }
+  return buckets
 })
 
-function setGroupVisible(g, v) {
+// 列可勾选行（审批列排除无审批流面板）
+function rowsForCol(g, code) {
+  if (code !== 'audit') return g.panels
+  return g.panels.filter((r) => r.hasApproval)
+}
+function groupColChecked(g, code) {
+  const rs = rowsForCol(g, code)
+  return rs.length > 0 && rs.every((r) => r.perms[code])
+}
+function groupColIndeterminate(g, code) {
+  const rs = rowsForCol(g, code)
+  return !groupColChecked(g, code) && rs.some((r) => r.perms[code])
+}
+function setGroupCol(g, code, v) {
+  for (const r of rowsForCol(g, code)) togglePerm(r, code, v)
+}
+function setGroupAll(g, v) {
   for (const r of g.panels) {
-    r.checked = v
-    if (!v) r.canApprove = false
+    if (!v) {
+      r.perms = {}
+      continue
+    }
+    for (const a of permActions.value) {
+      if (a.reserved) continue
+      if (a.code === 'audit' && !r.hasApproval) continue
+      r.perms[a.code] = true
+    }
   }
 }
-function setGroupApprove(g) {
-  for (const r of g.panels) {
-    if (r.hasApproval) {
-      r.checked = true
-      r.canApprove = true
-    }
+// 勾权限：勾任意权限自动带上「查看」；取消「查看」清空整行
+function togglePerm(row, code, v) {
+  if (code === 'view') {
+    if (v) row.perms.view = true
+    else row.perms = {}
+    return
+  }
+  if (v) {
+    row.perms.view = true
+    row.perms[code] = true
+  } else {
+    row.perms[code] = false
   }
 }
 
@@ -330,6 +312,7 @@ function toSelect(nodes) {
 
 async function load() {
   await Promise.all([loadDepts(), loadUsers(), loadRoles()])
+  ensurePageDict()
 }
 
 async function loadDepts() {
@@ -337,7 +320,7 @@ async function loadDepts() {
     const r = await request.get('/sys/dept/tree')
     deptTree.value = r?.data || []
   } catch (e) {
-    ElMessage.error('部门加载失败')
+    ElMessage.error(tt('部门加载失败'))
   }
 }
 
@@ -346,7 +329,7 @@ async function loadUsers() {
     const r = await request.get('/sys/user/list')
     users.value = r?.data || []
   } catch (e) {
-    ElMessage.error('用户列表加载失败')
+    ElMessage.error(tt('用户列表加载失败'))
   }
 }
 
@@ -355,7 +338,7 @@ async function loadRoles() {
     const r = await request.get('/sys/role/list')
     roles.value = r?.data || []
   } catch (e) {
-    ElMessage.error('角色列表加载失败')
+    ElMessage.error(tt('角色列表加载失败'))
   }
 }
 
@@ -378,15 +361,15 @@ function editDept(d) {
 }
 
 async function saveDept() {
-  if (!deptForm.deptName.trim()) return ElMessage.warning('请输入部门名称')
+  if (!deptForm.deptName.trim()) return ElMessage.warning(tt('请输入部门名称'))
   savingDept.value = true
   try {
     await request.post('/sys/dept/save', { id: deptForm.id, parentId: deptForm.parentId || 0, deptName: deptForm.deptName })
-    ElMessage.success('部门已保存')
+    ElMessage.success(tt('部门已保存'))
     deptVisible.value = false
     await loadDepts()
   } catch (e) {
-    ElMessage.error(e?.response?.data?.message || '保存失败')
+    ElMessage.error(e?.response?.data?.message || tt('保存失败'))
   } finally {
     savingDept.value = false
   }
@@ -394,16 +377,16 @@ async function saveDept() {
 
 async function delDept(d) {
   try {
-    await ElMessageBox.confirm('删除部门「' + d.deptName + '」？', '提示', { type: 'warning' })
+    await ElMessageBox.confirm(tt('删除部门') + '「' + d.deptName + '」？', tt('提示'), { type: 'warning' })
   } catch (e) {
     return
   }
   try {
     await request.delete('/sys/dept/' + d.id)
-    ElMessage.success('部门已删除')
+    ElMessage.success(tt('部门已删除'))
     await loadDepts()
   } catch (e) {
-    ElMessage.error(e?.response?.data?.message || '删除失败')
+    ElMessage.error(e?.response?.data?.message || tt('删除失败'))
   }
 }
 
@@ -419,35 +402,35 @@ function openUser(row) {
 }
 
 async function saveUser() {
-  if (!userForm.userName.trim()) return ElMessage.warning('请输入账号')
+  if (!userForm.userName.trim()) return ElMessage.warning(tt('请输入账号'))
   savingUser.value = true
   try {
     const body = { ...userForm }
     if (editingUser.value) body.id = editingUser.value.id
     await request.post('/sys/user/save', body)
-    ElMessage.success('用户已保存')
+    ElMessage.success(tt('用户已保存'))
     userVisible.value = false
     await loadUsers()
   } catch (e) {
-    ElMessage.error(e?.response?.data?.message || '保存失败')
+    ElMessage.error(e?.response?.data?.message || tt('保存失败'))
   } finally {
     savingUser.value = false
   }
 }
 
 async function saveRole() {
-  if (!roleForm.roleCode.trim() || !roleForm.roleName.trim()) return ElMessage.warning('请填写编码与名称')
+  if (!roleForm.roleCode.trim() || !roleForm.roleName.trim()) return ElMessage.warning(tt('请填写编码与名称'))
   savingRole.value = true
   try {
     await request.post('/sys/role/save', { ...roleForm })
-    ElMessage.success('角色已创建')
+    ElMessage.success(tt('角色已创建'))
     newRoleVisible.value = false
     roleForm.roleCode = ''
     roleForm.roleName = ''
     roleForm.remark = ''
     await loadRoles()
   } catch (e) {
-    ElMessage.error(e?.response?.data?.message || '创建失败')
+    ElMessage.error(e?.response?.data?.message || tt('创建失败'))
   } finally {
     savingRole.value = false
   }
@@ -455,20 +438,20 @@ async function saveRole() {
 
 async function delRole(row) {
   try {
-    await ElMessageBox.confirm('删除角色「' + row.roleName + '」？其下用户角色将清空', '提示', { type: 'warning' })
+    await ElMessageBox.confirm(tt('删除角色') + '「' + row.roleName + '」？' + tt('其下用户角色将清空'), tt('提示'), { type: 'warning' })
   } catch (e) {
     return
   }
   try {
     await request.delete('/sys/role/' + row.id)
-    ElMessage.success('角色已删除')
+    ElMessage.success(tt('角色已删除'))
     if (selRole.value && selRole.value.id === row.id) {
       selRole.value = null
       panelRows.value = []
     }
     await loadRoles()
   } catch (e) {
-    ElMessage.error(e?.response?.data?.message || '删除失败')
+    ElMessage.error(e?.response?.data?.message || tt('删除失败'))
   }
 }
 
@@ -481,24 +464,26 @@ async function loadRolePanels(row) {
   try {
     const r = await request.get('/sys/role/' + row.id + '/panels')
     const d = r?.data || {}
-    const all = d.allPanels || []
-    const granted = d.granted || []
-    // 授权标记与审批标记分开：canApprove=false 的面板（可见但无审批）也必须回显为「已勾选可见」
+    permActions.value = (d.actions && d.actions.length) ? d.actions : PERM_ACTIONS
+    groupDefs.value = (d.modules && d.modules.length) ? d.modules : [{ code: 'other', name: '其他' }]
+    // 兼容旧后端：无 perms 时按 canApprove 回退 view / view+audit
     const grantedMap = {}
-    const approveMap = {}
-    for (const g of granted) {
-      grantedMap[g.panelCode] = true
-      approveMap[g.panelCode] = !!g.canApprove
+    for (const g of d.granted || []) {
+      grantedMap[g.panelCode] = (g.perms && g.perms.length)
+        ? g.perms
+        : (g.canApprove ? ['view', 'audit'] : ['view'])
     }
-    panelRows.value = all.map((p) => ({
+    panelRows.value = (d.allPanels || []).map((p) => ({
       panelCode: p.panelCode,
       panelName: p.panelName,
       hasApproval: !!p.hasApproval,
-      checked: !!grantedMap[p.panelCode],
-      canApprove: !!approveMap[p.panelCode],
+      moduleGroup: p.moduleGroup || 'other',
+      perms: Object.fromEntries((grantedMap[p.panelCode] || []).map((c) => [c, true])),
     }))
+    openGroups.value = groupedPanels.value.filter((g) => g.panels.length).map((g) => g.code)
+    ensurePageDict()
   } catch (e) {
-    ElMessage.error('面板权限加载失败')
+    ElMessage.error(tt('面板权限加载失败'))
   }
 }
 
@@ -506,17 +491,38 @@ async function savePanels() {
   saving.value = true
   try {
     const panels = panelRows.value
-      .filter((p) => p.checked)
-      .map((p) => ({ panelCode: p.panelCode, canApprove: p.canApprove }))
+      .filter((p) => p.perms.view)
+      .map((p) => ({
+        panelCode: p.panelCode,
+        perms: permActions.value.filter((a) => !a.reserved && p.perms[a.code]).map((a) => a.code),
+      }))
     await request.post('/sys/role/' + selRole.value.id + '/panels', { panels })
-    ElMessage.success('面板权限已保存')
+    ElMessage.success(tt('权限矩阵已保存'))
     if (selRole.value.roleCode === user.roleCode) await user.fetchPerms()
   } catch (e) {
-    ElMessage.error(e?.response?.data?.message || '保存失败')
+    ElMessage.error(e?.response?.data?.message || tt('保存失败'))
   } finally {
     saving.value = false
   }
 }
+
+// 非中文语言：预取本页可见词条（静态列头/按钮 + 权限名/模块组名/面板名；静态包缺失的走机翻补齐）
+const PAGE_DICT_KEYS = [
+  '部门', '新增部门', '+子', '改', '删', '用户', '新增用户', '编辑用户', '账号', '姓名', '状态', '操作',
+  '启用', '停用', '编辑', '删除', '角色', '角色与面板权限', '创建角色', '角色名称', '角色编码', '编码', '类型',
+  '超级', '面板', '面板权限矩阵', '个面板', '全选', '清空', '保存权限矩阵', '刷新', '取消', '保存', '创建',
+  '上级部门', '部门名称', '备注', '密码', '选择角色', '编辑部门', '其他', '提示',
+]
+function ensurePageDict() {
+  if (localeStore.isZh) return
+  localeStore.ensureDict(localeStore.current, [
+    ...PAGE_DICT_KEYS,
+    ...permActions.value.map((a) => a.name),
+    ...groupDefs.value.map((g) => g.name),
+    ...panelRows.value.map((p) => p.panelName),
+  ])
+}
+watch(() => localeStore.current, ensurePageDict)
 
 onMounted(load)
 </script>
@@ -593,5 +599,19 @@ onMounted(load)
   margin-right: 14px;
   display: inline-flex;
   align-items: center;
+}
+/* 2026-09-01：11 列权限矩阵（列头复选框列间收紧，预留位置灰） */
+.perm-table :deep(.el-checkbox) {
+  height: auto;
+  margin-right: 0;
+}
+.perm-table :deep(.el-checkbox__label) {
+  padding-left: 2px;
+  font-size: 12px;
+  font-weight: 400;
+}
+.perm-reserved {
+  display: inline-flex;
+  opacity: 0.45;
 }
 </style>

@@ -1,30 +1,30 @@
 <template>
-  <el-dialog :model-value="modelValue" title="工作台设置" width="480px" append-to-body @update:model-value="(v) => $emit('update:modelValue', v)">
+  <el-dialog :model-value="modelValue" :title="tt('工作台设置')" width="480px" append-to-body @update:model-value="(v) => $emit('update:modelValue', v)">
     <div class="desk-setting">
       <div class="set-group">
-        <div class="set-group-title">快捷入口</div>
+        <div class="set-group-title">{{ tt('快捷入口') }}</div>
         <el-checkbox-group v-model="quick" @change="save">
-          <el-checkbox value="newOrder">新建加工单</el-checkbox>
-          <el-checkbox value="quickReport">快速报工</el-checkbox>
-          <el-checkbox value="board">生产看板</el-checkbox>
+          <el-checkbox value="newOrder">{{ tt('新建加工单') }}</el-checkbox>
+          <el-checkbox value="quickReport">{{ tt('快速报工') }}</el-checkbox>
+          <el-checkbox value="board">{{ tt('生产看板') }}</el-checkbox>
         </el-checkbox-group>
       </div>
       <div class="set-group">
-        <div class="set-group-title">内容卡片</div>
+        <div class="set-group-title">{{ tt('内容卡片') }}</div>
         <div class="set-row">
-          <span>KPI 指标卡</span>
+          <span>{{ tt('KPI 指标卡') }}</span>
           <el-switch v-model="showKpi" @change="save" />
         </div>
         <div class="set-row">
-          <span>生产进度</span>
+          <span>{{ tt('生产进度') }}</span>
           <el-switch v-model="showProgress" @change="save" />
         </div>
         <div class="set-row">
-          <span>我的待办</span>
+          <span>{{ tt('我的待办') }}</span>
           <el-switch v-model="showTodo" @change="save" />
         </div>
       </div>
-      <div class="set-hint">保存后回到「我的桌面」查看效果。</div>
+      <div class="set-hint">{{ tt('保存后回到「我的桌面」查看效果。') }}</div>
     </div>
   </el-dialog>
 </template>
@@ -32,6 +32,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useAppStore } from '@/stores/app'
+import { tt } from '@/i18n'
 
 defineProps({ modelValue: Boolean })
 defineEmits(['update:modelValue'])

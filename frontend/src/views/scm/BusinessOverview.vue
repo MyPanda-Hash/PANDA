@@ -3,8 +3,8 @@
 <template>
   <div class="bo-page">
     <div class="bo-head">
-      <div class="bo-title">业务总览</div>
-      <div class="bo-sub">智能供应链 · 全流程业务关系（点击流程节点或单据进入对应面板）</div>
+      <div class="bo-title">{{ tt('业务总览') }}</div>
+      <div class="bo-sub">{{ tt('智能供应链 · 全流程业务关系（点击流程节点或单据进入对应面板）') }}</div>
     </div>
     <div class="bo-body">
       <div class="bo-modules">
@@ -17,7 +17,7 @@
           @click="active = m.code"
         >
           <el-icon class="bo-mod-icon"><component :is="ICONS[m.icon]" /></el-icon>
-          <span>{{ m.name }}</span>
+          <span>{{ tt(m.name) }}</span>
         </div>
       </div>
       <div class="bo-main">
@@ -25,9 +25,9 @@
           <div class="bo-flow-title">
             <span>
               <i class="bo-flow-dot" :style="{ background: cur.color }"></i>
-              {{ cur.name }} · 业务流程图
+              {{ tt(cur.name) }} · {{ tt('业务流程图') }}
             </span>
-            <span class="bo-flow-tip">节点点击进入 · 箭头为生单/选单流转</span>
+            <span class="bo-flow-tip">{{ tt('节点点击进入 · 箭头为生单/选单流转') }}</span>
           </div>
           <div class="bo-canvas" :style="{ height: canvasH + 'px' }">
             <VueFlow
@@ -49,7 +49,7 @@
                   <div class="fn-icon">
                     <el-icon><component :is="ICONS[nodeProps.data.icon]" /></el-icon>
                   </div>
-                  <div class="fn-label">{{ nodeProps.data.label }}</div>
+                  <div class="fn-label">{{ tt(nodeProps.data.label) }}</div>
                 </div>
               </template>
             </VueFlow>
@@ -58,21 +58,21 @@
       </div>
       <div class="bo-sections" v-if="cur">
         <div class="bo-sec" v-if="cur.docs && cur.docs.length">
-          <span class="bo-sec-title" :style="{ '--sc': cur.color }">相关单据</span>
+          <span class="bo-sec-title" :style="{ '--sc': cur.color }">{{ tt('相关单据') }}</span>
           <div class="bo-sec-btns">
-            <span v-for="d in cur.docs" :key="d.code" class="bo-btn" @click="go(d.code)">{{ d.label }}</span>
+            <span v-for="d in cur.docs" :key="d.code" class="bo-btn" @click="go(d.code)">{{ tt(d.label) }}</span>
           </div>
         </div>
         <div class="bo-sec" v-if="cur.archives && cur.archives.length">
-          <span class="bo-sec-title" :style="{ '--sc': cur.color }">基础档案</span>
+          <span class="bo-sec-title" :style="{ '--sc': cur.color }">{{ tt('基础档案') }}</span>
           <div class="bo-sec-btns">
-            <span v-for="d in cur.archives" :key="d.code" class="bo-btn" @click="go(d.code)">{{ d.label }}</span>
+            <span v-for="d in cur.archives" :key="d.code" class="bo-btn" @click="go(d.code)">{{ tt(d.label) }}</span>
           </div>
         </div>
         <div class="bo-sec" v-if="cur.reports && cur.reports.length">
-          <span class="bo-sec-title" :style="{ '--sc': cur.color }">相关报表</span>
+          <span class="bo-sec-title" :style="{ '--sc': cur.color }">{{ tt('相关报表') }}</span>
           <div class="bo-sec-btns">
-            <span v-for="d in cur.reports" :key="d.code" class="bo-btn" @click="go(d.code)">{{ d.label }}</span>
+            <span v-for="d in cur.reports" :key="d.code" class="bo-btn" @click="go(d.code)">{{ tt(d.label) }}</span>
           </div>
         </div>
       </div>
@@ -89,11 +89,14 @@ import '@vue-flow/core/dist/theme-default.css'
 import { SetUp, Van, ShoppingCart, Box, Iphone, Sort, View, Connection } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { useTabsStore } from '@/stores/tabs'
+import { tt } from '@/i18n'
+import { useLocaleStore } from '@/stores/locale'
 
 const ICONS = { SetUp, Van, ShoppingCart, Box, Iphone, Sort, View, Connection }
 
 const router = useRouter()
 const tabs = useTabsStore()
+const localeStore = useLocaleStore()
 
 const modules = [
   {
@@ -427,6 +430,22 @@ const modules = [
 
 const active = ref('prod')
 const cur = computed(() => modules.find((m) => m.code === active.value) || modules[0])
+
+// 非中文语言：预取本页可见词条（模块名/流程节点与单据标签，静态包缺失的走机翻补齐；tt() 渲染层切换即时生效）
+watch(() => localeStore.current, async (locale) => {
+  if (localeStore.isZh) return
+  const keys = [
+    '业务总览', '智能供应链 · 全流程业务关系（点击流程节点或单据进入对应面板）',
+    '业务流程图', '节点点击进入 · 箭头为生单/选单流转', '相关单据', '基础档案', '相关报表',
+  ]
+  for (const m of modules) {
+    keys.push(m.name)
+    for (const list of [m.nodes, m.docs, m.archives, m.reports]) {
+      for (const it of list || []) keys.push(it.label)
+    }
+  }
+  await localeStore.ensureDict(locale, keys)
+}, { immediate: true })
 
 // 画布高度按当前模块节点最大纵坐标自适应（卡片高 80 + 边距）
 const canvasH = computed(() => {

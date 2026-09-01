@@ -9,14 +9,14 @@
           <span></span>
           MANUFACTURING OPERATIONS
         </p>
-        <h1><strong>轻 MES</strong> 让生产现场<br />有序运转</h1>
-        <p class="scene-subtitle">生产制造执行系统</p>
+        <h1><strong>轻 MES</strong> {{ tt('让生产现场') }}<br />{{ tt('有序运转') }}</h1>
+        <p class="scene-subtitle">{{ tt('生产制造执行系统') }}</p>
       </div>
 
       <div class="scene-meta" aria-hidden="true">
-        <span>聚焦现场</span>
-        <span>协同执行</span>
-        <span>持续改善</span>
+        <span>{{ tt('聚焦现场') }}</span>
+        <span>{{ tt('协同执行') }}</span>
+        <span>{{ tt('持续改善') }}</span>
       </div>
     </section>
 
@@ -28,14 +28,14 @@
           </div>
           <div>
             <div class="brand-name">轻 MES</div>
-            <div class="brand-subtitle">制造协同工作台</div>
+            <div class="brand-subtitle">{{ tt('制造协同工作台') }}</div>
           </div>
         </header>
 
         <div class="login-heading">
-          <p class="eyebrow">企业账号</p>
-          <h2>登录工作台</h2>
-          <p class="heading-note">进入制造协同工作台</p>
+          <p class="eyebrow">{{ tt('企业账号') }}</p>
+          <h2>{{ tt('登录工作台') }}</h2>
+          <p class="heading-note">{{ tt('进入制造协同工作台') }}</p>
         </div>
 
         <div v-if="errorMessage" class="login-error" role="alert">
@@ -52,35 +52,35 @@
           class="login-form"
           @keyup.enter="doLogin"
         >
-          <el-form-item label="账号" prop="userName">
+          <el-form-item :label="tt('账号')" prop="userName">
             <el-input
               v-model.trim="form.userName"
               :prefix-icon="User"
-              placeholder="请输入登录账号"
+              :placeholder="tt('请输入登录账号')"
               autocomplete="username"
               clearable
               @input="clearError"
             />
           </el-form-item>
 
-          <el-form-item label="密码" prop="password">
+          <el-form-item :label="tt('密码')" prop="password">
             <el-input
               v-model="form.password"
               :prefix-icon="Lock"
               type="password"
-              placeholder="请输入登录密码"
+              :placeholder="tt('请输入登录密码')"
               autocomplete="current-password"
               show-password
               @input="clearError"
             />
           </el-form-item>
 
-          <el-form-item label="登录工厂" prop="factory">
+          <el-form-item :label="tt('登录工厂')" prop="factory">
             <el-select
               v-model="form.factory"
               :loading="factoryLoading"
               :prefix-icon="OfficeBuilding"
-              :placeholder="factoryLoading ? '正在加载工厂' : '请选择登录工厂'"
+              :placeholder="factoryLoading ? tt('正在加载工厂') : tt('请选择登录工厂')"
               :disabled="factoryLoading || !user.factories.length"
               @change="clearError"
             >
@@ -94,10 +94,10 @@
           </el-form-item>
 
           <div class="form-options">
-            <el-checkbox v-model="rememberAccount">记住账号</el-checkbox>
+            <el-checkbox v-model="rememberAccount">{{ tt('记住账号') }}</el-checkbox>
             <span class="secure-note">
               <el-icon><Lock /></el-icon>
-              安全连接
+              {{ tt('安全连接') }}
             </span>
           </div>
 
@@ -108,7 +108,7 @@
             :disabled="factoryLoading"
             @click="doLogin"
           >
-            <span>进入系统</span>
+            <span>{{ tt('进入系统') }}</span>
             <el-icon v-if="!loading"><ArrowRight /></el-icon>
           </el-button>
         </el-form>
@@ -120,7 +120,7 @@
             :class="{ 'is-error': !factoryLoading && !user.factories.length }"
           >
             <span class="status-dot"></span>
-            {{ factoryLoading ? '正在连接服务' : user.factories.length ? '服务连接正常' : '服务连接异常' }}
+            {{ factoryLoading ? tt('正在连接服务') : user.factories.length ? tt('服务连接正常') : tt('服务连接异常') }}
           </span>
         </footer>
       </div>
@@ -129,7 +129,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   ArrowRight,
@@ -139,6 +139,7 @@ import {
   User,
   WarningFilled,
 } from '@element-plus/icons-vue'
+import { tt } from '@/i18n'
 import { useUserStore } from '@/stores/user'
 import manufacturingImage from '@/assets/login-manufacturing.png'
 
@@ -153,11 +154,12 @@ const rememberedAccount = localStorage.getItem(REMEMBERED_ACCOUNT_KEY) || ''
 const rememberAccount = ref(Boolean(rememberedAccount))
 const form = reactive({ userName: rememberedAccount, password: '', factory: '' })
 
-const rules = {
-  userName: [{ required: true, message: '请输入登录账号', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入登录密码', trigger: 'blur' }],
-  factory: [{ required: true, message: '请选择登录工厂', trigger: 'change' }],
-}
+// 校验提示走 tt()；computed 使语言切换后的新校验提示同步刷新
+const rules = computed(() => ({
+  userName: [{ required: true, message: tt('请输入登录账号'), trigger: 'blur' }],
+  password: [{ required: true, message: tt('请输入登录密码'), trigger: 'blur' }],
+  factory: [{ required: true, message: tt('请选择登录工厂'), trigger: 'change' }],
+}))
 
 function clearError() {
   errorMessage.value = ''
@@ -178,7 +180,7 @@ async function doLogin() {
     else localStorage.removeItem(REMEMBERED_ACCOUNT_KEY)
     await router.replace('/dashboard')
   } catch (error) {
-    errorMessage.value = error.response?.data?.message || error.message || '登录失败，请稍后重试'
+    errorMessage.value = error.response?.data?.message || error.message || tt('登录失败，请稍后重试')
   } finally {
     loading.value = false
   }
@@ -190,7 +192,7 @@ onMounted(async () => {
     await user.fetchFactories()
     form.factory = user.factory?.code || user.factories[0]?.code || ''
   } catch (error) {
-    errorMessage.value = '工厂信息加载失败，请检查服务后重试'
+    errorMessage.value = tt('工厂信息加载失败，请检查服务后重试')
   } finally {
     factoryLoading.value = false
   }

@@ -51,6 +51,7 @@ public class AuthController {
         info.put("roleCode", perms.get("roleCode"));
         info.put("visiblePanels", perms.get("visiblePanels"));
         info.put("approvePanels", perms.get("approvePanels"));
+        info.put("panelPerms", perms.get("panelPerms"));
         return ApiResult.ok(new LoginResponse(jwtUtil.generateToken(user.getUserName()), info));
     }
 
@@ -67,6 +68,7 @@ public class AuthController {
         info.put("roleCode", perms.get("roleCode"));
         info.put("visiblePanels", perms.get("visiblePanels"));
         info.put("approvePanels", perms.get("approvePanels"));
+        info.put("panelPerms", perms.get("panelPerms"));
         return ApiResult.ok(info);
     }
 

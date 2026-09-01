@@ -14,6 +14,7 @@ import com.mes.panel.PanelActionContext;
 import com.mes.panel.PanelActionRegistry;
 import com.mes.panel.PanelRuntimeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,22 +43,48 @@ public class PxService implements PanelRuntimeService {
     private final FormApprovalMapper approvalMapper;
     private final ReportQueryService reportQueryService;
     private final PanelActionRegistry panelActionRegistry;
+    private final RoleService roleService;
+    private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper json = new ObjectMapper();
+
+    /** 权限码 → 受控按钮名（矩阵过滤映射；未列出的按钮不受权限控制） */
+    private static final Map<String, List<String>> ACTION_BUTTONS = Map.of(
+            "query", List.of("查找", "查询", "刷新"),
+            "add", List.of("新增", "新增流程", "引入常用单据", "选单", "扫描填单"),
+            "edit", List.of("修改", "保存", "保存新增", "保存为草稿", "中止", "中止执行", "整单中止", "草稿", "取消中止"),
+            "delete", List.of("删除"),
+            "export", List.of("导出", "明细标签打印", "下载导入模板"),
+            "print", List.of("直接打印", "打印", "预览", "打印模板设置", "打印情况"),
+            "audit", List.of("提交审批", "审批通过", "审批驳回", "驳回审批", "审批情况", "弃审", "审核"));
+
+    /** 按钮名 → 权限码（含「生成XX」生单按钮 → add） */
+    private static String permOfButton(String buttonName) {
+        if (buttonName == null || buttonName.isEmpty()) return null;
+        if (buttonName.startsWith("生成")) return "add";
+        for (Map.Entry<String, List<String>> e : ACTION_BUTTONS.entrySet()) {
+            if (e.getValue().contains(buttonName)) return e.getKey();
+        }
+        return null;
+    }
 
     @Autowired
     public PxService(PanelConfigMapper panelMapper, FormDataMapper formMapper,
                      FormApprovalMapper approvalMapper, ReportQueryService reportQueryService,
-                     PanelActionRegistry panelActionRegistry) {
+                     PanelActionRegistry panelActionRegistry, RoleService roleService,
+                     JdbcTemplate jdbcTemplate) {
         this.panelMapper = panelMapper;
         this.formMapper = formMapper;
         this.approvalMapper = approvalMapper;
         this.reportQueryService = reportQueryService;
         this.panelActionRegistry = panelActionRegistry;
+        this.roleService = roleService;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     PxService(PanelConfigMapper panelMapper, FormDataMapper formMapper,
               FormApprovalMapper approvalMapper, ReportQueryService reportQueryService) {
-        this(panelMapper, formMapper, approvalMapper, reportQueryService, new PanelActionRegistry(List.of()));
+        this(panelMapper, formMapper, approvalMapper, reportQueryService,
+                new PanelActionRegistry(List.of()), null, null);
     }
 
     // ---------- 配置 ----------
@@ -120,6 +147,44 @@ public class PxService implements PanelRuntimeService {
         upgradeInvPairRef(config, "items", "材料编码", "材料名称", "规格型号", "计量单位");
         upgradeInvPairRef(config, "items", "产品编码", "产品名称", "规格型号", "计量单位");
         upgradeInvPairRef(config, null, "存货编码", "存货", "规格型号", "计量单位");
+        ensureOcrAction(config);
+    }
+
+    /** Add OCR to editable document panels without mutating configured group/action collections. */
+    @SuppressWarnings("unchecked")
+    private void ensureOcrAction(Map<String, Object> config) {
+        Object metadataObject = config.get("metadata");
+        if (!(metadataObject instanceof Map<?, ?> rawMetadata)) return;
+        Map<String, Object> source = (Map<String, Object>) rawMetadata;
+        if (!String.valueOf(source.getOrDefault("panelCategory", "")).trim().endsWith("单据")
+                || Boolean.parseBoolean(String.valueOf(source.getOrDefault("readonly", false)))
+                || Boolean.parseBoolean(String.valueOf(source.getOrDefault("readOnly", false)))) return;
+
+        Map<String, Object> metadata = new LinkedHashMap<>(source);
+        List<Map<String, Object>> groups = new ArrayList<>();
+        boolean foundMore = false;
+        Object groupsObject = source.get("buttonGroups");
+        if (groupsObject instanceof List<?> rawGroups) {
+            for (Object item : rawGroups) {
+                if (!(item instanceof Map<?, ?> rawGroup)) continue;
+                Map<String, Object> group = new LinkedHashMap<>((Map<String, Object>) rawGroup);
+                Object configuredActions = group.containsKey("actions") ? group.get("actions") : group.get("items");
+                List<String> actions = new ArrayList<>(actionNames(configuredActions));
+                actions.removeIf("扫描填单"::equals);
+                if (!foundMore && "更多".equals(String.valueOf(group.getOrDefault("name", "")))) {
+                    if (actions.isEmpty()) actions.add("刷新");
+                    actions.add("扫描填单");
+                    foundMore = true;
+                }
+                group.put("actions", actions);
+                groups.add(group);
+            }
+        }
+        if (!foundMore) {
+            groups.add(new LinkedHashMap<>(Map.of("name", "更多", "actions", List.of("刷新", "扫描填单"))));
+        }
+        metadata.put("buttonGroups", groups);
+        config.put("metadata", metadata);
     }
 
     /** 报价单金额链与销售订单保持一致：报价单价/税率 -> 含税单价 -> 金额/含税金额。 */
@@ -531,13 +596,163 @@ public class PxService implements PanelRuntimeService {
     }
 
     public Map<String, Object> getPanelConfig(String panelCode) {
-        return loadConfig(panelCode);
+        return getPanelConfig(panelCode, null);
+    }
+
+    /**
+     * 用户级表格列定制（px_column_pref）叠加在读取出口：重排/隐藏 gridTabs 列 + 注入
+     * metadata.columnAliases / metadata.columnPrefs。绝不写回 panel_config.config
+     * （4 个 Registry 启动时会无条件覆盖 config 列）。
+     */
+    public Map<String, Object> getPanelConfig(String panelCode, String userName) {
+        Map<String, Object> cfg = loadConfig(panelCode);
+        if (userName != null && !userName.isBlank()) applyColumnPrefs(cfg, panelCode, userName);
+        return cfg;
+    }
+
+    // ---------- 表格列定制（阶段 C：按用户顺序/显隐/别名） ----------
+
+    private static final class ColumnPref {
+        final String name;
+        final String alias;
+        final boolean visible;
+        ColumnPref(String name, String alias, boolean visible) {
+            this.name = name;
+            this.alias = alias;
+            this.visible = visible;
+        }
+    }
+
+    /** 列名提取：列配置兼容字符串与对象（dataName/name/label）两种形态 */
+    private static String columnNameOf(Object col) {
+        if (col instanceof String s) return s;
+        if (col instanceof Map<?, ?> m) {
+            for (String k : new String[]{"dataName", "name", "label"}) {
+                Object v = m.get(k);
+                if (v != null && !String.valueOf(v).isBlank()) return String.valueOf(v);
+            }
+        }
+        return null;
+    }
+
+    private static boolean visibleFlag(Object v) {
+        if (v instanceof Boolean b) return b;
+        if (v instanceof Number n) return n.intValue() != 0;
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void applyColumnPrefs(Map<String, Object> cfg, String panelCode, String userName) {
+        List<Map<String, Object>> rows;
+        try {
+            rows = jdbcTemplate.queryForList(
+                    "SELECT col_name, seq, alias, visible FROM px_column_pref WHERE panel_code = ? AND owner = ? ORDER BY seq, id",
+                    panelCode, userName);
+        } catch (Exception e) {
+            return; // 表未建/库未迁移：保持配置默认
+        }
+        if (rows.isEmpty()) return;
+        Map<String, Object> metadata = (Map<String, Object>) cfg.get("metadata");
+        if (metadata == null) return;
+        if (!(metadata.get("panelPageDto") instanceof Map<?, ?> pageDto)) return;
+        if (!(pageDto.get("tablePages") instanceof List<?> pages)) return;
+
+        List<ColumnPref> prefs = new ArrayList<>();
+        for (Map<String, Object> r : rows) {
+            String name = String.valueOf(r.get("col_name"));
+            Object alias = r.get("alias");
+            prefs.add(new ColumnPref(name,
+                    alias == null ? "" : String.valueOf(alias),
+                    visibleFlag(r.get("visible"))));
+        }
+
+        // 应用到每个 tablePage 的 gridTabs（明细页签与其同源汇总页签都应用）
+        for (Object pageObj : pages) {
+            if (!(pageObj instanceof Map<?, ?> page)) continue;
+            if (!(page.get("gridTabs") instanceof List<?> tabs)) continue;
+            for (Object tabObj : tabs) {
+                if (!(tabObj instanceof Map<?, ?> tab)) continue;
+                if (!(tab.get("columns") instanceof List<?> cols)) continue;
+                List<Object> reordered = new ArrayList<>();
+                Set<String> seen = new HashSet<>();
+                for (ColumnPref p : prefs) {
+                    if (!p.visible) continue;
+                    Object col = findColumn(cols, p.name);
+                    if (col != null) {
+                        reordered.add(col);
+                        seen.add(p.name);
+                    }
+                }
+                // 未收录列（配置新增）按原序追加且默认显示
+                for (Object col : cols) {
+                    String name = columnNameOf(col);
+                    if (name == null || seen.contains(name)) continue;
+                    if (prefs.stream().anyMatch(p -> name.equals(p.name) && !p.visible)) continue;
+                    reordered.add(col);
+                }
+                ((Map<String, Object>) tab).put("columns", reordered);
+            }
+        }
+
+        // 注入别名表（表头显示用）与全量清单（弹窗初始化用，含隐藏列）；数据键/取值仍是中文列名
+        Map<String, String> aliases = new LinkedHashMap<>();
+        List<Map<String, Object>> columnPrefs = new ArrayList<>();
+        for (ColumnPref p : prefs) {
+            if (!p.alias.isBlank()) aliases.put(p.name, p.alias);
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("name", p.name);
+            m.put("alias", p.alias);
+            m.put("visible", p.visible);
+            columnPrefs.add(m);
+        }
+        metadata.put("columnAliases", aliases);
+        metadata.put("columnPrefs", columnPrefs);
+    }
+
+    private static Object findColumn(List<?> cols, String name) {
+        for (Object col : cols) {
+            if (name.equals(columnNameOf(col))) return col;
+        }
+        return null;
+    }
+
+    /** 保存列定制（空数组=恢复默认：删除该用户该面板全部行） */
+    @Transactional
+    public void saveColumnPrefs(String panelCode, String userName, List<Map<String, Object>> columns) {
+        if (panelCode == null || panelCode.isBlank()) throw new IllegalArgumentException("panelCode 不能为空");
+        if (userName == null || userName.isBlank()) throw new IllegalArgumentException("未登录用户不能保存表格调整");
+        jdbcTemplate.update("DELETE FROM px_column_pref WHERE panel_code = ? AND owner = ?", panelCode, userName);
+        if (columns == null || columns.isEmpty()) return;
+        Set<String> aliases = new HashSet<>();
+        int seq = 10;
+        for (Map<String, Object> c : columns) {
+            String name = c.get("name") == null ? "" : String.valueOf(c.get("name")).trim();
+            if (name.isBlank()) continue;
+            String alias = c.get("alias") == null ? "" : String.valueOf(c.get("alias")).trim();
+            if (!alias.isEmpty() && !aliases.add(alias)) {
+                throw new IllegalArgumentException("栏名别名重复：" + alias);
+            }
+            jdbcTemplate.update(
+                    "INSERT INTO px_column_pref (panel_code, owner, col_name, seq, alias, visible, update_by) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?) "
+                            + "ON DUPLICATE KEY UPDATE seq = VALUES(seq), alias = VALUES(alias), visible = VALUES(visible), update_by = VALUES(update_by)",
+                    panelCode, userName, name, seq, alias, visibleFlag(c.get("visible")) ? 1 : 0, userName);
+            seq += 10;
+        }
     }
 
     // ---------- 权限矩阵 ----------
 
-    @SuppressWarnings("unchecked")
     public Map<String, Object> getPermMatrix(String panelCode) {
+        return getPermMatrix(panelCode, null);
+    }
+
+    /**
+     * 按登录用户权限过滤的权限矩阵：非 admin 时，未授权权限码对应的按钮 visible/operatable 置 false。
+     * userName 为空（内部调用）或 admin 时不过滤，保持全真（既有行为/e2e 不受影响）。
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getPermMatrix(String panelCode, String userName) {
         Map<String, Object> cfg = loadConfig(panelCode);
         Map<String, Object> metadata = (Map<String, Object>) cfg.get("metadata");
         List<Map<String, Object>> buttons = (List<Map<String, Object>>) metadata.get("panelButtons");
@@ -549,12 +764,38 @@ public class PxService implements PanelRuntimeService {
             a.put("operatable", true);
             actions.add(a);
         }
+        Set<String> grantedPerms = grantedPerms(userName, panelCode);
+        if (grantedPerms != null) {
+            for (Map<String, Object> a : actions) {
+                String perm = permOfButton(String.valueOf(a.get("name")));
+                if (perm != null && !grantedPerms.contains(perm)) {
+                    a.put("visible", false);
+                    a.put("operatable", false);
+                }
+            }
+        }
         Map<String, Object> privilege = new HashMap<>();
         privilege.put("actionPrivileges", actions);
         privilege.put("fieldPrivileges", new ArrayList<>());
         privilege.put("groupPrivileges", new ArrayList<>());
         Map<String, Object> out = new HashMap<>();
         out.put("privilege", privilege);
+        return out;
+    }
+
+    /**
+     * 用户在指定面板的已授权权限码；返回 null 表示不过滤（userName 空 / admin / RoleService 未装配）。
+     */
+    private Set<String> grantedPerms(String userName, String panelCode) {
+        if (userName == null || userName.isBlank() || roleService == null) return null;
+        Map<String, Object> perms = roleService.getPerms(userName);
+        if (Boolean.TRUE.equals(perms.get("isAdmin"))) return null;
+        Object panelPermsObj = perms.get("panelPerms");
+        if (!(panelPermsObj instanceof Map<?, ?> panelPerms)) return null;
+        Object list = panelPerms.get(panelCode);
+        if (!(list instanceof List<?> codes)) return Set.of();
+        Set<String> out = new HashSet<>();
+        for (Object c : codes) out.add(String.valueOf(c));
         return out;
     }
 

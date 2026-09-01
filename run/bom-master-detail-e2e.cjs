@@ -3,7 +3,7 @@ const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
 
-const API = process.env.BOM_E2E_API || 'http://127.0.0.1:8080/api'
+const API = process.env.BOM_E2E_API || 'http://127.0.0.1:3308/api'
 const WEB = process.env.BOM_E2E_WEB || 'http://127.0.0.1:4173'
 const PORT = 9266
 const PROFILE = path.join(os.tmpdir(), `bom-md-e2e-${Date.now()}`)

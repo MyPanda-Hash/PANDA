@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="visible"
-    :title="'新增' + panelName"
+    :title="tt('新增') + tt(panelName)"
     width="960px"
     append-to-body
     destroy-on-close
@@ -12,16 +12,16 @@
       <!-- 表头字段（fieldCols 列 × N 行，默认 2 列） -->
       <div class="fields udl-fields" :style="{ gridTemplateColumns: 'repeat(' + fieldCols + ', 1fr)' }">
         <div v-for="r in visibleMeta" :key="r.code" class="field">
-          <label :title="r.name">{{ r.name }}<span v-if="r.isNotNull" class="req">*</span></label>
-          <el-input v-if="isText(r)" v-model="form[r.code]" :disabled="fieldLocked(r)" :placeholder="r.name" />
+          <label :title="tt(r.name)">{{ tt(r.name) }}<span v-if="r.isNotNull" class="req">*</span></label>
+          <el-input v-if="isText(r)" v-model="form[r.code]" :disabled="fieldLocked(r)" :placeholder="tt(r.name)" />
           <el-input-number v-else-if="isNumber(r)" v-model="form[r.code]" :disabled="fieldLocked(r)" :controls="false" style="width: 100%" />
           <!-- 参照字段：点击弹窗拉取基础档案面板数据，勾选导入（开发约束十一-1） -->
           <div v-else-if="isRef(r)" class="ref-ctl">
-            <el-input :model-value="refText(r, form[r.code])" readonly :disabled="fieldLocked(r)" placeholder="点击选择" @click="openRefPick(r)" />
+            <el-input :model-value="refText(r, form[r.code])" readonly :disabled="fieldLocked(r)" :placeholder="tt('点击选择')" @click="openRefPick(r)" />
             <el-button v-if="!fieldLocked(r)" size="small" :icon="Search" class="ref-btn" @click="openRefPick(r)" />
           </div>
           <el-select v-else-if="isSelect(r)" v-model="form[r.code]" :disabled="fieldLocked(r)" filterable clearable allow-create style="width: 100%">
-            <el-option v-for="o in r.options || []" :key="o" :label="o.label ?? o" :value="o.value ?? o" />
+            <el-option v-for="o in r.options || []" :key="o" :label="tt(o.label ?? o)" :value="o.value ?? o" />
           </el-select>
           <el-date-picker
             v-else-if="isDate(r)"
@@ -32,7 +32,7 @@
             style="width: 100%"
           />
           <el-switch v-else-if="isBool(r)" v-model="form[r.code]" :disabled="fieldLocked(r)" />
-          <el-input v-else v-model="form[r.code]" :disabled="fieldLocked(r)" :placeholder="r.name" />
+          <el-input v-else v-model="form[r.code]" :disabled="fieldLocked(r)" :placeholder="tt(r.name)" />
         </div>
       </div>
 
@@ -41,19 +41,19 @@
         <el-tabs v-model="activeTab">
           <el-tab-pane v-for="tab in tabs" :key="tab.key" :name="tab.key">
             <template #label>
-              <span>{{ tab.label }}<span v-if="tab.isRequired" class="req">*</span></span>
+              <span>{{ tt(tab.label) }}<span v-if="tab.isRequired" class="req">*</span></span>
             </template>
             <div class="tab-toolbar">
-              <el-button size="small" type="primary" :icon="Plus" @click="addDetailRow(tab)">新增数据</el-button>
+              <el-button size="small" type="primary" :icon="Plus" @click="addDetailRow(tab)">{{ tt('新增数据') }}</el-button>
             </div>
             <el-table :data="detailData[tab.key] || []" size="small" border height="260">
-              <el-table-column label="序号" width="50" align="center">
+              <el-table-column :label="tt('序号')" width="50" align="center">
                 <template #default="{ $index }">{{ $index + 1 }}</template>
               </el-table-column>
               <el-table-column
                 v-for="dr in visibleFields(tab)"
                 :key="dr.dataName"
-                :label="dr.dataName"
+                :label="tt(dr.dataName)"
                 min-width="110"
                 :class-name="[dr.computed ? 'computed-col' : '', dr.dataType === '参照' ? 'detail-ref-col' : ''].filter(Boolean).join(' ')"
               >
@@ -67,11 +67,11 @@
                     @click.stop="openDetailRef(dr, row, tab)"
                   >{{ drRefText(dr, row) || refPlaceholder(dr) }}</button>
                   <el-select v-else-if="dr.dataType === '下拉框'" v-model="row[dr.dataName]" :disabled="dr.computed" filterable allow-create style="width: 100%">
-                    <el-option v-for="o in dr.options || []" :key="o" :label="o.label ?? o" :value="o.value ?? o" />
+                    <el-option v-for="o in dr.options || []" :key="o" :label="tt(o.label ?? o)" :value="o.value ?? o" />
                   </el-select>
                   <el-switch v-else-if="dr.dataType === '是否'" v-model="row[dr.dataName]" :disabled="dr.computed" />
                   <el-image v-else-if="dr.dataType === '图片'" :src="row[dr.dataName] || ''" fit="contain" style="width: 34px; height: 34px">
-                    <template #error><span class="img-ph">图</span></template>
+                    <template #error><span class="img-ph">{{ tt('图') }}</span></template>
                   </el-image>
                   <el-input-number
                     v-else-if="dr.dataType === '小数' || dr.dataType === '整数'"
@@ -91,7 +91,7 @@
                   <el-input v-else v-model="row[dr.dataName]" :disabled="dr.computed" />
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="50" align="center">
+              <el-table-column :label="tt('操作')" width="50" align="center">
                 <template #default="{ $index }">
                   <el-icon class="del" @click="detailData[tab.key].splice($index, 1)"><Delete /></el-icon>
                 </template>
@@ -101,12 +101,12 @@
         </el-tabs>
       </div>
 
-      <div class="hint">提示：也可在列表页底部空白行双击单元格直接填写（内联新增）</div>
+      <div class="hint">{{ tt('提示：也可在列表页底部空白行双击单元格直接填写（内联新增）') }}</div>
     </div>
 
     <template #footer>
-      <el-button @click="emit('update:visible', false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="onSave">保存</el-button>
+      <el-button @click="emit('update:visible', false)">{{ tt('取消') }}</el-button>
+      <el-button type="primary" :loading="saving" @click="onSave">{{ tt('保存') }}</el-button>
     </template>
   </el-dialog>
   <RefPickDialog v-model="refVisible" :field="refPick?.field" :mode="refPick?.kind || 'header'" @confirm="onRefConfirm" />
@@ -117,6 +117,7 @@ import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Delete, Search } from '@element-plus/icons-vue'
 import { usePanelRuntime } from '@core/panel-runtime'
+import { tt } from '@/i18n'
 import RefPickDialog from './RefPickDialog.vue'
 
 const engine = usePanelRuntime()
@@ -172,7 +173,7 @@ function refText(r, v) {
 
 function refPlaceholder(r) {
   const ref = r.ref || r
-  return `选择${ref.display || ref.displayField || r.dataName || ''}`
+  return tt('选择') + tt(ref.display || ref.displayField || r.dataName || '')
 }
 
 function openRefPick(r) {
@@ -225,7 +226,7 @@ async function onRefConfirm(rows) {
     applyMap(form, rows[0] || {})
   }
   applyCalc()
-  ElMessage.success(`已导入 ${rows.length} 行${await engine.refPanelName(r)}数据`)
+  ElMessage.success(tt('已导入') + ' ' + rows.length + ' ' + tt('行') + tt(await engine.refPanelName(r)) + tt('数据'))
 }
 function visibleFields(tab) { return (tab.fields || []).filter((r) => !r.hidden) }
 
@@ -312,7 +313,7 @@ async function onOpen() {
     if (firstTab) activeTab.value = firstTab.key
     applyCalc()
   } catch (e) {
-    ElMessage.error(engine.errMsg(e) || '初始化失败')
+    ElMessage.error(engine.errMsg(e) || tt('初始化失败'))
   } finally {
     loading.value = false
   }
@@ -324,14 +325,14 @@ function emptyValue(v) {
 
 function validate() {
   for (const r of visibleMeta.value) {
-    if (r.isNotNull && emptyValue(form[r.code])) return `${r.name}不能为空`
+    if (r.isNotNull && emptyValue(form[r.code])) return tt(r.name) + tt('不能为空')
   }
   for (const tab of tabs.value) {
     const rows = detailData[tab.key] || []
-    if (tab.isRequired && !rows.length) return `请至少添加一行${tab.label}`
+    if (tab.isRequired && !rows.length) return tt('请至少添加一行') + tt(tab.label)
     for (let i = 0; i < rows.length; i++) {
       for (const f of tab.fields || []) {
-        if (f.isRequired && emptyValue(rows[i][f.dataName])) return `${tab.label}第 ${i + 1} 行${f.dataName}不能为空`
+        if (f.isRequired && emptyValue(rows[i][f.dataName])) return tt(tab.label) + tt('第') + ' ' + (i + 1) + ' ' + tt('行') + tt(f.dataName) + tt('不能为空')
       }
     }
   }
@@ -346,11 +347,11 @@ async function onSave() {
     const rd = { ...form }
     if (tabs.value.length) rd.detail = { ...detailData }
     const res = await engine.callButton({ panelCode: props.panelCode, buttonName: '保存', formData: rd, buttonParam: {} })
-    ElMessage.success(`保存成功：${res?.['编号'] || ''}`)
+    ElMessage.success(tt('保存成功：') + (res?.['编号'] || ''))
     emit('update:visible', false)
     emit('saved', res)
   } catch (e) {
-    const m = engine.errMsg(e) || '保存失败'
+    const m = engine.errMsg(e) || tt('保存失败')
     if (m.includes('演示环境暂未实现')) ElMessage.info(m)
     else ElMessage.error(m)
   } finally {

@@ -120,7 +120,7 @@ class PxServiceApprovalFlowTest {
         Map<?, ?> upgradedMetadata = (Map<?, ?>) upgraded.get("metadata");
         List<?> groups = (List<?>) upgradedMetadata.get("buttonGroups");
 
-        assertEquals(2, groups.size());
+        assertEquals(3, groups.size());
         Map<?, ?> workflow = (Map<?, ?>) groups.stream()
                 .filter(value -> value instanceof Map<?, ?> group && "审批".equals(group.get("name")))
                 .findFirst().orElseThrow();

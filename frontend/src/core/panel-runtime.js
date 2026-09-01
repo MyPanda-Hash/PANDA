@@ -6,6 +6,7 @@ const REQUIRED_METHODS = [
   'queryFormDataList',
   'callButton',
   'deleteForms',
+  'recognizeFormImage',
   'queryRefRows',
   'refPanelName',
   'refColumns',

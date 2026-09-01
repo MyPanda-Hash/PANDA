@@ -2,6 +2,7 @@ package com.mes.controller;
 
 import com.mes.dto.ApiResult;
 import com.mes.panel.PanelRuntimeService;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,13 +24,19 @@ public class PxController {
     }
 
     @GetMapping("/getPanelConfig")
-    public ApiResult<Map<String, Object>> getPanelConfig(@RequestParam String panelCode) {
-        return ApiResult.ok(service.getPanelConfig(panelCode));
+    public ApiResult<Map<String, Object>> getPanelConfig(@RequestParam String panelCode,
+                                                         Authentication authentication) {
+        // 叠加登录用户的表格列定制（px_column_pref：顺序/显隐/别名；未认证不叠加）
+        String userName = authentication != null ? authentication.getName() : null;
+        return ApiResult.ok(service.getPanelConfig(panelCode, userName));
     }
 
     @GetMapping("/getPermMatrix")
-    public ApiResult<Map<String, Object>> getPermMatrix(@RequestParam String panelCode) {
-        return ApiResult.ok(service.getPermMatrix(panelCode));
+    public ApiResult<Map<String, Object>> getPermMatrix(@RequestParam String panelCode,
+                                                        Authentication authentication) {
+        // 按登录用户权限过滤按钮（admin/未认证不过滤，保持全真）
+        String userName = authentication != null ? authentication.getName() : null;
+        return ApiResult.ok(service.getPermMatrix(panelCode, userName));
     }
 
     @GetMapping("/getNewFormPermMatrix")
@@ -78,6 +85,18 @@ public class PxController {
         @SuppressWarnings("unchecked")
         List<String> rowCodes = (List<String>) body.getOrDefault("rowCodes", List.of());
         service.deleteForms(panelCode, rowCodes);
+        return ApiResult.ok(null);
+    }
+
+    /** 保存登录用户的表格列定制（columns 空数组=恢复默认） */
+    @PostMapping("/saveColumnPrefs")
+    public ApiResult<Void> saveColumnPrefs(@RequestBody Map<String, Object> body,
+                                           Authentication authentication) {
+        String panelCode = String.valueOf(body.getOrDefault("panelCode", ""));
+        String userName = authentication != null ? authentication.getName() : null;
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> columns = (List<Map<String, Object>>) body.getOrDefault("columns", List.of());
+        service.saveColumnPrefs(panelCode, userName, columns);
         return ApiResult.ok(null);
     }
 }

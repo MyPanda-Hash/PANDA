@@ -11,18 +11,18 @@
     <div v-if="info" class="mm-head">
       <span class="mm-tag">{{ info[headCodeField] || '' }}</span>
       <span class="mm-name">{{ info[headNameField] || '' }}</span>
-      <span class="mm-status" :class="info['单据状态']">{{ info['单据状态'] || '' }}</span>
-      <span v-if="!editable" class="mm-tip">已审核/生效单据需弃审后维护</span>
+      <span class="mm-status" :class="info['单据状态']">{{ tt(info['单据状态'] || '') }}</span>
+      <span v-if="!editable" class="mm-tip">{{ tt('已审核/生效单据需弃审后维护') }}</span>
     </div>
     <div class="mm-toolbar">
-      <el-button size="small" type="primary" :disabled="!editable" @click="addRow">新增数据</el-button>
-      <el-button size="small" :disabled="!editable || !selRows.length" @click="delRows">删除选中</el-button>
-      <span class="mm-count">共 {{ rows.length }} 行</span>
+      <el-button size="small" type="primary" :disabled="!editable" @click="addRow">{{ tt('新增数据') }}</el-button>
+      <el-button size="small" :disabled="!editable || !selRows.length" @click="delRows">{{ tt('删除选中') }}</el-button>
+      <span class="mm-count">{{ tt('共') }} {{ rows.length }} {{ tt('行') }}</span>
     </div>
     <el-table :data="rows" size="small" border height="380" @selection-change="(r) => (selRows = r)">
       <el-table-column type="selection" width="40" :selectable="() => editable" />
-      <el-table-column type="index" label="序号" width="55" align="center" :index="(i) => i + 1" />
-      <el-table-column v-for="f in fields" :key="f.dataName" :label="f.dataName" min-width="110">
+      <el-table-column type="index" :label="tt('序号')" width="55" align="center" :index="(i) => i + 1" />
+      <el-table-column v-for="f in fields" :key="f.dataName" :label="tt(f.dataName)" min-width="110">
         <template #default="{ row }">
           <el-select
             v-if="f.dataType === '参照'"
@@ -31,7 +31,7 @@
             size="small"
             :disabled="!editable"
             style="width: 100%"
-            placeholder="选择"
+            :placeholder="tt('选择')"
             @change="onRefChange(f, row)"
           >
             <el-option v-for="o in refOptions(f)" :key="o[refValOf(f)]" :label="o[refValOf(f)] + ' ' + (o[refDispOf(f)] || '')" :value="o[refValOf(f)]" />
@@ -45,7 +45,7 @@
             :disabled="!editable"
             style="width: 100%"
           >
-            <el-option v-for="o in f.options || []" :key="o.label ?? o" :label="o.label ?? o" :value="o.value ?? o" />
+            <el-option v-for="o in f.options || []" :key="o.label ?? o" :label="tt(o.label ?? o)" :value="o.value ?? o" />
           </el-select>
           <el-switch v-else-if="f.dataType === '是否'" v-model="row[f.dataName]" :disabled="!editable" />
           <el-input-number
@@ -70,8 +70,8 @@
       </el-table-column>
     </el-table>
     <template #footer>
-      <el-button @click="close">取消</el-button>
-      <el-button type="primary" :disabled="!editable || saving" @click="save">{{ saving ? '保存中…' : '保存' }}</el-button>
+      <el-button @click="close">{{ tt('取消') }}</el-button>
+      <el-button type="primary" :disabled="!editable || saving" @click="save">{{ saving ? tt('保存中…') : tt('保存') }}</el-button>
     </template>
   </el-dialog>
 </template>
@@ -80,6 +80,7 @@
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { usePanelRuntime } from '@core/panel-runtime'
+import { tt } from '@/i18n'
 
 const engine = usePanelRuntime()
 
@@ -104,7 +105,7 @@ const headNameField = computed(() => (tab.value?.fields || []).some((f) => f.dat
 const editable = computed(() => !info.value || info.value['单据状态'] === '草稿' || info.value['单据状态'] === '启用' || info.value['单据状态'] === '停用')
 const title = computed(() => {
   const no = props.row ? props.row['编号'] : ''
-  return '明细维护' + (no ? ' - ' + no : '')
+  return tt('明细维护') + (no ? ' - ' + no : '')
 })
 
 watch(
@@ -131,7 +132,7 @@ async function load() {
     rows.value = (key && Array.isArray(dd[key]) ? dd[key] : []).map((r) => ({ ...r }))
     for (const f of fields.value) if (f.dataType === '参照') await ensureRef(f)
   } catch (e) {
-    ElMessage.error(engine.errMsg(e) || '明细加载失败')
+    ElMessage.error(engine.errMsg(e) || tt('明细加载失败'))
   }
 }
 
@@ -201,11 +202,11 @@ async function save() {
       formData: { ...info.value, detail },
       buttonParam: { code: info.value['编号'] },
     })
-    ElMessage.success('保存成功')
+    ElMessage.success(tt('保存成功'))
     emit('saved')
     close()
   } catch (e) {
-    ElMessage.error(engine.errMsg(e) || '保存失败')
+    ElMessage.error(engine.errMsg(e) || tt('保存失败'))
   } finally {
     saving.value = false
   }

@@ -14,6 +14,8 @@ public class PanelConfig {
     private String panelCode;
     private String panelName;
     private String category;
+    /** 所属业务模块分组（prod/sales/.../other），组织架构权限矩阵分组用 */
+    private String moduleGroup;
     private String config;
     private String version;
     private LocalDateTime createTime;
@@ -27,6 +29,8 @@ public class PanelConfig {
     public void setPanelName(String panelName) { this.panelName = panelName; }
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
+    public String getModuleGroup() { return moduleGroup; }
+    public void setModuleGroup(String moduleGroup) { this.moduleGroup = moduleGroup; }
     public String getConfig() { return config; }
     public void setConfig(String config) { this.config = config; }
     public String getVersion() { return version; }

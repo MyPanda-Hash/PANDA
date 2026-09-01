@@ -35,7 +35,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 var user = userMapper.selectOne(
                         new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.mes.entity.SysUser>()
                                 .eq(com.mes.entity.SysUser::getUserName, userName));
-                if (user != null) {
+                if (user != null && (user.getEnabled() == null || user.getEnabled() != 0)) {
                     var authToken = new UsernamePasswordAuthenticationToken(userName, null, Collections.emptyList());
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }

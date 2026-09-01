@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS sys_role_panel (
   id          BIGINT PRIMARY KEY AUTO_INCREMENT,
   role_id     BIGINT       NOT NULL COMMENT '角色ID',
   panel_code  VARCHAR(50)  NOT NULL COMMENT '面板编码',
-  can_approve TINYINT      DEFAULT 0 COMMENT '1可审批 0否',
+  perms       VARCHAR(500) NULL COMMENT '逗号分隔权限码 view,query,add,edit,delete,export,print,audit,price,review,adjust',
+  can_approve TINYINT      DEFAULT 0 COMMENT '1可审批 0否（audit 派生）',
   KEY idx_role_panel (role_id, panel_code)
 ) COMMENT '角色-面板授权表';
 
@@ -117,6 +118,7 @@ CREATE TABLE IF NOT EXISTS panel_config (
   panel_code  VARCHAR(50)  NOT NULL UNIQUE COMMENT '面板编码',
   panel_name  VARCHAR(100) COMMENT '面板名称',
   category    VARCHAR(50)  COMMENT '分类',
+  module_group VARCHAR(50) COMMENT '所属业务模块分组（prod/sales/.../other）',
   config      TEXT         COMMENT '面板配置JSON（metadata+dataSchema+detail）',
   version     VARCHAR(32)  DEFAULT '1.0',
   create_time DATETIME     DEFAULT CURRENT_TIMESTAMP,
@@ -733,3 +735,107 @@ WHERE panel_code = 'SALE_OUT'
 
 -- 报价单正式种子：金额链与库存状况表联动（2026-08-26）
 INSERT INTO panel_config (panel_code, panel_name, category, config) VALUES ('QUOTE_ORDER', '报价单', '单据', '{"metadata":{"panelCode":"QUOTE_ORDER","panelName":"报价单","panelCategory":"单据","autoCodeField":"单据编号","panelState":{"dataName":"单据状态","dataType":"STRING","defaultOptions":["草稿","已审核","审批中","已中止"]},"panelPageDto":{"tablePages":[{"tableName":"报价单列表","queryFields":[{"dataName":"单据日期","dataType":"日期"},{"dataName":"单据编号","dataType":"文本"},{"dataName":"业务类型","dataType":"下拉框","options":["报价"]},{"dataType":"参照","refPanel":"PARTNER","refField":"往来单位名称","displayField":"往来单位名称","filter":{"停用":false,"性质":["客户","两者"]},"refColumns":["往来单位编码","往来单位名称","往来单位简称","性质","停用"],"dataName":"客户"}],"gridTabs":[{"label":"明细","rowSource":"detail","columns":["存货编码","存货名称","规格型号","数量","销售单位","报价单价","税率%","含税单价","金额","含税金额","折扣金额","预计交货日期","现存量","备注"]}],"topBarBtn":[{"buttonName":"新增流程"},{"buttonName":"删除"},{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"报价单","fieldNames":"单据日期,单据编号,业务类型,客户,客户编码,结算客户,部门,业务员,项目,有效期至,联系人,备注","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"删除"},{"buttonName":"审核"},{"buttonName":"弃审"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"新增流程"},{"buttonName":"删除"},{"buttonName":"刷新"},{"buttonName":"保存"},{"buttonName":"弃审"},{"buttonName":"放弃"},{"buttonName":"提交审批"},{"buttonName":"审批通过"},{"buttonName":"生成销售订单"},{"buttonName":"审批驳回"},{"buttonName":"审批情况"}],"buttonGroups":[{"name":"新增","actions":["新增"]},{"name":"保存","actions":["保存","保存新增","保存为草稿","保存打印"]},{"name":"删除","actions":["删除","删除单据"]},{"name":"审批","actions":["提交审批","审批通过","审批驳回","审批情况","弃审"]},{"name":"生单","actions":["生成销售订单"]},{"name":"工具","actions":["现存量查询","联查","生单流程联查"]},{"name":"打印","actions":["直接打印","打印","预览","打印模板设置","导出"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"单据日期","dataType":"日期","isRequired":true,"defaultValue":"2026-08-25"},{"dataName":"单据编号","dataType":"文本","isRequired":true,"defaultValue":"","autoCode":true},{"dataName":"业务类型","dataType":"下拉框","isRequired":true,"defaultValue":"报价","options":["报价","报价(含税)"]},{"dataName":"客户","dataType":"参照","refPanel":"PARTNER","refField":"往来单位名称","displayField":"往来单位名称","filter":{"停用":false,"性质":["客户","两者"]},"refColumns":["往来单位编码","往来单位名称","往来单位简称","性质","停用"],"isRequired":true,"defaultValue":""},{"dataName":"客户编码","dataType":"文本","isRequired":false,"defaultValue":""},{"dataName":"结算客户","dataType":"参照","refPanel":"PARTNER","refField":"往来单位名称","displayField":"往来单位名称","filter":{"停用":false,"性质":["客户","两者"]},"refColumns":["往来单位编码","往来单位名称","往来单位简称","性质","停用"],"isRequired":false,"defaultValue":""},{"dataName":"部门","dataType":"参照","refPanel":"DEPT","refField":"部门名称","displayField":"部门名称","filter":{"停用":false},"isRequired":false,"defaultValue":""},{"dataName":"业务员","dataType":"参照","refPanel":"EMP","refField":"员工名称","displayField":"员工名称","filter":{"停用":false},"isRequired":false,"defaultValue":""},{"dataName":"项目","dataType":"参照","refPanel":"PROJ","refField":"项目名称","displayField":"项目名称","filter":{"停用":false},"isRequired":false,"defaultValue":""},{"dataName":"有效期至","dataType":"日期","isRequired":false,"defaultValue":""},{"dataName":"联系人","dataType":"文本","isRequired":false,"defaultValue":""},{"dataName":"备注","dataType":"文本","isRequired":false,"defaultValue":""}]},"detail":{"tabs":[{"key":"items","label":"明细","isRequired":true,"summaryItems":[{"label":"数量合计","field":"数量"},{"label":"金额合计","field":"金额"},{"label":"含税金额合计","field":"含税金额"}],"calc":[{"target":"含税单价","formula":"报价单价 * (1 + 税率% / 100)","round":2},{"target":"金额","formula":"数量 * 报价单价","round":2},{"target":"含税金额","formula":"数量 * 含税单价","round":2}],"fields":[{"dataName":"存货编码","dataType":"参照","isRequired":false,"defaultValue":"","refPanel":"INV","refField":"存货编码","displayField":"存货编码","filter":{"停用":false},"refColumns":["存货编码","存货名称","规格型号","所属类别","品牌","计量单位","停用"],"refMap":[{"from":"存货名称","to":"存货名称"},{"from":"规格型号","to":"规格型号"},{"from":"计量单位","to":"销售单位"}]},{"dataName":"存货名称","dataType":"参照","isRequired":true,"defaultValue":"","refPanel":"INV","refField":"存货名称","displayField":"存货名称","filter":{"停用":false},"refColumns":["存货编码","存货名称","规格型号","所属类别","品牌","计量单位","停用"],"refMap":[{"from":"存货编码","to":"存货编码"},{"from":"规格型号","to":"规格型号"},{"from":"计量单位","to":"销售单位"}]},{"dataName":"规格型号","dataType":"文本","isRequired":false,"defaultValue":""},{"dataName":"数量","dataType":"小数","isRequired":true,"defaultValue":0},{"dataName":"销售单位","dataType":"下拉框","isRequired":true,"defaultValue":"件","options":["件","kg","套","升"]},{"dataName":"报价单价","dataType":"小数","isRequired":true,"defaultValue":0},{"dataName":"税率%","dataType":"小数","isRequired":false,"defaultValue":13},{"dataName":"含税单价","dataType":"小数","isRequired":false,"computed":true},{"dataName":"金额","dataType":"小数","computed":true},{"dataName":"含税金额","dataType":"小数","computed":true},{"dataName":"折扣金额","dataType":"小数","isRequired":false,"defaultValue":0},{"dataName":"预计交货日期","dataType":"日期","isRequired":false,"defaultValue":""},{"dataName":"现存量","dataType":"小数","computed":true},{"dataName":"备注","dataType":"文本","isRequired":false,"defaultValue":""}]}]},"selectConfig":null}') ON DUPLICATE KEY UPDATE panel_name=VALUES(panel_name), category=VALUES(category), config=VALUES(config);
+
+-- ============================================================
+-- 2026-09-01 阶段 B：panel_config.module_group 模块分组种子（幂等）
+-- 存量库执行 tools/update-2026-09-01-b-role-perms.sql（含 sys_role_panel.perms 迁移）
+-- ============================================================
+UPDATE panel_config SET module_group = 'prod' WHERE (module_group IS NULL OR module_group = '') AND panel_code IN (
+  'MANU_ORDER','PROCESS_REPORT','REWORK_REPORT','MATERIAL_REQ','MATERIAL_OUT','FINISH_IN','TRANSFER',
+  'MANU_ORDER_EXEC','MANU_ORDER_TRACKER','MANU_ORDER_PRODUCT_DETAIL','MANU_ORDER_MATERIAL_DETAIL','MANU_ORDER_DETAIL','PROC_DETAIL',
+  'MANU_ORDER_PRODUCT_STATS','MANU_ORDER_MATERIAL_STATS','MANU_ORDER_STATS','MANU_PROC_STATS','PROC_STATS','SALARY_STATS','SALARY_DETAIL',
+  'FINISH_IN_DETAIL','FINISH_IN_STATS','MATERIAL_OUT_DETAIL','MATERIAL_OUT_STATS',
+  'ROUTE','OP','TEAM','WC','OP_CONV');
+UPDATE panel_config SET module_group = 'outsource' WHERE (module_group IS NULL OR module_group = '') AND panel_code IN (
+  'OUTSOURCE_ORDER','OUTSOURCE_ISSUE','OUTSOURCE_IN','OUTSOURCE_FEE',
+  'OUTSOURCE_ISSUE_BALANCE','OUTSOURCE_ORDER_EXEC','OUTSOURCE_ORDER_PRODUCT_DETAIL','OUTSOURCE_ORDER_MATERIAL_DETAIL','OUTSOURCE_FEE_DETAIL',
+  'OUTSOURCE_ORDER_PRODUCT_STATS','OUTSOURCE_ORDER_MATERIAL_STATS','OUTSOURCE_FEE_STATS');
+UPDATE panel_config SET module_group = 'sales' WHERE (module_group IS NULL OR module_group = '') AND panel_code IN (
+  'QUOTE_ORDER','SO_ORDER','SALE_INV','SALE_OUT','SALE_INVOICE','EXPENSE','SALE_COST_ALLOC',
+  'SALES_ORDER_DETAIL','SALES_ORDER_STATS','SALES_ORDER_EXEC','SALES_ORDER_PROGRESS','SALE_OUT_DETAIL','SALE_OUT_STATS');
+UPDATE panel_config SET module_group = 'purchase' WHERE (module_group IS NULL OR module_group = '') AND panel_code IN (
+  'PU_REQ','PU_ORDER','PURCHASE_IN','PU_IN','PU_INVOICE','PU_COST_ALLOC','PU_REQ_ANALYSIS',
+  'PURCHASE_IN_DETAIL','PURCHASE_IN_STATS');
+UPDATE panel_config SET module_group = 'distribution' WHERE (module_group IS NULL OR module_group = '') AND panel_code IN (
+  'PICK_ORDER','OTHER_IN','OTHER_OUT',
+  'PICK_ORDER_DETAIL','PICK_ORDER_STATS','PICK_ORDER_SUMMARY','OTHER_IN_DETAIL','OTHER_IN_STATS','OTHER_OUT_DETAIL','OTHER_OUT_STATS');
+UPDATE panel_config SET module_group = 'inv' WHERE (module_group IS NULL OR module_group = '') AND panel_code IN (
+  'STOCK_STATUS','STOCK_SUMMARY','STOCK_LEDGER');
+UPDATE panel_config SET module_group = 'pda' WHERE (module_group IS NULL OR module_group = '') AND panel_code IN (
+  'STOCK_CHECK','LOCATION_ADJUST');
+UPDATE panel_config SET module_group = 'sn' WHERE (module_group IS NULL OR module_group = '') AND panel_code IN (
+  'SERIAL_NO','SERIAL_STATUS','SERIAL_TRACE');
+UPDATE panel_config SET module_group = 'qc' WHERE (module_group IS NULL OR module_group = '') AND panel_code IN (
+  'ARRIVAL_IN','FINISH_INSPECT','FIRST_INSPECT','PROCESS_INSPECT_APPLY','INSPECTION','PROCESS_INSPECTION',
+  'ARRIVAL_IN_DETAIL','ARRIVAL_IN_STATS','ARRIVAL_IN_EXEC',
+  'FINISH_INSPECT_DETAIL','FINISH_INSPECT_STATS','FINISH_INSPECT_EXEC',
+  'FIRST_INSPECT_DETAIL','FIRST_INSPECT_STATS','FIRST_INSPECT_EXEC',
+  'PROCESS_INSPECT_APPLY_DETAIL','PROCESS_INSPECT_APPLY_STATS','PROCESS_INSPECT_APPLY_EXEC',
+  'QUALITY_STATS_ANALYSIS','INSPECTION_DETAIL','INSPECTION_STATS','QC_ITEM_LIST','QC_ITEM_STATS',
+  'COMPANY_TRACE_SETTINGS','CUSTOMER_TRACE_SETTINGS','TRACE_PRINT_TEMPLATE',
+  'PRODUCT_FORWARD_TRACE','MATERIAL_REVERSE_TRACE');
+UPDATE panel_config SET module_group = 'archives' WHERE (module_group IS NULL OR module_group = '') AND panel_code IN (
+  'INV','INV_PRICE','PARTNER','PARTNER_INV','DEPT','EMP','EQUIP','WH','UOM','PROJ','REGION','REJECT','QC_ITEM','QC_PLAN','BOM');
+UPDATE panel_config SET module_group = 'query' WHERE (module_group IS NULL OR module_group = '') AND panel_code IN (
+  'BOM_FWD','BOM_REV');
+UPDATE panel_config SET module_group = 'sys' WHERE (module_group IS NULL OR module_group = '') AND panel_code IN (
+  'SYS_ALARM','SYS_BILL_DESIGN','SYS_BOARD_AUTH','SYS_CODE','SYS_MOBILE','SYS_MOBILE_TPL','SYS_OPT','SYS_PRINT','SYS_PRINT_DEFAULT',
+  'SYS_SCREEN','SYS_SCREEN_DL','SYS_TASK','COST_MAINTAIN','INIT_AP','INIT_AR','INIT_BALANCE');
+UPDATE panel_config SET module_group = 'other' WHERE module_group IS NULL OR module_group = '';
+
+-- ============================================================
+-- 2026-09-01 阶段 C：表格列定制表（按用户；无行=默认列序）
+-- ============================================================
+CREATE TABLE IF NOT EXISTS px_column_pref (
+  id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+  panel_code  VARCHAR(50)  NOT NULL COMMENT '面板编码',
+  owner       VARCHAR(50)  NOT NULL DEFAULT '' COMMENT '用户名（'' 预留全局默认行）',
+  col_name    VARCHAR(100) NOT NULL COMMENT '列名（中文列名即数据键）',
+  seq         INT          DEFAULT 100 COMMENT '顺序（步长 10）',
+  alias       VARCHAR(100) NULL COMMENT '栏名别名（空=默认列名）',
+  visible     TINYINT(1)   DEFAULT 1 COMMENT '1显示 0隐藏',
+  update_by   VARCHAR(50)  NULL,
+  update_time DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_col_pref (panel_code, owner, col_name),
+  KEY idx_col_pref (panel_code, owner)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '表格列定制表（按用户）';
+
+-- ============================================================
+-- 2026-09-01 阶段 A：界面语言注册表 + 词条词典（阿里云机器翻译 i18n）
+-- ============================================================
+CREATE TABLE IF NOT EXISTS sys_locale (
+  locale      VARCHAR(10)  NOT NULL COMMENT '语言码（zh-CN/en/ja…，见后端 localeKey 归一）',
+  name_zh     VARCHAR(50)  NOT NULL COMMENT '中文名',
+  name_native VARCHAR(50)  NULL COMMENT '本地语名',
+  enabled     TINYINT(1)   DEFAULT 1 COMMENT '1 启用 0 停用',
+  sort        INT          DEFAULT 0,
+  PRIMARY KEY (locale)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '界面语言注册表';
+
+CREATE TABLE IF NOT EXISTS sys_translation (
+  id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+  scope       VARCHAR(20)  DEFAULT 'biz' COMMENT '词条域（biz=界面词条）',
+  ref_key     VARCHAR(200) NOT NULL COMMENT '源词条（中文原文即键）',
+  locale      VARCHAR(10)  NOT NULL COMMENT '目标语言键（en/ja/zh-TW…）',
+  text        VARCHAR(500) NULL COMMENT '译文（空=未翻译）',
+  source      VARCHAR(10)  DEFAULT 'mt' COMMENT '来源（mt=机翻/manual=人工）',
+  create_time DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_trans (scope, ref_key, locale),
+  KEY idx_trans (locale)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '界面词条词典';
+
+-- 语言种子（enabled 不覆盖：保留管理员手动启停状态）
+INSERT INTO sys_locale (locale, name_zh, name_native, enabled, sort) VALUES
+  ('zh-CN', '简体中文', '简体中文', 1, 0),
+  ('en',    '英语',    'English',  1, 10),
+  ('ja',    '日语',    '日本語',    1, 20),
+  ('ko',    '韩语',    '한국어',    1, 30),
+  ('de',    '德语',    'Deutsch',  1, 40),
+  ('fr',    '法语',    'Français', 1, 50),
+  ('es',    '西班牙语', 'Español',  1, 60),
+  ('ru',    '俄语',    'Русский',  1, 70),
+  ('th',    '泰语',    'ไทย',      1, 80),
+  ('zh-TW', '繁体中文', '繁體中文',  0, 90)
+ON DUPLICATE KEY UPDATE
+  name_zh = VALUES(name_zh), name_native = VALUES(name_native), sort = VALUES(sort);

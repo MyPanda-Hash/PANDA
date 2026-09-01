@@ -36,5 +36,6 @@
 - 当前行为以这四份主题文档、当前代码和自动化校验为准。
 - 本地 `docs/archive/` 保存旧规范、Panel/Mock 时代笔记、T+ 调研和工作记录；该目录不入库，也不作为实现依据。
 - `docs/ref/` 保存截图、DOM、抓包和 E2E 原始证据，不作为操作手册。
+- `docs/conversation/` 保存协作对话的过程导出（只读归档），当前有 [对话导出-2026-08-27](conversation/对话导出-2026-08-27.md)。
 - 代码旁的 README 只说明对应目录，不重复维护项目级规则。
 - 文档修改后运行 `node tools/docs-audit.mjs`；提交前运行 `node tools/verify-project.mjs`。

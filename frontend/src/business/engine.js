@@ -1,8 +1,11 @@
 import request from '@core/request'
 import { unwrap, errMsg } from '@core/panel-engine'
+import { filterButtonGroups, priceFieldLocked } from './permissions'
 
 // 通用层函数继续对外导出（保持既有调用方兼容）
 export { unwrap, errMsg }
+// 权限渲染层过滤（阶段 B）：经引擎通道暴露，core 渲染器不得直接 import business 层
+export { filterButtonGroups, priceFieldLocked }
 
 /** 财务字段十进制四舍五入，修正 15.5 * 1.13 = 17.514999... 一类二进制浮点边界。 */
 export function roundDecimal(value, digits = 2) {
@@ -132,11 +135,26 @@ export async function refColumns(field) {
   return [...new Set([r.refField, r.displayField].filter(Boolean))]
 }
 
+// 构造参照查询条件：单单据面板/备选过滤不带 filter（单据行顶层无明细字段，后端过滤不到，
+// filter/keyword 在展平后的明细行上应用）；参照面板有「审核」流程（单据类面板）时仅已审核
+// 来源单据可选（对齐 T+：已审核才能选择生单）。行数计数（refRowCount）与弹窗/下拉取数
+// 共用同一口径，保证计数与可选行集一致。
+function buildRefCondition(refConfig, filter) {
+  const singleDoc = refConfig?.metadata?.singleDoc === true
+  const hasAlternativeFilter = Object.values(filter || {}).some(Array.isArray)
+  const cond = singleDoc || hasAlternativeFilter ? {} : { ...filter }
+  if (!cond['单据状态']) {
+    const hasAudit = (refConfig?.metadata?.buttonGroups || []).some((g) =>
+      (g.actions || []).some((a) => ['审核', '提交审批'].includes(a)))
+    if (hasAudit) cond['单据状态'] = '已审核'
+  }
+  return cond
+}
+
 // 拉取引用面板数据（SQL 后端）
 export async function queryRefRows(field, { keyword = '', pageSize = 200 } = {}) {
   const r = normRef(field)
   const filter = r.filter || {}
-  const hasAlternativeFilter = Object.values(filter).some(Array.isArray)
   let refConfig = null
   try {
     refConfig = await getPanelConfig(r.refPanel)
@@ -144,19 +162,7 @@ export async function queryRefRows(field, { keyword = '', pageSize = 200 } = {})
     /* 配置不可得时按普通多单据面板查询 */
   }
   const singleDoc = refConfig?.metadata?.singleDoc === true
-  // 单单据面板：condition 不带 filter——单据行顶层无明细字段，后端过滤不到明细；
-  // filter/keyword 在展平后的明细行上应用
-  const cond = singleDoc || hasAlternativeFilter ? {} : { ...filter }
-  // 2026-08-25：参照面板有「审核」流程（单据类面板）时，仅已审核来源单据可选（对齐 T+：已审核才能选择生单）
-  if (!cond['单据状态']) {
-    try {
-      const hasAudit = (refConfig?.metadata?.buttonGroups || []).some((g) =>
-        (g.actions || []).some((a) => ['审核', '提交审批'].includes(a)))
-      if (hasAudit) cond['单据状态'] = '已审核'
-    } catch (e) {
-      /* 配置不可得时不强制过滤 */
-    }
-  }
+  const cond = buildRefCondition(refConfig, filter)
   // 单单据面板：keyword 也不传后端（单据行无明细字段，后端匹配不到），前端展平后过滤
   const res = await queryFormDataList({ panelCode: r.refPanel, condition: cond, keyword: singleDoc ? '' : keyword, pageNo: 1, pageSize })
   let list = res.list || []
@@ -179,6 +185,53 @@ export async function queryRefRows(field, { keyword = '', pageSize = 200 } = {})
   return list
 }
 
+/**
+ * 参照面板可选数据行数（参照字段动态形态判定：≤20 行下拉直选，>20 行弹窗搜索定位）。
+ * 与 queryRefRows 同口径：单单据面板/备选过滤的行集需前端展平后计数；
+ * 其余按相同 condition（含「已审核」过滤）取 totalSize，保证计数与弹窗内行数一致。
+ */
+export async function refRowCount(field) {
+  const r = normRef(field)
+  try {
+    let refConfig = null
+    try {
+      refConfig = await getPanelConfig(r.refPanel)
+    } catch (e) {
+      /* 配置不可得时按普通多单据面板计数 */
+    }
+    const clientFiltered = refConfig?.metadata?.singleDoc === true
+      || Object.values(r.filter || {}).some(Array.isArray)
+    if (clientFiltered) {
+      const rows = await queryRefRows(field, {})
+      return rows.length
+    }
+    const res = await queryFormDataList({
+      panelCode: r.refPanel,
+      condition: buildRefCondition(refConfig, r.filter || {}),
+      pageNo: 1,
+      pageSize: 1,
+    })
+    return res.totalSize || 0
+  } catch (e) {
+    return 0
+  }
+}
+
+/**
+ * 参照下拉远程搜索选项：返回 [{ label, value, row }]。
+ * 保留原始 row，选中后调用方复用弹窗同款确认回填链路（含 refMap 带出）。
+ */
+export async function refSelectOptions(field, keyword = '') {
+  const r = normRef(field)
+  const rows = await queryRefRows(field, { keyword, pageSize: 100 })
+  const displayField = r.displayField || r.refField
+  return rows.map((row) => ({
+    label: String(row[displayField] ?? ''),
+    value: row[r.refField] ?? '',
+    row,
+  }))
+}
+
 // SQL 后端返回原始值；这里返回 null 让调用方直接显示该值
 export function refLabelOf(field, value) {
   if (value === undefined || value === null || value === '') return ''
@@ -199,6 +252,26 @@ export function fieldOptions(field) {
 
 export async function getPanelConfig(panelCode) {
   return normalizeApprovalConfig(unwrap(await request.get('/px/getPanelConfig', { params: { panelCode } })))
+}
+
+/**
+ * 保存登录用户的表格列定制（阶段 C：顺序/显隐/别名）。columns 传空数组 = 恢复默认。
+ * 引擎可选方法：core 渲染器通过 typeof 特性探测决定是否显示「表格调整」入口。
+ */
+export async function saveColumnPrefs({ panelCode, columns }) {
+  return unwrap(await request.post('/px/saveColumnPrefs', { panelCode, columns }))
+}
+
+// ==================== 界面语言（阶段 A：tt() 显示层翻译） ====================
+
+/** 可选语言清单（zh-CN 恒首位） */
+export async function localeList() {
+  return unwrap(await request.get('/locale/list'))
+}
+
+/** 词条字典（zh/空 locale 后端短路返回空 dict；失败键不返回，前端回退原文） */
+export async function localeDict({ locale, keys }) {
+  return unwrap(await request.post('/locale/dict', { locale, keys }))
 }
 
 export async function getPermMatrix(panelCode) {
@@ -262,6 +335,21 @@ export async function callButton({ panelCode, buttonName, formData, buttonParam 
 
 export async function deleteForms({ panelCode, rowCodes }) {
   return unwrap(await request.post('/px/deleteForms', { panelCode, rowCodes }))
+}
+
+/**
+ * Upload a voucher image to the MES backend. The backend owns the cloud OCR
+ * credentials and returns schema-whitelisted form data for user confirmation.
+ */
+export async function recognizeFormImage({ panelCode, image }) {
+  const body = new FormData()
+  body.append('panelCode', panelCode)
+  body.append('image', image, image.name || 'voucher.jpg')
+  const response = await request.post('/ocr/scan-form', body, { timeout: 60000 })
+  if (response?.code && response.code !== 200) {
+    throw new Error(response.message || 'OCR 识别失败')
+  }
+  return unwrap(response)
 }
 
 // ==================== 专属视图数据（生产看板 / 返修工作台） ====================

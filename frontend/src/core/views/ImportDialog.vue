@@ -1,28 +1,28 @@
 <!-- ImportDialog.vue — Excel 导入：选择 .xlsx/.xls，自动识别明细字段（表头匹配 dataName），预览后填入明细 -->
 <template>
-  <el-dialog :model-value="modelValue" title="Excel 导入" width="760px" append-to-body @update:model-value="close">
+  <el-dialog :model-value="modelValue" :title="tt('Excel 导入')" width="760px" append-to-body @update:model-value="close">
     <div class="imp-tip">
-      选择 Excel 文件（.xlsx / .xls），自动识别「{{ targetLabel }}」字段并填入明细；
-      Excel 第一行为字段名，需与明细字段名一致（如 产品名称、实收数量、材料编码）。
+      {{ tt('选择 Excel 文件（.xlsx / .xls），自动识别「') }}{{ tt(targetLabel) }}{{ tt('」字段并填入明细；') }}
+      {{ tt('Excel 第一行为字段名，需与明细字段名一致（如 产品名称、实收数量、材料编码）。') }}
     </div>
     <div class="imp-actions">
       <input ref="fileRef" type="file" accept=".xlsx,.xls" style="display: none" @change="onFile" />
-      <el-button type="primary" :icon="Upload" @click="pick">选择 Excel 文件</el-button>
+      <el-button type="primary" :icon="Upload" @click="pick">{{ tt('选择 Excel 文件') }}</el-button>
       <span v-if="fileName" class="imp-file">{{ fileName }}</span>
       <span v-if="error" class="imp-err">{{ error }}</span>
     </div>
     <div v-if="rows.length" class="imp-preview">
       <div class="imp-match">
-        已识别 <b>{{ matchedCols.length }}</b>/{{ totalCols }} 列 → 明细字段，共 {{ rows.length }} 行数据
-        <span class="imp-sub">（未匹配列忽略；确认后追加到明细，请点击保存落库）</span>
+        {{ tt('已识别') }} <b>{{ matchedCols.length }}</b>/{{ totalCols }} {{ tt('列') }} → {{ tt('明细字段') }}，{{ tt('共') }} {{ rows.length }} {{ tt('行数据') }}
+        <span class="imp-sub">{{ tt('（未匹配列忽略；确认后追加到明细，请点击保存落库）') }}</span>
       </div>
       <el-table :data="previewRows" size="small" border max-height="300">
-        <el-table-column v-for="c in matchedCols" :key="c" :label="c" :prop="c" min-width="100" show-overflow-tooltip />
+        <el-table-column v-for="c in matchedCols" :key="c" :label="tt(c)" :prop="c" min-width="100" show-overflow-tooltip />
       </el-table>
     </div>
     <template #footer>
-      <el-button @click="close">取消</el-button>
-      <el-button type="primary" :disabled="!rows.length || !matchedCols.length" @click="doImport">导入 {{ rows.length }} 行</el-button>
+      <el-button @click="close">{{ tt('取消') }}</el-button>
+      <el-button type="primary" :disabled="!rows.length || !matchedCols.length" @click="doImport">{{ tt('导入') }} {{ rows.length }} {{ tt('行') }}</el-button>
     </template>
   </el-dialog>
 </template>
@@ -32,6 +32,7 @@ import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
 import * as XLSX from 'xlsx'
+import { tt } from '@/i18n'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -77,9 +78,9 @@ function onFile(e) {
     try {
       const wb = XLSX.read(ev.target.result, { type: 'array' })
       const ws = wb.Sheets[wb.SheetNames[0]]
-      if (!ws) throw new Error('Excel 无工作表')
+      if (!ws) throw new Error(tt('Excel 无工作表'))
       const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
-      if (!aoa.length) throw new Error('Excel 为空')
+      if (!aoa.length) throw new Error(tt('Excel 为空'))
       // 第一行为表头：匹配明细字段 dataName
       const header = (aoa[0] || []).map((h) => String(h).trim())
       const fieldNames = (props.fields || []).map((f) => f.dataName)
@@ -106,13 +107,13 @@ function onFile(e) {
         })
         out.push(obj)
       }
-      if (!out.length) throw new Error('没有可导入的数据行')
-      if (!matched.length) throw new Error('未识别任何列：Excel 表头需与明细/档案字段名一致（如 员工编码、员工名称）')
+      if (!out.length) throw new Error(tt('没有可导入的数据行'))
+      if (!matched.length) throw new Error(tt('未识别任何列：Excel 表头需与明细/档案字段名一致（如 员工编码、员工名称）'))
       rows.value = out
       previewRows.value = out.slice(0, 20)
-      ElMessage.success('已解析 ' + out.length + ' 行，识别 ' + matchedCols.value.length + ' 列')
+      ElMessage.success(tt('已解析') + ' ' + out.length + ' ' + tt('行') + tt('，识别') + ' ' + matchedCols.value.length + ' ' + tt('列'))
     } catch (err) {
-      error.value = err.message || '文件解析失败'
+      error.value = err.message || tt('文件解析失败')
       rows.value = []
       previewRows.value = []
     }

@@ -1,35 +1,35 @@
 ﻿<template>
   <div class="solution-center">
     <div class="head">
-      <h3>方案中心 <span class="code">（行业方案 / 应用市场 · 对齐 T+ 方案中心形态）</span></h3>
+      <h3>{{ tt('方案中心') }} <span class="code">{{ tt('（行业方案 / 应用市场 · 对齐 T+ 方案中心形态）') }}</span></h3>
     </div>
 
     <el-card shadow="never" class="sec">
-      <template #header>行业方案</template>
+      <template #header>{{ tt('行业方案') }}</template>
       <el-row :gutter="12">
         <el-col :span="8" v-for="s in solutions" :key="s.name">
           <div class="sol">
-            <div class="sol-name">{{ s.name }}</div>
-            <div class="sol-desc">{{ s.desc }}</div>
+            <div class="sol-name">{{ tt(s.name) }}</div>
+            <div class="sol-desc">{{ tt(s.desc) }}</div>
             <div class="sol-tags">
-              <el-tag v-for="t in s.tags" :key="t" size="small" effect="plain">{{ t }}</el-tag>
+              <el-tag v-for="t in s.tags" :key="t" size="small" effect="plain">{{ tt(t) }}</el-tag>
             </div>
-            <el-button size="small" type="primary" @click="apply(s)">应用方案</el-button>
+            <el-button size="small" type="primary" @click="apply(s)">{{ tt('应用方案') }}</el-button>
           </div>
         </el-col>
       </el-row>
     </el-card>
 
     <el-card shadow="never" class="sec">
-      <template #header>应用市场 <el-tag size="small" type="success" v-if="installed.length">已安装 {{ installed.length }} 个</el-tag></template>
+      <template #header>{{ tt('应用市场') }} <el-tag size="small" type="success" v-if="installed.length">{{ tt('已安装') }} {{ installed.length }} {{ tt('个') }}</el-tag></template>
       <el-row :gutter="12">
         <el-col :span="6" v-for="a in apps" :key="a.name">
           <div class="app">
             <div class="app-icon">{{ a.icon }}</div>
-            <div class="app-name">{{ a.name }}</div>
-            <div class="app-desc">{{ a.desc }}</div>
-            <el-button v-if="!installed.includes(a.name)" size="small" type="primary" @click="install(a)">安装</el-button>
-            <el-tag v-else size="small" type="success">已安装</el-tag>
+            <div class="app-name">{{ tt(a.name) }}</div>
+            <div class="app-desc">{{ tt(a.desc) }}</div>
+            <el-button v-if="!installed.includes(a.name)" size="small" type="primary" @click="install(a)">{{ tt('安装') }}</el-button>
+            <el-tag v-else size="small" type="success">{{ tt('已安装') }}</el-tag>
           </div>
         </el-col>
       </el-row>
@@ -40,6 +40,7 @@
 <script setup>
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { tt } from '@/i18n'
 
 const solutions = [
   { name: '轻MES 智能制造方案', desc: '面向中小制造企业的生产执行一体化方案：工单驱动、工序报工、计件工资、库存联动。', tags: ['生产管理', '智慧车间', '库存核算'] },
@@ -61,12 +62,12 @@ const apps = [
 const installed = ref(['生产看板', '计件工资'])
 
 function apply(s) {
-  ElMessage.success(`已应用方案：${s.name}（演示环境为静态展示）`)
+  ElMessage.success(`${tt('已应用方案：')}${s.name}${tt('（演示环境为静态展示）')}`)
 }
 
 function install(a) {
   installed.value.push(a.name)
-  ElMessage.success(`已安装应用：${a.name}`)
+  ElMessage.success(`${tt('已安装应用：')}${a.name}`)
 }
 </script>
 
