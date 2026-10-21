@@ -1,4 +1,3 @@
-
 name: deploy-backend
 
 # 触发：
@@ -6,7 +5,6 @@ name: deploy-backend
 #   - 手动触发：默认部署，可取消勾选只验证构建
 on:
   push:
-    分支: [master]
     paths:
       - 'backend/**'
   workflow_dispatch:
@@ -22,6 +20,7 @@ concurrency:
 
 jobs:
   build-and-deploy:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -50,21 +49,21 @@ jobs:
       - name: Deploy over SSH
         if: github.event_name == 'push' || inputs.deploy
         env:
-          SSH_HOST: ${ secrets.SSH_HOST }}
-          SSH_USER: ${ secrets.SSH_USER }}
-          SSH_KEY: ${ secrets.SSH_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
         run: |
           set -euo pipefail
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          VERSION="${ GITHUB_SHA::7 }}"
-          JAR="${ steps.jar.outputs.path }}"
+          VERSION="${GITHUB_SHA:0:7}"
+          JAR="${{ steps.jar.outputs.path }}"
           scp -i ~/.ssh/deploy_key -o BatchMode=yes "$JAR" "$SSH_USER@$SSH_HOST:/tmp/light-mes-$VERSION.jar"
           ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SSH_USER@$SSH_HOST" \
             "sudo -n /opt/light-mes/bin/deploy.sh /tmp/light-mes-$VERSION.jar $VERSION"
 
       - name: Summary
         if: always()
-        run: echo "artifact=${ steps.jar.outputs.artifact }} sha=${ GITHUB_SHA::7 }} status=${ job.status }}"
+        run: echo "artifact=${{ steps.jar.outputs.artifact }} sha=${GITHUB_SHA:0:7} status=${{ job.status }}"
