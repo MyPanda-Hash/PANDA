@@ -385,6 +385,12 @@ export const menuTree = [
               { code: 'screenDl', title: '大屏客户端下载中心', path: '/panelx/list/SYS_SCREEN_DL', icon: 'Download', panelCode: 'SYS_SCREEN_DL' },
             ],
           },
+          {
+            code: 'security', title: '数据安全与审计', children: [
+              { code: 'dbBackup', title: '数据备份', path: '/sys/backup', icon: 'FolderOpened' },
+              { code: 'usageLog', title: '使用日志', path: '/sys/usage', icon: 'Document' },
+            ],
+          },
         ],
       },
       {
