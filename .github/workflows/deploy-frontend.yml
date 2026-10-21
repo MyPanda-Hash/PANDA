@@ -1,0 +1,67 @@
+name: deploy-frontend
+
+# 触发：
+#   - push 到 master 且改动 frontend/ -> 自动构建并部署
+#   - 手动触发：默认部署，可取消勾选只验证构建
+on:
+  push:
+    paths:
+      - 'frontend/**'
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: '部署到服务器'
+        type: boolean
+        default: true
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Package
+        run: tar -czf /tmp/dist.tar.gz -C frontend/dist .
+
+      - name: Deploy over SSH
+        if: github.event_name == 'push' || inputs.deploy
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          VERSION="${GITHUB_SHA:0:7}"
+          scp -i ~/.ssh/deploy_key -o BatchMode=yes /tmp/dist.tar.gz "$SSH_USER@$SSH_HOST:/tmp/frontend-$VERSION.tar.gz"
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SSH_USER@$SSH_HOST" \
+            "sudo -n /var/www/light-mes/bin/deploy-frontend.sh /tmp/frontend-$VERSION.tar.gz $VERSION"
+
+      - name: Summary
+        if: always()
+        run: echo "sha=${GITHUB_SHA:0:7} status=${{ job.status }}"
