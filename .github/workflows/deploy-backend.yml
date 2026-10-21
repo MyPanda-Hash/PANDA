@@ -6,7 +6,7 @@ name: deploy-backend
 #   - 手动触发：默认部署，可取消勾选只验证构建
 on:
   push:
-分支: [master]
+    分支: [master]
     paths:
       - 'backend/**'
   workflow_dispatch:
