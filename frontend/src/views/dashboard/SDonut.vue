@@ -14,7 +14,7 @@
         />
       </svg>
       <div class="donut-center">
-        <div class="donut-total">{{ total }}</div>
+        <div class="donut-total" :title="String(total)">{{ totalText }}</div>
         <div class="donut-sub">{{ sub }}</div>
       </div>
     </div>
@@ -38,7 +38,9 @@ const props = defineProps({
 })
 
 const C = 2 * Math.PI * 48
-const total = computed(() => props.data.reduce((s, d) => s + (d.value || 0), 0))
+// 浮点累加会出现 9356.800000000001，先按 2 位小数收敛再展示
+const total = computed(() => Math.round(props.data.reduce((s, d) => s + (d.value || 0), 0) * 100) / 100)
+const totalText = computed(() => new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 1 }).format(total.value))
 const segments = computed(() => {
   let acc = 0
   return props.data.map((d) => {
@@ -79,9 +81,14 @@ function colorOf(i) {
   justify-content: center;
 }
 .donut-total {
+  max-width: 96px;
+  overflow: hidden;
   font-size: 22px;
   font-weight: 700;
   color: var(--t-text-1);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .donut-sub {
   font-size: 11px;

@@ -262,6 +262,14 @@ export async function saveColumnPrefs({ panelCode, columns }) {
   return unwrap(await request.post('/px/saveColumnPrefs', { panelCode, columns }))
 }
 
+/**
+ * 业务流程追踪：按任意单号正反向找全相关单据，返回每一步状态与卡点。
+ * 供业务总览的「选择单据追踪」使用。
+ */
+export async function traceProcess(docNo) {
+  return unwrap(await request.get('/px/trace', { params: { docNo } }))
+}
+
 // ==================== 界面语言（阶段 A：tt() 显示层翻译） ====================
 
 /** 可选语言清单（zh-CN 恒首位） */

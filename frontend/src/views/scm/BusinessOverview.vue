@@ -1,141 +1,475 @@
-<!-- BusinessOverview.vue — 智能供应链「业务总览」：模块 + 业务流程图（Vue Flow 升级版）
-     流程图节点=单据面板，点击进入；箭头=生单/选单流转（对齐业务流程图 + 推式生单/选单联动） -->
+<!-- BusinessOverview.vue — 业务总览：模块导航 + 业务流程图（Vue Flow）
+     设计基线 Ant Design v6（design-kits/antd）：colorPrimary #1677ff、borderRadius 6、
+     controlHeight 32、正文 14/22、8pt 间距；卡片 0 层用 1px 边框不用阴影。
+     流程图节点=单据面板，点击进入；箭头=生单/选单流转（smoothstep 正交连线）。 -->
 <template>
   <div class="bo-page">
-    <div class="bo-head">
-      <div class="bo-title">{{ tt('业务总览') }}</div>
-      <div class="bo-sub">{{ tt('智能供应链 · 全流程业务关系（点击流程节点或单据进入对应面板）') }}</div>
+    <header class="bo-head">
+      <div class="bo-head-main">
+        <h1 class="bo-title">{{ tt('业务总览') }}</h1>
+        <p class="bo-sub">{{ tt('全流程业务关系：设计 → 计划 → 销售 → 采购 → 生产 → 质量 → 库存 → 财务（点击节点或单据进入对应面板）') }}</p>
+      </div>
+      <div class="bo-head-actions">
+        <el-input
+          v-model="nodeFilter"
+          class="bo-search"
+          :placeholder="tt('筛选节点或单据')"
+          clearable
+        >
+          <template #prefix><AntIcon name="file-search" :size="14" /></template>
+        </el-input>
+        <el-button :type="tracked ? 'primary' : 'default'" @click="pickVisible = true">
+          <AntIcon name="node-index" :size="14" style="margin-right: 6px" />
+          {{ tt('选择单据追踪') }}
+        </el-button>
+        <el-button v-if="tracked" @click="clearTrace">
+          <AntIcon name="rollback" :size="14" style="margin-right: 6px" />
+          {{ tt('清除追踪') }}
+        </el-button>
+      </div>
+    </header>
+
+    <!-- 追踪状态条：选中一张单据后，显示当前卡在哪个环节 -->
+    <div v-if="tracked" class="bo-track-bar" :class="{ stalled: traceInfo['卡点单号'] }">
+      <div class="bo-track-main">
+        <AntIcon :name="traceInfo['卡点单号'] ? 'clock-circle' : 'check-circle'" :size="16" class="bo-track-icon" />
+        <span class="bo-track-doc">{{ traceInfo['单号'] }}</span>
+        <span class="bo-track-sep">·</span>
+        <span class="bo-track-count">{{ traceInfo['环节数'] }} {{ tt('个环节') }}</span>
+        <span class="bo-track-sep">·</span>
+        <span v-if="traceInfo['卡点单号']" class="bo-track-msg">
+          {{ tt('卡在') }} <b>{{ traceInfo['卡点单号'] }}</b> — {{ traceInfo['卡点原因'] }}
+        </span>
+        <span v-else class="bo-track-msg done">{{ tt('全流程已完成') }}</span>
+      </div>
+      <div class="bo-track-legend">
+        <span class="lg"><i class="lg-dot done"></i>{{ tt('已完成') }}</span>
+        <span class="lg"><i class="lg-dot doing"></i>{{ tt('进行中') }}</span>
+        <span class="lg"><i class="lg-dot stalled"></i>{{ tt('卡点') }}</span>
+        <span class="lg"><i class="lg-dot none"></i>{{ tt('无关环节') }}</span>
+      </div>
     </div>
+
+    <!-- 跨模块提示：一张单可能跨多个模块，这里给直达入口 -->
+    <div v-if="tracked && hitModules.length > 1" class="bo-cross-mod">
+      <AntIcon name="branches" :size="14" class="bo-cross-icon" />
+      <span class="bo-cross-text">{{ tt('该单涉及') }}{{ hitModules.length }}{{ tt('个模块') }}：</span>
+      <button
+        v-for="m in hitModules"
+        :key="m.code"
+        class="bo-cross-btn"
+        :class="{ on: active === m.code }"
+        type="button"
+        @click="active = m.code"
+      >
+        {{ tt(m.name) }}
+        <span class="bo-cross-num">{{ moduleHitCount(m) }}</span>
+      </button>
+    </div>
+
+    <!-- 经过的单据路线：按业务顺序列出全链路，当前卡点高亮 -->
+    <div v-if="tracked && traceSteps.length" class="bo-route">
+      <div class="bo-route-head">
+        <AntIcon name="node-index" :size="14" class="bo-route-icon" />
+        <span class="bo-route-title">{{ tt('经过的单据路线') }}</span>
+        <span class="bo-route-count">{{ traceSteps.length }}{{ tt('张') }}</span>
+      </div>
+      <div class="bo-route-track">
+        <template v-for="(s, i) in traceSteps" :key="s['单号']">
+          <button
+            class="bo-route-node"
+            :class="[stepKind(s), { stalled: s['是否卡点'] }]"
+            type="button"
+            :title="s['环节'] + ' ' + s['单号']"
+            @click="openDoc(s['面板编码'], s['单号'], s['环节'] + '-' + s['单号'])"
+          >
+            <AntIcon
+              :name="s['阶段'] === '完成' ? 'check-circle' : (s['是否卡点'] ? 'clock-circle' : 'file-text')"
+              :size="13"
+              class="bo-route-ic"
+            />
+            <span class="bo-route-label">{{ tt(s['环节']) }}</span>
+            <span class="bo-route-no">{{ s['单号'] }}</span>
+            <span class="bo-route-status">{{ tt(s['单据状态']) }}</span>
+          </button>
+          <span v-if="i < traceSteps.length - 1" class="bo-route-arrow" :class="stepKind(traceSteps[i + 1])">
+            <AntIcon name="arrow-right" :size="14" />
+          </span>
+        </template>
+      </div>
+    </div>
+
     <div class="bo-body">
-      <div class="bo-modules">
-        <div
-          v-for="m in modules"
+      <!-- 左：模块导航 -->
+      <nav class="bo-nav" :aria-label="tt('业务模块')">
+        <button
+          v-for="m in filteredModules"
           :key="m.code"
-          class="bo-mod"
-          :class="{ on: active === m.code }"
-          :style="{ '--mc': m.color }"
+          class="bo-nav-item"
+          :class="{ on: active === m.code, hit: moduleHitCount(m) > 0 }"
+          type="button"
           @click="active = m.code"
         >
-          <el-icon class="bo-mod-icon"><component :is="ICONS[m.icon]" /></el-icon>
-          <span>{{ tt(m.name) }}</span>
-        </div>
-      </div>
-      <div class="bo-main">
-        <div class="bo-flow" v-if="cur">
-          <div class="bo-flow-title">
-            <span>
-              <i class="bo-flow-dot" :style="{ background: cur.color }"></i>
-              {{ tt(cur.name) }} · {{ tt('业务流程图') }}
-            </span>
-            <span class="bo-flow-tip">{{ tt('节点点击进入 · 箭头为生单/选单流转') }}</span>
+          <AntIcon :name="m.icon" :size="16" class="bo-nav-icon" />
+          <span class="bo-nav-label">{{ tt(m.name) }}</span>
+          <span v-if="tracked && moduleHitCount(m) > 0" class="bo-nav-hit" :title="tt('该模块有追踪命中的环节')">
+            {{ moduleHitCount(m) }}
+          </span>
+          <span v-else class="bo-nav-count">{{ (m.nodes || []).length }}</span>
+        </button>
+      </nav>
+
+      <!-- 中：流程图 -->
+      <section class="bo-main" v-if="cur">
+        <div class="bo-panel-head">
+          <div class="bo-panel-title">
+            <AntIcon :name="cur.icon" :size="16" class="bo-panel-icon" />
+            <span>{{ tt(cur.name) }} · {{ tt('业务流程图') }}</span>
           </div>
-          <div class="bo-canvas" :style="{ height: canvasH + 'px' }">
-            <VueFlow
-              v-model:nodes="nodes"
-              v-model:edges="edges"
-              :min-zoom="0.3"
-              :max-zoom="1.8"
-              :default-viewport="{ zoom: 0.9 }"
-              :nodes-draggable="false"
-              :nodes-connectable="false"
-              :elements-selectable="false"
-              :delete-key-code="null"
-              class="bo-vueflow"
-              @node-click="onNodeClick"
-            >
-              <Background :gap="20" :size="1.4" variant="dots" />
-              <template #node-flowNode="nodeProps">
-                <div class="fn-card" :style="{ '--c': nodeProps.data.color }">
-                  <div class="fn-icon">
-                    <el-icon><component :is="ICONS[nodeProps.data.icon]" /></el-icon>
-                  </div>
-                  <div class="fn-label">{{ tt(nodeProps.data.label) }}</div>
+          <div class="bo-panel-meta">
+            <span class="bo-meta-item">{{ (cur.nodes || []).length }} {{ tt('环节') }}</span>
+            <span class="bo-meta-sep">·</span>
+            <span class="bo-meta-item">{{ (cur.edges || []).length }} {{ tt('条流转') }}</span>
+            <span class="bo-meta-sep">·</span>
+            <span class="bo-meta-item bo-meta-tip">{{ tt('节点点击进入 · 箭头为生单/选单流转') }}</span>
+          </div>
+        </div>
+        <div class="bo-canvas" :style="{ height: canvasH + 'px' }">
+          <VueFlow
+            v-model:nodes="nodes"
+            v-model:edges="edges"
+            :min-zoom="0.3"
+            :max-zoom="1.8"
+            :fit-view-on-init="true"
+            :default-viewport="{ zoom: 1 }"
+            :nodes-draggable="false"
+            :nodes-connectable="false"
+            :elements-selectable="false"
+            :delete-key-code="null"
+            class="bo-vueflow"
+            @node-click="onNodeClick"
+          >
+            <Background :gap="16" :size="1" variant="dots" pattern-color="#e8e8e8" />
+            <template #node-flowNode="nodeProps">
+              <div
+                class="fn-card"
+                :class="[
+                  'state-' + (nodeProps.data.state || 'none'),
+                  { dim: nodeProps.data.dim, stalled: nodeProps.data.stalled },
+                ]"
+              >
+                <div class="fn-icon">
+                  <AntIcon :name="nodeProps.data.icon" :size="18" />
                 </div>
-              </template>
-            </VueFlow>
+                <div class="fn-body">
+                  <div class="fn-label">{{ tt(nodeProps.data.label) }}</div>
+                  <div class="fn-code" :title="nodeProps.data.docNo || nodeProps.data.code">
+                    <template v-if="nodeProps.data.docNo">{{ nodeProps.data.docNo }}</template>
+                    <template v-else>{{ nodeProps.data.code }}</template>
+                  </div>
+                </div>
+                <!-- 同一环节命中多张单据：显示 +N，避免误以为只有一张 -->
+                <span
+                  v-if="nodeProps.data.moreCount > 0"
+                  class="fn-more"
+                  :title="nodeProps.data.moreTitle"
+                >+{{ nodeProps.data.moreCount }}</span>
+                <span v-if="nodeProps.data.state === 'done'" class="fn-mark done">
+                  <AntIcon name="check-circle" :size="13" />
+                </span>
+                <span v-else-if="nodeProps.data.stalled" class="fn-mark stalled">
+                  <AntIcon name="clock-circle" :size="13" />
+                </span>
+              </div>
+            </template>
+          </VueFlow>
+        </div>
+      </section>
+
+      <!-- 右：单据 / 档案 / 报表 -->
+      <aside class="bo-side" v-if="cur">
+        <div class="bo-sec" v-if="visibleDocs.length">
+          <div class="bo-sec-head">
+            <AntIcon name="file-text" :size="14" class="bo-sec-icon" />
+            <span class="bo-sec-title">{{ tt('相关单据') }}</span>
+            <span class="bo-sec-count">{{ visibleDocs.length }}</span>
+          </div>
+          <div class="bo-sec-list">
+            <button
+              v-for="d in visibleDocs"
+              :key="d.code"
+              class="bo-item"
+              type="button"
+              @click="go('/panelx/list/' + d.code, d.label)"
+            >
+              <AntIcon name="file-text" :size="13" class="bo-item-icon" />
+              <span class="bo-item-label">{{ tt(d.label) }}</span>
+            </button>
           </div>
         </div>
-      </div>
-      <div class="bo-sections" v-if="cur">
-        <div class="bo-sec" v-if="cur.docs && cur.docs.length">
-          <span class="bo-sec-title" :style="{ '--sc': cur.color }">{{ tt('相关单据') }}</span>
-          <div class="bo-sec-btns">
-            <span v-for="d in cur.docs" :key="d.code" class="bo-btn" @click="go(d.code)">{{ tt(d.label) }}</span>
+
+        <div class="bo-sec" v-if="visibleArchives.length">
+          <div class="bo-sec-head">
+            <AntIcon name="database" :size="14" class="bo-sec-icon" />
+            <span class="bo-sec-title">{{ tt('基础档案') }}</span>
+            <span class="bo-sec-count">{{ visibleArchives.length }}</span>
+          </div>
+          <div class="bo-sec-list">
+            <button
+              v-for="d in visibleArchives"
+              :key="d.code"
+              class="bo-item"
+              type="button"
+              @click="go('/panelx/list/' + d.code, d.label)"
+            >
+              <AntIcon name="database" :size="13" class="bo-item-icon" />
+              <span class="bo-item-label">{{ tt(d.label) }}</span>
+            </button>
           </div>
         </div>
-        <div class="bo-sec" v-if="cur.archives && cur.archives.length">
-          <span class="bo-sec-title" :style="{ '--sc': cur.color }">{{ tt('基础档案') }}</span>
-          <div class="bo-sec-btns">
-            <span v-for="d in cur.archives" :key="d.code" class="bo-btn" @click="go(d.code)">{{ tt(d.label) }}</span>
+
+        <div class="bo-sec" v-if="visibleReports.length">
+          <div class="bo-sec-head">
+            <AntIcon name="bar-chart" :size="14" class="bo-sec-icon" />
+            <span class="bo-sec-title">{{ tt('相关报表') }}</span>
+            <span class="bo-sec-count">{{ visibleReports.length }}</span>
+          </div>
+          <div class="bo-sec-list">
+            <button
+              v-for="d in visibleReports"
+              :key="d.code"
+              class="bo-item"
+              type="button"
+              @click="go('/panelx/list/' + d.code, d.label)"
+            >
+              <AntIcon name="bar-chart" :size="13" class="bo-item-icon" />
+              <span class="bo-item-label">{{ tt(d.label) }}</span>
+            </button>
           </div>
         </div>
-        <div class="bo-sec" v-if="cur.reports && cur.reports.length">
-          <span class="bo-sec-title" :style="{ '--sc': cur.color }">{{ tt('相关报表') }}</span>
-          <div class="bo-sec-btns">
-            <span v-for="d in cur.reports" :key="d.code" class="bo-btn" @click="go(d.code)">{{ tt(d.label) }}</span>
-          </div>
+
+        <div class="bo-empty" v-if="!visibleDocs.length && !visibleArchives.length && !visibleReports.length">
+          <AntIcon name="inbox" :size="28" class="bo-empty-icon" />
+          <p class="bo-empty-text">{{ tt('没有匹配的结果') }}</p>
+          <el-button size="small" @click="nodeFilter = ''">{{ tt('清空筛选') }}</el-button>
         </div>
-      </div>
+      </aside>
     </div>
+
+    <!-- 选择单据弹窗：选一张单据，按它追踪整条链路 -->
+    <el-dialog v-model="pickVisible" :title="tt('选择单据追踪')" width="720px" class="bo-pick-dialog">
+      <div class="bo-pick-bar">
+        <el-select v-model="pickPanel" class="bo-pick-select" :placeholder="tt('选择单据类型')" filterable>
+          <el-option
+            v-for="p in pickPanels"
+            :key="p.code"
+            :label="p.label"
+            :value="p.code"
+          />
+        </el-select>
+        <el-input
+          v-model="pickKeyword"
+          class="bo-pick-kw"
+          :placeholder="tt('按单号/客户/供应商筛选')"
+          clearable
+          @keyup.enter="loadPickRows"
+        />
+        <el-button type="primary" :loading="pickLoading" @click="loadPickRows">
+          {{ tt('查询') }}
+        </el-button>
+      </div>
+
+      <div class="bo-pick-list" v-if="pickRows.length">
+        <button
+          v-for="r in pickRows"
+          :key="r.no"
+          class="bo-pick-row"
+          type="button"
+          @click="applyTrace(r.no)"
+        >
+          <span class="bo-pick-no">{{ r.no }}</span>
+          <span class="bo-pick-meta">{{ r.partner || '—' }}</span>
+          <span class="bo-pick-date">{{ r.date || '—' }}</span>
+          <span class="bo-pick-status" :class="'st-' + statusKind(r.status)">{{ r.status }}</span>
+        </button>
+      </div>
+      <div class="bo-pick-empty" v-else>
+        <AntIcon name="inbox" :size="28" class="bo-empty-icon" />
+        <p class="bo-empty-text">{{ pickLoading ? tt('查询中…') : tt('没有符合条件的单据') }}</p>
+        <el-button size="small" @click="loadPickRows">{{ tt('重新查询') }}</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { VueFlow, MarkerType, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
-import { SetUp, Van, ShoppingCart, Box, Iphone, Sort, View, Connection } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { useTabsStore } from '@/stores/tabs'
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
-
-const ICONS = { SetUp, Van, ShoppingCart, Box, Iphone, Sort, View, Connection }
+import AntIcon from '@/business/components/AntIcon.vue'
+import { traceProcess, queryFormDataList } from '@/business/engine'
 
 const router = useRouter()
 const tabs = useTabsStore()
 const localeStore = useLocaleStore()
 
+/**
+ * 单据面板 → 设计库图标。键是面板编码，值是 AntIcon 的 name。
+ * 未列出的面板回退到 file-text，保证任何单据都有图标。
+ */
+const PANEL_ICONS = {
+  // 销售
+  QUOTE_ORDER: 'solution', SO_ORDER: 'shopping', SALE_INV: 'file-done',
+  SALE_OUT: 'export', SALE_INVOICE: 'file-text', SALE_RETURN: 'rollback',
+  EXPENSE: 'money-collect', SALE_COST_ALLOC: 'calculator',
+  // 采购
+  PU_REQ_ANALYSIS: 'pie-chart', PU_REQ: 'file-add', PU_ORDER: 'shopping-cart',
+  PU_IN: 'import', ARRIVAL_IN: 'truck', PURCHASE_IN: 'inbox',
+  PURCHASE_RETURN: 'rollback', PU_INVOICE: 'file-text',
+  // 生产
+  MANU_ORDER: 'tool', PROCESS_REPORT: 'profile', MATERIAL_REQ: 'form',
+  MATERIAL_OUT: 'export', FINISH_IN: 'file-done', FINISH_INSPECT: 'file-search',
+  TRANSFER: 'swap', PICK_ORDER: 'container', OUTSOURCE_ORDER: 'deployment-unit',
+  OUTSOURCE_ISSUE: 'export', OUTSOURCE_IN: 'import', OUTSOURCE_FEE: 'money-collect',
+  // 库存
+  OTHER_IN: 'import', OTHER_OUT: 'export', INIT_BALANCE: 'database',
+  STOCK_CHECK: 'audit', LOCATION_ADJUST: 'aim', STOCK_STATUS: 'database',
+  STOCK_LEDGER: 'profile', PICK_WORKBENCH: 'container',
+  // 质量
+  INSPECTION: 'safety-certificate', PROCESS_INSPECTION: 'safety-certificate',
+  FIRST_INSPECT: 'file-search', PROCESS_INSPECT_APPLY: 'file-add',
+  DISPATCH: 'team', SPC_CONTROL: 'line-chart',
+  // 计划
+  MPS_PLAN: 'schedule', MRP_RESULT: 'branches', KIT_ANALYSIS: 'apartment',
+  // 财务
+  RECEIPT: 'money-collect', RECEIPT_PAYABLE: 'money-collect',
+  SETTLE_CUSTOMER: 'account-book', SETTLE_SUPPLIER: 'account-book',
+  AGING_ANALYSIS: 'clock-circle', ACCOUNTING_ENTRY: 'transaction',
+  ACCOUNT_BALANCE: 'bank',
+  // 档案
+  INV: 'tags', UOM: 'calculator', DEPT: 'cluster', EMP: 'user',
+  WH: 'shop', PROJ: 'flag', TEAM: 'team', OP: 'build',
+  ROUTE: 'node-index', BOM: 'partition', PARTNER: 'idcard',
+  BOM_FWD: 'node-index', BOM_REV: 'sisternode', OP_CONV: 'swap',
+  WC: 'dashboard', EQUIP: 'control',
+  QC_ITEM: 'audit', QC_PLAN: 'safety-certificate', REJECT: 'flag', SETTLE: 'pay-circle',
+  ACCOUNT: 'account-book', ACCOUNT_DETAIL: 'profile',
+}
+
+function iconOf(code) {
+  return PANEL_ICONS[code] || 'file-text'
+}
+
 const modules = [
   {
-    code: 'prod', name: '生产管理', icon: 'SetUp', color: '#2f6fed',
+    code: 'design', name: '设计管理', icon: 'apartment', color: '#722ed1',
+    /** PDM：存货与工序是主数据，向上游提供物料清单与工艺路线 */
+    nodes: [
+      { code: 'INV', label: '存货' },
+      { code: 'OP', label: '工序' },
+      { code: 'BOM', label: '物料清单' },
+      { code: 'ROUTE', label: '工艺路线' },
+    ],
+    edges: [
+      { from: 'INV', to: 'BOM', label: '构成' },
+      { from: 'OP', to: 'ROUTE', label: '组成' },
+    ],
+    pos: { INV: [40, 0], OP: [320, 0], BOM: [40, 170], ROUTE: [320, 170] },
+    docs: [
+      { code: 'INV', label: '存货' }, { code: 'BOM', label: '物料清单' },
+      { code: 'ROUTE', label: '工艺路线' }, { code: 'OP', label: '工序' },
+      { code: 'BOM_FWD', label: '物料清单正向查询' }, { code: 'BOM_REV', label: '物料清单反向查询' },
+      { code: 'OP_CONV', label: '工序辅单位换算率设置' },
+    ],
+    archives: [
+      { code: 'INV', label: '存货' }, { code: 'UOM', label: '计量单位' }, { code: 'OP', label: '工序' },
+      { code: 'OP_CONV', label: '工序换算率' }, { code: 'TEAM', label: '班组' },
+      { code: 'WC', label: '工作中心' }, { code: 'EQUIP', label: '设备' },
+    ],
+    reports: [
+      { code: 'BOM_FWD', label: '物料清单正向查询' }, { code: 'BOM_REV', label: '物料清单反向查询' },
+    ],
+  },
+  {
+    code: 'plan', name: '计划管理', icon: 'schedule', color: '#13a8a8',
+    /** 计划：销售需求 → 主生产计划 → 物料需求运算 → 采购需求 / 齐套分析 */
+    nodes: [
+      { code: 'SO_ORDER', label: '销售订单' },
+      { code: 'MPS_PLAN', label: '主生产计划' },
+      { code: 'MRP_RESULT', label: '物料需求运算' },
+      { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' },
+      { code: 'KIT_ANALYSIS', label: '齐套分析' },
+    ],
+    edges: [
+      { from: 'SO_ORDER', to: 'MPS_PLAN', label: '需求' },
+      { from: 'MPS_PLAN', to: 'MRP_RESULT', label: '运算' },
+      { from: 'MRP_RESULT', to: 'PU_REQ_ANALYSIS', label: '生成采购需求' },
+      { from: 'MRP_RESULT', to: 'KIT_ANALYSIS', label: '齐套检查' },
+    ],
+    pos: {
+      SO_ORDER: [320, 0], MPS_PLAN: [320, 160], MRP_RESULT: [320, 320],
+      PU_REQ_ANALYSIS: [80, 480], KIT_ANALYSIS: [560, 480],
+    },
+    docs: [
+      { code: 'MPS_PLAN', label: '主生产计划' }, { code: 'MRP_RESULT', label: '物料需求运算结果' },
+      { code: 'KIT_ANALYSIS', label: '齐套分析' }, { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' },
+    ],
+    archives: [
+      { code: 'INV', label: '存货' }, { code: 'BOM', label: '物料清单' }, { code: 'WH', label: '仓库' },
+    ],
+    reports: [],
+  },
+  {
+    code: 'prod', name: '生产管理', icon: 'tool', color: '#1677ff',
+    /** 生产主流程把质量链条画进来：领料 → 报工 → 报检 → 检验 → 首件/成品报检 → 入库 */
     nodes: [
       { code: 'SO_ORDER', label: '销售订单' },
       { code: 'MANU_ORDER', label: '生产加工单' },
-      { code: 'PROCESS_REPORT', label: '工序汇报单' },
-      { code: 'TRANSFER', label: '调拨单' },
       { code: 'MATERIAL_REQ', label: '领料申请单' },
       { code: 'MATERIAL_OUT', label: '材料出库单' },
+      { code: 'TRANSFER', label: '调拨单' },
+      { code: 'PROCESS_REPORT', label: '工序汇报单' },
+      { code: 'PROCESS_INSPECT_APPLY', label: '工序报检单' },
+      { code: 'PROCESS_INSPECTION', label: '生产过程检验单' },
+      { code: 'FIRST_INSPECT', label: '首件报检单' },
+      { code: 'FINISH_INSPECT', label: '成品报检单' },
       { code: 'FINISH_IN', label: '产成品入库单' },
-      { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' },
     ],
     edges: [
-      { from: 'SO_ORDER', to: 'MANU_ORDER' },
-      { from: 'MANU_ORDER', to: 'PROCESS_REPORT' },
-      { from: 'MANU_ORDER', to: 'MATERIAL_REQ' },
-      { from: 'MANU_ORDER', to: 'TRANSFER' },
-      { from: 'MANU_ORDER', to: 'MATERIAL_OUT' },
-      { from: 'MANU_ORDER', to: 'FINISH_IN' },
-      { from: 'MANU_ORDER', to: 'PU_REQ_ANALYSIS' },
-      { from: 'MATERIAL_REQ', to: 'TRANSFER' },
-      { from: 'MATERIAL_REQ', to: 'MATERIAL_OUT' },
-      { from: 'TRANSFER', to: 'MATERIAL_OUT' },
+      { from: 'SO_ORDER', to: 'MANU_ORDER', label: '生单' },
+      { from: 'MANU_ORDER', to: 'MATERIAL_REQ', label: '领料' },
+      { from: 'MATERIAL_REQ', to: 'MATERIAL_OUT', label: '出库' },
+      { from: 'MATERIAL_REQ', to: 'TRANSFER', label: '调拨' },
+      { from: 'MANU_ORDER', to: 'PROCESS_REPORT', label: '报工' },
+      { from: 'PROCESS_REPORT', to: 'PROCESS_INSPECT_APPLY', label: '报检' },
+      { from: 'PROCESS_INSPECT_APPLY', to: 'PROCESS_INSPECTION', label: '检验' },
+      { from: 'MANU_ORDER', to: 'FIRST_INSPECT', label: '首件' },
+      { from: 'MANU_ORDER', to: 'FINISH_INSPECT', label: '完工报检' },
+      { from: 'FIRST_INSPECT', to: 'FINISH_IN', label: '合格入库' },
+      { from: 'FINISH_INSPECT', to: 'FINISH_IN', label: '合格入库' },
     ],
+    /** 分层布局：每条边都是上一层 → 下一层，避免同层连线被画成 U 形 */
     pos: {
-      SO_ORDER: [470, 60],
-      MANU_ORDER: [470, 180],
-      TRANSFER: [20, 330], PROCESS_REPORT: [920, 330], FINISH_IN: [1220, 330],
-      MATERIAL_REQ: [470, 480], PU_REQ_ANALYSIS: [920, 480],
-      MATERIAL_OUT: [20, 630],
+      SO_ORDER: [430, 0], MANU_ORDER: [430, 150],
+      MATERIAL_REQ: [40, 310], PROCESS_REPORT: [300, 310], FIRST_INSPECT: [560, 310], FINISH_INSPECT: [820, 310],
+      MATERIAL_OUT: [40, 470], TRANSFER: [180, 470], PROCESS_INSPECT_APPLY: [300, 470], FINISH_IN: [690, 470],
+      PROCESS_INSPECTION: [300, 630],
     },
     docs: [
-      { code: 'MANU_ORDER', label: '生产加工单' }, { code: 'PROCESS_REPORT', label: '工序汇报单' },
-      { code: 'TRANSFER', label: '调拨单' }, { code: 'MATERIAL_REQ', label: '领料申请单' },
-      { code: 'MATERIAL_OUT', label: '材料出库单' }, { code: 'FINISH_IN', label: '产成品入库单' },
-      { code: 'SO_ORDER', label: '销售订单' }, { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' },
-      { code: 'PU_REQ', label: '请购单' }, { code: 'PU_ORDER', label: '采购订单' },
+      { code: 'MANU_ORDER', label: '生产加工单' }, { code: 'DISPATCH', label: '工序派工单' },
+      { code: 'PROCESS_REPORT', label: '工序汇报单' }, { code: 'PROCESS_INSPECT_APPLY', label: '工序报检单' },
+      { code: 'PROCESS_INSPECTION', label: '生产过程检验单' }, { code: 'FIRST_INSPECT', label: '首件报检单' },
+      { code: 'FINISH_INSPECT', label: '成品报检单' },
+      { code: 'MATERIAL_REQ', label: '领料申请单' }, { code: 'MATERIAL_OUT', label: '材料出库单' },
+      { code: 'FINISH_IN', label: '产成品入库单' }, { code: 'TRANSFER', label: '调拨单' },
+      { code: 'SO_ORDER', label: '销售订单' },
     ],
     archives: [
       { code: 'INV', label: '存货' }, { code: 'UOM', label: '计量单位' }, { code: 'DEPT', label: '部门' },
@@ -153,7 +487,7 @@ const modules = [
     ],
   },
   {
-    code: 'outsource', name: '委外管理', icon: 'Van', color: '#0e9f9f',
+    code: 'outsource', name: '委外管理', icon: 'deployment-unit', color: '#13a8a8',
     nodes: [
       { code: 'SO_ORDER', label: '销售订单' },
       { code: 'OUTSOURCE_ORDER', label: '委外加工单' },
@@ -195,7 +529,7 @@ const modules = [
     ],
   },
   {
-    code: 'sales', name: '销售管理', icon: 'ShoppingCart', color: '#e8873a',
+    code: 'sales', name: '销售管理', icon: 'shopping-cart', color: '#fa8c16',
     nodes: [
       { code: 'QUOTE_ORDER', label: '报价单' },
       { code: 'SO_ORDER', label: '销售订单' },
@@ -224,53 +558,56 @@ const modules = [
       { code: 'SALE_INVOICE', label: '销售发票' }, { code: 'EXPENSE', label: '费用单' },
       { code: 'SALE_COST_ALLOC', label: '销售费用分摊单' },
     ],
-    archives: [{ code: 'PARTNER', label: '往来单位(客户)' }, { code: 'INV', label: '存货' }, { code: 'DEPT', label: '部门' }, { code: 'EMP', label: '员工' }, { code: 'UOM', label: '计量单位' }, { code: 'WH', label: '仓库' }, { code: 'SETTLE', label: '结算方式' }],
+    archives: [{ code: 'PARTNER', label: '往来单位(客户)' }, { code: 'INV', label: '存货' }, { code: 'DEPT', label: '部门' }, { code: 'EMP', label: '员工' }, { code: 'UOM', label: '计量单位' }, { code: 'WH', label: '仓库' }],
     reports: [
       { code: 'SALES_ORDER_DETAIL', label: '销售订单明细表' }, { code: 'SALES_ORDER_STATS', label: '销售订单统计表' },
       { code: 'SALES_ORDER_EXEC', label: '销售订单执行表' }, { code: 'SALES_ORDER_PROGRESS', label: '销售订单生产进度表' },
     ],
   },
   {
-    code: 'purchase', name: '采购管理', icon: 'ShoppingCart', color: '#3aa76d',
+    code: 'purchase', name: '采购管理', icon: 'shopping', color: '#52c41a',
+    /** 采购链路补齐到货与检验：请购 → 采购订单 → 到货单 → 检验 → 合格入库 / 不合格退回 */
     nodes: [
       { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' },
       { code: 'PU_REQ', label: '请购单' },
       { code: 'PU_ORDER', label: '采购订单' },
+      { code: 'ARRIVAL_IN', label: '到货单' },
+      { code: 'INSPECTION', label: '来料/成品检验单' },
       { code: 'PURCHASE_IN', label: '采购入库单' },
+      { code: 'PURCHASE_RETURN', label: '采购退货单' },
       { code: 'PU_IN', label: '进货单' },
       { code: 'PU_INVOICE', label: '采购发票' },
-      { code: 'EXPENSE', label: '费用单' },
-      { code: 'PU_COST_ALLOC', label: '采购费用分摊单' },
     ],
     edges: [
       { from: 'PU_REQ_ANALYSIS', to: 'PU_REQ' },
       { from: 'PU_REQ', to: 'PU_ORDER' },
-      { from: 'PU_ORDER', to: 'PURCHASE_IN' },
-      { from: 'PU_ORDER', to: 'PU_IN' },
-      { from: 'PU_IN', to: 'PU_INVOICE' },
-      { from: 'PU_ORDER', to: 'PU_INVOICE' },
-      { from: 'EXPENSE', to: 'PU_COST_ALLOC' },
-      { from: 'PU_INVOICE', to: 'PU_COST_ALLOC' },
+      { from: 'PU_ORDER', to: 'ARRIVAL_IN', label: '到货' },
+      { from: 'ARRIVAL_IN', to: 'INSPECTION', label: '报检' },
+      { from: 'INSPECTION', to: 'PURCHASE_IN', label: '合格入库' },
+      { from: 'INSPECTION', to: 'PURCHASE_RETURN', label: '不合格退回' },
+      { from: 'PU_ORDER', to: 'PU_IN', label: '进货' },
+      { from: 'PU_IN', to: 'PU_INVOICE', label: '开票' },
     ],
     pos: {
-      PU_REQ_ANALYSIS: [440, 20], PU_REQ: [440, 190], PU_ORDER: [440, 360],
-      PURCHASE_IN: [120, 360], PU_IN: [760, 360],
-      PU_INVOICE: [440, 530], PU_COST_ALLOC: [440, 700], EXPENSE: [760, 700],
+      PU_REQ_ANALYSIS: [440, 0], PU_REQ: [440, 160], PU_ORDER: [440, 320],
+      ARRIVAL_IN: [240, 480], PU_IN: [700, 480],
+      INSPECTION: [240, 640], PU_INVOICE: [700, 640],
+      PURCHASE_IN: [120, 800], PURCHASE_RETURN: [380, 800],
     },
     docs: [
-      { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' }, { code: 'PU_REQ', label: '请购单' },
-      { code: 'PU_ORDER', label: '采购订单' },
-      { code: 'PU_IN', label: '进货单' }, { code: 'PURCHASE_IN', label: '采购入库单' },
-      { code: 'PU_INVOICE', label: '采购发票' }, { code: 'EXPENSE', label: '费用单' },
-      { code: 'PU_COST_ALLOC', label: '采购费用分摊单' },
+      { code: 'PU_REQ', label: '请购单' }, { code: 'PU_ORDER', label: '采购订单' },
+      { code: 'ARRIVAL_IN', label: '到货单' }, { code: 'INSPECTION', label: '来料检验单' },
+      { code: 'PURCHASE_IN', label: '采购入库单' }, { code: 'PURCHASE_RETURN', label: '采购退货单' },
+      { code: 'PU_IN', label: '进货单' }, { code: 'PU_INVOICE', label: '采购发票' },
     ],
-    archives: [{ code: 'PARTNER', label: '往来单位(供应商)' }, { code: 'INV', label: '存货' }, { code: 'WH', label: '仓库' }],
+    archives: [{ code: 'PARTNER', label: '往来单位(供应商)' }, { code: 'INV', label: '存货' }, { code: 'WH', label: '仓库' }, { code: 'UOM', label: '计量单位' }],
     reports: [
       { code: 'PURCHASE_IN_DETAIL', label: '采购入库明细表' }, { code: 'PURCHASE_IN_STATS', label: '采购入库统计表' },
+      { code: 'ARRIVAL_IN_EXEC', label: '到货单执行表' },
     ],
   },
   {
-    code: 'distribution', name: '配货管理', icon: 'Box', color: '#7a5af8',
+    code: 'distribution', name: '配货管理', icon: 'container', color: '#722ed1',
     nodes: [
       { code: 'SO_ORDER', label: '销售订单' },
       { code: 'PICK_ORDER', label: '配货单' },
@@ -293,7 +630,7 @@ const modules = [
     ],
   },
   {
-    code: 'inv', name: '库存核算', icon: 'Box', color: '#4a7bd8',
+    code: 'inv', name: '库存核算', icon: 'database', color: '#2f54eb',
     nodes: [
       { code: 'PURCHASE_IN', label: '采购入库单' },
       { code: 'FINISH_IN', label: '产成品入库单' },
@@ -321,7 +658,7 @@ const modules = [
     ],
   },
   {
-    code: 'pda', name: '移动仓管', icon: 'Iphone', color: '#1c9fae',
+    code: 'pda', name: '移动仓管', icon: 'idcard', color: '#13a8a8',
     nodes: [
       { code: 'PURCHASE_IN', label: '采购入库单' },
       { code: 'FINISH_IN', label: '产成品入库单' },
@@ -355,7 +692,7 @@ const modules = [
     ],
   },
   {
-    code: 'sn', name: '序列号管理', icon: 'Sort', color: '#5a7fa8',
+    code: 'sn', name: '序列号管理', icon: 'node-index', color: '#597ef7',
     nodes: [
       { code: 'INV', label: '存货(启用序列号)' },
       { code: 'SERIAL_NO', label: '序列号登记单' },
@@ -379,41 +716,67 @@ const modules = [
     reports: [],
   },
   {
-    code: 'qc', name: '质量管理', icon: 'View', color: '#d95b5b',
+    code: 'qc', name: '质量管理', icon: 'safety-certificate', color: '#ff4d4f',
+    /**
+     * 质检有两条独立入口链，画成上下两段：
+     * 上段 = 来料检验（采购到货 → 检验 → 入库）
+     * 下段 = 生产检验（加工单 → 成品/首件/工序报检 → 入库）
+     * 两段共用「来料/成品检验单」作为统一检验出口。
+     */
     nodes: [
+      // 来料检验链
       { code: 'PU_ORDER', label: '采购订单' },
       { code: 'ARRIVAL_IN', label: '到货单' },
       { code: 'INSPECTION', label: '来料/成品检验单' },
       { code: 'PURCHASE_IN', label: '采购入库单' },
+      { code: 'PURCHASE_RETURN', label: '采购退货单' },
+      // 生产检验链
       { code: 'MANU_ORDER', label: '生产加工单' },
       { code: 'FINISH_INSPECT', label: '成品报检单' },
-      { code: 'FINISH_IN', label: '产成品入库单' },
       { code: 'FIRST_INSPECT', label: '首件报检单' },
       { code: 'PROCESS_REPORT', label: '工序汇报单' },
       { code: 'PROCESS_INSPECT_APPLY', label: '工序报检单' },
       { code: 'PROCESS_INSPECTION', label: '生产过程检验单' },
+      { code: 'FINISH_IN', label: '产成品入库单' },
     ],
     edges: [
-      { from: 'PU_ORDER', to: 'ARRIVAL_IN' },
-      { from: 'ARRIVAL_IN', to: 'INSPECTION' },
-      { from: 'INSPECTION', to: 'PURCHASE_IN' },
-      { from: 'MANU_ORDER', to: 'FINISH_INSPECT' },
-      { from: 'FINISH_INSPECT', to: 'INSPECTION' },
-      { from: 'INSPECTION', to: 'FINISH_IN' },
-      { from: 'MANU_ORDER', to: 'FIRST_INSPECT' },
-      { from: 'FIRST_INSPECT', to: 'INSPECTION' },
-      { from: 'PROCESS_REPORT', to: 'PROCESS_INSPECT_APPLY' },
-      { from: 'PROCESS_INSPECT_APPLY', to: 'PROCESS_INSPECTION' },
+      // 采购来料链：到货 → 检验 → 入库 / 退货
+      { from: 'PU_ORDER', to: 'ARRIVAL_IN', label: '到货' },
+      { from: 'ARRIVAL_IN', to: 'INSPECTION', label: '报检' },
+      { from: 'INSPECTION', to: 'PURCHASE_IN', label: '合格入库' },
+      { from: 'INSPECTION', to: 'PURCHASE_RETURN', label: '不合格退回' },
+      // 生产检验链：加工单派生成品报检与首件报检，检验合格入成品库
+      { from: 'MANU_ORDER', to: 'FINISH_INSPECT', label: '报检' },
+      { from: 'MANU_ORDER', to: 'FIRST_INSPECT', label: '首件' },
+      { from: 'FINISH_INSPECT', to: 'FINISH_IN', label: '合格入库' },
+      { from: 'FIRST_INSPECT', to: 'FINISH_IN', label: '合格入库' },
+      // 工序链：报工 → 报检 → 过程检验
+      { from: 'PROCESS_REPORT', to: 'PROCESS_INSPECT_APPLY', label: '报检' },
+      { from: 'PROCESS_INSPECT_APPLY', to: 'PROCESS_INSPECTION', label: '检验' },
     ],
+    /**
+     * 布局按真实流向纵向分层，确保每条边都是"上一层 → 下一层"，
+     * 避免同层相连被画成 U 形绕行。三条独立链并列：
+     *   采购链  PU_ORDER → ARRIVAL_IN → INSPECTION → PURCHASE_IN / PURCHASE_RETURN
+     *   生产链  MANU_ORDER → FINISH_INSPECT / FIRST_INSPECT → FINISH_IN
+     *   工序链  PROCESS_REPORT → PROCESS_INSPECT_APPLY → PROCESS_INSPECTION
+     */
     pos: {
-      PU_ORDER: [40, 80], ARRIVAL_IN: [360, 80], INSPECTION: [690, 190], PURCHASE_IN: [1030, 80],
-      MANU_ORDER: [40, 260], FINISH_INSPECT: [360, 220], FINISH_IN: [1030, 260],
-      FIRST_INSPECT: [360, 360], PROCESS_REPORT: [40, 500], PROCESS_INSPECT_APPLY: [360, 500], PROCESS_INSPECTION: [690, 500],
+      // 采购链（第1-3层）
+      PU_ORDER: [0, 0], ARRIVAL_IN: [220, 0],
+      INSPECTION: [220, 150],
+      PURCHASE_IN: [120, 300], PURCHASE_RETURN: [320, 300],
+      // 生产链（第1-3层，与采购链并列）
+      MANU_ORDER: [480, 0], FINISH_INSPECT: [460, 150], FIRST_INSPECT: [620, 150],
+      FINISH_IN: [540, 300],
+      // 工序链（第4层）
+      PROCESS_REPORT: [0, 460], PROCESS_INSPECT_APPLY: [220, 460], PROCESS_INSPECTION: [440, 460],
     },
     docs: [
-      { code: 'ARRIVAL_IN', label: '到货单' }, { code: 'INSPECTION', label: '来料/成品检验单' },
+      { code: 'INSPECTION', label: '来料/成品检验单' }, { code: 'ARRIVAL_IN', label: '到货单' },
       { code: 'FINISH_INSPECT', label: '成品报检单' }, { code: 'FIRST_INSPECT', label: '首件报检单' },
       { code: 'PROCESS_INSPECT_APPLY', label: '工序报检单' }, { code: 'PROCESS_INSPECTION', label: '生产过程检验单' },
+      { code: 'PURCHASE_IN', label: '采购入库单' }, { code: 'FINISH_IN', label: '产成品入库单' },
     ],
     archives: [
       { code: 'QC_ITEM', label: '检验项目' }, { code: 'QC_PLAN', label: '检验方案' },
@@ -426,10 +789,56 @@ const modules = [
       { code: 'QUALITY_STATS_ANALYSIS', label: '质量统计分析表' },
     ],
   },
+  {
+    code: 'finance', name: '应收应付', icon: 'account-book', color: '#faad14',
+    /** 收付款来自销货单与采购入库：收款 / 付款 → 对账 → 账龄 → 凭证 */
+    nodes: [
+      { code: 'SALE_INV', label: '销货单' },
+      { code: 'RECEIPT', label: '收款单' },
+      { code: 'SETTLE_CUSTOMER', label: '客户对账单' },
+      { code: 'PURCHASE_IN', label: '采购入库单' },
+      { code: 'RECEIPT_PAYABLE', label: '付款单' },
+      { code: 'SETTLE_SUPPLIER', label: '供应商对账单' },
+      { code: 'AGING_ANALYSIS', label: '账龄分析表' },
+      { code: 'ACCOUNTING_ENTRY', label: '记账凭证' },
+    ],
+    edges: [
+      { from: 'SALE_INV', to: 'RECEIPT', label: '收款' },
+      { from: 'RECEIPT', to: 'SETTLE_CUSTOMER', label: '对账' },
+      { from: 'PURCHASE_IN', to: 'RECEIPT_PAYABLE', label: '付款' },
+      { from: 'RECEIPT_PAYABLE', to: 'SETTLE_SUPPLIER', label: '对账' },
+      { from: 'SETTLE_CUSTOMER', to: 'AGING_ANALYSIS', label: '账龄' },
+      { from: 'SETTLE_SUPPLIER', to: 'AGING_ANALYSIS', label: '账龄' },
+      { from: 'RECEIPT', to: 'ACCOUNTING_ENTRY', label: '凭证' },
+      { from: 'RECEIPT_PAYABLE', to: 'ACCOUNTING_ENTRY', label: '凭证' },
+    ],
+    pos: {
+      SALE_INV: [40, 0], RECEIPT: [40, 160], SETTLE_CUSTOMER: [40, 320],
+      PURCHASE_IN: [420, 0], RECEIPT_PAYABLE: [420, 160], SETTLE_SUPPLIER: [420, 320],
+      AGING_ANALYSIS: [230, 480], ACCOUNTING_ENTRY: [600, 480],
+    },
+    docs: [
+      { code: 'RECEIPT', label: '收款单' }, { code: 'RECEIPT_PAYABLE', label: '付款单' },
+      { code: 'SETTLE_CUSTOMER', label: '客户对账单' }, { code: 'SETTLE_SUPPLIER', label: '供应商对账单' },
+      { code: 'AGING_ANALYSIS', label: '账龄分析表' }, { code: 'ACCOUNTING_ENTRY', label: '凭证查询' },
+      { code: 'ACCOUNT', label: '会计科目' },
+    ],
+    archives: [
+      { code: 'PARTNER', label: '往来单位' }, { code: 'PROJ', label: '项目' }, { code: 'DEPT', label: '部门' },
+    ],
+    reports: [
+      { code: 'SETTLE_CUSTOMER', label: '客户对账单' }, { code: 'SETTLE_SUPPLIER', label: '供应商对账单' },
+      { code: 'AGING_ANALYSIS', label: '账龄分析表' }, { code: 'ACCOUNT_BALANCE', label: '科目余额表' },
+      { code: 'ACCOUNT_DETAIL', label: '明细账' },
+    ],
+  },
 ]
 
-const active = ref('prod')
+const active = ref('sales')
 const cur = computed(() => modules.find((m) => m.code === active.value) || modules[0])
+
+/** 左侧模块顺序 = 业务流顺序（设计 → 计划 → 销售 → 采购 → 生产 → 质量 → 库存 → 配货 → 移动仓管 → 序列号 → 委外 → 财务） */
+const FLOW_ORDER = ['design', 'plan', 'sales', 'purchase', 'prod', 'qc', 'inv', 'distribution', 'pda', 'sn', 'outsource', 'finance']
 
 // 非中文语言：预取本页可见词条（模块名/流程节点与单据标签，静态包缺失的走机翻补齐；tt() 渲染层切换即时生效）
 watch(() => localeStore.current, async (locale) => {
@@ -458,239 +867,1359 @@ const canvasH = computed(() => {
   return maxY + 40
 })
 
+// ---------- 节点与侧栏筛选 ----------
+const nodeFilter = ref('')
+const filterText = computed(() => nodeFilter.value.trim().toLowerCase())
+
+function hit(code, label) {
+  if (!filterText.value) return true
+  return String(code).toLowerCase().includes(filterText.value)
+    || String(label || '').toLowerCase().includes(filterText.value)
+}
+
+const filteredModules = computed(() => {
+  const list = filterText.value
+    ? modules.filter((m) => !!(m.nodes || []).find((n) => hit(n.code, n.label)))
+    : modules
+  const rank = (code) => {
+    const i = FLOW_ORDER.indexOf(code)
+    return i < 0 ? FLOW_ORDER.length : i
+  }
+  return [...list].sort((a, b) => rank(a.code) - rank(b.code))
+})
+
+const visibleDocs = computed(() => (cur.value?.docs || []).filter((d) => hit(d.code, d.label)))
+const visibleArchives = computed(() => (cur.value?.archives || []).filter((d) => hit(d.code, d.label)))
+const visibleReports = computed(() => (cur.value?.reports || []).filter((d) => hit(d.code, d.label)))
+
+// ---------- 追踪状态 ----------
+/** 当前追踪的单号；空串表示未追踪。 */
+const trackedNo = ref('')
+const tracked = computed(() => !!trackedNo.value)
+/** 追踪结果原文（来自 /api/px/trace）。 */
+const traceInfo = ref({ 单号: '', 环节数: 0, 卡点单号: '', 卡点原因: '', steps: [] })
+/** 变更触发器：结果变化后重建图。 */
+const traceKey = ref(0)
+
+/**
+ * 面板编码 → 该面板在追踪结果里命中的单据列表。
+ * 同一个面板可能命中多张（如多张出库单），保留数组以支持"多张单在同一环节"。
+ */
+const traceHits = computed(() => {
+  const out = {}
+  for (const s of traceInfo.value.steps || []) {
+    const code = s['面板编码']
+    if (!code) continue
+    if (!out[code]) out[code] = []
+    out[code].push({ docNo: s['单号'], state: s['阶段'] || '待开始', isStalled: s['是否卡点'] })
+  }
+  return out
+})
+
+function clearTrace() {
+  trackedNo.value = ''
+  traceInfo.value = { 单号: '', 环节数: 0, 卡点单号: '', 卡点原因: '', steps: [] }
+  traceKey.value++
+}
+
+/** 某模块里有多少个环节命中追踪结果（用于在导航上打标记）。 */
+function moduleHitCount(module) {
+  if (!tracked.value) return 0
+  return (module.nodes || []).filter((n) => (traceHits.value[n.code] || []).length).length
+}
+
+/** 追踪命中的模块列表：一个单据可能跨多个模块（如销售订单 → 委外加工单）。 */
+const hitModules = computed(() => {
+  if (!tracked.value) return []
+  return modules.filter((m) => moduleHitCount(m) > 0)
+})
+
+/** 按业务顺序排列的追踪环节（后端已按业务序列排好），用于渲染"经过的单据路线"。 */
+const traceSteps = computed(() => traceInfo.value.steps || [])
+
+/** 环节状态 → CSS 类。 */
+function stepKind(s) {
+  const state = s['阶段']
+  if (state === '完成') return 'kind-done'
+  if (state === '已中止') return 'kind-aborted'
+  if (state === '进行中') return 'kind-doing'
+  return 'kind-pending'
+}
+
+async function applyTrace(docNo) {
+  pickVisible.value = false
+  if (!docNo) return
+  try {
+    const info = await traceProcess(docNo)
+    trackedNo.value = docNo
+    traceInfo.value = info || { 单号: docNo, 环节数: 0, 卡点单号: '', 卡点原因: '', steps: [] }
+    traceKey.value++
+    if (!info || !(info.steps || []).length) {
+      ElMessage.warning(tt('该单号没有追踪到关联单据'))
+      return
+    }
+    // 自动切到命中的模块页签，让用户第一眼看到相关流程
+    const hitCodes = new Set((info.steps || []).map((s) => s['面板编码']))
+    const target = modules.find((m) => (m.nodes || []).some((n) => hitCodes.has(n.code)))
+    if (target && target.code !== active.value) active.value = target.code
+  } catch (e) {
+    ElMessage.error(tt('追踪失败') + '：' + (e?.message || ''))
+    clearTrace()
+  }
+}
+
+// ---------- 选单弹窗 ----------
+const pickVisible = ref(false)
+const pickPanel = ref('SO_ORDER')
+const pickKeyword = ref('')
+const pickLoading = ref(false)
+const pickRows = ref([])
+
+/** 可追踪的单据类型（与后端 TRACE_PANELS 对应，选主流程上的单据）。 */
+const pickPanels = [
+  { code: 'SO_ORDER', label: '销售订单' },
+  { code: 'MANU_ORDER', label: '生产加工单' },
+  { code: 'OUTSOURCE_ORDER', label: '委外加工单' },
+  { code: 'PURCHASE_IN', label: '采购入库单' },
+  { code: 'SALE_OUT', label: '销售出库单' },
+  { code: 'FINISH_IN', label: '产成品入库单' },
+  { code: 'MATERIAL_OUT', label: '材料出库单' },
+  { code: 'PU_ORDER', label: '采购订单' },
+  { code: 'INSPECTION', label: '检验单' },
+  { code: 'SALE_INV', label: '销货单' },
+  // 工序检验链
+  { code: 'PROCESS_REPORT', label: '工序汇报单' },
+  { code: 'PROCESS_INSPECT_APPLY', label: '工序报检单' },
+  { code: 'PROCESS_INSPECTION', label: '生产过程检验单' },
+  { code: 'FIRST_INSPECT', label: '首件报检单' },
+  { code: 'FINISH_INSPECT', label: '成品报检单' },
+]
+
+function statusKind(status) {
+  const s = String(status || '')
+  if (s === '已审核' || s === '已完工') return 'done'
+  if (s === '审批中' || s === '生产中') return 'doing'
+  if (s === '已中止' || s === '已驳回') return 'aborted'
+  return 'draft'
+}
+
+async function loadPickRows() {
+  if (!pickPanel.value) return
+  pickLoading.value = true
+  try {
+    const res = await queryFormDataList({
+      panelCode: pickPanel.value,
+      keyword: pickKeyword.value || undefined,
+      condition: {},
+      pageNo: 1,
+      pageSize: 30,
+    })
+    const list = res?.list || []
+    pickRows.value = list.map((r) => ({
+      no: r['编号'] || r['单据编号'] || '',
+      partner: r['客户'] || r['供应商'] || r['生产车间'] || '',
+      date: r['单据日期'] || '',
+      status: r['单据状态'] || '',
+    })).filter((r) => r.no)
+  } catch (e) {
+    ElMessage.error(tt('查询失败') + '：' + (e?.message || ''))
+    pickRows.value = []
+  } finally {
+    pickLoading.value = false
+  }
+}
+
+watch(pickVisible, (v) => {
+  if (v && !pickRows.value.length) loadPickRows()
+})
+
+// 切换单据类型后必须重新查询，否则列表仍停在上一个类型的结果上
+watch(pickPanel, () => {
+  if (pickVisible.value) {
+    pickRows.value = []
+    loadPickRows()
+  }
+})
+
 // ---------- Vue Flow 图数据（按当前模块构建） ----------
 const nodes = ref([])
 const edges = ref([])
 const { fitView } = useVueFlow()
 
+/** 画布尺寸就绪后再 fitView：VueFlow 在容器高度为 0 时会算出错误的比例。 */
+async function fitNow() {
+  await nextTick()
+  requestAnimationFrame(() => fitView({ padding: 0.12, maxZoom: 1, minZoom: 0.75 }))
+}
+
+const EDGE_COLOR = '#bfbfbf'
+
+/**
+ * 流程图布局：原始 pos 是按 1400px 画布手摆的坐标，直接放进本页会超出可视区，
+ * 硬缩放又会把卡片压到互相重叠。所以只用 pos 的纵向先后关系（Y 归入同一行），
+ * 横向改为行内等距布点，保证任何模块都放得下且不重叠。
+ */
+const CARD_W = 176   // 与 .fn-card 宽度一致
+const CARD_H = 56    // 与 .fn-card 高度一致
+const GAP_X = 32
+const GAP_Y = 56
+/** 行吸附网格：原始 pos 的 Y 常以 120/170/250 这类手工值出现，按 60 取整才能把同层归到一行。 */
+const ROW_SNAP = 60
+
+/** 把一个模块的节点排成行列：返回 code → {x, y}。 */
+function layoutNodes(module) {
+  const raw = (module.nodes || []).map((n) => {
+    const p = module.pos && module.pos[n.code] ? module.pos[n.code] : [0, 0]
+    return { code: n.code, x: p[0], y: p[1] }
+  })
+  if (!raw.length) return {}
+
+  // 1) 按原 Y 吸附到网格后分行：同层节点归入同一行
+  const sorted = [...raw].sort((a, b) => a.y - b.y || a.x - b.x)
+  const rows = []
+  for (const item of sorted) {
+    const band = Math.round(item.y / ROW_SNAP)
+    const row = rows[rows.length - 1]
+    if (row && row.band === band) {
+      row.items.push(item)
+    } else {
+      rows.push({ band, items: [item] })
+    }
+  }
+
+  // 2) 行内按原 X 排序，等距铺开
+  const widest = Math.max(...rows.map((r) => r.items.length))
+  const rowWidth = widest * CARD_W + (widest - 1) * GAP_X
+  const out = {}
+  rows.forEach((row, ri) => {
+    row.items.sort((a, b) => a.x - b.x)
+    const count = row.items.length
+    const used = count * CARD_W + (count - 1) * GAP_X
+    const offset = (rowWidth - used) / 2
+    row.items.forEach((item, ci) => {
+      out[item.code] = {
+        x: Math.round(offset + ci * (CARD_W + GAP_X)),
+        y: Math.round(ri * (CARD_H + GAP_Y)),
+      }
+    })
+  })
+  return out
+}
+
 function buildFlow() {
   const m = cur.value
-  nodes.value = (m.nodes || []).map((n) => ({
-    id: n.code,
-    type: 'flowNode',
-    position: { x: (m.pos && m.pos[n.code] ? m.pos[n.code][0] : 0), y: (m.pos && m.pos[n.code] ? m.pos[n.code][1] : 0) },
-    data: { code: n.code, label: n.label, icon: m.icon, color: m.color },
-  }))
-  edges.value = (m.edges || []).map((e, i) => ({
-    id: 'e' + i + '-' + e.from + '-' + e.to,
-    source: e.from,
-    target: e.to,
-    ...(e.sourceHandle ? { sourceHandle: e.sourceHandle } : {}),
-    ...(e.targetHandle ? { targetHandle: e.targetHandle } : {}),
-    markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: m.color },
-    style: { stroke: m.color, strokeWidth: 1.8 },
-  }))
+  const kw = filterText.value
+  const layout = layoutNodes(m)
+  // 追踪命中的面板 → 该面板下的单据（同面板可能有多张，例如多张出库单）
+  const hits = traceHits.value
+  const stalledSet = traceInfo.value['卡点单号'] ? new Set([traceInfo.value['卡点单号']]) : new Set()
+
+  nodes.value = (m.nodes || []).map((n) => {
+    const p = layout[n.code] || { x: 0, y: 0 }
+    const hitList = hits[n.code] || []
+    const firstHit = hitList[0]
+    // 没有任何追踪结果时，所有节点都是中性态；有追踪时，未命中节点压暗
+    const state = !tracked.value
+      ? 'none'
+      : hitList.length
+        ? (firstHit.state === '完成' ? 'done' : 'doing')
+        : 'none'
+    const isStalled = hitList.some((h) => stalledSet.has(h.docNo))
+    // 同环节多张单：第一张显示单号，其余用 +N 汇总，避免误以为只有一张
+    const extra = hitList.slice(1)
+    return {
+      id: n.code,
+      type: 'flowNode',
+      position: p,
+      data: {
+        code: n.code,
+        label: n.label,
+        icon: iconOf(n.code),
+        // 追踪态：未命中的环节压暗，命中的正常；无追踪时才用文字筛选压暗
+        dim: tracked.value
+          ? !hitList.length
+          : (!!kw && !hit(n.code, n.label)),
+        state: isStalled ? 'doing' : state,
+        stalled: isStalled,
+        docNo: firstHit ? firstHit.docNo : '',
+        moreCount: extra.length,
+        moreTitle: extra.length
+          ? tt('同环节还有') + '：' + extra.map((h) => h.docNo).join('、')
+          : '',
+      },
+    }
+  })
+
+  // 只有"上游节点 → 下游节点"两端都在追踪结果里，这条边才点亮并走流光
+  edges.value = (m.edges || []).map((e, i) => {
+    const fromHit = hits[e.from]
+    const toHit = hits[e.to]
+    const bothHit = tracked.value && !!fromHit && !!toHit
+    // 两端都命中且下游仍未完成 → 正在流转，给流光动画
+    const flowing = bothHit && toHit.some((h) => h.state !== '完成')
+    return {
+      id: 'e' + i + '-' + e.from + '-' + e.to,
+      source: e.from,
+      target: e.to,
+      // 正交连线：制造业流程图用直角折线比贝塞尔曲线更易读
+      type: 'smoothstep',
+      pathOptions: { borderRadius: 6, offset: 16 },
+      ...(e.sourceHandle ? { sourceHandle: e.sourceHandle } : {}),
+      ...(e.targetHandle ? { targetHandle: e.targetHandle } : {}),
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 12,
+        height: 12,
+        color: flowing ? '#1677ff' : (bothHit ? '#52c41a' : EDGE_COLOR),
+      },
+      style: bothHit
+        ? { stroke: flowing ? '#1677ff' : '#95de64', strokeWidth: flowing ? 2 : 1.6 }
+        : { stroke: EDGE_COLOR, strokeWidth: 1.2, opacity: tracked.value ? 0.35 : 1 },
+      animated: flowing,
+      class: flowing ? 'bo-edge-flow' : (bothHit ? 'bo-edge-done' : ''),
+      // 边标签说明流转条件（到货/报检/合格入库/不合格退回…），追踪态下命中边才显示
+      ...(e.label && (!tracked.value || bothHit)
+        ? {
+            label: e.label,
+            labelShowBg: true,
+            labelBgPadding: [4, 2],
+            labelBgBorderRadius: 3,
+            labelBgStyle: { fill: '#ffffff', fillOpacity: 0.95 },
+            labelStyle: { fill: bothHit ? '#1677ff' : '#8c8c8c', fontSize: 11 },
+          }
+        : {}),
+    }
+  })
 }
 
-watch(cur, () => {
+watch([cur, filterText, traceKey], async () => {
   buildFlow()
-  setTimeout(() => fitView({ padding: 0.18, maxZoom: 1 }), 80)
+  await fitNow()
+  // 二次补救：首屏容器高度可能在首帧后变化，再适配一次
+  setTimeout(fitNow, 400)
 }, { immediate: true })
 
-function onNodeClick({ node }) {
-  go(node.data.code)
+onMounted(() => {
+  fitNow()
+  window.addEventListener('resize', fitNow)
+})
+
+onUnmounted(() => window.removeEventListener('resize', fitNow))
+
+/**
+ * 打开具体单据的表单页，而不是列表页。
+ * 路由约定见 PanelxList.openForm：/panelx/form/{panelCode}?code={单号}
+ * 带 code 时 PanelxForm 直接渲染该单据，省掉用户再自己找一遍。
+ */
+function openDoc(panelCode, docNo, title) {
+  if (!panelCode) return
+  if (docNo) {
+    const path = '/panelx/form/' + panelCode
+    const query = { code: docNo }
+    router.push({ path, query })
+    tabs.open({ path, title: title || docNo, query })
+    return
+  }
+  // 没有具体单号（未追踪或该环节没命中）时退回列表页
+  go('/panelx/list/' + panelCode, title)
 }
 
-function go(code) {
-  const path = '/panelx/list/' + code
+function onNodeClick({ node }) {
+  // 追踪态下打开命中的具体单据；有多张时打开第一张
+  const hit = (traceHits.value[node.data.code] || [])[0]
+  if (tracked.value && hit && hit.docNo) {
+    openDoc(node.data.code, hit.docNo, node.data.label + '-' + hit.docNo)
+    return
+  }
+  go('/panelx/list/' + node.data.code, node.data.label)
+}
+
+function go(path, title) {
   router.push(path)
-  tabs.open({ path, title: code })
+  tabs.open({ path, title })
 }
 </script>
 
 <style scoped>
+/* ---------- 设计基线（Ant Design v6 design-kits/antd）----------
+   字号 14/22 正文（fontSize/lineHeight）、圆角 6（borderRadius）、
+   间距 8/16/24（8pt 网格）、边框 #d9d9d9（colorBorder）、
+   次要字 rgba(0,0,0,.65)（colorTextSecondary）、占位 rgba(0,0,0,.45)（colorTextTertiary）。
+   卡片 0 层：白底 + 1px 边框，不加阴影；仅 hover 态给边框变色。 */
 .bo-page {
-  padding: 14px 18px;
-  height: 100%;
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  background: #f5f7fa;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 16px 24px 24px;
+  gap: 16px;
+  background: #f5f5f5;
 }
+
+/* ---------- 页头 ---------- */
 .bo-head {
-  padding-bottom: 12px;
-  border-bottom: 1px solid #e4e7ed;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
 }
+
 .bo-title {
-  font-size: 17px;
-  font-weight: 700;
-  color: #1f2d3d;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: rgba(0, 0, 0, 0.88);
 }
+
 .bo-sub {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 22px;
+  color: rgba(0, 0, 0, 0.65);
 }
+
+.bo-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bo-search {
+  width: 220px;
+}
+
+/* ---------- 主体三栏 ---------- */
 .bo-body {
   flex: 1;
   display: flex;
-  gap: 14px;
-  margin-top: 14px;
+  gap: 16px;
   min-height: 0;
 }
-.bo-modules {
-  width: 176px;
-  flex-shrink: 0;
-  background: #fff;
-  border: 1px solid #e4e7ed;
-  border-radius: 8px;
-  padding: 8px;
-  overflow-y: auto;
-}
-.bo-mod {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 10px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  color: #333;
-  margin-bottom: 2px;
-  transition: background .15s, color .15s;
-}
-.bo-mod:hover {
-  background: #f0f7ff;
-}
-.bo-mod.on {
-  background: var(--mc, #0d5bd3);
-  color: #fff;
-  box-shadow: 0 3px 8px rgba(31, 45, 61, .18);
-}
-.bo-mod-icon {
-  font-size: 15px;
-}
-.bo-main {
-  flex: 1;
+
+/* 左：模块导航 */
+.bo-nav {
+  width: 168px;
+  flex: 0 0 168px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-width: 0;
-}
-.bo-flow {
+  gap: 2px;
+  padding: 8px;
   background: #fff;
-  border: 1px solid #e4e7ed;
-  border-radius: 8px;
-  padding: 10px 12px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  overflow-y: auto;
 }
-.bo-flow-title {
+
+.bo-nav-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.88);
+  font-size: 14px;
+  line-height: 22px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+
+.bo-nav-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.bo-nav-item.on {
+  background: #e6f4ff;
+  color: #1677ff;
   font-weight: 600;
-  color: #333;
-  padding-bottom: 8px;
 }
-.bo-flow-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  margin-right: 6px;
-  vertical-align: middle;
+
+.bo-nav-icon {
+  color: rgba(0, 0, 0, 0.45);
 }
-.bo-flow-tip {
-  font-size: 11px;
-  font-weight: 400;
-  color: #909399;
+
+.bo-nav-item.on .bo-nav-icon {
+  color: #1677ff;
 }
-.bo-canvas {
-  border: 1px solid #eef1f5;
-  border-radius: 8px;
-  background: #fbfcfe;
+
+.bo-nav-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-nav-count {
+  flex: 0 0 auto;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.bo-nav-item.on .bo-nav-count {
+  background: #1677ff;
+  color: #fff;
+}
+
+/* 中：流程图 */
+.bo-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
   overflow: hidden;
 }
+
+.bo-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  flex: 0 0 auto;
+}
+
+.bo-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+.bo-panel-icon {
+  color: #1677ff;
+}
+
+.bo-panel-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 20px;
+  color: rgba(0, 0, 0, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+.bo-meta-sep {
+  color: rgba(0, 0, 0, 0.25);
+}
+
+.bo-meta-tip {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.bo-canvas {
+  flex: 1;
+  min-height: 420px;
+  background: #fafafa;
+  overflow: hidden;
+}
+
 .bo-vueflow {
   width: 100%;
   height: 100%;
 }
-/* 自定义节点卡片（对齐真实 T+ 卡片尺寸 211×83 → 200×80，左侧图标条 + 名称） */
+
+/* 流程图节点卡片：0 层边框，hover 才提边框色 */
 .fn-card {
-  width: 200px;
-  height: 80px;
+  position: relative;
   display: flex;
-  align-items: stretch;
-  border-radius: 10px;
+  align-items: center;
+  gap: 10px;
+  /* 与 JS 的 CARD_W 保持一致：布局按 176 计算列宽，卡片超出就会压到相邻节点 */
+  width: 176px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
   background: #fff;
-  border: 1.5px solid var(--c, #2f6fed);
-  box-shadow: 0 3px 10px rgba(31, 45, 61, .12);
   cursor: pointer;
-  overflow: hidden;
-  transition: transform .16s ease, box-shadow .16s ease;
+  transition: border-color 0.15s, background 0.15s;
 }
+
 .fn-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 22px rgba(31, 45, 61, .20);
+  border-color: #1677ff;
+  background: #fafcff;
 }
+
+.fn-card.dim {
+  opacity: 0.35;
+}
+
+.fn-card.done {
+  border-color: #b7eb8f;
+  background: #f6ffed;
+}
+
 .fn-icon {
-  width: 52px;
-  flex-shrink: 0;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  font-size: 22px;
-  background: linear-gradient(160deg, var(--c, #2f6fed), rgba(0, 0, 0, .16) 135%);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #e6f4ff;
+  color: #1677ff;
 }
-.fn-label {
+
+.fn-card.done .fn-icon {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.fn-body {
+  min-width: 0;
   flex: 1;
+}
+
+.fn-label {
+  font-size: 14px;
+  line-height: 22px;
+  color: rgba(0, 0, 0, 0.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fn-code {
+  font-size: 12px;
+  line-height: 18px;
+  color: rgba(0, 0, 0, 0.45);
+  font-family: Consolas, "Courier New", monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fn-mark {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: #52c41a;
+  display: flex;
+}
+
+.fn-mark.stalled {
+  color: #faad14;
+}
+
+/* 同环节多张单的汇总标记 */
+.fn-more {
+  position: absolute;
+  top: 6px;
+  right: 22px;
+  min-width: 20px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #e6f4ff;
+  color: #1677ff;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.fn-card.stalled .fn-more {
+  background: #fff7e6;
+  color: #faad14;
+}
+
+/* ---------- 追踪态节点 ---------- */
+/* 已完成：绿色边框 + 浅绿底 */
+.fn-card.state-done {
+  border-color: #95de64;
+  background: #f6ffed;
+}
+
+.fn-card.state-done .fn-icon {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+/* 进行中（含卡点）：蓝色边框，卡点再加琥珀色脉冲 */
+.fn-card.state-doing {
+  border-color: #1677ff;
+  background: #f0f7ff;
+}
+
+.fn-card.state-doing .fn-icon {
+  background: #e6f4ff;
+  color: #1677ff;
+}
+
+.fn-card.stalled {
+  border-color: #faad14;
+  background: #fffbe6;
+  animation: bo-pulse 1.8s ease-in-out infinite;
+}
+
+.fn-card.stalled .fn-icon {
+  background: #fff7e6;
+  color: #faad14;
+}
+
+@keyframes bo-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(250, 173, 20, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(250, 173, 20, 0.18); }
+}
+
+/* ---------- 追踪状态条 ---------- */
+.bo-track-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: #1f2d3d;
-  white-space: nowrap;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  background: #f6ffed;
+  flex: 0 0 auto;
 }
-.bo-sections {
-  width: 248px;
-  flex-shrink: 0;
+
+.bo-track-bar.stalled {
+  border-color: #ffe58f;
+  background: #fffbe6;
+}
+
+.bo-track-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  line-height: 22px;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+.bo-track-icon {
+  color: #52c41a;
+}
+
+.bo-track-bar.stalled .bo-track-icon {
+  color: #faad14;
+}
+
+.bo-track-doc {
+  font-weight: 600;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.bo-track-sep {
+  color: rgba(0, 0, 0, 0.25);
+}
+
+.bo-track-count {
+  color: rgba(0, 0, 0, 0.65);
+  font-variant-numeric: tabular-nums;
+}
+
+.bo-track-msg {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.bo-track-msg.done {
+  color: #52c41a;
+}
+
+.bo-track-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  line-height: 20px;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lg-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.lg-dot.done { background: #52c41a; }
+.lg-dot.doing { background: #1677ff; }
+.lg-dot.stalled { background: #faad14; }
+.lg-dot.none { background: #d9d9d9; }
+
+/* ---------- 跨模块提示 ---------- */
+.bo-cross-mod {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 16px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
   background: #fff;
-  border: 1px solid #e4e7ed;
+  font-size: 13px;
+  line-height: 20px;
+  flex: 0 0 auto;
+}
+
+.bo-cross-icon {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.bo-cross-text {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.bo-cross-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 2px 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background: #fff;
+  color: rgba(0, 0, 0, 0.88);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.bo-cross-btn:hover {
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+.bo-cross-btn.on {
+  border-color: #1677ff;
+  background: #e6f4ff;
+  color: #1677ff;
+  font-weight: 600;
+}
+
+.bo-cross-num {
+  min-width: 16px;
+  padding: 0 4px;
   border-radius: 8px;
-  padding: 8px 12px 12px;
+  background: rgba(0, 0, 0, 0.06);
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.bo-cross-btn.on .bo-cross-num {
+  background: #1677ff;
+  color: #fff;
+}
+
+/* 导航上的追踪命中标记 */
+.bo-nav-hit {
+  flex: 0 0 auto;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: #faad14;
+  color: #fff;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.bo-nav-item.hit:not(.on) .bo-nav-icon {
+  color: #faad14;
+}
+
+/* ---------- 经过的单据路线 ---------- */
+.bo-route {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fff;
+  flex: 0 0 auto;
+}
+
+.bo-route-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+.bo-route-icon {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.bo-route-count {
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bo-route-track {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.bo-route-node {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 152px;
+  padding: 6px 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  flex: 0 0 auto;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.bo-route-node:hover {
+  border-color: #1677ff;
+  background: #fafcff;
+}
+
+.bo-route-ic {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.bo-route-label {
+  font-size: 12px;
+  line-height: 18px;
+  color: rgba(0, 0, 0, 0.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bo-route-no {
+  font-size: 12px;
+  line-height: 17px;
+  font-family: Consolas, "Courier New", monospace;
+  color: rgba(0, 0, 0, 0.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bo-route-status {
+  font-size: 11px;
+  line-height: 16px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* 已完成 */
+.bo-route-node.kind-done {
+  border-color: #95de64;
+  background: #f6ffed;
+}
+
+.bo-route-node.kind-done .bo-route-ic {
+  color: #52c41a;
+}
+
+/* 进行中 / 卡点 */
+.bo-route-node.kind-doing {
+  border-color: #1677ff;
+  background: #f0f7ff;
+}
+
+.bo-route-node.kind-doing .bo-route-ic {
+  color: #1677ff;
+}
+
+.bo-route-node.stalled {
+  border-color: #faad14;
+  background: #fffbe6;
+}
+
+.bo-route-node.stalled .bo-route-ic {
+  color: #faad14;
+}
+
+.bo-route-node.stalled .bo-route-status {
+  color: #d48806;
+}
+
+.bo-route-node.kind-aborted {
+  border-color: #ffa39e;
+  background: #fff1f0;
+}
+
+.bo-route-node.kind-aborted .bo-route-ic {
+  color: #ff4d4f;
+}
+
+.bo-route-arrow {
+  flex: 0 0 auto;
+  display: flex;
+  color: rgba(0, 0, 0, 0.25);
+}
+
+.bo-route-arrow.kind-done {
+  color: #95de64;
+}
+
+.bo-route-arrow.kind-doing {
+  color: #1677ff;
+}
+
+/* ---------- 选单弹窗 ---------- */
+.bo-pick-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.bo-pick-select {
+  width: 180px;
+}
+
+.bo-pick-kw {
+  flex: 1;
+  min-width: 160px;
+}
+
+.bo-pick-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 360px;
   overflow-y: auto;
 }
+
+.bo-pick-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  color: rgba(0, 0, 0, 0.88);
+  transition: background 0.15s;
+}
+
+.bo-pick-row:hover {
+  background: #e6f4ff;
+}
+
+.bo-pick-no {
+  flex: 0 0 auto;
+  width: 168px;
+  font-family: Consolas, "Courier New", monospace;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-pick-meta {
+  flex: 1;
+  min-width: 0;
+  color: rgba(0, 0, 0, 0.65);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-pick-date {
+  flex: 0 0 auto;
+  width: 88px;
+  color: rgba(0, 0, 0, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+.bo-pick-status {
+  flex: 0 0 auto;
+  padding: 0 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 20px;
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.bo-pick-status.st-done { background: #f6ffed; color: #52c41a; }
+.bo-pick-status.st-doing { background: #e6f4ff; color: #1677ff; }
+.bo-pick-status.st-aborted { background: #fff1f0; color: #ff4d4f; }
+
+.bo-pick-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 8px;
+  text-align: center;
+}
+
+/* ---------- 流光：沿连线流动的虚线 ---------- */
+/* Vue Flow 默认 animated 只移动虚线，这里加一层更明显的流光效果 */
+:deep(.bo-edge-flow .vue-flow__edge-path) {
+  stroke-dasharray: 8 6;
+  animation: bo-flow 0.9s linear infinite;
+}
+
+@keyframes bo-flow {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+
+/* 右：单据/档案/报表 */
+.bo-side {
+  width: 248px;
+  flex: 0 0 248px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  overflow-y: auto;
+}
+
 .bo-sec {
-  padding: 8px 0;
-  border-bottom: 1px dashed #eef0f3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-.bo-sec:last-child {
-  border-bottom: none;
+
+.bo-sec + .bo-sec {
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
 }
-.bo-sec-title {
+
+.bo-sec-head {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #303133;
-  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+  color: rgba(0, 0, 0, 0.88);
 }
-.bo-sec-title::before {
-  content: '';
-  width: 4px;
-  height: 13px;
-  border-radius: 2px;
-  background: var(--sc, #0d5bd3);
+
+.bo-sec-icon {
+  color: rgba(0, 0, 0, 0.45);
 }
-.bo-sec-btns {
+
+.bo-sec-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.bo-sec-count {
+  flex: 0 0 auto;
+  min-width: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.bo-sec-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  gap: 2px;
 }
-.bo-btn {
-  padding: 3px 9px;
-  font-size: 12px;
-  color: #0d5bd3;
-  background: #f0f7ff;
-  border: 1px solid #cfe3ff;
-  border-radius: 5px;
+
+.bo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.88);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
   cursor: pointer;
-  transition: background .15s;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
 }
-.bo-btn:hover {
-  background: #d7e6ff;
+
+.bo-item:hover {
+  background: #e6f4ff;
+  color: #1677ff;
+}
+
+.bo-item:hover .bo-item-icon {
+  color: #1677ff;
+}
+
+.bo-item-icon {
+  flex: 0 0 auto;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.bo-item-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 空态：给主行动（设计库规则：空态不能只写"暂无数据"） */
+.bo-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 8px;
+  text-align: center;
+}
+
+.bo-empty-icon {
+  color: rgba(0, 0, 0, 0.25);
+}
+
+.bo-empty-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* ---------- 响应式 ---------- */
+/* 平板：侧栏下移，流程图占满宽度 */
+@media (max-width: 1100px) {
+  .bo-body {
+    flex-wrap: wrap;
+  }
+  .bo-nav {
+    width: 100%;
+    flex: 1 0 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .bo-nav-item {
+    width: auto;
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 6px 10px;
+  }
+  .bo-nav-label {
+    flex: 0 0 auto;
+  }
+  .bo-main {
+    flex: 1 0 100%;
+  }
+  .bo-side {
+    width: 100%;
+    flex: 1 0 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px;
+    overflow-y: visible;
+  }
+  .bo-sec {
+    flex: 1 1 200px;
+  }
+  .bo-sec + .bo-sec {
+    padding-top: 0;
+    border-top: 0;
+  }
+}
+
+/* 手机：单列，扇出节点卡片收窄 */
+@media (max-width: 768px) {
+  .bo-page {
+    padding: 12px 12px 16px;
+    gap: 12px;
+  }
+  .bo-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .bo-search {
+    width: 100%;
+  }
+  .bo-head-actions {
+    width: 100%;
+  }
+  .bo-canvas {
+    min-height: 320px;
+  }
+  .fn-card {
+    width: 176px;
+    padding: 8px 10px;
+  }
+  .fn-icon {
+    width: 28px;
+    height: 28px;
+  }
+  .bo-side {
+    flex-direction: column;
+  }
+  .bo-sec {
+    flex: 1 1 auto;
+  }
 }
 </style>

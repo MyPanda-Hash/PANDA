@@ -6,29 +6,31 @@ export const menuTree = [
     icon: 'HomeFilled',
   },
   {
-    code: 'scm',
-    title: '智能供应链',
+    code: 'businessOverview',
+    title: '业务总览',
+    path: '/scm/businessOverview',
     icon: 'Connection',
+  },
+  {
+    code: 'erp',
+    title: 'ERP',
+    desc: '销售 · 采购 · 库存 · 计划 · 财务',
+    icon: 'Money',
     children: [
-      {
-        code: 'businessOverview',
-        title: '业务总览',
-        path: '/scm/businessOverview',
-        icon: 'Connection',
-      },
       {
         code: 'sales',
         title: '销售管理',
         icon: 'ShoppingCart',
         children: [
           { code: 'cat', title: '单据', children: [
-            { code: 'quoteOrder', title: '报价单', path: '/panelx/list/QUOTE_ORDER', icon: 'Tickets', panelCode: 'QUOTE_ORDER', operationName: '新增流程' },
-            { code: 'salesOrder', title: '销售订单', path: '/panelx/list/SO_ORDER', icon: 'Tickets', panelCode: 'SO_ORDER', operationName: '新增流程' },
-            { code: 'saleInv', title: '销货单', path: '/panelx/list/SALE_INV', icon: 'Tickets', panelCode: 'SALE_INV', operationName: '新增流程' },
-            { code: 'saleInvoice', title: '销售发票', path: '/panelx/list/SALE_INVOICE', icon: 'Tickets', panelCode: 'SALE_INVOICE', operationName: '新增流程' },
-            { code: 'expense', title: '费用单', path: '/panelx/list/EXPENSE', icon: 'Tickets', panelCode: 'EXPENSE', operationName: '新增流程' },
-            { code: 'saleCostAlloc', title: '销售费用分摊单', path: '/panelx/list/SALE_COST_ALLOC', icon: 'Tickets', panelCode: 'SALE_COST_ALLOC', operationName: '新增流程' },
-          ] },
+              { code: 'quoteOrder', title: '报价单', path: '/panelx/list/QUOTE_ORDER', icon: 'Tickets', panelCode: 'QUOTE_ORDER', operationName: '新增流程' },
+              { code: 'salesOrder', title: '销售订单', path: '/panelx/list/SO_ORDER', icon: 'Tickets', panelCode: 'SO_ORDER', operationName: '新增流程' },
+              { code: 'saleInv', title: '销货单', path: '/panelx/list/SALE_INV', icon: 'Tickets', panelCode: 'SALE_INV', operationName: '新增流程' },
+              { code: 'saleReturn', title: '销售退货单', path: '/panelx/list/SALE_RETURN', icon: 'Tickets', panelCode: 'SALE_RETURN', operationName: '新增流程' },
+              { code: 'saleInvoice', title: '销售发票', path: '/panelx/list/SALE_INVOICE', icon: 'Tickets', panelCode: 'SALE_INVOICE', operationName: '新增流程' },
+              { code: 'expense', title: '费用单', path: '/panelx/list/EXPENSE', icon: 'Tickets', panelCode: 'EXPENSE', operationName: '新增流程' },
+              { code: 'saleCostAlloc', title: '销售费用分摊单', path: '/panelx/list/SALE_COST_ALLOC', icon: 'Tickets', panelCode: 'SALE_COST_ALLOC', operationName: '新增流程' },
+            ] },
           { code: 'detail', title: '明细表', children: [{ code: 'salesOrderDetail', title: '销售订单明细表', path: '/panelx/list/SALES_ORDER_DETAIL', panelCode: 'SALES_ORDER_DETAIL', icon: 'List' }] },
           { code: 'stats', title: '统计表', children: [{ code: 'salesOrderStats', title: '销售订单统计表', path: '/panelx/list/SALES_ORDER_STATS', panelCode: 'SALES_ORDER_STATS', icon: 'Histogram' }] },
           { code: 'exec', title: '执行表', children: [{ code: 'salesOrderExec', title: '销售订单执行表', path: '/panelx/list/SALES_ORDER_EXEC', panelCode: 'SALES_ORDER_EXEC', icon: 'Operation' }] },
@@ -46,63 +48,10 @@ export const menuTree = [
               { code: 'puReq', title: '请购单', path: '/panelx/list/PU_REQ', icon: 'Tickets', panelCode: 'PU_REQ', operationName: '新增流程' },
               { code: 'puOrder', title: '采购订单', path: '/panelx/list/PU_ORDER', icon: 'Tickets', panelCode: 'PU_ORDER', operationName: '新增流程' },
               { code: 'puIn', title: '进货单', path: '/panelx/list/PU_IN', icon: 'Tickets', panelCode: 'PU_IN', operationName: '新增流程' },
+              { code: 'purchaseReturn', title: '采购退货单', path: '/panelx/list/PURCHASE_RETURN', icon: 'Tickets', panelCode: 'PURCHASE_RETURN', operationName: '新增流程' },
               { code: 'puInvoice', title: '采购发票', path: '/panelx/list/PU_INVOICE', icon: 'Tickets', panelCode: 'PU_INVOICE', operationName: '新增流程' },
               { code: 'expense', title: '费用单', path: '/panelx/list/EXPENSE', icon: 'Tickets', panelCode: 'EXPENSE', operationName: '新增流程' },
               { code: 'puCostAlloc', title: '采购费用分摊单', path: '/panelx/list/PU_COST_ALLOC', icon: 'Tickets', panelCode: 'PU_COST_ALLOC', operationName: '新增流程' },
-            ],
-          },
-        ],
-      },
-      {
-        code: 'outsource',
-        title: '委外管理',
-        icon: 'Van',
-        children: [
-          {
-            code: 'doc', title: '单据', children: [
-              { code: 'outsourceOrder', title: '委外加工单', path: '/panelx/list/OUTSOURCE_ORDER', icon: 'Tickets', panelCode: 'OUTSOURCE_ORDER', operationName: '新增流程' },
-              { code: 'outsourceIssue', title: '委外发料单', path: '/panelx/list/OUTSOURCE_ISSUE', icon: 'Tickets', panelCode: 'OUTSOURCE_ISSUE', operationName: '新增流程' },
-              { code: 'outsourceIn', title: '委外入库单', path: '/panelx/list/OUTSOURCE_IN', icon: 'Tickets', panelCode: 'OUTSOURCE_IN', operationName: '新增流程' },
-              { code: 'outsourceFee', title: '委外加工费用单', path: '/panelx/list/OUTSOURCE_FEE', icon: 'Tickets', panelCode: 'OUTSOURCE_FEE', operationName: '新增流程' },
-            ],
-          },
-          {
-            code: 'detail', title: '明细表', children: [
-              { code: 'outsourceProductDetail', title: '委外加工单产成品明细表', path: '/panelx/list/OUTSOURCE_ORDER_PRODUCT_DETAIL', panelCode: 'OUTSOURCE_ORDER_PRODUCT_DETAIL', icon: 'List' },
-              { code: 'outsourceMaterialDetail', title: '委外加工单材料明细表', path: '/panelx/list/OUTSOURCE_ORDER_MATERIAL_DETAIL', panelCode: 'OUTSOURCE_ORDER_MATERIAL_DETAIL', icon: 'List' },
-              { code: 'outsourceFeeDetail', title: '委外加工费用单明细表', path: '/panelx/list/OUTSOURCE_FEE_DETAIL', panelCode: 'OUTSOURCE_FEE_DETAIL', icon: 'List' },
-            ],
-          },
-          {
-            code: 'stats', title: '统计表', children: [
-              { code: 'outsourceProductStats', title: '委外加工单产成品统计表', path: '/panelx/list/OUTSOURCE_ORDER_PRODUCT_STATS', panelCode: 'OUTSOURCE_ORDER_PRODUCT_STATS', icon: 'Histogram' },
-              { code: 'outsourceMaterialStats', title: '委外加工单材料统计表', path: '/panelx/list/OUTSOURCE_ORDER_MATERIAL_STATS', panelCode: 'OUTSOURCE_ORDER_MATERIAL_STATS', icon: 'Histogram' },
-              { code: 'outsourceFeeStats', title: '委外加工费用单统计表', path: '/panelx/list/OUTSOURCE_FEE_STATS', panelCode: 'OUTSOURCE_FEE_STATS', icon: 'Histogram' },
-            ],
-          },
-          {
-            code: 'exec', title: '执行表', children: [
-              { code: 'outsourceExec', title: '委外加工单执行表', path: '/panelx/list/OUTSOURCE_ORDER_EXEC', panelCode: 'OUTSOURCE_ORDER_EXEC', icon: 'Operation' },
-              { code: 'outsourceIssueBalance', title: '委外发料耗用结存表', path: '/panelx/list/OUTSOURCE_ISSUE_BALANCE', panelCode: 'OUTSOURCE_ISSUE_BALANCE', icon: 'DataAnalysis' },
-            ],
-          },
-        ],
-      },
-      {
-        code: 'distribution',
-        title: '配货管理',
-        icon: 'Box',
-        children: [
-          {
-            code: 'doc', title: '单据', children: [
-              { code: 'pickOrder', title: '配货单', path: '/panelx/list/PICK_ORDER', icon: 'Tickets', panelCode: 'PICK_ORDER', operationName: '新增流程' },
-            ],
-          },
-          {
-            code: 'report', title: '报表', children: [
-              { code: 'pickDetail', title: '配货单明细表', path: '/panelx/list/PICK_ORDER_DETAIL', panelCode: 'PICK_ORDER_DETAIL', icon: 'List' },
-              { code: 'pickStats', title: '配货单统计表', path: '/panelx/list/PICK_ORDER_STATS', panelCode: 'PICK_ORDER_STATS', icon: 'Histogram' },
-              { code: 'pickSummary', title: '配货综合统计表', path: '/panelx/list/PICK_ORDER_SUMMARY', panelCode: 'PICK_ORDER_SUMMARY', icon: 'DataAnalysis' },
             ],
           },
         ],
@@ -167,11 +116,97 @@ export const menuTree = [
           },
         ],
       },
+      {
+        code: 'plan',
+        title: '计划管理',
+        icon: 'Calendar',
+        children: [
+          { code: 'mpsPlan', title: '主生产计划', path: '/panelx/list/MPS_PLAN', icon: 'Calendar', panelCode: 'MPS_PLAN' },
+          { code: 'mrpResult', title: '物料需求运算结果', path: '/panelx/list/MRP_RESULT', icon: 'DataAnalysis', panelCode: 'MRP_RESULT' },
+          { code: 'kitAnalysis', title: '齐套分析', path: '/panelx/list/KIT_ANALYSIS', icon: 'Files', panelCode: 'KIT_ANALYSIS' },
+          { code: 'puReqAnalysis2', title: '采购需求分析', path: '/panelx/list/PU_REQ_ANALYSIS', icon: 'DataAnalysis', panelCode: 'PU_REQ_ANALYSIS' },
+        ],
+      },
+      {
+        code: 'finance',
+        title: '应收应付',
+        icon: 'Money',
+        children: [
+          {
+            code: 'doc', title: '收付款', children: [
+              { code: 'receipt', title: '收款单', path: '/panelx/list/RECEIPT', icon: 'Tickets', panelCode: 'RECEIPT', operationName: '新增流程' },
+              { code: 'receiptPayable', title: '付款单', path: '/panelx/list/RECEIPT_PAYABLE', icon: 'Tickets', panelCode: 'RECEIPT_PAYABLE', operationName: '新增流程' },
+            ],
+          },
+          {
+            code: 'report', title: '对账与分析', children: [
+              { code: 'settleCustomer', title: '客户对账单', path: '/panelx/list/SETTLE_CUSTOMER', icon: 'List', panelCode: 'SETTLE_CUSTOMER' },
+              { code: 'settleSupplier', title: '供应商对账单', path: '/panelx/list/SETTLE_SUPPLIER', icon: 'List', panelCode: 'SETTLE_SUPPLIER' },
+              { code: 'agingAnalysis', title: '账龄分析表', path: '/panelx/list/AGING_ANALYSIS', icon: 'Histogram', panelCode: 'AGING_ANALYSIS' },
+            ],
+          },
+        ],
+      },
+      {
+        code: 'accounting',
+        title: '账务处理',
+        icon: 'Notebook',
+        children: [
+          {
+            code: 'base', title: '基础设置', children: [
+              { code: 'account', title: '会计科目', path: '/panelx/list/ACCOUNT', icon: 'Collection', panelCode: 'ACCOUNT' },
+            ],
+          },
+          {
+            code: 'report', title: '账表', children: [
+              { code: 'accountingEntry', title: '凭证查询', path: '/panelx/list/ACCOUNTING_ENTRY', icon: 'Tickets', panelCode: 'ACCOUNTING_ENTRY' },
+              { code: 'accountBalance', title: '科目余额表', path: '/panelx/list/ACCOUNT_BALANCE', icon: 'Histogram', panelCode: 'ACCOUNT_BALANCE' },
+              { code: 'accountDetail', title: '明细账', path: '/panelx/list/ACCOUNT_DETAIL', icon: 'List', panelCode: 'ACCOUNT_DETAIL' },
+            ],
+          },
+        ],
+      },
+      {
+        code: 'outsource',
+        title: '委外管理',
+        icon: 'Van',
+        children: [
+          {
+            code: 'doc', title: '单据', children: [
+              { code: 'outsourceOrder', title: '委外加工单', path: '/panelx/list/OUTSOURCE_ORDER', icon: 'Tickets', panelCode: 'OUTSOURCE_ORDER', operationName: '新增流程' },
+              { code: 'outsourceIssue', title: '委外发料单', path: '/panelx/list/OUTSOURCE_ISSUE', icon: 'Tickets', panelCode: 'OUTSOURCE_ISSUE', operationName: '新增流程' },
+              { code: 'outsourceIn', title: '委外入库单', path: '/panelx/list/OUTSOURCE_IN', icon: 'Tickets', panelCode: 'OUTSOURCE_IN', operationName: '新增流程' },
+              { code: 'outsourceFee', title: '委外加工费用单', path: '/panelx/list/OUTSOURCE_FEE', icon: 'Tickets', panelCode: 'OUTSOURCE_FEE', operationName: '新增流程' },
+            ],
+          },
+          {
+            code: 'detail', title: '明细表', children: [
+              { code: 'outsourceProductDetail', title: '委外加工单产成品明细表', path: '/panelx/list/OUTSOURCE_ORDER_PRODUCT_DETAIL', panelCode: 'OUTSOURCE_ORDER_PRODUCT_DETAIL', icon: 'List' },
+              { code: 'outsourceMaterialDetail', title: '委外加工单材料明细表', path: '/panelx/list/OUTSOURCE_ORDER_MATERIAL_DETAIL', panelCode: 'OUTSOURCE_ORDER_MATERIAL_DETAIL', icon: 'List' },
+              { code: 'outsourceFeeDetail', title: '委外加工费用单明细表', path: '/panelx/list/OUTSOURCE_FEE_DETAIL', panelCode: 'OUTSOURCE_FEE_DETAIL', icon: 'List' },
+            ],
+          },
+          {
+            code: 'stats', title: '统计表', children: [
+              { code: 'outsourceProductStats', title: '委外加工单产成品统计表', path: '/panelx/list/OUTSOURCE_ORDER_PRODUCT_STATS', panelCode: 'OUTSOURCE_ORDER_PRODUCT_STATS', icon: 'Histogram' },
+              { code: 'outsourceMaterialStats', title: '委外加工单材料统计表', path: '/panelx/list/OUTSOURCE_ORDER_MATERIAL_STATS', panelCode: 'OUTSOURCE_ORDER_MATERIAL_STATS', icon: 'Histogram' },
+              { code: 'outsourceFeeStats', title: '委外加工费用单统计表', path: '/panelx/list/OUTSOURCE_FEE_STATS', panelCode: 'OUTSOURCE_FEE_STATS', icon: 'Histogram' },
+            ],
+          },
+          {
+            code: 'exec', title: '执行表', children: [
+              { code: 'outsourceExec', title: '委外加工单执行表', path: '/panelx/list/OUTSOURCE_ORDER_EXEC', panelCode: 'OUTSOURCE_ORDER_EXEC', icon: 'Operation' },
+              { code: 'outsourceIssueBalance', title: '委外发料耗用结存表', path: '/panelx/list/OUTSOURCE_ISSUE_BALANCE', panelCode: 'OUTSOURCE_ISSUE_BALANCE', icon: 'DataAnalysis' },
+            ],
+          },
+        ],
+      },
     ],
   },
   {
-    code: 'mfg',
-    title: '新生产',
+    code: 'mes',
+    title: 'MES',
+    desc: '生产加工 · 工序 · 车间',
     icon: 'Odometer',
     children: [
       {
@@ -227,10 +262,57 @@ export const menuTree = [
     ],
   },
   {
-    code: 'qc',
-    title: '质量管理',
+    code: 'wms',
+    title: 'WMS',
+    desc: '仓内作业 · 配货 · 库存账表',
+    icon: 'Box',
+    children: [
+      {
+        code: 'wmsOps',
+        title: '仓内作业',
+        icon: 'Box',
+        children: [
+          { code: 'pickWorkbench', title: '拣货工作台', path: '/panelx/list/PICK_WORKBENCH', icon: 'Box', panelCode: 'PICK_WORKBENCH' },
+          { code: 'pickOrderWms', title: '配货单', path: '/panelx/list/PICK_ORDER', icon: 'Tickets', panelCode: 'PICK_ORDER', operationName: '新增流程' },
+          { code: 'stockCheckWms', title: '库存盘点单', path: '/panelx/list/STOCK_CHECK', icon: 'Files', panelCode: 'STOCK_CHECK', operationName: '新增流程' },
+          { code: 'locationAdjustWms', title: '货位调整单', path: '/panelx/list/LOCATION_ADJUST', icon: 'Sort', panelCode: 'LOCATION_ADJUST', operationName: '新增流程' },
+          { code: 'stockStatusWms', title: '库存状况表', path: '/panelx/list/STOCK_STATUS', icon: 'DataAnalysis', panelCode: 'STOCK_STATUS' },
+          { code: 'stockLedgerWms', title: '库存台账', path: '/panelx/list/STOCK_LEDGER', icon: 'Notebook', panelCode: 'STOCK_LEDGER' },
+        ],
+      },
+      {
+        code: 'distribution',
+        title: '配货管理',
+        icon: 'Box',
+        children: [
+          {
+            code: 'doc', title: '单据', children: [
+              { code: 'pickOrder', title: '配货单', path: '/panelx/list/PICK_ORDER', icon: 'Tickets', panelCode: 'PICK_ORDER', operationName: '新增流程' },
+            ],
+          },
+          {
+            code: 'report', title: '报表', children: [
+              { code: 'pickDetail', title: '配货单明细表', path: '/panelx/list/PICK_ORDER_DETAIL', panelCode: 'PICK_ORDER_DETAIL', icon: 'List' },
+              { code: 'pickStats', title: '配货单统计表', path: '/panelx/list/PICK_ORDER_STATS', panelCode: 'PICK_ORDER_STATS', icon: 'Histogram' },
+              { code: 'pickSummary', title: '配货综合统计表', path: '/panelx/list/PICK_ORDER_SUMMARY', panelCode: 'PICK_ORDER_SUMMARY', icon: 'DataAnalysis' },
+            ],
+          },
+        ],
+      },
+      {
+        // 移动仓管页面早已存在（/scm/mobileWarehouse），此前没有任何菜单入口
+        code: 'mobileWarehouse',
+        title: '移动仓管',
+        path: '/scm/mobileWarehouse',
+        icon: 'Cellphone',
+      },
+    ],
+  },
+  {
+    code: 'qms',
+    title: 'QMS',
+    desc: '质检 · 检验 · 质量追溯',
     icon: 'Aim',
-    tplusCode: 'NQM',
     children: [
       {
         code: 'qcManagement',
@@ -284,6 +366,7 @@ export const menuTree = [
               { code: 'inspectionStats', title: '检验单综合统计表', path: '/panelx/list/INSPECTION_STATS', icon: 'Histogram', panelCode: 'INSPECTION_STATS', tplusCode: 'QM6015' },
               { code: 'qcItemList', title: '检验项目列表', path: '/panelx/list/QC_ITEM_LIST', icon: 'List', panelCode: 'QC_ITEM_LIST', tplusCode: 'QM1501' },
               { code: 'qcItemStats', title: '检验项目综合统计表', path: '/panelx/list/QC_ITEM_STATS', icon: 'Histogram', panelCode: 'QC_ITEM_STATS', tplusCode: 'QM6016' },
+              { code: 'spcControl', title: 'SPC 控制图', path: '/panelx/list/SPC_CONTROL', icon: 'TrendCharts', panelCode: 'SPC_CONTROL' },
             ],
           },
         ],
@@ -312,8 +395,35 @@ export const menuTree = [
     ],
   },
   {
+    code: 'pdm',
+    title: 'PDM',
+    desc: '物料 · BOM · 工艺路线',
+    icon: 'Collection',
+    children: [
+      {
+        code: 'doc', title: '物料与工艺', icon: 'Collection', children: [
+          { code: 'inventory', title: '存货', path: '/panelx/list/INV', icon: 'Grid', panelCode: 'INV' },
+          { code: 'opConv', title: '工序辅单位换算率设置', path: '/panelx/list/OP_CONV', icon: 'RefreshRight', panelCode: 'OP_CONV' },
+          { code: 'wc', title: '工作中心', path: '/panelx/list/WC', icon: 'Odometer', panelCode: 'WC' },
+          { code: 'equip', title: '设备', path: '/panelx/list/EQUIP', icon: 'Cpu', panelCode: 'EQUIP' },
+          { code: 'team', title: '班组', path: '/panelx/list/TEAM', icon: 'UserFilled', panelCode: 'TEAM' },
+          { code: 'bom', title: '物料清单', path: '/panelx/list/BOM', icon: 'Files', panelCode: 'BOM' },
+          { code: 'routing', title: '工艺路线', path: '/panelx/list/ROUTE', icon: 'Guide', panelCode: 'ROUTE' },
+          { code: 'process', title: '工序', path: '/panelx/list/OP', icon: 'SetUp', panelCode: 'OP' }
+        ],
+      },
+      {
+        code: 'query', title: 'BOM 查询', icon: 'Search', children: [
+          { code: 'bomFwd', title: '物料清单正向查询', path: '/panelx/list/BOM_FWD', icon: 'TopRight', panelCode: 'BOM_FWD' },
+          { code: 'bomRev', title: '物料清单反向查询', path: '/panelx/list/BOM_REV', icon: 'BottomLeft', panelCode: 'BOM_REV' }
+        ],
+      },
+    ],
+  },
+  {
     code: 'foundation',
     title: '基础设置',
+    desc: '组织与档案 · 单据编码 · 初始化',
     icon: 'Setting',
     children: [
       {
@@ -327,16 +437,6 @@ export const menuTree = [
               { code: 'employee', title: '员工', path: '/panelx/list/EMP', icon: 'User', panelCode: 'EMP' },
               { code: 'partner', title: '往来单位', path: '/panelx/list/PARTNER', icon: 'OfficeBuilding', panelCode: 'PARTNER' },
               { code: 'uom', title: '计量单位', path: '/panelx/list/UOM', icon: 'ScaleToOriginal', panelCode: 'UOM' },
-              { code: 'inventory', title: '存货', path: '/panelx/list/INV', icon: 'Grid', panelCode: 'INV' },
-              { code: 'equip', title: '设备', path: '/panelx/list/EQUIP', icon: 'Cpu', panelCode: 'EQUIP' },
-              { code: 'team', title: '班组', path: '/panelx/list/TEAM', icon: 'UserFilled', panelCode: 'TEAM' },
-              { code: 'wc', title: '工作中心', path: '/panelx/list/WC', icon: 'Odometer', panelCode: 'WC' },
-              { code: 'process', title: '工序', path: '/panelx/list/OP', icon: 'SetUp', panelCode: 'OP' },
-              { code: 'opConv', title: '工序辅单位换算率设置', path: '/panelx/list/OP_CONV', icon: 'RefreshRight', panelCode: 'OP_CONV' },
-              { code: 'routing', title: '工艺路线', path: '/panelx/list/ROUTE', icon: 'Guide', panelCode: 'ROUTE' },
-              { code: 'bom', title: '物料清单', path: '/panelx/list/BOM', icon: 'Files', panelCode: 'BOM' },
-              { code: 'bomFwd', title: '物料清单正向查询', path: '/panelx/list/BOM_FWD', icon: 'TopRight', panelCode: 'BOM_FWD' },
-              { code: 'bomRev', title: '物料清单反向查询', path: '/panelx/list/BOM_REV', icon: 'BottomLeft', panelCode: 'BOM_REV' },
               { code: 'warehouse', title: '仓库', path: '/panelx/list/WH', icon: 'House', panelCode: 'WH' },
               { code: 'region', title: '地区', path: '/panelx/list/REGION', icon: 'Location', panelCode: 'REGION' },
               { code: 'proj', title: '项目', path: '/panelx/list/PROJ', icon: 'Flag', panelCode: 'PROJ' },
@@ -358,31 +458,12 @@ export const menuTree = [
         icon: 'Tools',
         children: [
           {
-            code: 'basic', title: '基本设置', children: [
-              { code: 'options', title: '选项设置', path: '/panelx/list/SYS_OPT', icon: 'Setting', panelCode: 'SYS_OPT' },
-              { code: 'boardAuth', title: '看板授权', path: '/panelx/list/SYS_BOARD_AUTH', icon: 'Key', panelCode: 'SYS_BOARD_AUTH' },
-            ],
-          },
-          {
+            // 只保留有真实实现支撑的两项：自动编号规则、打印模板。
+            // 原「选项设置/看板授权/单据设计/移动单据/移动模板/打印出厂值/预警/任务/大屏×2」
+            // 共 10 个面板是纯静态占位记录，后端零实现，已清理。
             code: 'doc', title: '单据档案设置', children: [
-              { code: 'docDesign', title: '单据设计', path: '/panelx/list/SYS_BILL_DESIGN', icon: 'Brush', panelCode: 'SYS_BILL_DESIGN' },
-              { code: 'mobileDoc', title: '移动单据设置', path: '/panelx/list/SYS_MOBILE', icon: 'Iphone', panelCode: 'SYS_MOBILE' },
-              { code: 'mobileTpl', title: '移动模板设置', path: '/panelx/list/SYS_MOBILE_TPL', icon: 'Iphone', panelCode: 'SYS_MOBILE_TPL' },
               { code: 'coding', title: '单据编码设置', path: '/panelx/list/SYS_CODE', icon: 'Sort', panelCode: 'SYS_CODE' },
               { code: 'print', title: '打印管理中心', path: '/panelx/list/SYS_PRINT', icon: 'Printer', panelCode: 'SYS_PRINT' },
-              { code: 'printDefault', title: '打印出厂值设置', path: '/panelx/list/SYS_PRINT_DEFAULT', icon: 'Printer', panelCode: 'SYS_PRINT_DEFAULT' },
-            ],
-          },
-          {
-            code: 'msg', title: '消息中心及预警设置', children: [
-              { code: 'alert', title: '预警设置', path: '/panelx/list/SYS_ALARM', icon: 'Bell', panelCode: 'SYS_ALARM' },
-            ],
-          },
-          {
-            code: 'acct', title: '账套管理及工具', children: [
-              { code: 'task', title: '任务管理', path: '/panelx/list/SYS_TASK', icon: 'Calendar', panelCode: 'SYS_TASK' },
-              { code: 'screen', title: '大屏设备管理', path: '/panelx/list/SYS_SCREEN', icon: 'Monitor', panelCode: 'SYS_SCREEN' },
-              { code: 'screenDl', title: '大屏客户端下载中心', path: '/panelx/list/SYS_SCREEN_DL', icon: 'Download', panelCode: 'SYS_SCREEN_DL' },
             ],
           },
           {
@@ -416,6 +497,7 @@ export const menuTree = [
   {
     code: 'top',
     title: 'TOP应用',
+    desc: '方案中心',
     icon: 'Platform',
     children: [
       {
@@ -427,7 +509,7 @@ export const menuTree = [
         ],
       },
     ],
-  },
+  }
 ]
 
 function walk(node, fn) {
@@ -455,14 +537,14 @@ export function filterTree(nodes, keyword) {
   const k = keyword.trim()
   if (!k) return nodes
   return nodes
-    .map((n) => {
-      if (n.children) {
-        const children = filterTree(n.children, k)
-        return children.length ? { ...n, children } : null
-      }
-      return n.title.includes(k) ? n : null
-    })
-    .filter(Boolean)
+  .map((n) => {
+    if (n.children) {
+      const children = filterTree(n.children, k)
+      return children.length ? { ...n, children } : null
+    }
+    return n.title.includes(k) ? n : null
+  })
+  .filter(Boolean)
 }
 
 // 角色权限过滤：仅保留 visiblePanels 内的面板叶子；分组节点在子项全不可见时隐藏；admin 返回全量

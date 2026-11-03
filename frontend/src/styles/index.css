@@ -61,6 +61,45 @@ html.dark {
   --el-fill-color-blank: #222c28;
 }
 
+/* ===== 设计库语义层（映射 antd v6 token）：容器加 class="adx"，内部用 var(--d-*) =====
+   - 中性：colorBgContainer / colorBorderSecondary / colorBorder / colorText 阶梯 / colorFillTertiary
+   - 语义：colorSuccess #52c41a / colorWarning #faad14 / colorError #ff4d4f
+   - 尺寸：borderRadius 6、borderRadiusLG 8
+   - 主色保留项目品牌绿：全站导航与按钮都是绿，单页换 antd 蓝会割裂
+   已接入：我的桌面（dashboard）、组织架构（OrgAdmin）。新页面请直接复用本类，不要再抄一份 token。 */
+.adx {
+  --d-card: var(--t-card-bg);
+  --d-border: var(--t-border-light);
+  --d-border-strong: var(--t-border);
+  --d-text: var(--t-text-1);
+  --d-text-2: var(--t-text-2);
+  --d-text-3: var(--t-text-3);
+  --d-fill: rgba(0, 0, 0, 0.04);
+  --d-fill-soft: rgba(0, 0, 0, 0.02);
+  --d-primary: var(--t-primary);
+  --d-primary-bg: rgba(17, 106, 91, 0.08);
+  --d-ok: #52c41a;
+  --d-ok-bg: rgba(82, 196, 26, 0.1);
+  --d-warn: #faad14;
+  --d-warn-bg: rgba(250, 173, 20, 0.12);
+  --d-bad: #ff4d4f;
+  --d-bad-bg: rgba(255, 77, 79, 0.1);
+  --d-radius: 8px;
+  --d-radius-sm: 6px;
+}
+
+html.dark .adx {
+  --d-fill: rgba(255, 255, 255, 0.08);
+  --d-fill-soft: rgba(255, 255, 255, 0.04);
+  --d-primary-bg: rgba(88, 176, 158, 0.16);
+  --d-ok: #49aa19;
+  --d-ok-bg: rgba(73, 170, 25, 0.16);
+  --d-warn: #d89614;
+  --d-warn-bg: rgba(216, 150, 20, 0.16);
+  --d-bad: #dc4446;
+  --d-bad-bg: rgba(220, 68, 70, 0.16);
+}
+
 html,
 body,
 #app {

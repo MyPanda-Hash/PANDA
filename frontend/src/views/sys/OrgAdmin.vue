@@ -1,138 +1,256 @@
-<!-- OrgAdmin.vue — 组织架构（仅管理员）：部门树 + 用户管理（分配角色/部门）+ 角色管理（面板勾选、审批权限） -->
+<!-- OrgAdmin.vue — 组织架构（仅管理员）：部门树 + 用户管理（分配角色/部门）+ 角色与面板权限矩阵 -->
 <template>
-  <div class="org-wrap">
-    <!-- 左：部门 -->
-    <div class="org-col dept">
-      <div class="col-head">
-        <span class="col-title">{{ tt('部门') }}</span>
-        <el-button type="primary" size="small" @click="newDept(0)">{{ tt('新增部门') }}</el-button>
+  <div class="adx org">
+    <!-- 页头：三层关系一句话说清，右侧只放刷新 -->
+    <header class="d-head">
+      <div>
+        <h1 class="d-head__title">{{ tt('组织架构') }}</h1>
+        <p class="d-head__desc">
+          {{ tt('部门定层级') }} · {{ tt('用户挂部门与角色') }} · {{ tt('角色决定能看到哪些面板') }}
+        </p>
       </div>
-      <el-tree
-        class="dept-tree"
-        :data="deptTree"
-        node-key="id"
-        :props="{ label: 'deptName', children: 'children' }"
-        highlight-current
-        :expand-on-click-node="false"
-        @node-click="onDeptClick"
-      >
-        <template #default="{ data }">
-          <div class="dept-node">
-            <span>{{ data.deptName }}</span>
-            <span class="dept-ops" @click.stop>
-              <el-button size="small" link type="primary" @click="newDept(data.id)">{{ tt('+子') }}</el-button>
-              <el-button size="small" link type="primary" @click="editDept(data)">{{ tt('改') }}</el-button>
-              <el-button v-if="data.id !== 1" size="small" link type="danger" @click="delDept(data)">{{ tt('删') }}</el-button>
-            </span>
+      <el-tooltip :content="tt('重新加载')" placement="top">
+        <el-button :loading="loadingAll" aria-label="重新加载" @click="reloadAll">
+          <el-icon><Refresh /></el-icon>
+        </el-button>
+      </el-tooltip>
+    </header>
+
+    <div class="d-grid">
+      <!-- 左：部门 -->
+      <section class="d-card d-span-4">
+        <div class="d-card__head">
+          <div>
+            <h2 class="d-card__title">{{ tt('部门') }}</h2>
+            <p class="d-card__desc">{{ tt('支持多级部门，最多到车间/班组') }}</p>
           </div>
-        </template>
-      </el-tree>
-      <div class="col-tip">{{ tt('支持多级部门；「+子」新增下级部门') }}</div>
-    </div>
-
-    <!-- 中：用户 -->
-    <div class="org-col users">
-      <div class="col-head">
-        <span class="col-title">{{ tt('用户（组织调整）') }}</span>
-        <el-button type="primary" size="small" @click="openUser()">{{ tt('新增用户') }}</el-button>
-      </div>
-      <el-table :data="users" size="small" border height="620" highlight-current-row @row-click="openUser">
-        <el-table-column prop="userName" :label="tt('账号')" width="100" />
-        <el-table-column prop="realName" :label="tt('姓名')" min-width="80" />
-        <el-table-column :label="tt('部门')" min-width="110">
-          <template #default="{ row }">{{ row.deptName || '-' }}</template>
-        </el-table-column>
-        <el-table-column :label="tt('角色')" min-width="100">
-          <template #default="{ row }">{{ row.roleName || '-' }}</template>
-        </el-table-column>
-        <el-table-column :label="tt('状态')" width="64" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.enabled ? 'success' : 'info'" size="small">{{ row.enabled ? tt('启用') : tt('停用') }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="tt('操作')" width="56" align="center">
-          <template #default="{ row }">
-            <el-button size="small" link type="primary" @click.stop="openUser(row)">{{ tt('编辑') }}</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="col-tip">{{ tt('点击用户行可分配部门 / 角色 / 启停用') }}</div>
-    </div>
-
-    <!-- 右：角色与面板权限 -->
-    <div class="org-col roles">
-      <div class="col-head">
-        <span class="col-title">{{ tt('角色与面板权限') }}</span>
-        <el-button type="primary" size="small" @click="newRoleVisible = true">{{ tt('创建角色') }}</el-button>
-      </div>
-      <el-table :data="roles" size="small" border height="200" highlight-current-row @current-change="onRoleSelect">
-        <el-table-column prop="roleName" :label="tt('角色名称')" min-width="110" />
-        <el-table-column prop="roleCode" :label="tt('编码')" width="100" />
-        <el-table-column :label="tt('类型')" width="64" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.isAdmin" type="danger" size="small">{{ tt('超级') }}</el-tag>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column :label="tt('操作')" width="56" align="center">
-          <template #default="{ row }">
-            <el-button v-if="!row.isAdmin" size="small" link type="danger" @click.stop="delRole(row)">{{ tt('删除') }}</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div v-if="selRole" class="perm-box">
-        <div class="perm-head">
-          「{{ selRole.roleName }}」{{ tt('面板权限矩阵') }}
-          <span class="perm-sub">{{ tt('（11 项权限；勾「查看」才有菜单入口，取消「查看」清空整行；审批列仅审批流面板可勾；复核/调整为预留位）') }}</span>
+          <el-button type="primary" @click="newDept(0)">{{ tt('新增部门') }}</el-button>
         </div>
-        <div v-if="selRole.isAdmin" class="admin-tip">{{ tt('管理员为超级权限：默认全部面板全部权限，无需配置。') }}</div>
-        <template v-else>
-          <el-collapse v-model="openGroups" class="perm-collapse">
-            <el-collapse-item v-for="g in groupedPanels" :key="g.code" :name="g.code">
-              <template #title>
-                <span class="g-title">{{ tt(g.name) }}</span>
-                <span class="g-count">{{ g.panels.length }} {{ tt('个面板') }}</span>
-                <span class="g-actions" @click.stop>
-                  <el-button link size="small" type="primary" @click="setGroupAll(g, true)">{{ tt('全选') }}</el-button>
-                  <el-button link size="small" @click="setGroupAll(g, false)">{{ tt('清空') }}</el-button>
+
+        <div class="d-tree">
+          <el-tree
+            v-if="deptTree.length"
+            class="dept-tree"
+            :data="deptTree"
+            node-key="id"
+            :props="{ label: 'deptName', children: 'children' }"
+            highlight-current
+            :expand-on-click-node="false"
+            default-expand-all
+            @node-click="onDeptClick"
+          >
+            <template #default="{ data }">
+              <div class="d-tree__row">
+                <span class="d-tree__name" :title="data.deptName">{{ data.deptName }}</span>
+                <span class="d-tree__ops" @click.stop>
+                  <el-button link type="primary" @click="newDept(data.id)">{{ tt('+子') }}</el-button>
+                  <el-button link type="primary" @click="editDept(data)">{{ tt('改') }}</el-button>
+                  <el-button v-if="data.id !== 1" link type="danger" @click="delDept(data)">{{ tt('删') }}</el-button>
                 </span>
-              </template>
-              <el-table :data="g.panels" size="small" border class="perm-table">
-                <el-table-column :label="tt('面板')" prop="panelName" min-width="130" fixed="left">
-                  <template #default="{ row }">{{ tt(row.panelName) }}</template>
-                </el-table-column>
-                <el-table-column v-for="a in permActions" :key="a.code" width="56" align="center">
-                  <template #header>
-                    <el-checkbox
-                      :model-value="groupColChecked(g, a.code)"
-                      :indeterminate="groupColIndeterminate(g, a.code)"
-                      :disabled="a.reserved || (a.code === 'audit' && !rowsForCol(g, a.code).length)"
-                      @change="(v) => setGroupCol(g, a.code, v)"
-                    >{{ tt(a.name) }}</el-checkbox>
-                  </template>
-                  <template #default="{ row }">
-                    <el-tooltip v-if="a.reserved" :content="tt('预留权限位，当前版本暂无对应按钮')" placement="top">
-                      <span class="perm-reserved"><el-checkbox :model-value="false" disabled /></span>
-                    </el-tooltip>
-                    <el-checkbox
-                      v-else
-                      :model-value="!!row.perms[a.code]"
-                      :disabled="a.code === 'audit' && !row.hasApproval"
-                      :title="a.code === 'audit' && !row.hasApproval ? tt('该面板无审批流') : ''"
-                      @change="(v) => togglePerm(row, a.code, v)"
-                    />
-                  </template>
-                </el-table-column>
-              </el-table>
-            </el-collapse-item>
-          </el-collapse>
-          <div class="perm-actions">
-            <el-button type="primary" size="small" :loading="saving" @click="savePanels">{{ tt('保存权限矩阵') }}</el-button>
-            <el-button size="small" @click="loadRolePanels(selRole)">{{ tt('刷新') }}</el-button>
+              </div>
+            </template>
+          </el-tree>
+          <div v-else class="d-empty">
+            <el-icon><OfficeBuilding /></el-icon>
+            <p>{{ tt('还没有部门') }}</p>
+            <el-button type="primary" size="small" @click="newDept(0)">{{ tt('新增部门') }}</el-button>
           </div>
-        </template>
-      </div>
+        </div>
+
+        <p class="d-tip">{{ tt('支持多级部门；「+子」新增下级部门') }}</p>
+      </section>
+
+      <!-- 中：用户 -->
+      <section class="d-card d-span-8">
+        <div class="d-card__head">
+          <div>
+            <h2 class="d-card__title">{{ tt('用户') }}</h2>
+            <p class="d-card__desc">{{ tt('点击用户行分配部门 / 角色 / 启停用') }}</p>
+          </div>
+          <el-button type="primary" @click="openUser()">{{ tt('新增用户') }}</el-button>
+        </div>
+
+        <div class="d-toolbar">
+          <el-input
+            v-model="keyword"
+            class="d-search"
+            clearable
+            :placeholder="tt('搜索账号或姓名')"
+            :prefix-icon="Search"
+          />
+          <el-select v-model="statusFilter" class="d-filter">
+            <el-option :label="tt('全部状态')" value="all" />
+            <el-option :label="tt('启用')" value="on" />
+            <el-option :label="tt('停用')" value="off" />
+          </el-select>
+          <span class="d-count">{{ filteredUsers.length }} / {{ users.length }} {{ tt('人') }}</span>
+        </div>
+
+        <el-table
+          v-if="users.length"
+          :data="filteredUsers"
+          class="d-table"
+          max-height="392"
+          highlight-current-row
+          @row-click="openUser"
+        >
+          <el-table-column prop="userName" :label="tt('账号')" min-width="110" />
+          <el-table-column prop="realName" :label="tt('姓名')" min-width="90">
+            <template #default="{ row }">{{ row.realName || '-' }}</template>
+          </el-table-column>
+          <el-table-column :label="tt('部门')" min-width="120">
+            <template #default="{ row }">{{ row.deptName || '-' }}</template>
+          </el-table-column>
+          <el-table-column :label="tt('角色')" min-width="120">
+            <template #default="{ row }">{{ row.roleName || '-' }}</template>
+          </el-table-column>
+          <el-table-column :label="tt('状态')" width="88">
+            <template #default="{ row }">
+              <span class="d-tag" :class="row.enabled ? 'is-stable' : 'is-neutral'">
+                {{ row.enabled ? tt('启用') : tt('停用') }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column :label="tt('操作')" width="76" align="right">
+            <template #default="{ row }">
+              <el-button link type="primary" @click.stop="openUser(row)">{{ tt('编辑') }}</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div v-else class="d-empty">
+          <el-icon><User /></el-icon>
+          <p>{{ tt('还没有用户') }}</p>
+          <el-button type="primary" size="small" @click="openUser()">{{ tt('新增用户') }}</el-button>
+        </div>
+        <div v-if="users.length && !filteredUsers.length" class="d-empty d-empty--inline">
+          <p>{{ tt('没有匹配的用户') }}</p>
+          <el-button size="small" @click="keyword = ''; statusFilter = 'all'">{{ tt('清空筛选') }}</el-button>
+        </div>
+      </section>
+
+      <!-- 下：角色与面板权限（整行，权限矩阵需要横向空间） -->
+      <section class="d-card d-span-12">
+        <div class="d-card__head">
+          <div>
+            <h2 class="d-card__title">{{ tt('角色与面板权限') }}</h2>
+            <p class="d-card__desc">{{ tt('选中左侧角色，在右侧配置 11 项面板权限') }}</p>
+          </div>
+          <el-button type="primary" @click="newRoleVisible = true">{{ tt('创建角色') }}</el-button>
+        </div>
+
+        <div class="d-roles">
+          <!-- 角色列表 -->
+          <div class="d-roles__list">
+            <el-table
+              :data="roles"
+              class="d-table d-table--roles"
+              max-height="360"
+              highlight-current-row
+              :current-row-key="selRole?.id"
+              row-key="id"
+              @current-change="onRoleSelect"
+            >
+              <el-table-column prop="roleName" :label="tt('角色名称')" min-width="110" show-overflow-tooltip />
+              <el-table-column prop="roleCode" :label="tt('编码')" width="76" show-overflow-tooltip />
+              <el-table-column :label="tt('类型')" width="64">
+                <template #default="{ row }">
+                  <span v-if="row.isAdmin" class="d-tag is-risk">{{ tt('超级') }}</span>
+                  <span v-else class="d-muted">-</span>
+                </template>
+              </el-table-column>
+              <el-table-column :label="tt('操作')" width="58" align="right">
+                <template #default="{ row }">
+                  <el-button v-if="!row.isAdmin" link type="danger" @click.stop="delRole(row)">{{ tt('删除') }}</el-button>
+                  <span v-else class="d-muted">-</span>
+                </template>
+              </el-table-column>
+              <template #empty>
+                <div class="d-empty d-empty--inline">
+                  <p>{{ tt('还没有角色') }}</p>
+                  <el-button type="primary" size="small" @click="newRoleVisible = true">{{ tt('创建角色') }}</el-button>
+                </div>
+              </template>
+            </el-table>
+          </div>
+
+          <!-- 权限矩阵 -->
+          <div class="d-roles__perm">
+            <div v-if="!selRole" class="d-empty d-empty--box">
+              <el-icon><Lock /></el-icon>
+              <p>{{ tt('选择一个角色查看权限矩阵') }}</p>
+            </div>
+
+            <template v-else>
+              <div class="d-permhead">
+                <span class="d-permhead__name">「{{ selRole.roleName }}」{{ tt('面板权限矩阵') }}</span>
+                <span class="d-permhead__hint">
+                  {{ tt('勾「查看」才有菜单入口，取消「查看」清空整行；审批列仅审批流面板可勾') }}
+                </span>
+              </div>
+
+              <div v-if="selRole.isAdmin" class="d-alert is-warning">
+                <el-icon><Warning /></el-icon>
+                <span>{{ tt('管理员为超级权限：默认全部面板全部权限，无需配置。') }}</span>
+              </div>
+
+              <template v-else>
+                <el-collapse v-model="openGroups" class="perm-collapse">
+                  <el-collapse-item v-for="g in groupedPanels" :key="g.code" :name="g.code">
+                    <template #title>
+                      <div class="d-grouphead">
+                        <span class="d-grouphead__name">{{ tt(g.name) }}</span>
+                        <span class="d-grouphead__count">{{ g.panels.length }} {{ tt('个面板') }}</span>
+                        <span class="d-grouphead__ops" @click.stop>
+                          <el-button link type="primary" @click="setGroupAll(g, true)">{{ tt('全选') }}</el-button>
+                          <el-button link @click="setGroupAll(g, false)">{{ tt('清空') }}</el-button>
+                        </span>
+                      </div>
+                    </template>
+                    <el-table :data="g.panels" class="d-table d-table--perm">
+                      <el-table-column :label="tt('面板')" prop="panelName" min-width="150" fixed="left" show-overflow-tooltip>
+                        <template #default="{ row }">{{ tt(row.panelName) }}</template>
+                      </el-table-column>
+                      <el-table-column v-for="a in permActions" :key="a.code" width="60" align="center">
+                        <template #header>
+                          <div class="perm-col">
+                            <span class="perm-col__label">{{ tt(a.name) }}</span>
+                            <el-checkbox
+                              :model-value="groupColChecked(g, a.code)"
+                              :indeterminate="groupColIndeterminate(g, a.code)"
+                              :disabled="a.reserved || (a.code === 'audit' && !rowsForCol(g, a.code).length)"
+                              @change="(v) => setGroupCol(g, a.code, v)"
+                            />
+                          </div>
+                        </template>
+                        <template #default="{ row }">
+                          <el-tooltip v-if="a.reserved" :content="tt('预留权限位，当前版本暂无对应按钮')" placement="top">
+                            <span class="perm-reserved"><el-checkbox :model-value="false" disabled /></span>
+                          </el-tooltip>
+                          <el-checkbox
+                            v-else
+                            :model-value="!!row.perms[a.code]"
+                            :disabled="a.code === 'audit' && !row.hasApproval"
+                            :title="a.code === 'audit' && !row.hasApproval ? tt('该面板无审批流') : ''"
+                            @change="(v) => togglePerm(row, a.code, v)"
+                          />
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                  </el-collapse-item>
+                </el-collapse>
+
+                <div class="d-permfoot">
+                  <span class="d-permfoot__hint">{{ tt('展开模块后按列勾选可整列切换') }}</span>
+                  <span class="d-permfoot__ops">
+                    <el-button @click="loadRolePanels(selRole)">{{ tt('刷新') }}</el-button>
+                    <el-button type="primary" :loading="saving" @click="savePanels">{{ tt('保存权限矩阵') }}</el-button>
+                  </span>
+                </div>
+              </template>
+            </template>
+          </div>
+        </div>
+      </section>
     </div>
 
     <!-- 新增/编辑部门 -->
@@ -205,6 +323,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
 import request from '@core/request'
 import { tt } from '@/i18n'
 import { useUserStore } from '@/stores/user'
@@ -293,6 +412,20 @@ const panelRows = ref([])
 const saving = ref(false)
 const savingUser = ref(false)
 const savingRole = ref(false)
+const loadingAll = ref(false)
+
+// 用户列表筛选：账号/姓名关键字 + 启停状态（数据少，前端筛即可）
+const keyword = ref('')
+const statusFilter = ref('all')
+const filteredUsers = computed(() => {
+  const kw = keyword.value.trim().toLowerCase()
+  return users.value.filter((u) => {
+    if (statusFilter.value === 'on' && !u.enabled) return false
+    if (statusFilter.value === 'off' && u.enabled) return false
+    if (!kw) return true
+    return [u.userName, u.realName].some((v) => String(v || '').toLowerCase().includes(kw))
+  })
+})
 
 const userVisible = ref(false)
 const editingUser = ref(null)
@@ -311,8 +444,18 @@ function toSelect(nodes) {
 }
 
 async function load() {
-  await Promise.all([loadDepts(), loadUsers(), loadRoles()])
+  loadingAll.value = true
+  try {
+    await Promise.all([loadDepts(), loadUsers(), loadRoles()])
+  } finally {
+    loadingAll.value = false
+  }
   ensurePageDict()
+}
+
+async function reloadAll() {
+  await load()
+  ElMessage.success(tt('已重新加载'))
 }
 
 async function loadDepts() {
@@ -508,10 +651,15 @@ async function savePanels() {
 
 // 非中文语言：预取本页可见词条（静态列头/按钮 + 权限名/模块组名/面板名；静态包缺失的走机翻补齐）
 const PAGE_DICT_KEYS = [
+  '组织架构', '部门定层级', '用户挂部门与角色', '角色决定能看到哪些面板', '重新加载', '已重新加载',
   '部门', '新增部门', '+子', '改', '删', '用户', '新增用户', '编辑用户', '账号', '姓名', '状态', '操作',
   '启用', '停用', '编辑', '删除', '角色', '角色与面板权限', '创建角色', '角色名称', '角色编码', '编码', '类型',
   '超级', '面板', '面板权限矩阵', '个面板', '全选', '清空', '保存权限矩阵', '刷新', '取消', '保存', '创建',
   '上级部门', '部门名称', '备注', '密码', '选择角色', '编辑部门', '其他', '提示',
+  '支持多级部门，最多到车间/班组', '点击用户行分配部门 / 角色 / 启停用', '选中左侧角色，在右侧配置 11 项面板权限',
+  '搜索账号或姓名', '全部状态', '人', '还没有部门', '还没有用户', '没有匹配的用户', '清空筛选', '还没有角色',
+  '选择一个角色查看权限矩阵', '勾「查看」才有菜单入口，取消「查看」清空整行；审批列仅审批流面板可勾',
+  '展开模块后按列勾选可整列切换',
 ]
 function ensurePageDict() {
   if (localeStore.isZh) return
@@ -528,90 +676,446 @@ onMounted(load)
 </script>
 
 <style scoped>
-.org-wrap {
-  display: flex;
-  gap: 12px;
-  padding: 14px;
-  height: 100%;
-  box-sizing: border-box;
-}
-.org-col {
-  background: #fff;
-  border: 1px solid #e3e8ef;
-  border-radius: 6px;
-  padding: 12px;
+/* 设计变量来自全局 `.adx`；本页只管布局与 Element Plus 的 antd 化 */
+.org {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  min-width: 0;
 }
-.org-col.dept { flex: 1; }
-.org-col.users { flex: 1.4; }
-.org-col.roles { flex: 1.6; }
-.col-head {
+
+/* ===== 页头 ===== */
+.d-head {
   display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
+  gap: 16px;
 }
-.col-title { font-size: 14px; font-weight: 600; color: #1c4f8a; }
-.col-tip { margin-top: 8px; font-size: 12px; color: #999; }
-.dept-tree { overflow: auto; flex: 1; }
-.dept-node {
+.d-head__title {
+  margin: 0;
+  color: var(--d-text);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+.d-head__desc {
+  margin: 4px 0 0;
+  color: var(--d-text-3);
+  font-size: 12px;
+  line-height: 20px;
+  text-wrap: pretty;
+}
+
+/* ===== 栅格与卡片（与「我的桌面」同一套） ===== */
+.d-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.d-span-4 { grid-column: span 4; }
+.d-span-8 { grid-column: span 8; }
+.d-span-12 { grid-column: span 12; }
+
+.d-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--d-border);
+  border-radius: var(--d-radius);
+  background: var(--d-card);
+}
+.d-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.d-card__title {
+  margin: 0;
+  color: var(--d-text);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+.d-card__desc {
+  margin: 2px 0 0;
+  color: var(--d-text-3);
+  font-size: 12px;
+  line-height: 20px;
+  text-wrap: pretty;
+}
+.d-count {
+  margin-left: auto;
+  color: var(--d-text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.d-muted {
+  color: var(--d-text-3);
+}
+.d-tip {
+  margin: 12px 0 0;
+  color: var(--d-text-3);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+/* ===== 标签 ===== */
+.d-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 4px;
+  background: var(--d-fill);
+  color: var(--d-text-2);
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+.d-tag.is-stable { background: var(--d-ok-bg); color: var(--d-ok); }
+.d-tag.is-risk { background: var(--d-bad-bg); color: var(--d-bad); }
+.d-tag.is-neutral { background: var(--d-fill); color: var(--d-text-2); }
+
+/* ===== 提示条 ===== */
+.d-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--d-radius-sm);
+  font-size: 12px;
+  line-height: 20px;
+}
+.d-alert.is-warning {
+  border-color: rgba(250, 173, 20, 0.35);
+  background: var(--d-warn-bg);
+  color: var(--d-warn);
+}
+
+/* ===== 工具栏 ===== */
+.d-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.d-search {
+  max-width: 240px;
+}
+.d-filter {
+  width: 112px;
+}
+
+/* ===== 部门树 ===== */
+.d-tree {
+  flex: 1;
+  min-height: 200px;
+  max-height: 420px;
+  margin-top: 12px;
+  overflow: auto;
+}
+.dept-tree :deep(.el-tree-node__content) {
+  height: 32px;
+  border-radius: 4px;
+}
+.dept-tree :deep(.el-tree-node__content:hover) {
+  background: var(--d-fill-soft);
+}
+.dept-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
+  background: var(--d-primary-bg);
+  color: var(--d-primary);
+  font-weight: 600;
+}
+.d-tree__row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding-right: 6px;
+  gap: 8px;
+  padding-right: 4px;
 }
-.dept-ops { display: none; }
-.dept-node:hover .dept-ops { display: inline-flex; gap: 2px; }
-.perm-box { margin-top: 12px; border-top: 1px dashed #d0d7e3; padding-top: 10px; }
-.perm-head { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 8px; }
-.perm-sub { font-weight: 400; color: #888; font-size: 12px; }
-.admin-tip { color: #c0392b; font-size: 12px; padding: 8px 0; }
-.perm-actions { margin-top: 10px; display: flex; gap: 8px; }
-/* 2026-08-25：按业务模块分组的权限配置 */
+.d-tree__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.d-tree__ops {
+  display: none;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+.d-tree__row:hover .d-tree__ops {
+  display: inline-flex;
+}
+
+/* ===== 表格：按 antd 表头/行高/分隔线重排 ===== */
+.d-table {
+  width: 100%;
+  margin-top: 12px;
+}
+/* 固定表格布局：表头与表体列宽同源，否则表头内容（复选框+文字）会把列撑开导致对不齐 */
+.d-table :deep(.el-table__inner-wrapper table) {
+  table-layout: fixed;
+}
+.d-table :deep(.el-table__inner-wrapper::before) {
+  display: none;
+}
+.d-table :deep(th.el-table__cell) {
+  height: 40px;
+  padding: 0;
+  background: var(--d-fill-soft);
+  border-bottom: 1px solid var(--d-border);
+  color: var(--d-text-2);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+}
+.d-table :deep(th.el-table__cell .cell) {
+  justify-content: flex-start !important;
+  text-align: left !important;
+  padding: 0 12px;
+}
+.d-table :deep(th.el-table__cell.is-right .cell) {
+  justify-content: flex-end !important;
+  text-align: right !important;
+}
+.d-table :deep(th.el-table__cell.is-center .cell) {
+  justify-content: center !important;
+  text-align: center !important;
+}
+.d-table :deep(td.el-table__cell) {
+  height: 44px;
+  padding: 0;
+  border-bottom: 1px solid var(--d-border);
+  color: var(--d-text);
+  font-size: 14px;
+}
+.d-table :deep(td.el-table__cell .cell) {
+  padding: 0 12px;
+}
+.d-table :deep(.el-table__row:hover > td.el-table__cell) {
+  background: var(--d-fill-soft);
+}
+.d-table :deep(.el-table__row.current-row > td.el-table__cell) {
+  background: var(--d-primary-bg);
+}
+.d-table :deep(.el-table__body tr > td.el-table__cell:first-child) {
+  color: var(--d-text);
+}
+/* 窄屏表格需要横向滚动时，滚动条常显，避免「内容被切掉」而无提示 */
+.d-table :deep(.el-scrollbar__bar.is-horizontal) {
+  opacity: 1;
+  height: 6px;
+}
+.d-table :deep(.el-scrollbar__bar.is-horizontal > div) {
+  height: 6px;
+}
+
+/* ===== 角色 + 权限矩阵 ===== */
+.d-roles {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 24px;
+  margin-top: 16px;
+}
+.d-roles__list {
+  min-width: 0;
+}
+.d-table--roles {
+  margin-top: 0;
+}
+.d-roles__perm {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-left: 24px;
+  border-left: 1px solid var(--d-border);
+}
+.d-permhead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.d-permhead__name {
+  color: var(--d-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.d-permhead__hint {
+  color: var(--d-text-3);
+  font-size: 12px;
+  line-height: 20px;
+}
 .perm-collapse {
-  border: 1px solid #e3e8ef;
-  border-radius: 6px;
-  max-height: 340px;
+  border: 1px solid var(--d-border);
+  border-radius: var(--d-radius-sm);
+  max-height: 420px;
   overflow-y: auto;
 }
 .perm-collapse :deep(.el-collapse-item__header) {
-  height: 34px;
-  line-height: 34px;
-  padding: 0 10px;
+  height: 40px;
+  padding: 0 12px;
+  border-bottom-color: var(--d-border);
+  background: var(--d-fill-soft);
+  color: var(--d-text);
   font-size: 13px;
-  font-weight: 600;
-  color: #1c4f8a;
-  background: #f7f9fc;
+  line-height: 40px;
 }
 .perm-collapse :deep(.el-collapse-item__wrap) {
-  padding: 6px 10px 10px;
+  border-bottom-color: var(--d-border);
 }
-.g-count {
-  font-weight: 400;
-  color: #999;
-  font-size: 12px;
-  margin-left: 6px;
+.perm-collapse :deep(.el-collapse-item__content) {
+  padding: 0;
+  background: var(--d-card);
 }
-.g-actions {
-  margin-left: auto;
-  margin-right: 14px;
-  display: inline-flex;
+.d-grouphead {
+  display: flex;
   align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding-right: 12px;
 }
-/* 2026-09-01：11 列权限矩阵（列头复选框列间收紧，预留位置灰） */
-.perm-table :deep(.el-checkbox) {
-  height: auto;
+.d-grouphead__name {
+  font-weight: 600;
+}
+.d-grouphead__count {
+  color: var(--d-text-3);
+  font-size: 12px;
+  font-weight: 400;
+}
+.d-grouphead__ops {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 8px;
+}
+.d-table--perm {
+  margin-top: 0;
+}
+/* 权限列窄：表头改成「名字在上、整列勾选在下」，与表体复选框同列同轴 */
+.d-table--perm :deep(th.el-table__cell) {
+  height: 48px;
+  vertical-align: middle;
+}
+.d-table--perm :deep(th.el-table__cell .cell) {
+  justify-content: center !important;
+  padding: 0 2px;
+}
+.perm-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  line-height: 16px;
+}
+.perm-col__label {
+  color: var(--d-text-2);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.perm-col :deep(.el-checkbox) {
+  height: 16px;
   margin-right: 0;
 }
-.perm-table :deep(.el-checkbox__label) {
-  padding-left: 2px;
-  font-size: 12px;
-  font-weight: 400;
+.d-table--perm :deep(td.el-table__cell) {
+  height: 40px;
+}
+.d-table--perm :deep(td.el-table__cell .cell) {
+  padding: 0 2px;
 }
 .perm-reserved {
   display: inline-flex;
-  opacity: 0.45;
+  align-items: center;
+}
+.d-permfoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+.d-permfoot__hint {
+  color: var(--d-text-3);
+  font-size: 12px;
+}
+.d-permfoot__ops {
+  display: inline-flex;
+  gap: 8px;
+}
+
+/* ===== 空态 ===== */
+.d-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 0;
+  color: var(--d-text-3);
+  font-size: 12px;
+}
+.d-empty .el-icon {
+  color: var(--d-text-3);
+  font-size: 24px;
+}
+.d-empty p {
+  margin: 0;
+}
+.d-empty--inline {
+  padding: 16px 0;
+}
+.d-empty--box {
+  flex: 1;
+  min-height: 240px;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 1100px) {
+  .d-span-4 {
+    grid-column: span 12;
+  }
+  .d-span-8 {
+    grid-column: span 12;
+  }
+  .d-tree {
+    max-height: 280px;
+  }
+  .d-roles {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .d-roles__perm {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid var(--d-border);
+    padding-top: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .d-card {
+    padding: 16px;
+  }
+  .d-toolbar {
+    flex-wrap: wrap;
+  }
+  .d-search {
+    max-width: none;
+    flex: 1 1 160px;
+  }
+  .d-table :deep(.el-table__body-wrapper),
+  .d-table :deep(.el-scrollbar__wrap) {
+    overflow-x: auto;
+  }
 }
 </style>

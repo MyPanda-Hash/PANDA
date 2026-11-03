@@ -45,30 +45,102 @@
     <div
       v-if="cardModule"
       ref="cardRef"
-      class="fly-card"
+      class="fly-card adx"
       :style="{
         top: cardTop + 'px',
         '--fly-pointer-top': cardPointerTop + 'px',
         '--fly-card-max-height': cardMaxHeight + 'px',
       }"
     >
-      <div class="card-body">
-        <div v-for="cat in cardColumns" :key="cat.title" class="card-group">
-          <div class="card-group-title">{{ tt(cat.title) }}</div>
+      <div class="card-head">
+        <el-icon class="card-head__icon"><component :is="cardModule.icon || 'Folder'" /></el-icon>
+        <span class="card-head__title">{{ tt(cardModule.title) }}</span>
+        <span v-if="cardModule.desc" class="card-head__desc">{{ tt(cardModule.desc) }}</span>
+        <span class="card-head__count">{{ cardItemCount }} {{ tt('项') }}</span>
+      </div>
+      <!-- 悬停的是顶层分组：左侧模块清单，右侧当前模块的入口（不再一次性平铺 80+ 条） -->
+      <div v-if="cardIsGroup" class="card-split">
+        <div class="card-side">
+          <button
+            v-for="mod in cardModules"
+            :key="mod.code"
+            class="side-item"
+            :class="{ on: activeModule?.code === mod.code }"
+            @mouseenter="activeModuleCode = mod.code"
+            @focus="activeModuleCode = mod.code"
+            @click="onSideClick(mod)"
+          >
+            <span class="side-item__label">{{ tt(mod.title) }}</span>
+            <el-icon class="side-item__arrow"><ArrowRight /></el-icon>
+          </button>
+        </div>
+        <div class="card-main">
+          <div v-if="activeHeadVisible" class="card-main__head">
+            <span>{{ tt(activeModule?.title || '') }}</span>
+            <em>{{ activeLeafCount }} {{ tt('项') }}</em>
+          </div>
+          <div class="card-sections">
+            <section v-for="cat in activeSections" :key="cat.title" class="card-group" :class="{ 'is-wide': cat.total > 6 }">
+              <div v-if="cat.showTitle" class="card-group-title">
+                <span>{{ tt(cat.title) }}</span>
+                <em>{{ cat.total }}</em>
+              </div>
+              <div class="card-items">
+                <div v-for="row in cat.rows" :key="row.node.code" class="card-row">
+                  <button
+                    class="card-item"
+                    :class="{ 'is-parent': row.links.length, 'is-leaf': !row.links.length }"
+                    :title="tt(row.node.fullTitle || row.node.title)"
+                    @click="go(row.node)"
+                  >
+                    <span>{{ tt(row.node.title) }}</span>
+                  </button>
+                  <span v-if="row.links.length" class="card-links">
+                    <button
+                      v-for="link in row.links"
+                      :key="link.code"
+                      class="card-link"
+                      :title="tt(link.title)"
+                      @click="go(link)"
+                    >{{ tt(link.title) }}</button>
+                  </span>
+                </div>
+              </div>
+            </section>
+          </div>
+          <div v-if="!activeLeafCount" class="card-main__empty">{{ tt('该模块下暂无入口') }}</div>
+        </div>
+      </div>
+
+      <!-- 悬停的是具体模块：同样按「分类 → 单据 + 报表链接」排，不再平铺 -->
+      <div v-else class="card-body">
+        <section v-for="cat in cardSections" :key="cat.title" class="card-group" :class="{ 'is-wide': cat.total > 6 }">
+          <div v-if="cat.showTitle" class="card-group-title">
+            <span>{{ tt(cat.title) }}</span>
+            <em>{{ cat.total }}</em>
+          </div>
           <div class="card-items">
-            <div
-              v-for="leaf in cat.items"
-              :key="leaf.code"
-              class="card-item"
-              :class="{ 'is-parent': leaf.children?.length, nested: leaf.depth > 0 }"
-              :style="{ '--card-depth': leaf.depth || 0 }"
-              :title="tt(leaf.fullTitle || leaf.title)"
-              @click="go(leaf)"
-            >
-              <span>{{ tt(leaf.title) }}</span>
+            <div v-for="row in cat.rows" :key="row.node.code" class="card-row">
+              <button
+                class="card-item"
+                :class="{ 'is-parent': row.links.length, 'is-leaf': !row.links.length }"
+                :title="tt(row.node.fullTitle || row.node.title)"
+                @click="go(row.node)"
+              >
+                <span>{{ tt(row.node.title) }}</span>
+              </button>
+              <span v-if="row.links.length" class="card-links">
+                <button
+                  v-for="link in row.links"
+                  :key="link.code"
+                  class="card-link"
+                  :title="tt(link.title)"
+                  @click="go(link)"
+                >{{ tt(link.title) }}</button>
+              </span>
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </div>
 
@@ -219,7 +291,10 @@ function clickGroup(g) {
 
 async function openCard(m, e) {
   if (!app.collapsed && !m.children) return
+  const sameCard = cardModule.value?.code === m.code
   cardModule.value = m
+  // 分组浮层每次重新打开都回到第一个模块，避免停留上次位置
+  if (!sameCard) activeModuleCode.value = ''
   if (e?.currentTarget) cardAnchorEl = e.currentTarget
   await nextTick()
   updateCardPosition()
@@ -326,24 +401,97 @@ function groupOrPath(path) {
   return null
 }
 
-const cardColumns = computed(() => {
+/** 浮层头部的「N 项」：分组时是全部模块条目合计，模块时是它自己的一级入口数 */
+const cardItemCount = computed(() => (
+  cardIsGroup.value
+    ? cardTotalForGroup.value
+    : cardSections.value.reduce((n, cat) => n + cat.total, 0)
+))
+
+// ---------- 悬浮层两级结构：分组 → 模块清单 + 当前模块入口 ----------
+// 顶层分组的 children 是模块（有 children），逐个平铺会把 80+ 条挤在一屏，
+// 所以分组悬停时先列模块，右侧只展开当前模块的入口。
+const groupCodes = computed(() => new Set(menuTree.value.map((g) => g.code)))
+// 分组下只有一个模块（如 TOP应用 › 方案中心）：不做左右分栏，直接给这个模块的入口
+const cardSingleModule = computed(() => {
   const m = cardModule.value
-  if (!m) return []
-  if (!m.children) return [{ title: m.title, items: [m] }]
-  if (m.children[0]?.children) {
-    return m.children.map((cat) => ({ title: cat.title, items: flattenCardItems(cat.children || [cat]) }))
+  if (!m || !groupCodes.value.has(m.code)) return null
+  const kids = m.children || []
+  return kids.length === 1 ? kids[0] : null
+})
+const cardIsGroup = computed(() => (
+  !!cardModule.value && groupCodes.value.has(cardModule.value.code) && !cardSingleModule.value
+))
+const cardModules = computed(() => (cardIsGroup.value ? cardModule.value.children || [] : []))
+const activeModuleCode = ref('')
+const activeModule = computed(() => {
+  const list = cardModules.value
+  if (!list.length) return null
+  if (activeModuleCode.value) {
+    const hit = list.find((m) => m.code === activeModuleCode.value)
+    if (hit) return hit
   }
-  return m.children.map((mod) => ({ title: mod.title, items: flattenCardItems([mod]) }))
+  // 默认落在第一个「有入口」的模块上：叶子模块（如业务总览）点一下就跳走，
+  // 拿它当默认会让右侧只剩一条，看起来像空浮层
+  return list.find((m) => m.children && m.children.length) || list[0]
 })
 
-function flattenCardItems(nodes) {
-  const out = []
-  const walk = (node, depth) => {
-    if (node.path) out.push({ ...node, depth })
-    if (node.children) node.children.forEach((child) => walk(child, node.path ? depth + 1 : depth))
+/**
+ * 把模块的菜单子树压成「分类 → 行」：
+ * 一行 = 一张单据（可点）+ 它自己的统计表 / 明细表等报表（可点的小链接）。
+ * 原来把 单据/统计表/明细表 拉平成同级条目，25 条竖排下来浮层超过一屏。
+ */
+function sectionsOf(module) {
+  if (!module) return []
+  const kids = module.children || []
+  if (!kids.length) {
+    return [{ title: module.title, rows: [{ node: module, links: [] }], total: 1, showTitle: false }]
   }
-  nodes.forEach((node) => walk(node, 0))
-  return out
+  // 子级本身可点（没有下级分类）：整体作为一节，标题用模块名，
+  // 否则会出现「物料清单正向查询 1 / 物料清单正向查询」这种同名重复
+  if (kids.every((k) => k.path)) {
+    const rows = kids.map((node) => ({ node, links: (node.children || []).filter((c) => c.path) }))
+    return [{ title: module.title, rows, total: rows.length, showTitle: false }]
+  }
+  return kids.map((cat) => {
+    const nodes = cat.children && cat.children.length ? cat.children : [cat]
+    const rows = nodes.map((node) => ({
+      node,
+      links: (node.children || []).filter((c) => c.path),
+    }))
+    // 分类里只有一条、且名字和分类名一样（如 TOP应用 › 方案中心）：不再重复一行标题
+    const redundant = rows.length === 1 && rows[0].node.title === cat.title
+    return { title: cat.title, rows, total: rows.length, showTitle: !redundant }
+  })
+}
+
+const activeSections = computed(() => sectionsOf(activeModule.value))
+const cardSections = computed(() => sectionsOf(cardSingleModule.value || cardModule.value))
+const activeLeafCount = computed(() => activeSections.value.reduce((n, cat) => n + cat.total, 0))
+// 模块只有一个入口且名字与模块相同时（如 TOP应用 › 方案中心），右侧不再重复一遍模块名
+const activeHeadVisible = computed(() => {
+  const sections = activeSections.value
+  if (!sections.length) return false
+  return !(sections.length === 1 && !sections[0].showTitle)
+})
+const cardTotalForGroup = computed(() => (
+  cardModules.value.reduce((n, m) => n + sectionsOf(m).reduce((k, c) => k + c.total, 0), 0)
+))
+
+function onSideClick(mod) {
+  activeModuleCode.value = mod.code
+  // 模块本身没有子级（如「业务总览」）：直接跳转，不留在浮层里
+  if (!mod.children || !mod.children.length) {
+    go(mod)
+    return
+  }
+  // 整块只有一条可点入口（如「方案中心」）：侧栏点一下就到，不必再展开右侧
+  const sections = sectionsOf(mod)
+  const total = sections.reduce((n, cat) => n + cat.total, 0)
+  if (total === 1) {
+    const only = sections[0].rows[0].node
+    if (only.path) go(only)
+  }
 }
 
 watch(
@@ -496,120 +644,330 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
 .mi {
   font-size: 12px;
 }
+/* ===== 悬浮层：按设计库（antd Popover / Menu）重排 =====
+   - 卡片：白底 + 1px 边框 + 弹层阴影，圆角 8
+   - 头部：图标 + 分组名 + 条目数，44 高，底边 1px
+   - 内容：网格自动分列（每列 ≥190），模块名做列头，条目 36 高、圆角 6、悬停填充色不位移 */
 .fly-card {
   position: absolute;
   left: 100%;
-  min-width: 520px;
-  max-width: min(820px, calc(100vw - 210px));
-  max-height: var(--fly-card-max-height, 420px);
-  background: var(--t-card-bg);
-  border: 1px solid #d5d8dc;
-  border-radius: 5px;
-  box-shadow: 0 4px 14px rgba(31, 42, 55, 0.14);
   z-index: 200;
+  display: flex;
+  flex-direction: column;
+  min-width: 440px;
+  max-width: min(880px, calc(100vw - 200px));
+  max-height: var(--fly-card-max-height, 420px);
+  overflow: hidden;
+  border: 1px solid var(--d-border-strong);
+  border-radius: var(--d-radius);
+  background: var(--d-card);
+  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12);
 }
 .fly-card::before,
 .fly-card::after {
   position: absolute;
-  top: calc(var(--fly-pointer-top, 24px) - 11px);
+  top: calc(var(--fly-pointer-top, 24px) - 6px);
   width: 0;
   height: 0;
-  border-top: 11px solid transparent;
-  border-bottom: 11px solid transparent;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
   content: '';
   pointer-events: none;
 }
 .fly-card::before {
-  left: -13px;
-  border-right: 13px solid #d5d8dc;
+  left: -7px;
+  border-right: 6px solid var(--d-border-strong);
 }
 .fly-card::after {
-  left: -11px;
-  border-right: 12px solid var(--t-card-bg);
+  left: -6px;
+  border-right: 6px solid var(--d-card);
 }
-.dark .fly-card {
-  background: #26272e;
-  border-color: #3a3b42;
-}
-.dark .fly-card::before {
-  border-right-color: #3a3b42;
-}
-.dark .fly-card::after {
-  border-right-color: #26272e;
-}
-.card-body {
+.card-head {
   display: flex;
-  flex-direction: row;
-  max-height: var(--fly-card-max-height, 420px);
-  overflow: auto;
-  padding: 14px 16px 16px;
-  border-radius: 5px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--d-border);
+  background: var(--d-fill-soft);
 }
-.card-group {
-  flex: 1;
-  min-width: 180px;
-  display: flex;
-  flex-direction: column;
-  padding: 0 4px;
+.card-head__icon {
+  color: var(--d-text-3);
+  font-size: 14px;
 }
-.card-group + .card-group {
-  margin-left: 14px;
-  padding-left: 18px;
-  border-left: 1px dashed #d9dde2;
-}
-.card-group-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--t-text-1);
-  padding: 2px 0 10px;
-  margin-bottom: 2px;
+.card-head__title {
+  overflow: hidden;
+  color: var(--d-text);
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
-.dark .card-group-title {
-  color: #ddd;
+.card-head__count {
+  margin-left: auto;
+  color: var(--d-text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
-.dark .card-group + .card-group {
-  border-left-color: #45464f;
+/* 分组标题后的中文释义：ERP / MES 这类缩写需要一句人话说明范围 */
+.card-head__desc {
+  overflow: hidden;
+  color: var(--d-text-3);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  align-content: start;
+  gap: 16px 20px;
+  max-height: calc(var(--fly-card-max-height, 420px) - 44px);
+  overflow: auto;
+  padding: 12px 16px 16px;
+}
+
+/* ===== 两级浮层：左模块清单 + 右当前模块入口 ===== */
+.card-split {
+  display: flex;
+  min-height: 0;
+  max-height: calc(var(--fly-card-max-height, 420px) - 44px);
+}
+.card-side {
+  display: flex;
+  flex: 0 0 176px;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  padding: 8px;
+  border-right: 1px solid var(--d-border);
+  background: var(--d-fill-soft);
+}
+.side-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 8px 0 10px;
+  border: 0;
+  border-radius: var(--d-radius-sm);
+  background: transparent;
+  color: var(--d-text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.side-item__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.side-item__arrow {
+  flex: 0 0 auto;
+  color: var(--d-text-3);
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.side-item:hover {
+  background: var(--d-fill);
+}
+.side-item:hover .side-item__arrow {
+  opacity: 1;
+}
+.side-item.on {
+  background: var(--d-card);
+  color: var(--d-primary);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--d-border-strong);
+}
+.side-item.on .side-item__arrow {
+  opacity: 1;
+  color: var(--d-primary);
+}
+.side-item:focus-visible {
+  outline: 2px solid var(--d-primary);
+  outline-offset: -2px;
+}
+.card-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.card-main__head {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 16px 6px;
+  color: var(--d-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.card-main__head em {
+  color: var(--d-text-3);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+}
+/* 两级浮层需要更宽的卡面：右栏才能排成两列，条目不必竖着排到屏幕外 */
+.fly-card:has(.card-split) {
+  min-width: 680px;
+  max-width: min(800px, calc(100vw - 200px));
+}
+.card-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
+  align-content: start;
+  gap: 20px 24px;
+  overflow: auto;
+  padding: 4px 16px 16px;
+}
+.card-main__empty {
+  padding: 24px 16px;
+  color: var(--d-text-3);
+  font-size: 12px;
+}
+.card-group {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* 分类之间的间隔交给网格 row-gap：原来每节各自 padding-top + border-top，
+   同一行两节的标题就会差一条线的高度而错位 */
+/* 分类标题：比条目更重、更深，右侧数量做成小胶囊，扫读时先把「分类」和「条目」分开 */
+.card-group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding: 0 8px;
+  color: var(--d-text);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 22px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-group-title em {
+  flex: 0 0 auto;
+  padding: 0 8px;
+  border-radius: 100px;
+  background: var(--d-fill);
+  color: var(--d-text-3);
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
 }
 .card-items {
   display: flex;
   flex-direction: column;
+  gap: 2px;
+}
+/* 条目多的分类（>6）横跨两列，避免一条长龙把浮层拉到屏幕外 */
+.card-group.is-wide {
+  grid-column: span 2;
+}
+.card-group.is-wide .card-items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 12px;
+}
+/* 一行 = 单据 + 它的统计表/明细表：报表收成行内小链接，不再各占一行 */
+.card-row {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  min-height: 40px;
+  min-width: 0;
+}
+.card-row .card-item {
+  flex: 1;
+  min-width: 0;
+}
+.card-links {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+}
+.card-link {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--d-radius-sm);
+  background: transparent;
+  color: var(--d-text-3);
+  font: inherit;
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.card-link:hover {
+  background: var(--d-fill);
+  color: var(--d-primary);
+}
+.card-link:focus-visible {
+  outline: 2px solid var(--d-primary);
+  outline-offset: -2px;
 }
 .card-item {
   display: flex;
   align-items: center;
   min-width: 0;
-  padding: 7px 0;
+  min-height: 40px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--d-radius-sm);
+  background: transparent;
+  color: var(--d-text);
+  font: inherit;
   font-size: 14px;
-  color: var(--t-text-1);
-  border-radius: 3px;
+  line-height: 20px;
+  text-align: left;
   cursor: pointer;
   white-space: nowrap;
-  transition: color 0.15s, background-color 0.15s, padding-left 0.15s;
-  margin-left: calc(var(--card-depth, 0) * 14px);
+  transition: background-color 0.15s, color 0.15s;
 }
+/* 单据行（带报表链接）比纯报表行更重：一眼分清「单据」和「报表」 */
 .card-item.is-parent {
   font-weight: 600;
 }
+.card-item.is-leaf {
+  color: var(--d-text-2);
+  font-weight: 400;
+}
 .card-item.nested {
-  color: var(--t-text-2);
+  color: var(--d-text-2);
   font-size: 13px;
 }
 .card-item span {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.dark .card-item {
-  color: #ccc;
-}
 .card-item:hover {
-  padding-left: 8px;
-  background: var(--t-hover-bg);
-  color: var(--t-primary);
+  background: var(--d-fill);
+  color: var(--d-primary);
 }
-.dark .card-item:hover {
-  background: var(--t-hover-bg);
-  color: var(--t-primary);
+.card-item:focus-visible {
+  outline: 2px solid var(--d-primary);
+  outline-offset: -2px;
 }
 .bill-list {
   max-height: 400px;
