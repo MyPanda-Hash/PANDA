@@ -56,3 +56,9 @@ docs/deploy/pc-table.sql
 
 # Local documentation archive (may contain historical environment details)
 /docs/archive/
+
+# === 本地探针产物与临时工作目录（非源码，不入库） ===
+/run/
+_scratch/
+.workbuddy/
+.dsh-tool-vision/
