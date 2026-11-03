@@ -4,7 +4,7 @@ const path = require('node:path')
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const PORT = 9262
 const BASE = 'http://127.0.0.1:4173'
-const API = 'http://127.0.0.1:8080/api'
+const API = 'http://127.0.0.1:3308/api'
 const PROFILE = path.join(require('node:os').tmpdir(), 'ov35-' + Date.now())
 function edgePath() { return ['C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe', 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'].find(fs.existsSync) }
 async function waitJson(url, attempts = 60) { for (let i = 0; i < attempts; i++) { try { const r = await fetch(url); if (r.ok) return r.json() } catch {} await sleep(500) } throw new Error('wait failed ' + url) }

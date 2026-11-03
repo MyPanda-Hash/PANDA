@@ -9,7 +9,7 @@
         @click="go(t)"
         @contextmenu.prevent="showCtx(t, $event)"
       >
-        <span>{{ t.title }}</span>
+        <span>{{ tt(t.title) }}</span>
         <el-icon v-if="!t.affix" class="close" @click.stop="closeAndGo(t.path)"><Close /></el-icon>
       </div>
     </div>
@@ -18,14 +18,14 @@
     <div class="tab-actions">
       <el-popover v-model:visible="findPop" placement="bottom-end" :width="260" trigger="click">
         <template #reference>
-          <el-tooltip content="快速查找单据" placement="bottom">
+          <el-tooltip :content="tt('快速查找单据')" placement="bottom">
             <el-icon class="action-icon"><Search /></el-icon>
           </el-tooltip>
         </template>
         <div class="find-box">
           <el-input
             v-model="findNo"
-            placeholder="单据编号（如 MO20260813-001）"
+            :placeholder="tt('单据编号（如 MO20260813-001）')"
             size="small"
             clearable
             @keyup.enter="quickFind"
@@ -37,40 +37,40 @@
         </div>
       </el-popover>
 
-      <el-tooltip :content="app.maxContent ? '恢复' : '最大化'" placement="bottom">
+      <el-tooltip :content="app.maxContent ? tt('恢复') : tt('最大化')" placement="bottom">
         <el-icon class="action-icon" @click="app.toggleMaxContent()">
           <FullScreen v-if="!app.maxContent" />
           <Crop v-else />
         </el-icon>
       </el-tooltip>
 
-      <el-tooltip content="关闭全部页签" placement="bottom">
+      <el-tooltip :content="tt('关闭全部页签')" placement="bottom">
         <el-icon class="action-icon" @click="closeAll"><Close /></el-icon>
       </el-tooltip>
 
       <el-dropdown @command="onMore">
-        <el-tooltip content="更多" placement="bottom">
+        <el-tooltip :content="tt('更多')" placement="bottom">
           <el-icon class="action-icon"><ArrowDown /></el-icon>
         </el-tooltip>
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item v-for="t in tabs.tabs.filter((x) => !x.affix)" :key="t.path" :command="`go:${t.path}`">
-              {{ t.title }}
+              {{ tt(t.title) }}
             </el-dropdown-item>
-            <el-dropdown-item v-if="tabs.tabs.every((x) => x.affix)" disabled>暂无其他页签</el-dropdown-item>
-            <el-dropdown-item divided command="others">关闭其他</el-dropdown-item>
-            <el-dropdown-item command="all">关闭全部</el-dropdown-item>
-            <el-dropdown-item divided command="refresh">刷新当前</el-dropdown-item>
+            <el-dropdown-item v-if="tabs.tabs.every((x) => x.affix)" disabled>{{ tt('暂无其他页签') }}</el-dropdown-item>
+            <el-dropdown-item divided command="others">{{ tt('关闭其他') }}</el-dropdown-item>
+            <el-dropdown-item command="all">{{ tt('关闭全部') }}</el-dropdown-item>
+            <el-dropdown-item divided command="refresh">{{ tt('刷新当前') }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
     </div>
 
     <ul v-if="ctx.tab" class="ctx-menu" :style="{ left: ctx.x + 'px', top: ctx.y + 'px' }" @mouseleave="ctx.tab = null">
-      <li @click="doCtx('refresh')">刷新</li>
-      <li v-if="!ctx.tab.affix" @click="doCtx('close')">关闭</li>
-      <li @click="doCtx('others')">关闭其他</li>
-      <li @click="doCtx('all')">关闭全部</li>
+      <li @click="doCtx('refresh')">{{ tt('刷新') }}</li>
+      <li v-if="!ctx.tab.affix" @click="doCtx('close')">{{ tt('关闭') }}</li>
+      <li @click="doCtx('others')">{{ tt('关闭其他') }}</li>
+      <li @click="doCtx('all')">{{ tt('关闭全部') }}</li>
     </ul>
   </div>
 </template>
@@ -80,6 +80,7 @@ import { ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useTabsStore } from '@/stores/tabs'
 import { useAppStore } from '@/stores/app'
+import { tt } from '@/i18n'
 import { apiPageManuOrders } from '@/business/api'
 import { ElMessage } from 'element-plus'
 
@@ -153,12 +154,12 @@ function onMore(cmd) {
 // 快速查找单据：按编号搜索生产加工单（T+ searchVoucher 对应能力）
 async function quickFind() {
   const no = findNo.value.trim()
-  if (!no) return ElMessage.warning('请输入单据编号')
+  if (!no) return ElMessage.warning(tt('请输入单据编号'))
   try {
     const res = await apiPageManuOrders({ orderNo: no, pageNo: 1, pageSize: 5 })
     const hit = res.records?.[0] || res.list?.[0]
     if (!hit) {
-      ElMessage.warning(`未找到单据：${no}`)
+      ElMessage.warning(`${tt('未找到单据：')}${no}`)
       return
     }
     const path = `/panelx/form/MANU_ORDER?id=${hit.id}`
@@ -167,7 +168,7 @@ async function quickFind() {
     findPop.value = false
     findNo.value = ''
   } catch (e) {
-    ElMessage.error(e?.response?.data?.message || '查询失败')
+    ElMessage.error(e?.response?.data?.message || tt('查询失败'))
   }
 }
 </script>

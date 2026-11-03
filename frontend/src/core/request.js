@@ -11,11 +11,22 @@ request.interceptors.request.use((config) => {
   return config
 })
 
+export function unwrapApiResponse(res) {
+  const body = res.data
+  if (body && Number.isFinite(Number(body.code)) && Number(body.code) !== 200) {
+    const error = new Error(body.message || '请求失败')
+    error.businessCode = Number(body.code)
+    error.response = { status: res.status, data: body }
+    throw error
+  }
+  return body
+}
+
 request.interceptors.response.use(
-  (res) => res.data,
+  unwrapApiResponse,
   async (err) => {
     const status = err.response?.status
-    // 401/403 都视为认证失效（后端无 token/伪造/过期返回 403）→ 同步 user store 登出并跳登录
+    // 仅 HTTP 401/403 表示认证失效；HTTP 200 中的业务 403 是权限不足，不能退出登录。
     if (status === 401 || status === 403) {
       try {
         const { useUserStore } = await import('@/stores/user')

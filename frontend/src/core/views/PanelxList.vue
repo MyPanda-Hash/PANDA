@@ -2,39 +2,39 @@
   <div class="panelx-list" @click="closeCtx">
     <!-- ══════════ ① 顶部工具栏（T+ 灰条 + 单据翻页）══════════ -->
     <div class="tools">
-      <button type="button" class="toolbar-query-btn" title="按表头字段查询单据" @click.stop="openQueryDialog">
+      <button type="button" class="toolbar-query-btn" :title="tt('按表头字段查询单据')" @click.stop="openQueryDialog">
         <el-icon><Search /></el-icon>
-        <span>查询</span>
+        <span>{{ tt('查询') }}</span>
       </button>
       <div class="tb-group" v-for="(g, gi) in toolbarGroups" :key="'g' + gi">
         <span class="tb-main" :class="{ disabled: isDisabled(btnName(g)) }" @click="onButton(btnName(g))">
-          <span class="act-name">{{ g.name }}</span>
+          <span class="act-name">{{ tt(g.name) }}</span>
         </span>
         <span v-if="actsOf(g).length > 1" class="tb-caret" @click.stop="toggleGroup(gi)">▼</span>
         <div v-if="openGroup === gi" class="tb-menu">
-          <!-- 下拉排除主按钮（组按钮=第一个 action，下拉只列其余动作，避免「审核」重复） -->
-          <div class="ctx-item" :class="{ disabled: isDisabled(a) }" v-for="a in dropItems(g)" :key="a" @click="onGroupAction(a)">{{ a }}</div>
+          <!-- 下拉排除主按钮（组按钮=第一个 action，下拉只列其余动作，避免「审核」重复）；显示名走 tt()，动作值保持原文 -->
+          <div class="ctx-item" :class="{ disabled: isDisabled(a) }" v-for="a in dropItems(g)" :key="a" @click="onGroupAction(a)">{{ tt(a) }}</div>
         </div>
       </div>
       <div class="tools-right">
         <template v-if="reportMode">
-          <span class="doc-chip">{{ panelName }}</span>
-          <span class="report-count">共 {{ total }} 条</span>
-          <span class="page-btn" title="首页" @click="reportPage(1)">◁</span>
-          <span class="page-btn" title="上一页" @click="reportPage(query.pageNo - 1)">◀</span>
-          <span class="page-no">第 {{ query.pageNo }}/{{ reportPageCount }} 页</span>
-          <span class="page-btn" title="下一页" @click="reportPage(query.pageNo + 1)">▶</span>
-          <span class="page-btn" title="末页" @click="reportPage(reportPageCount)">▷</span>
+          <span class="doc-chip">{{ tt(panelName) }}</span>
+          <span class="report-count">{{ tt('共') }} {{ total }} {{ tt('条') }}</span>
+          <span class="page-btn" :title="tt('首页')" @click="reportPage(1)">◁</span>
+          <span class="page-btn" :title="tt('上一页')" @click="reportPage(query.pageNo - 1)">◀</span>
+          <span class="page-no">{{ tt('第') }} {{ query.pageNo }}/{{ reportPageCount }} {{ tt('页') }}</span>
+          <span class="page-btn" :title="tt('下一页')" @click="reportPage(query.pageNo + 1)">▶</span>
+          <span class="page-btn" :title="tt('末页')" @click="reportPage(reportPageCount)">▷</span>
         </template>
         <template v-else>
-          <span class="doc-chip">单据：{{ cur['编号'] || cur['单据编号'] || '-' }}</span>
-          <span v-if="cur['类别']" class="doc-cat">{{ cur['类别'] }}</span>
-          <span v-if="cur['单据状态']" class="doc-status" :class="cur['单据状态']">{{ cur['单据状态'] }}</span>
-          <span class="page-btn" title="首页" @click="pageFirst">◁</span>
-          <span class="page-btn" title="上一张" @click="page(-1)">◀</span>
-          <span class="page-no">第 {{ curNo }}/{{ total }} 张</span>
-          <span class="page-btn" title="下一张" @click="page(1)">▶</span>
-          <span class="page-btn" title="末页" @click="pageLast">▷</span>
+          <span class="doc-chip">{{ tt('单据') }}：{{ cur['编号'] || cur['单据编号'] || '-' }}</span>
+          <span v-if="cur['类别']" class="doc-cat">{{ tt(cur['类别']) }}</span>
+          <span v-if="cur['单据状态']" class="doc-status" :class="cur['单据状态']">{{ tt(cur['单据状态']) }}</span>
+          <span class="page-btn" :title="tt('首页')" @click="pageFirst">◁</span>
+          <span class="page-btn" :title="tt('上一张')" @click="page(-1)">◀</span>
+          <span class="page-no">{{ tt('第') }} {{ curNo }}/{{ total }} {{ tt('张') }}</span>
+          <span class="page-btn" :title="tt('下一张')" @click="page(1)">▶</span>
+          <span class="page-btn" :title="tt('末页')" @click="pageLast">▷</span>
         </template>
       </div>
     </div>
@@ -42,17 +42,36 @@
     <!-- 报表沿用配置查询字段；单据页显示当前单据表头，草稿态原地编辑。 -->
     <div v-if="reportMode" class="fields udl-fields">
       <div class="field" v-for="qr in queryFields" :key="qr.dataName">
-        <label :class="{ req: qr.isRequired }">{{ qr.label || qr.dataName }}</label>
-        <div v-if="qType(qr) === 'ref'" class="query-ref">
+        <label :class="{ req: qr.isRequired }">{{ tt(qr.label || qr.dataName) }}</label>
+        <div v-if="qType(qr) === 'ref' && isRefSelect(qr)" class="query-ref-select">
+          <el-select
+            v-model="condition[qr.dataName]"
+            clearable
+            filterable
+            remote
+            allow-create
+            default-first-option
+            :remote-method="(kw) => loadRefSelectOptions(qr, refFieldKey(qr), kw)"
+            :loading="refSelectData[refFieldKey(qr)]?.loading"
+            :placeholder="qr.placeholder || tt('输入搜索')"
+            style="width: 100%"
+            @change="search"
+            @clear="search"
+            @focus="checkRefMode(qr, refFieldKey(qr))"
+          >
+            <el-option v-for="o in refSelectData[refFieldKey(qr)]?.options || []" :key="o.value" :label="tt(o.label)" :value="o.value" />
+          </el-select>
+        </div>
+        <div v-else-if="qType(qr) === 'ref'" class="query-ref">
           <el-input
             :model-value="condition[qr.dataName] || ''"
             readonly
             clearable
-            :placeholder="qr.placeholder || '请选择'"
+            :placeholder="qr.placeholder || tt('请选择')"
             @click="openQueryRef(qr, 'page')"
             @clear="clearQueryRef(qr, 'page')"
           />
-          <el-button :icon="Search" title="打开参照" @click="openQueryRef(qr, 'page')" />
+          <el-button :icon="Search" :title="tt('打开参照')" @click="openQueryRef(qr, 'page')" />
         </div>
         <el-select
           v-else-if="qType(qr) === 'select'"
@@ -62,14 +81,14 @@
           :placeholder="qr.placeholder || ''"
           @change="search"
         >
-          <el-option v-for="o in qOptions(qr)" :key="o.value" :label="o.label ?? o.value" :value="o.value" />
+          <el-option v-for="o in qOptions(qr)" :key="o.value" :label="tt(o.label ?? o.value)" :value="o.value" />
         </el-select>
         <el-date-picker
           v-else-if="qType(qr) === 'date'"
           v-model="condition[qr.dataName]"
           type="date"
           value-format="YYYY-MM-DD"
-          :placeholder="qr.placeholder || '选择日期'"
+          :placeholder="qr.placeholder || tt('选择日期')"
           @change="search"
         />
         <el-input v-else v-model="condition[qr.dataName]" :placeholder="qr.placeholder || ''" @keyup.enter="search" clearable @clear="search" />
@@ -77,19 +96,36 @@
     </div>
     <div v-else class="fields header-fields udl-fields" :class="{ 'is-draft': draftEditable }">
       <div class="field" v-for="field in headerFields" :key="headerFieldKey(field)">
-        <label :class="{ req: field.isRequired }">{{ headerFieldLabel(field) }}</label>
+        <label :class="{ req: field.isRequired }">{{ tt(headerFieldLabel(field)) }}</label>
         <template v-if="draftEditable">
-          <div v-if="isReferenceField(field)" class="query-ref">
+          <div v-if="isRefSelect(field)" class="query-ref-select">
+            <el-select
+              v-model="cur[headerFieldKey(field)]"
+              clearable
+              filterable
+              remote
+              :disabled="headerFieldLocked(field)"
+              :remote-method="(kw) => loadRefSelectOptions(field, refFieldKey(field), kw)"
+              :loading="refSelectData[refFieldKey(field)]?.loading"
+              :placeholder="tt('输入搜索')"
+              style="width: 100%"
+              @change="(v) => onHeaderRefSelect(field, v)"
+              @focus="checkRefMode(field, refFieldKey(field))"
+            >
+              <el-option v-for="o in refSelectData[refFieldKey(field)]?.options || []" :key="o.value" :label="tt(o.label)" :value="o.value" />
+            </el-select>
+          </div>
+          <div v-else-if="isReferenceField(field)" class="query-ref">
             <el-input
               :model-value="headerRefText(field)"
               readonly
               :disabled="headerFieldLocked(field)"
-              placeholder="请选择"
+              :placeholder="tt('请选择')"
               @click="openHeaderRef(field)"
             />
             <el-button
               :icon="Search"
-              title="打开参照"
+              :title="tt('打开参照')"
               :disabled="headerFieldLocked(field)"
               @click="openHeaderRef(field)"
             />
@@ -136,24 +172,22 @@
 
     <div v-if="reportMode" class="report-body" v-loading="loading">
       <div class="report-heading">
-        <strong>{{ panelName }}</strong>
+        <strong>{{ tt(panelName) }}</strong>
         <span>{{ reportPeriod }}</span>
-
       </div>
       <el-table
         class="report-table"
         :data="list"
-        @header-contextmenu="(column, ev) => openColMenu('report', column.property, ev)"
         border
         stripe
         size="small"
         height="100%"
         show-summary
         :summary-method="sumMethod"
-        empty-text="暂无符合条件的数据"
+        :empty-text="tt('暂无符合条件的数据')"
         @row-click="(row) => (current = row)"
       >
-        <el-table-column type="index" label="序号" width="58" fixed="left" :index="(i) => (query.pageNo - 1) * query.pageSize + i + 1" />
+        <el-table-column type="index" :label="tt('序号')" width="58" fixed="left" :index="(i) => (query.pageNo - 1) * query.pageSize + i + 1" />
         <template v-for="column in reportColumnTree" :key="column.label">
           <el-table-column v-if="column.children" :label="column.label" align="center">
             <el-table-column
@@ -169,24 +203,11 @@
           <el-table-column
             v-else
             :prop="column.prop"
+            :label="column.label"
             :min-width="column.width"
             :align="column.align"
-            :label-class-name="'hcol-' + column.prop"
             show-overflow-tooltip
-          >
-            <template #header>
-              <input
-                v-if="renaming.on && renaming.scope === 'report' && renaming.prop === column.prop"
-                v-model="renaming.text"
-                class="col-rename-input"
-                :ref="(el) => el && el.focus()"
-                @keyup.enter="commitRename"
-                @keyup.esc="cancelRename"
-                @blur="commitRename"
-              />
-              <span v-else class="col-hd" title="拖拽调序 · 双击改名 · 右键显隐" @dblclick="startRename('report', column.prop, column.label)">{{ column.label }}</span>
-            </template>
-          </el-table-column>
+          />
         </template>
       </el-table>
     </div>
@@ -210,93 +231,73 @@
         <div class="dt-head">
           <span class="dt-tab on">{{ mainGrid.label }}</span>
           <span class="dt-ics">
-            <span class="dt-ic" title="点行切换当前单据">定位</span>
+            <span class="dt-ic" :title="tt('点行切换当前单据')">{{ tt('定位') }}</span>
           </span>
         </div>
-        <el-table class="blk-main" :data="mainRows" border size="small" :row-class-name="mainRowCls" @row-click="onMainRowClick" @row-dblclick="openMaintain" @header-contextmenu="(column, ev) => openColMenu('main', column.property, ev)">
-          <el-table-column type="index" label="序号" width="60" align="center" :index="(i) => i + 1" />
-          <el-table-column v-for="c in mainCols" :key="c" :prop="c" :label-class-name="'hcol-' + c" min-width="110" show-overflow-tooltip>
-            <template #header>
-              <input
-                v-if="renaming.on && renaming.scope === 'main' && renaming.prop === c"
-                v-model="renaming.text"
-                class="col-rename-input"
-                :ref="(el) => el && el.focus()"
-                @keyup.enter="commitRename"
-                @keyup.esc="cancelRename"
-                @blur="commitRename"
-              />
-              <span v-else class="col-hd" title="拖拽调序 · 双击改名 · 右键显隐" @dblclick="startRename('main', c, mainColLabel(c))">{{ mainColLabel(c) }}</span>
-            </template>
-          </el-table-column>
+        <el-table :data="mainRows" border size="small" :row-class-name="mainRowCls" @row-click="onMainRowClick" @row-dblclick="openMaintain">
+          <el-table-column type="index" :label="tt('序号')" width="60" align="center" :index="(i) => i + 1" />
+          <el-table-column v-for="c in mainCols" :key="c" :prop="c" :label="c" min-width="110" show-overflow-tooltip />
         </el-table>
       </div>
       <!-- ══════════ ③ 表中 · 明细区块（配置驱动：区块内多页签，同 T+）══════════ -->
-      <div class="detail" v-for="b in blocks" :key="b.id">
-        <div v-if="isApproved" class="approved-stamp">已审批</div>
+      <div class="detail" v-for="(b, bi) in blocks" :key="b.id">
+        <div v-if="isApproved && bi === 0" class="approved-stamp">{{ tt('已审批') }}</div>
         <div class="dt-head">
-          <span v-for="it in headItems(b)" :key="it.kind + it.key" class="dt-tab" :class="{ on: isOn(b, it) }" @click="switchTab(b, it)">{{ it.label }}</span>
-          <span v-if="b.id === 'B' && activeTab(b).key === 'materials' && selectedProduct" class="filter-hint">当前产品：{{ selectedProduct }} 的 BOM 子件</span>
+          <span v-for="it in headItems(b)" :key="it.kind + it.key" class="dt-tab" :class="{ on: isOn(b, it) }" @click="switchTab(b, it)">{{ tt(it.label) }}</span>
+          <span v-if="b.id === 'B' && activeTab(b).key === 'materials' && selectedProduct" class="filter-hint">{{ tt('当前产品') }}：{{ selectedProduct }} {{ tt('的 BOM 子件') }}</span>
           <span class="dt-ics">
-            <el-button v-if="detailEditable(b)" size="small" type="primary" :icon="Plus" @click="addInlineDetailRow(b)">新增数据</el-button>
-            <span class="dt-ic" v-for="ic in b.isMain ? iconA : iconB" :key="ic" @click="onIcon(ic, b)">{{ ic }}</span>
-            <el-dropdown trigger="click" @command="(cmd) => onMoreCommand(cmd, b)">
-              <span class="dt-ic">更多▼</span>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="列设置">列设置</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            <el-button v-if="detailEditable(b)" size="small" type="primary" :icon="Plus" @click="addInlineDetailRow(b)">{{ tt('新增数据') }}</el-button>
+            <span class="dt-ic" v-for="ic in b.isMain ? iconA : iconB" :key="ic" @click="onIcon(ic, b)">{{ iconLabel(ic) }}</span>
           </span>
         </div>
         <el-table
-          :class="'blk-' + b.id"
           :data="blockRows(b)"
           :height="tableH(b)"
           border
           size="small"
           :show-summary="tabView(b, activeTab(b)) !== 'summary'"
           :summary-method="sumMethod"
-          sum-text="合计"
+          :sum-text="tt('合计')"
           :row-class-name="(o) => rowCls(o, b)"
           @selection-change="(r) => (delSel = r)"
           @row-contextmenu="(row, col, ev) => onCtx(ev, row, b)"
           @cell-dblclick="(row, col, cell, ev) => onDetailCellDblclick(row, col, ev, b)"
           @row-click="(row) => onRowClick(row, b)"
           @click.capture="(e) => onTableClick(b, e)"
-          @header-contextmenu="(column, ev) => openColMenu(b, column.property, ev)"
         >
           <el-table-column v-if="delMode && b.isMain" type="selection" width="45" fixed="left" />
           <el-table-column
             v-for="c in blockCols(b)"
             :key="c.prop"
             :prop="c.prop"
+            :label="c.label"
             :min-width="c.width"
             :align="c.align"
-            :label-class-name="'hcol-' + c.prop"
             :show-overflow-tooltip="!detailEditable(b)"
           >
-            <template #header>
-              <input
-                v-if="renaming.on && renaming.scope === b.id && renaming.prop === c.prop"
-                v-model="renaming.text"
-                class="col-rename-input"
-                :ref="(el) => el && el.focus()"
-                @keyup.enter="commitRename"
-                @keyup.esc="cancelRename"
-                @blur="commitRename"
-              />
-              <span v-else class="col-hd" title="拖拽调序 · 双击改名 · 右键显隐" @dblclick="startRename(b.id, c.prop, c.label)">{{ c.label }}</span>
-            </template>
             <template #default="{ row }">
               <template v-if="detailEditable(b) && !row._placeholder">
                 <span v-if="c.field.computed" class="inline-computed-value">{{ formatFieldValue(c.field, row[c.prop]) }}</span>
+                <el-select
+                  v-else-if="isRefSelect(c.field)"
+                  v-model="row[c.prop]"
+                  class="inline-ref-select"
+                  clearable
+                  filterable
+                  remote
+                  :remote-method="(kw) => loadRefSelectOptions(c.field, refFieldKey(c.field), kw)"
+                  :loading="refSelectData[refFieldKey(c.field)]?.loading"
+                  :placeholder="tt('输入搜索')"
+                  @change="(v) => onDetailRefSelect(c.field, row, b, v)"
+                  @visible-change="(vis) => vis && checkRefMode(c.field, refFieldKey(c.field))"
+                >
+                  <el-option v-for="o in refSelectData[refFieldKey(c.field)]?.options || []" :key="o.value" :label="tt(o.label)" :value="o.value" />
+                </el-select>
                 <div v-else-if="isReferenceField(c.field)" class="inline-ref-editor" :class="{ active: isActiveDetailRefRow(row, b, c.prop) }">
                   <el-input
                     :model-value="formatFieldValue(c.field, row[c.prop])"
                     readonly
-                    :title="detailRefTrigger(c.field) === 'dblclick' ? '双击选择存货' : '点击选择'"
+                    :title="detailRefTrigger(c.field) === 'dblclick' ? tt('双击选择存货') : tt('点击选择')"
                     @click="openClickDetailRef(c.field, row, b)"
                   />
                   <el-icon v-if="detailRefTrigger(c.field) === 'dblclick' && isActiveDetailRefRow(row, b, c.prop)" class="list-ref-icon"><Search /></el-icon>
@@ -304,7 +305,7 @@
                 <el-select
                   v-else-if="isSelectField(c.field)"
                   v-model="row[c.prop]"
-                  :disabled="c.field.computed"
+                  :disabled="c.field.computed || priceLocked(c.prop)"
                   filterable
                   clearable
                   allow-create
@@ -315,7 +316,7 @@
                 <el-date-picker
                   v-else-if="isDateField(c.field)"
                   v-model="row[c.prop]"
-                  :disabled="c.field.computed"
+                  :disabled="c.field.computed || priceLocked(c.prop)"
                   type="date"
                   value-format="YYYY-MM-DD"
                   @change="onInlineDetailChange(activeTab(b).key, row, c.field)"
@@ -323,26 +324,26 @@
                 <el-input-number
                   v-else-if="isNumberField(c.field)"
                   v-model="row[c.prop]"
-                  :disabled="c.field.computed"
+                  :disabled="c.field.computed || priceLocked(c.prop)"
                   :controls="false"
                   @change="onInlineDetailChange(activeTab(b).key, row, c.field)"
                 />
                 <el-switch
                   v-else-if="isBooleanField(c.field)"
                   v-model="row[c.prop]"
-                  :disabled="c.field.computed"
+                  :disabled="c.field.computed || priceLocked(c.prop)"
                   @change="onInlineDetailChange(activeTab(b).key, row, c.field)"
                 />
                 <el-input
                   v-else
                   v-model="row[c.prop]"
-                  :disabled="c.field.computed"
+                  :disabled="c.field.computed || priceLocked(c.prop)"
                   @change="onInlineDetailChange(activeTab(b).key, row, c.field)"
                 />
               </template>
               <span v-else-if="c.prop === '材料编码' && activeTab(b).key === 'materials'" class="mat-cell">
                 <span>{{ row[c.prop] }}</span>
-                <span v-if="hasSubBom(row[c.prop])" class="mat-star" title="该材料有下级子件 BOM，点击行查看">*</span>
+                <span v-if="hasSubBom(row[c.prop])" class="mat-star" :title="tt('该材料有下级子件 BOM，点击行查看')">*</span>
               </span>
               <span v-else>{{ row[c.prop] ?? '' }}</span>
             </template>
@@ -356,43 +357,59 @@
     <!-- ══════════ ④ 表尾（固定在页面底部，滚动明细时始终可见；备注 + 审核行）══════════ -->
     <div v-if="showFooter" class="footer">
       <div class="remark">
-        <label>备注</label>
+        <label>{{ tt('备注') }}</label>
         <el-input v-model="remarkText" size="small" placeholder="" :disabled="!draftEditable" />
       </div>
       <div class="footer-hr"></div>
       <div class="audit-line">
-        <span>制单人：{{ cur['制单人'] || cur['发起人编号'] || '' }}</span>
-        <span>审核人：{{ cur['审核人'] || '' }}</span>
-        <span>审核日期：{{ cur['审核日期'] || '' }}</span>
-        <span>审核时间：{{ cur['审核时间'] || '' }}</span>
-        <span>打印次数：{{ cur['打印次数'] ?? 0 }}</span>
-        <span>创建时间：{{ cur['创建时间'] || '' }}</span>
-        <span>审核意见：{{ cur['审核意见'] || '-' }}</span>
+        <span>{{ tt('制单人') }}：{{ cur['制单人'] || cur['发起人编号'] || '' }}</span>
+        <span>{{ tt('审核人') }}：{{ cur['审核人'] || '' }}</span>
+        <span>{{ tt('审核日期') }}：{{ cur['审核日期'] || '' }}</span>
+        <span>{{ tt('审核时间') }}：{{ cur['审核时间'] || '' }}</span>
+        <span>{{ tt('打印次数') }}：{{ cur['打印次数'] ?? 0 }}</span>
+        <span>{{ tt('创建时间') }}：{{ cur['创建时间'] || '' }}</span>
+        <span>{{ tt('审核意见') }}：{{ cur['审核意见'] || '-' }}</span>
       </div>
     </div>
 
     <!-- ══════════ 表格右键菜单（对齐真实 T+ 明细右键）══════════ -->
     <div v-if="ctx.visible" class="ctx-menu" :style="{ left: ctx.x + 'px', top: ctx.y + 'px' }">
-      <div class="ctx-item" v-for="it in ctxItems" :key="it" @click="onCtxItem(it)">{{ it }}</div>
+      <div class="ctx-item" v-for="it in ctxItems" :key="it" @click="onCtxItem(it)">{{ tt(it) }}</div>
     </div>
 
     <RefPickDialog v-model="queryRefVisible" :field="queryRefField" mode="query" @confirm="onQueryRefConfirm" />
     <RefPickDialog v-model="headerRefVisible" :field="headerRefField" mode="header" @confirm="onHeaderRefConfirm" />
     <RefPickDialog v-model="detailRefVisible" :field="detailRefPick?.field" mode="detail" @confirm="onDetailRefConfirm" />
-    <el-dialog v-model="queryDialogVisible" title="查询" width="760px" append-to-body destroy-on-close class="header-query-dialog">
+    <el-dialog v-model="queryDialogVisible" :title="tt('查询')" width="760px" append-to-body destroy-on-close class="header-query-dialog">
       <div class="query-dialog-fields">
         <div v-for="field in queryDialogFields" :key="headerFieldKey(field)" class="query-dialog-field">
-          <label>{{ headerFieldLabel(field) }}</label>
-          <div v-if="isReferenceField(field)" class="query-ref">
+          <label>{{ tt(headerFieldLabel(field)) }}</label>
+          <el-select
+            v-if="isRefSelect(field)"
+            v-model="queryDraft[headerFieldKey(field)]"
+            clearable
+            filterable
+            remote
+            allow-create
+            default-first-option
+            :remote-method="(kw) => loadRefSelectOptions(field, refFieldKey(field), kw)"
+            :loading="refSelectData[refFieldKey(field)]?.loading"
+            :placeholder="tt('输入搜索')"
+            style="width: 100%"
+            @focus="checkRefMode(field, refFieldKey(field))"
+          >
+            <el-option v-for="o in refSelectData[refFieldKey(field)]?.options || []" :key="o.value" :label="tt(o.label)" :value="o.value" />
+          </el-select>
+          <div v-else-if="isReferenceField(field)" class="query-ref">
             <el-input
               :model-value="queryDraft[headerFieldKey(field)] ?? ''"
               readonly
               clearable
-              placeholder="请选择"
+              :placeholder="tt('请选择')"
               @click="openQueryRef(field, 'dialog')"
               @clear="clearQueryRef(field, 'dialog')"
             />
-            <el-button :icon="Search" title="打开参照" @click="openQueryRef(field, 'dialog')" />
+            <el-button :icon="Search" :title="tt('打开参照')" @click="openQueryRef(field, 'dialog')" />
           </div>
           <el-select v-else-if="isSelectField(field)" v-model="queryDraft[headerFieldKey(field)]" clearable filterable allow-create>
             <el-option v-for="option in fieldOptions(field)" :key="option.value" :label="option.label" :value="option.value" />
@@ -400,16 +417,16 @@
           <el-date-picker v-else-if="isDateField(field)" v-model="queryDraft[headerFieldKey(field)]" type="date" value-format="YYYY-MM-DD" />
           <el-input-number v-else-if="isNumberField(field)" v-model="queryDraft[headerFieldKey(field)]" :controls="false" />
           <el-select v-else-if="isBooleanField(field)" v-model="queryDraft[headerFieldKey(field)]" clearable>
-            <el-option label="是" :value="true" />
-            <el-option label="否" :value="false" />
+            <el-option :label="tt('是')" :value="true" />
+            <el-option :label="tt('否')" :value="false" />
           </el-select>
           <el-input v-else v-model="queryDraft[headerFieldKey(field)]" clearable @keyup.enter="applyHeaderQuery" />
         </div>
       </div>
       <template #footer>
-        <el-button @click="resetHeaderQuery">重置</el-button>
-        <el-button @click="queryDialogVisible = false">取消</el-button>
-        <el-button type="primary" :icon="Search" @click="applyHeaderQuery">查询</el-button>
+        <el-button @click="resetHeaderQuery">{{ tt('重置') }}</el-button>
+        <el-button @click="queryDialogVisible = false">{{ tt('取消') }}</el-button>
+        <el-button type="primary" :icon="Search" @click="applyHeaderQuery">{{ tt('查询') }}</el-button>
       </template>
     </el-dialog>
     <NewVoucherDialog v-model:visible="newVisible" :panelCode="panelCode" :panel-name="panelName" @saved="onNewSaved" />
@@ -419,23 +436,21 @@
     <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
     <DetailMaintainDialog v-model="maintainVisible" :panel-code="panelCode" :row="maintainRow" @saved="onMaintainSaved" />
     <VoucherFormDialog v-model="formVisible" :panel-code="formPanel || panelCode" :code="formCode" @saved="onFormSaved" />
-    <!-- 列设置浮层：显隐管理（拖拽表头调序 / 双击表头改名 / 右键表头打开） -->
-    <Teleport to="body">
-      <div v-if="colMenu.visible" class="col-menu" :style="{ left: colMenu.x + 'px', top: colMenu.y + 'px' }" @click.stop>
-        <div class="col-menu-title">列设置 · {{ colMenu.title }}</div>
-        <div class="col-menu-list">
-          <label v-for="c in colMenu.cols" :key="c.prop" class="col-menu-item">
-            <el-checkbox :model-value="c.visible" size="small" @update:model-value="(v) => onColMenuToggle(c.prop, v)" />
-            <span class="col-menu-name">{{ c.label }}</span>
-          </label>
-        </div>
-        <div class="col-menu-tip">表格里直接操作：拖拽表头调顺序 · 双击表头改栏名 · 右键表头打开本菜单</div>
-        <div class="col-menu-foot">
-          <el-button size="small" text @click="onColMenuReset">恢复默认</el-button>
-          <el-button size="small" text @click="colMenu.visible = false">关闭</el-button>
-        </div>
-      </div>
-    </Teleport>
+    <ScanFillDialog
+      v-model="scanVisible"
+      :panel-code="panelCode"
+      :panel-name="panelName"
+      :header-fields="headerFields"
+      :detail-tabs="cfgCache?.detail?.tabs || []"
+      @apply="onScanApply"
+    />
+    <ColumnPrefsDialog
+      v-model="colPrefsVisible"
+      :panel-code="panelCode"
+      :panel-name="panelName"
+      :columns="colPrefsColumns"
+      @save="onColumnPrefsSaved"
+    />
   </div>
 </template>
 
@@ -447,6 +462,10 @@ import { Plus, Search } from '@element-plus/icons-vue'
 import { useTabsStore } from '@/stores/tabs'
 import { useUserStore } from '@/stores/user'
 import { usePanelRuntime } from '@core/panel-runtime'
+import { ensureScanFillAction, ensureColumnPrefsAction } from '@core/button-groups'
+import { isDocApproved } from '@core/doc-status'
+import { tt } from '@/i18n'
+import { useLocaleStore } from '@/stores/locale'
 import RefPickDialog from './RefPickDialog.vue'
 import NewVoucherDialog from './NewVoucherDialog.vue'
 import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
@@ -456,14 +475,17 @@ import BomMasterDetail from './BomMasterDetail.vue'
 import ImportDialog from './ImportDialog.vue'
 import DetailMaintainDialog from './DetailMaintainDialog.vue'
 import VoucherFormDialog from './VoucherFormDialog.vue'
-import { defaultSettings, withReordered } from './tableColCustom'
-import { useColSettings } from './useColSettings'
+import ScanFillDialog from './ScanFillDialog.vue'
+import ColumnPrefsDialog from './ColumnPrefsDialog.vue'
 
 const engine = usePanelRuntime()
+// 权限过滤经引擎通道取用（core 层不直接依赖 business 层）
+const { filterButtonGroups, priceFieldLocked } = engine
 const route = useRoute()
 const router = useRouter()
 const tabs = useTabsStore()
 const user = useUserStore()
+const localeStore = useLocaleStore()
 
 const panelCode = computed(() => route.params.panelCode)
 const operationName = computed(() => route.meta.operationName || route.query.operationName || '新增流程')
@@ -514,20 +536,16 @@ const reportPeriod = computed(() => {
   const start = condition['开始日期']
   const end = condition['结束日期']
   if (start && end) return `${start} - ${end}`
-  if (start) return `${start} 起`
-  if (end) return `截至 ${end}`
-  return '当前业务数据'
+  if (start) return `${start} ${tt('起')}`
+  if (end) return `${tt('截至')} ${end}`
+  return tt('当前业务数据')
 })
-// 报表列设置（顺序/栏名/显隐，与明细表格共用机制，key = :_report）
-const reportColSettings = computed(() => {
-  const cols = gridTabs.value[0]?.columns || []
-  const saved = getColSettings('report')
-  if (!saved) return cols
-  const visibleSaved = saved.filter((s) => s.visible !== false && cols.includes(s.prop)).map((s) => s.prop)
-  const extras = cols.filter((c) => !saved.some((s) => s.prop === c))
-  return [...visibleSaved, ...extras]
-})
-const reportColumns = computed(() => reportColSettings.value)
+const reportColumns = computed(() => gridTabs.value[0]?.columns || [])
+// 表格列定制（阶段 C）：表头别名（数据键/取值仍是中文列名，仅显示替换）
+const columnAliases = ref({})
+const colPrefsVisible = ref(false)
+const colPrefsColumns = ref([])
+const supportsColPrefs = computed(() => typeof engine.saveColumnPrefs === 'function')
 const reportColumnTree = computed(() => {
   const groups = gridTabs.value[0]?.columnGroups || []
   const owner = new Map()
@@ -581,6 +599,7 @@ const selVisible = ref(false)
 const impVisible = ref(false)
 const impFields = ref([])
 const impLabel = ref('明细')
+const scanVisible = ref(false)
 const selCfg = ref(null)
 
 function selectConfigFor(action = '选单') {
@@ -685,14 +704,7 @@ const mainGrid = computed(() => {
   const tp = cfgCache.value?.metadata?.panelPageDto?.tablePages?.[0]
   return tp?.mainTable || null
 })
-const mainCols = computed(() => {
-  const cols = (mainGrid.value?.columns || []).filter((c) => c !== '序号')
-  const saved = getColSettings({ key: '_main' })
-  if (!saved) return cols
-  const visibleSaved = saved.filter((s) => s.visible !== false && cols.includes(s.prop)).map((s) => s.prop)
-  const extras = cols.filter((c) => !saved.some((s) => s.prop === c))
-  return [...visibleSaved, ...extras]
-})
+const mainCols = computed(() => (mainGrid.value?.columns || []).filter((c) => c !== '序号'))
 // 主表固定 5 行（不足补占位，与明细区一致）
 const mainRows = computed(() => {
   const l = list.value
@@ -846,18 +858,9 @@ function tableH(b) {
 
 function blockCols(b) {
   const t = activeTab(b)
-  const saved = getColSettings(b)
-  let cols = (t.cols || [])
-  if (saved) {
-    // 用户自定义顺序 + 显隐；配置新增列自动追加到末尾
-    const savedProps = saved.filter((s) => s.visible !== false && cols.includes(s.prop)).map((s) => s.prop)
-    const extras = cols.filter((c) => !saved.some((s) => s.prop === c))
-    cols = [...savedProps, ...extras]
-  }
-  return cols.map((c) => {
+  return (t.cols || []).map((c) => {
     const f = fieldDefOf(c)
-    const savedCol = saved?.find((s) => s.prop === c)
-    return { prop: c, label: savedCol?.label || c, field: f, width: colW(f), align: f.dataType === '小数' || f.dataType === '整数' ? 'right' : 'left' }
+    return { prop: c, label: tt(columnAliases.value[c] || c), field: f, width: colW(f), align: f.dataType === '小数' || f.dataType === '整数' ? 'right' : 'left' }
   })
 }
 
@@ -889,13 +892,13 @@ function sumMethod({ columns, data }) {
   return sums
 }
 
-// 审批流：当前单据已审批 → 表格左上角「已审批」角标；已审批明细行浅绿底色
-const isApproved = computed(() => cur.value && cur.value['审批状态'] === '已审批')
+// 审批流：当前单据已审批（直接审核/审批流通用，见 core/doc-status）→ 明细块左上角「已审批」印章；已审批行浅绿底色
+const isApproved = computed(() => isDocApproved(cur.value))
 
 function rowCls({ row }, b) {
   if (row._placeholder) return 'ph-row'
   if (b && b.id === 'A' && row['产品编码'] && row['产品编码'] === selectedProduct.value) return 'prod-selected'
-  if (row['审批状态'] === '已审批') return 'row-approved'
+  if (isDocApproved(row)) return 'row-approved'
   return ['产品编码', '材料编码', '存货编码', '存货名称', '产品名称', '材料名称'].some((k) => row[k] === '合计') ? 'sum-row' : ''
 }
 
@@ -912,79 +915,18 @@ function colW(f) {
 
 // ---------- 明细右键/图标操作（作用于当前活动区块） ----------
 const ctxItems = ['定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改', '销售订单查询', '存货中心', '更多']
-const iconA = ['☑ Ctrl+V列粘贴', '定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改', '销售订单查询', '存货中心']
-const iconB = ['现存量提取', '定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改']
+const iconA = ['☑ Ctrl+V列粘贴', '定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改', '销售订单查询', '存货中心', '更多▼']
+const iconB = ['现存量提取', '定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改', '更多▼']
+
+// 工具条装饰符（☑/▼）不进翻译键：拆出装饰仅翻译文字部分；onIcon 分发仍按原值匹配
+function iconLabel(ic) {
+  const deco = ic.startsWith('☑ ') ? '☑ ' : ''
+  const arr = ic.endsWith('▼') ? '▼' : ''
+  return deco + tt(ic.slice(deco.length, ic.length - arr.length)) + arr
+}
 
 const ctxBlock = ref(null)
 const ctx = reactive({ visible: false, x: 0, y: 0, row: null })
-// ---------- 列设置（顺序/栏名/显隐）：共享状态机见 useColSettings.js，组件只注入差异点 ----------
-function spliceMove(arr, from, to) {
-  const nv = [...arr]
-  const [m] = nv.splice(from, 1)
-  nv.splice(t, 0, m)
-  return nv
-}
-
-function reorderBlock(b, from, to) {
-  const vis = blockCols(b).map((c) => c.prop)
-  const f = vis.indexOf(from)
-  const t = vis.indexOf(to)
-  if (f < 0 || t < 0 || f === t) return
-  saveColSettings(b, withReordered(getColSettings(b) || defaultSettings(activeTab(b)?.cols || []), spliceMove(vis, f, t)))
-}
-
-function reorderMain(from, to) {
-  const f = mainCols.value.indexOf(from)
-  const t = mainCols.value.indexOf(to)
-  if (f < 0 || t < 0 || f === t) return
-  const mainDefaults = (mainGrid.value?.columns || []).filter((c) => c !== '序号')
-  saveColSettings('main', withReordered(getColSettings('main') || defaultSettings(mainDefaults), spliceMove(mainCols.value, f, t)))
-}
-
-function mainColLabel(c) {
-  return getColSettings('main')?.find((s) => s.prop === c)?.label || c
-}
-
-const dragSig = computed(() =>
-  JSON.stringify({
-    blocks: blocks.value.map((b) => ({ id: b.id, cols: blockCols(b).map((c) => c.prop) })),
-    main: mainCols.value,
-  })
-)
-
-const {
-  menu: colMenu, renaming, lastPointer,
-  getSettings: getColSettings, saveSettings: saveColSettings,
-  openMenu: openColMenu, onMenuToggle: onColMenuToggle, onMenuReset: onColMenuReset,
-  startRename, cancelRename, commitRename,
-} = useColSettings({
-  panelCode,
-  // target：'report' | 'main' | 明细 block 对象
-  resolveTarget(target) {
-    if (target === 'main') return { key: '_main', defaults: (mainGrid.value?.columns || []).filter((c) => c !== '序号'), title: mainGrid.value?.label || '主表' }
-    if (target === 'report') return { key: '_report', defaults: gridTabs.value[0]?.columns || [], title: panelName.value || '报表' }
-    return { key: target?.key || activeTab(target)?.key || '_default', defaults: activeTab(target)?.cols || [], title: activeTab(target)?.label || '明细' }
-  },
-  targetFromScope(scope) {
-    if (scope === 'main' || scope === 'report') return scope
-    return blocks.value.find((x) => x.id === scope) || null
-  },
-  dragTargets() {
-    const list = blocks.value.map((b) => ({ selector: '.blk-' + b.id, onReorder: (f, t) => reorderBlock(b, f, t) }))
-    if (mainGrid.value) list.push({ selector: '.blk-main', onReorder: reorderMain })
-    return list
-  },
-  dragSignature: dragSig,
-})
-
-function onMoreCommand(cmd, b) {
-  ctxBlock.value = b
-  if (cmd === '列设置') {
-    openColMenu(b, null, { clientX: lastPointer.x, clientY: lastPointer.y, preventDefault() {} })
-    return
-  }
-  ElMessage.info(`演示环境暂未实现「${cmd}」，界面与 T+ 保持一致`)
-}
 
 const activeCols = computed(() => (ctxBlock.value ? blockCols(ctxBlock.value) : []))
 const activeData = computed(() => (ctxBlock.value ? blockData(ctxBlock.value) : []))
@@ -1052,7 +994,7 @@ async function copyActive() {
     document.execCommand('copy')
     ta.remove()
   }
-  ElMessage.success(`已复制 ${rows.length} 行到剪贴板`)
+  ElMessage.success(tt('已复制') + ` ${rows.length} ` + tt('行到剪贴板'))
 }
 
 function exportActive() {
@@ -1075,7 +1017,6 @@ function exportActive() {
 
 async function onIcon(it, b) {
   ctxBlock.value = b
-
   if (it === '复制到剪贴板') {
     copyActive()
     return
@@ -1087,13 +1028,13 @@ async function onIcon(it, b) {
   if (it === '现存量提取') {
     try {
       const count = await engine.fillCurrentStock(blockData(b))
-      ElMessage.success(`已按库存状况表刷新 ${count} 行现存量`)
+      ElMessage.success(tt('已按库存状况表刷新') + ` ${count} ` + tt('行现存量'))
     } catch (error) {
-      ElMessage.error(engine.errMsg(error) || '现存量提取失败')
+      ElMessage.error(engine.errMsg(error) || tt('现存量提取失败'))
     }
     return
   }
-  ElMessage.info(`演示环境暂未实现「${it}」，界面与 T+ 保持一致`)
+  ElMessage.info(tt('演示环境暂未实现') + '「' + tt(it) + '」，' + tt('界面与 T+ 保持一致'))
 }
 
 async function onCtxItem(it) {
@@ -1101,7 +1042,7 @@ async function onCtxItem(it) {
   ctx.visible = false
   if (!row) return
   if (it === '定位') {
-    ElMessage.success('已定位：' + (row['产品编码'] || row['材料编码'] || row['存货编码'] || row['工序编码'] || row['编号'] || ''))
+    ElMessage.success(tt('已定位') + '：' + (row['产品编码'] || row['材料编码'] || row['存货编码'] || row['工序编码'] || row['编号'] || ''))
     return
   }
   if (it === '复制到剪贴板') {
@@ -1112,7 +1053,7 @@ async function onCtxItem(it) {
     exportActive()
     return
   }
-  ElMessage.info(`演示环境暂未实现「${it}」，界面与 T+ 保持一致`)
+  ElMessage.info(tt('演示环境暂未实现') + '「' + tt(it) + '」，' + tt('界面与 T+ 保持一致'))
 }
 
 // ---------- 查询区 ----------
@@ -1176,6 +1117,12 @@ function formatFieldValue(field, value) {
 function headerFieldLocked(field) {
   const key = headerFieldKey(field)
   return !!field.computed || !!field.autoCode || ['编号', '单据状态', '创建时间', '更新时间', '发起人编号'].includes(key)
+    || priceLocked(key)
+}
+
+/** price 权限未授权时价格/金额类字段只读（表头与明细同口径） */
+function priceLocked(fieldName) {
+  return priceFieldLocked(fieldName, panelCode.value, user)
 }
 
 function headerRefText(field) {
@@ -1303,7 +1250,7 @@ function discardCreatedDetailRefRow(pick) {
 async function onInlineDetailChange(tabKey, row, field) {
   calculateDetailRow(tabKey, row)
   if (['存货编码', '存货名称', '产品编码', '产品名称', '材料编码', '材料名称', '仓库', '预出仓库', '出库仓库'].includes(field?.dataName)) {
-    try { await engine.fillCurrentStock(row) } catch (error) { ElMessage.error(engine.errMsg(error) || '现存量刷新失败') }
+    try { await engine.fillCurrentStock(row) } catch (error) { ElMessage.error(engine.errMsg(error) || tt('现存量刷新失败')) }
   }
 }
 
@@ -1395,10 +1342,10 @@ async function saveInlineDraft(buttonName = '保存', { silent = false } = {}) {
     await load()
     const index = list.value.findIndex((item) => item['编号'] === documentNo)
     if (index >= 0) curIdx.value = index
-    if (!silent) ElMessage.success(`「${buttonName}」成功`)
+    if (!silent) ElMessage.success('「' + tt(buttonName) + '」' + tt('成功'))
     return true
   } catch (error) {
-    ElMessage.error(engine.errMsg(error) || '保存失败')
+    ElMessage.error(engine.errMsg(error) || tt('保存失败'))
     return false
   } finally {
     inlineSaving.value = false
@@ -1454,7 +1401,7 @@ async function onDetailRefConfirm(selectedRows) {
   if (!pick || !selectedRows?.length || detailRefSaving.value) return
   if (cur.value['编号'] !== pick.documentNo || cur.value['单据状态'] !== '草稿') {
     detailRefVisible.value = false
-    ElMessage.warning('当前单据已切换或不再是草稿，请重新选择')
+    ElMessage.warning(tt('当前单据已切换或不再是草稿，请重新选择'))
     return
   }
 
@@ -1501,10 +1448,10 @@ async function onDetailRefConfirm(selectedRows) {
     await load()
     const currentIndex = list.value.findIndex((item) => item['编号'] === documentNo)
     if (currentIndex >= 0) curIdx.value = currentIndex
-    ElMessage.success(`已导入 ${selectedRows.length} 条存货并保存`)
+    ElMessage.success(tt('已导入') + ` ${selectedRows.length} ` + tt('条存货并保存'))
   } catch (error) {
     discardCreatedDetailRefRow(pick)
-    ElMessage.error(engine.errMsg(error) || '存货导入保存失败')
+    ElMessage.error(engine.errMsg(error) || tt('存货导入保存失败'))
   } finally {
     detailRefSaving.value = false
     detailRefPick.value = null
@@ -1554,6 +1501,94 @@ function onQueryRefConfirm(rows) {
   if (queryRefContext.value === 'page') search()
 }
 
+// ==================== 参照字段动态形态：≤20 行下拉直选 / >20 行弹窗搜索定位 ====================
+// 移植自 YINJIA 优化：按参照面板数据行数自动切换交互形态，数据量跨越阈值时
+// （增删档案后）由 refreshRefModes 重新判定，形态随之切换。
+const REF_DROPDOWN_THRESHOLD = 20
+const refModeMap = reactive({})    // fieldKey -> 'dialog' | 'select'
+const refSelectData = reactive({}) // fieldKey -> { options: [{label, value, row}], loading }
+const refSelectTimers = {}
+
+function refFieldKey(field) {
+  const refPanel = field?.refPanel || field?.ref?.panel || ''
+  return `${refPanel}|${headerFieldKey(field)}`
+}
+
+async function checkRefMode(field, key) {
+  if (refModeMap[key]) return refModeMap[key]
+  refModeMap[key] = 'dialog' // 默认弹窗，异步判定后可能切下拉
+  try {
+    const count = await engine.refRowCount(field)
+    // 少量数据（≤20）用下拉轻快；大量数据（>20）用弹窗带搜索定位
+    refModeMap[key] = count > REF_DROPDOWN_THRESHOLD ? 'dialog' : 'select'
+    if (refModeMap[key] === 'select') loadRefSelectOptions(field, key, '')
+  } catch (e) {
+    /* 计数失败保持弹窗 */
+  }
+  return refModeMap[key]
+}
+
+// 远程搜索选项加载（300ms 防抖，避免每个按键打一次后端）
+function loadRefSelectOptions(field, key, keyword) {
+  if (!refSelectData[key]) refSelectData[key] = reactive({ options: [], loading: false })
+  clearTimeout(refSelectTimers[key])
+  refSelectTimers[key] = setTimeout(async () => {
+    refSelectData[key].loading = true
+    try {
+      refSelectData[key].options = await engine.refSelectOptions(field, keyword)
+    } catch (e) {
+      refSelectData[key].options = []
+    } finally {
+      refSelectData[key].loading = false
+    }
+  }, 300)
+}
+
+/** 数据变化后重新判定全部参照字段形态（清空缓存计数，按最新数据量切换下拉/弹窗）。 */
+async function refreshRefModes() {
+  const all = [
+    ...(queryFields.value || []),
+    ...(headerFields.value || []),
+    ...(cfgCache.value?.detail?.tabs || []).flatMap((tab) => tab.fields || []),
+  ].filter(isReferenceField)
+  const validKeys = new Set(all.map((f) => refFieldKey(f)))
+  Object.keys(refModeMap).forEach((k) => {
+    if (!validKeys.has(k)) delete refModeMap[k]
+  })
+  await Promise.all(all.map((f) => {
+    const key = refFieldKey(f)
+    delete refModeMap[key]
+    return checkRefMode(f, key)
+  }))
+}
+
+function isRefSelect(field) {
+  return isReferenceField(field) && refModeMap[refFieldKey(field)] === 'select'
+}
+
+// 下拉选中后走与弹窗完全相同的确认回填链路（含 refMap 带出），避免两路径行为漂移
+function onHeaderRefSelect(field, value) {
+  const opt = (refSelectData[refFieldKey(field)]?.options || []).find((o) => o.value === value)
+  if (!opt?.row) return
+  headerRefField.value = field
+  onHeaderRefConfirm([opt.row])
+}
+
+function onDetailRefSelect(field, row, b, value) {
+  const opt = (refSelectData[refFieldKey(field)]?.options || []).find((o) => o.value === value)
+  if (!opt?.row) return
+  // 与 openDetailReference 相同的前置校验，但不打开弹窗（下拉即选即填）
+  if (!detailEditable(b) || field.computed || row?._placeholder) return
+  detailRefPick.value = {
+    field,
+    row,
+    tabKey: activeTab(b).key,
+    documentNo: cur.value['编号'],
+    created: false,
+  }
+  onDetailRefConfirm([opt.row])
+}
+
 function applyHeaderQuery() {
   Object.keys(condition).forEach((key) => delete condition[key])
   for (const [key, value] of Object.entries(queryDraft)) {
@@ -1581,9 +1616,7 @@ function qOptions(qr) {
 function reportLeaf(column) {
   const field = fieldDefOf(column)
   const numeric = field.dataType === '小数' || field.dataType === '整数'
-  const saved = getColSettings('report')
-  const savedCol = saved?.find((s) => s.prop === column)
-  return { prop: column, label: savedCol?.label || column, width: colW(field), align: numeric ? 'right' : 'left' }
+  return { prop: column, label: tt(columnAliases.value[column] || column), width: colW(field), align: numeric ? 'right' : 'left' }
 }
 
 async function reportPage(pageNo) {
@@ -1599,7 +1632,7 @@ function exportReport() {
     const text = String(value ?? '')
     return /[",\n\t]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text
   }
-  const csv = '\ufeff' + columns.map(esc).join(',') + '\n' + list.value.map((row) => columns.map((column) => esc(row[column])).join(',')).join('\n')
+  const csv = '\ufeff' + columns.map((c) => esc(columnAliases.value[c] || c)).join(',') + '\n' + list.value.map((row) => columns.map((column) => esc(row[column])).join(',')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -1607,7 +1640,7 @@ function exportReport() {
   link.download = `${panelName.value}-${new Date().toISOString().slice(0, 10)}.csv`
   link.click()
   URL.revokeObjectURL(url)
-  ElMessage.success('已导出当前页 ' + list.value.length + ' 条数据')
+  ElMessage.success(tt('已导出当前页') + ' ' + list.value.length + ' ' + tt('条数据'))
 }
 
 // 底部备注（可编辑，绑定当前单据）
@@ -1637,8 +1670,47 @@ async function loadCrg() {
     query.pageNo = 1
   }
   gridTabs.value = tp?.gridTabs || []
-  groups.value = filterGroups(cfg?.metadata?.buttonGroups || [])
+  columnAliases.value = cfg?.metadata?.columnAliases || {}
+  groups.value = filterGroups(filterButtonGroups(ensureColumnPrefsAction(ensureScanFillAction(
+    cfg?.metadata?.buttonGroups,
+    cfg?.metadata,
+  ), supportsColPrefs.value && (gridTabs.value[0]?.columns || []).length > 0), panelCode.value, user))
+  ensurePanelDict()
   return cfg
+}
+
+// 非中文语言：预取本面板可见词条（面板名/查询与表头字段/列名/按钮组与动作，静态包缺失的走机翻）
+function ensurePanelDict() {
+  if (localeStore.isZh) return
+  localeStore.ensureDict(localeStore.current, [
+    panelName.value,
+    ...headerFields.value.map((f) => headerFieldLabel(f)),
+    ...queryFields.value.map((f) => f.label || f.dataName),
+    ...(gridTabs.value[0]?.columns || []).map((c) => (typeof c === 'string' ? c : String(c?.dataName ?? c?.name ?? c?.label ?? ''))),
+    ...(groups.value || []).flatMap((g) => [g.name, ...actsOf(g)]),
+  ])
+}
+watch(() => localeStore.current, ensurePanelDict)
+
+// ---------- 表格调整（阶段 C：按用户列顺序/显隐/别名） ----------
+function columnPrefList() {
+  const saved = cfgCache.value?.metadata?.columnPrefs
+  if (Array.isArray(saved) && saved.length) return saved
+  // 无定制：默认全显、无别名（列对象兼容 dataName/name/label，与后端 columnNameOf 同口径）
+  return (gridTabs.value[0]?.columns || []).map((c) => (typeof c === 'string'
+    ? { name: c, alias: '', visible: true }
+    : { name: String(c?.dataName ?? c?.name ?? c?.label ?? ''), alias: '', visible: true })).filter((x) => x.name)
+}
+
+async function onColumnPrefsSaved(columns) {
+  try {
+    await engine.saveColumnPrefs({ panelCode: panelCode.value, columns })
+    cfgCache.value = null // 强制重取配置（列序/别名由后端读取出口叠加返回）
+    await loadCrg()
+    ElMessage.success(columns.length ? tt('表格调整已保存') : tt('已恢复默认列设置'))
+  } catch (e) {
+    ElMessage.error(engine.errMsg(e) || tt('保存失败'))
+  }
 }
 
 function isDisabled(action) {
@@ -1661,6 +1733,7 @@ function isDisabled(action) {
     保存: !draftEditable.value || inlineSaving.value,
     保存为草稿: !draftEditable.value || inlineSaving.value,
     保存新增: !draftEditable.value || inlineSaving.value,
+    扫描填单: reportMode.value,
   }
   // 2026-08-25：所有「生成XX」生单按钮统一仅已审核/生产中可用（对齐 T+：已审核才能选择生单）
   if (map[action] === undefined && action.startsWith('生成')) {
@@ -1699,12 +1772,12 @@ async function directAdd() {
   try {
     const res = await engine.callButton({ panelCode: panelCode.value, buttonName: '保存', formData: {}, buttonParam: {} })
     const no = res && (res['编号'] || res.formNo)
-    if (!no) return ElMessage.error('新增失败：未返回单据编号')
+    if (!no) return ElMessage.error(tt('新增失败') + '：' + tt('未返回单据编号'))
     await load() // 刷新列表（新单按创建时间倒序置顶）
     curIdx.value = 0 // 定位到最新单据，草稿状态列表页可直接填写
-    ElMessage.success(`已新增 ${panelName.value}-${no}，请在列表页填写并保存`)
+    ElMessage.success(tt('已新增') + ` ${panelName.value}-${no}，` + tt('请在列表页填写并保存'))
   } catch (e) {
-    ElMessage.error(engine.errMsg(e) || '新增失败')
+    ElMessage.error(engine.errMsg(e) || tt('新增失败'))
   }
 }
 
@@ -1712,7 +1785,16 @@ async function onButton(action) {
   // 2026-08-25：灰按钮（disabled）点击直接忽略，不执行、不弹提示（如草稿态「生成XX」生单按钮）
   if (isDisabled(action)) return
   if (APPROVE_ACTIONS.includes(action) && !user.isAdmin && !user.approvePanels.includes(panelCode.value)) {
-    return ElMessage.warning('当前角色无审批权限')
+    return ElMessage.warning(tt('当前角色无审批权限'))
+  }
+  if (action === '扫描填单') {
+    scanVisible.value = true
+    return
+  }
+  if (action === '表格调整') {
+    colPrefsColumns.value = columnPrefList()
+    colPrefsVisible.value = true
+    return
   }
   if (action === '查询' || action === '查找') {
     search()
@@ -1728,11 +1810,11 @@ async function onButton(action) {
   }
   if (action === '恢复') {
     await load()
-    ElMessage.success('已恢复为最近一次保存的数据')
+    ElMessage.success(tt('已恢复为最近一次保存的数据'))
     return
   }
   if (reportMode.value && action === '发送邮件') {
-    ElMessage.info('报表邮件发送需先配置企业邮箱服务')
+    ElMessage.info(tt('报表邮件发送需先配置企业邮箱服务'))
     return
   }
   if (reportMode.value && action === '退出') {
@@ -1743,7 +1825,7 @@ async function onButton(action) {
     // Excel 导入：识别 A 区主明细字段，导入后追加行并自动保存
     const blk = blocks.value.find((x) => x.id === 'A')
     const tab = blk ? activeTab(blk) : null
-    if (!tab) return ElMessage.warning('该面板无明细可导入')
+    if (!tab) return ElMessage.warning(tt('该面板无明细可导入'))
     // 字段定义取自面板配置 detail.tabs（blocks 的 tab 只有列名 cols）；档案面板无明细 tab → 用 dataSchema.fields
     const tabDef = (cfgCache.value?.detail?.tabs || []).find((t) => t.key === tab.key)
     const fields = (tabDef && tabDef.fields && tabDef.fields.length)
@@ -1763,13 +1845,13 @@ async function onButton(action) {
       selVisible.value = true
       return
     }
-    ElMessage.info('演示环境暂未实现「选单」，界面与 T+ 保持一致')
+    ElMessage.info(tt('演示环境暂未实现「选单」，界面与 T+ 保持一致'))
     return
   }
   if (action === '新增' || action === '新建' || action === '新增流程') {
     if (cfgCache.value?.metadata?.singleDoc && current.value && current.value['编号']) {
       // 档案/单单据面板（存货档案、员工、部门等）：直接在当前单据页填写（列表页已内联可编辑），不弹新增弹窗
-      ElMessage.info('请在下方列表页直接填写并保存')
+      ElMessage.info(tt('请在下方列表页直接填写并保存'))
       return
     }
     // 统一直接新增（2026-08-24 全量生效）：后端创建一张最新草稿单（autoCode 编号 + 单据日期=当天填入表头），
@@ -1777,7 +1859,7 @@ async function onButton(action) {
     return await directAdd()
   }
   if (action === '修改') {
-    if (!current.value) return ElMessage.warning('请先选择一行数据')
+    if (!current.value) return ElMessage.warning(tt('请先选择一行数据'))
     openForm(current.value)
     return
   }
@@ -1790,34 +1872,34 @@ async function onButton(action) {
     return
   }
   if (action === '删除单据') {
-    if (!current.value) return ElMessage.warning('请先选择一行数据')
+    if (!current.value) return ElMessage.warning(tt('请先选择一行数据'))
     const no = current.value['编号'] || current.value['单据编号'] || ''
     try {
-      await ElMessageBox.confirm('确认删除整张单据 ' + no + '？该操作不可恢复。', '删除单据确认', { type: 'warning' })
+      await ElMessageBox.confirm(tt('确认删除整张单据') + ' ' + no + '？' + tt('该操作不可恢复。'), tt('删除单据确认'), { type: 'warning' })
     } catch (e) {
       return
     }
     try {
       await engine.deleteForms({ panelCode: panelCode.value, rowCodes: [no] })
-      ElMessage.success('单据已删除：' + no)
+      ElMessage.success(tt('单据已删除') + '：' + no)
       delMode.value = false
       delSel.value = []
       load()
     } catch (e) {
-      ElMessage.error(engine.errMsg(e) || '删除失败')
+      ElMessage.error(engine.errMsg(e) || tt('删除失败'))
     }
     return
   }
   if (action === '删除') {
-    if (!current.value) return ElMessage.warning('请先选择一行数据')
+    if (!current.value) return ElMessage.warning(tt('请先选择一行数据'))
     if (!delMode.value) {
       delMode.value = true
-      ElMessage.info('已进入删除模式：勾选要删除的行，再点「删除」确认；点「刷新」或翻页取消')
+      ElMessage.info(tt('已进入删除模式：勾选要删除的行，再点「删除」确认；点「刷新」或翻页取消'))
       return
     }
-    if (!delSel.value.length) return ElMessage.warning('请先勾选要删除的行')
+    if (!delSel.value.length) return ElMessage.warning(tt('请先勾选要删除的行'))
     try {
-      await ElMessageBox.confirm('确认删除勾选的 ' + delSel.value.length + ' 行明细？', '删除确认', { type: 'warning' })
+      await ElMessageBox.confirm(tt('确认删除勾选的') + ' ' + delSel.value.length + ' ' + tt('行明细？'), tt('删除确认'), { type: 'warning' })
     } catch (e) {
       return
     }
@@ -1841,24 +1923,24 @@ async function onButton(action) {
         formData: { ...head, 编号: cur.value['编号'], detail: { ...(cur.value.detail || {}), [key]: remain } },
         buttonParam: {},
       })
-      ElMessage.success('已删除 ' + delSel.value.length + ' 行')
+      ElMessage.success(tt('已删除') + ' ' + delSel.value.length + ' ' + tt('行'))
       delMode.value = false
       delSel.value = []
       load()
     } catch (e) {
-      ElMessage.error(engine.errMsg(e) || '删除失败')
+      ElMessage.error(engine.errMsg(e) || tt('删除失败'))
     }
     return
   }
   if (['中止执行', '整单中止', '草稿', '取消中止', '提交审批', '审批通过', '驳回审批'].includes(action)) {
-    if (!current.value) return ElMessage.warning('请先选择一行数据')
+    if (!current.value) return ElMessage.warning(tt('请先选择一行数据'))
   }
   // 人工审核：确认弹窗 + 审核意见（选填）；审核人取当前登录人（后端从 JWT 取）
   let auditOpinion = ''
   if (action === '审核') {
-    if (!current.value) return ElMessage.warning('请先选择一行数据')
+    if (!current.value) return ElMessage.warning(tt('请先选择一行数据'))
     // 已审核过的单据不允许再次审核，也不允许补填审批意见
-    if (current.value['单据状态'] !== '草稿') return ElMessage.warning('仅草稿状态可审核，已审核单据不允许再次审核')
+    if (current.value['单据状态'] !== '草稿') return ElMessage.warning(tt('仅草稿状态可审核，已审核单据不允许再次审核'))
     const no = current.value['编号'] || current.value['单据编号'] || ''
     try {
       const { value } = await ElMessageBox.prompt(
@@ -1871,10 +1953,10 @@ async function onButton(action) {
       return
     }
   } else if (action === '弃审') {
-    if (!current.value) return ElMessage.warning('请先选择一行数据')
+    if (!current.value) return ElMessage.warning(tt('请先选择一行数据'))
     if (current.value['单据状态'] !== '已审核') return ElMessage.warning('仅已审核状态可弃审')
     try {
-      await ElMessageBox.confirm('确认弃审该单据？弃审后需重新审核。', '弃审确认', { type: 'warning' })
+      await ElMessageBox.confirm(tt('确认弃审该单据？弃审后需重新审核。'), tt('弃审确认'), { type: 'warning' })
     } catch (e) {
       return
     }
@@ -1883,7 +1965,7 @@ async function onButton(action) {
     // 审批流：提交审批/审批通过（确认+意见）、审批驳回（意见必填）、审批情况（历史弹窗）
     let approvalOpinion = ''
     if (action === '提交审批' || action === '审批通过') {
-      if (!current.value) return ElMessage.warning('请先选择一行数据')
+      if (!current.value) return ElMessage.warning(tt('请先选择一行数据'))
       const need = action === '提交审批' ? '草稿' : '审批中'
       if (current.value['单据状态'] !== need) return ElMessage.warning(action === '提交审批' ? '仅草稿状态可提交审批' : '仅审批中状态可审批通过')
       const no = current.value['编号'] || current.value['单据编号'] || ''
@@ -1898,7 +1980,7 @@ async function onButton(action) {
         return
       }
     } else if (action === '审批驳回') {
-      if (!current.value) return ElMessage.warning('请先选择一行数据')
+      if (!current.value) return ElMessage.warning(tt('请先选择一行数据'))
       if (current.value['单据状态'] !== '审批中') return ElMessage.warning('仅审批中状态可审批驳回')
       const no = current.value['编号'] || current.value['单据编号'] || ''
       try {
@@ -1912,7 +1994,7 @@ async function onButton(action) {
         return
       }
     } else if (action === '审批情况') {
-      if (!current.value) return ElMessage.warning('请先选择一行数据')
+      if (!current.value) return ElMessage.warning(tt('请先选择一行数据'))
       approvalNo.value = current.value['编号'] || current.value['单据编号'] || ''
       approvalVisible.value = true
       return
@@ -1931,7 +2013,7 @@ async function onButton(action) {
     })
     if (res?.gotoPanel) {
       // 推式生单：直接跳转到目标面板列表页（不新开标签页），新生成的单据按创建时间倒序显示在第一张（草稿内联可编辑）
-      ElMessage.success(`已生成${res.gotoPanel === 'MANU_ORDER' ? '生产加工单' : res.gotoPanel}：${res['编号']}，请在列表页继续填写`)
+      ElMessage.success(tt('已生成') + (res.gotoPanel === 'MANU_ORDER' ? tt('生产加工单') : res.gotoPanel) + '：' + res['编号'] + '，' + tt('请在列表页继续填写'))
       const targetPath = `/panelx/list/${res.gotoPanel}`
       tabs.close(route.path) // 关闭当前源面板页签（页签被目标面板替换）
       router.push(targetPath)
@@ -1951,8 +2033,44 @@ async function onButton(action) {
   }
 }
 
-// 请求序号防竞态：快速切面板/连续查询时丢弃过期响应，避免旧面板数据写入当前页面
-let loadSeq = 0
+async function onScanApply(payload) {
+  if (!draftEditable.value) {
+    try {
+      const created = await engine.callButton({ panelCode: panelCode.value, buttonName: '保存', formData: {}, buttonParam: {} })
+      const documentNo = created?.['编号'] || created?.formNo
+      if (!documentNo) throw new Error('未返回单据编号')
+      await load()
+      const index = list.value.findIndex((row) => row['编号'] === documentNo)
+      curIdx.value = index >= 0 ? index : 0
+    } catch (error) {
+      ElMessage.error(engine.errMsg(error) || '新建草稿失败')
+      return
+    }
+  }
+
+  const fields = new Map(headerFields.value.map((field) => [headerFieldKey(field), field]))
+  for (const [key, value] of Object.entries(payload?.header || {})) {
+    const field = fields.get(key)
+    if (!field || field.hidden || field.computed || field.autoCode || headerFieldLocked(field)) continue
+    cur.value[key] = value
+  }
+
+  if (!cur.value.detail) cur.value.detail = {}
+  const tabMap = new Map((cfgCache.value?.detail?.tabs || []).map((tab) => [tab.key, tab]))
+  for (const [tabKey, rows] of Object.entries(payload?.detail || {})) {
+    const tab = tabMap.get(tabKey)
+    if (!tab || !Array.isArray(rows)) continue
+    const writable = new Set((tab.fields || []).filter((field) => !field.hidden && !field.computed && !priceLocked(field.dataName)).map((field) => field.dataName))
+    const recognizedRows = rows.map((row) => Object.fromEntries(
+      Object.entries(row || {}).filter(([key]) => writable.has(key)),
+    ))
+    cur.value.detail[tabKey] = payload?.detailMode === 'append'
+      ? [...(cur.value.detail[tabKey] || []), ...recognizedRows]
+      : recognizedRows
+    for (const row of cur.value.detail[tabKey]) calculateDetailRow(tabKey, row)
+  }
+  ElMessage.success('识别数据已填入草稿，请核对后保存')
+}
 
 async function load() {
   delMode.value = false
@@ -1961,14 +2079,12 @@ async function load() {
     ElMessage.error('面板编号无效，请从菜单重新进入')
     return
   }
-  const seq = ++loadSeq
   loading.value = true
   try {
     await loadCrg()
     const params = { panelCode: panelCode.value, condition: { ...condition }, pageNo: query.pageNo, pageSize: query.pageSize }
     if (query.keyword) params.keyword = query.keyword
     const res = await engine.queryFormDataList(params)
-    if (seq !== loadSeq) return
     list.value = res.list || []
     total.value = res.totalSize || 0
     if (curIdx.value >= list.value.length) curIdx.value = 0
@@ -1980,11 +2096,12 @@ async function load() {
       router.replace({ path: route.path, query: { ...route.query, focus: undefined } })
     }
   } catch (e) {
-    if (seq !== loadSeq) return
     const msg = engine.errMsg(e) || '加载失败'
     ElMessage.error(msg)
   } finally {
-    if (seq === loadSeq) loading.value = false
+    loading.value = false
+    // 数据变化后重新判定参照字段形态（增删档案跨 20 条阈值时下拉/弹窗自动切换）
+    refreshRefModes()
   }
 }
 
@@ -2061,7 +2178,7 @@ async function onImported(rows) {
     ElMessage.success('导入并保存成功')
     load()
   } catch (e) {
-    ElMessage.error(engine.errMsg(e) || '保存失败')
+    ElMessage.error(engine.errMsg(e) || tt('保存失败'))
   }
 }
 
@@ -2170,10 +2287,14 @@ async function selectProduct(code) {
 watch(
   () => [panelCode.value, operationName.value],
   () => {
+    scanVisible.value = false
     // 2026-08-20：关闭页签/切走时 panelCode 变 undefined——不触发加载（避免「面板编号无效」误报）
     if (!panelCode.value || panelCode.value === 'undefined') return
     cfgCache.value = null
     qOptCache.clear()
+    Object.keys(refModeMap).forEach((k) => delete refModeMap[k])
+    Object.keys(refSelectData).forEach((k) => delete refSelectData[k])
+    Object.keys(refSelectTimers).forEach((k) => clearTimeout(refSelectTimers[k]))
     Object.keys(condition).forEach((key) => delete condition[key])
     Object.keys(queryDraft).forEach((key) => delete queryDraft[key])
     query.keyword = ''
@@ -2212,7 +2333,7 @@ async function handleNewQuery() {
   if (newQueryHandled) return
   if (cfgCache.value?.metadata?.singleDoc && current.value && current.value['编号']) {
     newQueryHandled = true
-    ElMessage.info('请在下方列表页直接填写并保存')
+    ElMessage.info(tt('请在下方列表页直接填写并保存'))
     return
   }
   if (cfgCache.value?.metadata?.singleDoc) {
@@ -2256,6 +2377,7 @@ onDeactivated(() => {
   detailRefVisible.value = false
   detailRefPick.value = null
   impVisible.value = false
+  scanVisible.value = false
   maintainVisible.value = false
   selVisible.value = false
 })
@@ -2473,6 +2595,17 @@ onUnmounted(() => {
   display: flex;
   width: 192px;
   gap: 4px;
+}
+/* 参照字段下拉形态（≤20 行）：与 query-ref 同宽，省去弹窗按钮 */
+.query-ref-select {
+  display: flex;
+  width: 192px;
+}
+.query-ref-select :deep(.el-select) {
+  width: 100%;
+}
+.inline-ref-select {
+  width: 100%;
 }
 .query-ref :deep(.el-input) {
   width: 160px;
@@ -2999,7 +3132,3 @@ onUnmounted(() => {
   }
 }
 </style>
-
-
-
-

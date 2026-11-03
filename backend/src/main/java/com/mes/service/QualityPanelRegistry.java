@@ -44,17 +44,17 @@ public class QualityPanelRegistry {
 
         upsert("QC_PLAN", "检验方案", "基础档案", qualityPlanConfig(), "1.0");
         upsert("COMPANY_TRACE_SETTINGS", "企业移动追溯设置", "设置",
-                companyTraceSettingsConfig(), "1.0-live-QT0101");
+                companyTraceSettingsConfig(), "QT0101");
         upsert("CUSTOMER_TRACE_SETTINGS", "客户移动追溯设置", "设置",
-                customerTraceSettingsConfig(), "1.0-live-QT0102");
+                customerTraceSettingsConfig(), "QT0102");
         upsert("TRACE_PRINT_TEMPLATE", "追溯打印模板设置", "设置",
-                tracePrintTemplateConfig(), "1.0-live-QT0103");
+                tracePrintTemplateConfig(), "QT0103");
         upsert("FIRST_INSPECT", "首件报检单", "单据",
                 reportVoucherConfig("FIRST_INSPECT", "首件报检单", "首件报检", "首件检验",
                         selectConfigs(
                                 "选生产加工单", selectConfig("MANU_ORDER", "选生产加工单", "products", "数量", "报检数量",
                                         maps("单据编号", "来源单号", "生产车间", "生产车间"),
-                                        maps("产品编码", "存货编码", "产品名称", "存货名称", "规格型号", "规格型号", "生产单位", "计量单位", "数量", "报检数量")))), "1.0-menu-baseline");
+                                        maps("产品编码", "存货编码", "产品名称", "存货名称", "规格型号", "规格型号", "生产单位", "计量单位", "数量", "报检数量")))), "MB1.0");
         upsert("PROCESS_INSPECT_APPLY", "工序报检单", "单据",
                 reportVoucherConfig("PROCESS_INSPECT_APPLY", "工序报检单", "工序报检", "工序检验",
                         selectConfigs(
@@ -63,13 +63,13 @@ public class QualityPanelRegistry {
                                         maps("产品编码", "存货编码", "产品名称", "存货名称", "规格型号", "规格型号", "工序编码", "工序编码", "工序名称", "工序名称", "工序单位", "计量单位", "报工数量", "报检数量")),
                                 "选工序派工单", selectConfig("DISPATCH", "选工序派工单", "items", "派工数量", "报检数量",
                                         maps("单据编号", "来源单号", "生产车间", "生产车间", "加工单号", "加工单号"),
-                                        maps("产品编码", "存货编码", "产品名称", "存货名称", "规格型号", "规格型号", "工序编码", "工序编码", "工序名称", "工序名称", "计量单位", "计量单位", "派工数量", "报检数量")))), "1.0-menu-baseline");
+                                        maps("产品编码", "存货编码", "产品名称", "存货名称", "规格型号", "规格型号", "工序编码", "工序编码", "工序名称", "工序名称", "计量单位", "计量单位", "派工数量", "报检数量")))), "MB1.0");
         upsert("PROCESS_INSPECTION", "生产过程检验单", "单据",
                 inspectionVoucherConfig("PROCESS_INSPECTION", "生产过程检验单", "生产过程检验",
                         selectConfigs(
                                 "选工序报检单", selectConfig("PROCESS_INSPECT_APPLY", "选工序报检单", "items", "报检数量", "报检数量",
                                         maps("单据编号", "来源单号", "生产车间", "生产车间", "加工单号", "加工单号"),
-                                        maps("存货编码", "存货编码", "存货名称", "存货名称", "规格型号", "规格型号", "工序编码", "工序编码", "工序名称", "工序名称", "计量单位", "计量单位", "报检数量", "报检数量")))), "1.0-menu-baseline");
+                                        maps("存货编码", "存货编码", "存货名称", "存货名称", "规格型号", "规格型号", "工序编码", "工序编码", "工序名称", "工序名称", "计量单位", "计量单位", "报检数量", "报检数量")))), "MB1.0");
 
         upgradeCapturedPanels();
     }
@@ -382,7 +382,7 @@ public class QualityPanelRegistry {
             Map<String, Object> config = json.readValue(row.getConfig(), new TypeReference<>() {});
             mutator.accept(config);
             row.setConfig(json.writeValueAsString(config));
-            row.setVersion("quality-flow-1.0");
+            row.setVersion("QF1.0");
             row.setUpdateTime(LocalDateTime.now());
             panelMapper.updateById(row);
         } catch (Exception e) {

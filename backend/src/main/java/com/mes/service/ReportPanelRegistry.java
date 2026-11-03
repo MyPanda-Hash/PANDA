@@ -40,8 +40,14 @@ public class ReportPanelRegistry {
         this.json = json;
     }
 
+    /** 账务与计划类报表：数据源在 ReportQueryService，但与业务报表分开维护，避免污染 DEFINITIONS。 */
+    private static final Set<String> ACCOUNTING_CODES =
+            Set.of("ACCOUNT", "ACCOUNTING_ENTRY", "ACCOUNT_BALANCE", "ACCOUNT_DETAIL",
+                    "MPS_PLAN", "MRP_RESULT", "KIT_ANALYSIS", "PICK_WORKBENCH", "SPC_CONTROL",
+                    "SETTLE_CUSTOMER", "SETTLE_SUPPLIER", "AGING_ANALYSIS");
+
     public static boolean isReport(String panelCode) {
-        return DEFINITIONS.containsKey(panelCode);
+        return DEFINITIONS.containsKey(panelCode) || ACCOUNTING_CODES.contains(panelCode);
     }
 
     public static Definition definition(String panelCode) {
@@ -264,8 +270,8 @@ public class ReportPanelRegistry {
                 c("单据类型", "单据编号", "单据日期", "仓库", "存货编码", "存货类别", "存货", "规格型号", "计量单位", "数量", "原成本", "调整后成本", "成本金额", "制单人", "单据状态"),
                 query("开始日期", "结束日期", "仓库", "存货", "单据类型")));
         out.put("STOCK_STATUS", d("STOCK_STATUS", "库存状况表",
-                c("仓库编码", "仓库", "存货编码", "存货", "规格型号", "主计量", "现存量(主)", "结存单价(主)", "结存金额"),
-                query("仓库", "存货")));
+                c("仓库编码", "仓库", "库位", "批次号", "存货编码", "存货", "规格型号", "主计量", "现存量(主)", "结存单价(主)", "结存金额"),
+                query("仓库", "库位", "批次号", "存货")));
 
         List<String> summaryColumns = c("仓库编码", "仓库", "存货编码", "存货", "规格型号", "主单位", "辅单位",
                 "期初数量", "期初平均单价", "期初金额", "本期入库数量", "入库平均单价", "本期入库金额",

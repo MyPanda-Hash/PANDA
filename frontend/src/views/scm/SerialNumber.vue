@@ -2,24 +2,24 @@
 <template>
   <div class="sn-page">
     <div class="sn-head">
-      <div class="sn-title">序列号管理</div>
-      <div class="sn-sub">序列号启用 → 入库登记（扫码/录入/导入）→ 出库扫描 → 序列号状况表/跟踪表追溯</div>
+      <div class="sn-title">{{ tt('序列号管理') }}</div>
+      <div class="sn-sub">{{ tt('序列号启用 → 入库登记（扫码/录入/导入）→ 出库扫描 → 序列号状况表/跟踪表追溯') }}</div>
     </div>
     <div class="sn-body">
       <div class="sn-flow">
         <div v-for="(s, i) in flow" :key="i" class="sn-step">
           <div class="sn-step-no">{{ i + 1 }}</div>
-          <div class="sn-step-name">{{ s.name }}</div>
-          <div class="sn-step-desc">{{ s.desc }}</div>
+          <div class="sn-step-name">{{ tt(s.name) }}</div>
+          <div class="sn-step-desc">{{ tt(s.desc) }}</div>
         </div>
       </div>
       <div class="sn-sec">
-        <span class="sn-sec-title">快捷入口</span>
-        <span v-for="d in entries" :key="d.code" class="sn-btn" @click="go(d.code)">{{ d.label }}</span>
+        <span class="sn-sec-title">{{ tt('快捷入口') }}</span>
+        <span v-for="d in entries" :key="d.code" class="sn-btn" @click="go(d.code)">{{ tt(d.label) }}</span>
       </div>
       <div class="sn-note">
-        入库时：可以扫码、录入、导入序列号；出库时：直接扫描序列号或选择序列号，简单更高效。
-        序列号查询：通过序列号状况表查询序列号状态，通过序列号跟踪表对序列号进行追溯查询。
+        {{ tt('入库时：可以扫码、录入、导入序列号；出库时：直接扫描序列号或选择序列号，简单更高效。') }}
+        {{ tt('序列号查询：通过序列号状况表查询序列号状态，通过序列号跟踪表对序列号进行追溯查询。') }}
       </div>
     </div>
   </div>
@@ -28,6 +28,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useTabsStore } from '@/stores/tabs'
+import { tt } from '@/i18n'
 
 const router = useRouter()
 const tabs = useTabsStore()

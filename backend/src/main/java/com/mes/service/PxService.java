@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mes.entity.FinanceVoucher;
 import com.mes.entity.FormApproval;
 import com.mes.entity.FormData;
 import com.mes.entity.PanelConfig;
@@ -14,6 +15,8 @@ import com.mes.panel.PanelActionContext;
 import com.mes.panel.PanelActionRegistry;
 import com.mes.panel.PanelRuntimeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,28 +39,83 @@ public class PxService implements PanelRuntimeService {
     private static final Set<String> QUALITY_REPORT_PANELS = Set.of(
             "ARRIVAL_IN", "FINISH_INSPECT", "FIRST_INSPECT", "PROCESS_INSPECT_APPLY");
     private static final Set<String> QUALITY_INSPECTION_PANELS = Set.of("INSPECTION", "PROCESS_INSPECTION");
+    /** 质量三态判定集合：对齐金蝶「合格/让步接收/报废」语义。 */
+    private static final Set<String> QUALITY_VERDICTS =
+            Set.of("合格", "让步接收", "部分报废", "全批报废");
 
     private final PanelConfigMapper panelMapper;
     private final FormDataMapper formMapper;
     private final FormApprovalMapper approvalMapper;
     private final ReportQueryService reportQueryService;
     private final PanelActionRegistry panelActionRegistry;
+    private final RoleService roleService;
+    private final JdbcTemplate jdbcTemplate;
+    private final StockTxnService stockTxnService;
+    private final FinanceSettleService financeSettleService;
+    private final FinancePaymentService financePaymentService;
+    private final com.mes.mapper.FinanceVoucherMapper financeVoucherMapper;
+    private final AccountingService accountingService;
+    private final ProcessTraceQueryService processTraceQueryService;
     private final ObjectMapper json = new ObjectMapper();
+
+    /** 权限码 → 受控按钮名（矩阵过滤映射；未列出的按钮不受权限控制） */
+    private static final Map<String, List<String>> ACTION_BUTTONS = Map.of(
+            "query", List.of("查找", "查询", "刷新"),
+            "add", List.of("新增", "新增流程", "引入常用单据", "选单", "扫描填单"),
+            "edit", List.of("修改", "保存", "保存新增", "保存为草稿", "中止", "中止执行", "整单中止", "草稿", "取消中止", "关闭", "手工完工"),
+            "delete", List.of("删除", "删除单据"),
+            "export", List.of("导出", "明细标签打印", "下载导入模板", "导入"),
+            "print", List.of("直接打印", "打印", "预览", "打印模板设置", "打印情况", "保存打印"),
+            "audit", List.of("提交审批", "审批通过", "审批驳回", "驳回审批", "审批情况", "弃审", "审核"));
+
+    /** 按钮名 → 权限码（含「生成XX」生单按钮 → add） */
+    private static String permOfButton(String buttonName) {
+        if (buttonName == null || buttonName.isEmpty()) return null;
+        if (buttonName.startsWith("生成")) return "add";
+        for (Map.Entry<String, List<String>> e : ACTION_BUTTONS.entrySet()) {
+            if (e.getValue().contains(buttonName)) return e.getKey();
+        }
+        return null;
+    }
 
     @Autowired
     public PxService(PanelConfigMapper panelMapper, FormDataMapper formMapper,
                      FormApprovalMapper approvalMapper, ReportQueryService reportQueryService,
-                     PanelActionRegistry panelActionRegistry) {
+                     PanelActionRegistry panelActionRegistry, RoleService roleService,
+                     JdbcTemplate jdbcTemplate, StockTxnService stockTxnService,
+                     FinanceSettleService financeSettleService,
+                     FinancePaymentService financePaymentService,
+                     com.mes.mapper.FinanceVoucherMapper financeVoucherMapper,
+                     AccountingService accountingService,
+                     ProcessTraceQueryService processTraceQueryService) {
         this.panelMapper = panelMapper;
         this.formMapper = formMapper;
         this.approvalMapper = approvalMapper;
         this.reportQueryService = reportQueryService;
         this.panelActionRegistry = panelActionRegistry;
+        this.roleService = roleService;
+        this.jdbcTemplate = jdbcTemplate;
+        this.stockTxnService = stockTxnService;
+        this.financeSettleService = financeSettleService;
+        this.financePaymentService = financePaymentService;
+        this.financeVoucherMapper = financeVoucherMapper;
+        this.accountingService = accountingService;
+        this.processTraceQueryService = processTraceQueryService;
     }
 
     PxService(PanelConfigMapper panelMapper, FormDataMapper formMapper,
               FormApprovalMapper approvalMapper, ReportQueryService reportQueryService) {
-        this(panelMapper, formMapper, approvalMapper, reportQueryService, new PanelActionRegistry(List.of()));
+        this(panelMapper, formMapper, approvalMapper, reportQueryService,
+                new PanelActionRegistry(List.of()), null, null, null, null, null, null, null, null);
+    }
+
+    /** 测试与无财务场景的简化构造：库存与财务服务均可为空。 */
+    PxService(PanelConfigMapper panelMapper, FormDataMapper formMapper,
+              FormApprovalMapper approvalMapper, ReportQueryService reportQueryService,
+              PanelActionRegistry panelActionRegistry, RoleService roleService,
+              JdbcTemplate jdbcTemplate, StockTxnService stockTxnService) {
+        this(panelMapper, formMapper, approvalMapper, reportQueryService,
+                panelActionRegistry, roleService, jdbcTemplate, stockTxnService, null, null, null, null, null);
     }
 
     // ---------- 配置 ----------
@@ -120,6 +178,44 @@ public class PxService implements PanelRuntimeService {
         upgradeInvPairRef(config, "items", "材料编码", "材料名称", "规格型号", "计量单位");
         upgradeInvPairRef(config, "items", "产品编码", "产品名称", "规格型号", "计量单位");
         upgradeInvPairRef(config, null, "存货编码", "存货", "规格型号", "计量单位");
+        ensureOcrAction(config);
+    }
+
+    /** Add OCR to editable document panels without mutating configured group/action collections. */
+    @SuppressWarnings("unchecked")
+    private void ensureOcrAction(Map<String, Object> config) {
+        Object metadataObject = config.get("metadata");
+        if (!(metadataObject instanceof Map<?, ?> rawMetadata)) return;
+        Map<String, Object> source = (Map<String, Object>) rawMetadata;
+        if (!String.valueOf(source.getOrDefault("panelCategory", "")).trim().endsWith("单据")
+                || Boolean.parseBoolean(String.valueOf(source.getOrDefault("readonly", false)))
+                || Boolean.parseBoolean(String.valueOf(source.getOrDefault("readOnly", false)))) return;
+
+        Map<String, Object> metadata = new LinkedHashMap<>(source);
+        List<Map<String, Object>> groups = new ArrayList<>();
+        boolean foundMore = false;
+        Object groupsObject = source.get("buttonGroups");
+        if (groupsObject instanceof List<?> rawGroups) {
+            for (Object item : rawGroups) {
+                if (!(item instanceof Map<?, ?> rawGroup)) continue;
+                Map<String, Object> group = new LinkedHashMap<>((Map<String, Object>) rawGroup);
+                Object configuredActions = group.containsKey("actions") ? group.get("actions") : group.get("items");
+                List<String> actions = new ArrayList<>(actionNames(configuredActions));
+                actions.removeIf("扫描填单"::equals);
+                if (!foundMore && "更多".equals(String.valueOf(group.getOrDefault("name", "")))) {
+                    if (actions.isEmpty()) actions.add("刷新");
+                    actions.add("扫描填单");
+                    foundMore = true;
+                }
+                group.put("actions", actions);
+                groups.add(group);
+            }
+        }
+        if (!foundMore) {
+            groups.add(new LinkedHashMap<>(Map.of("name", "更多", "actions", List.of("刷新", "扫描填单"))));
+        }
+        metadata.put("buttonGroups", groups);
+        config.put("metadata", metadata);
     }
 
     /** 报价单金额链与销售订单保持一致：报价单价/税率 -> 含税单价 -> 金额/含税金额。 */
@@ -531,13 +627,166 @@ public class PxService implements PanelRuntimeService {
     }
 
     public Map<String, Object> getPanelConfig(String panelCode) {
-        return loadConfig(panelCode);
+        return getPanelConfig(panelCode, null);
+    }
+
+    /**
+     * 用户级表格列定制（px_column_pref）叠加在读取出口：重排/隐藏 gridTabs 列 + 注入
+     * metadata.columnAliases / metadata.columnPrefs。绝不写回 panel_config.config
+     * （4 个 Registry 启动时会无条件覆盖 config 列）。
+     */
+    public Map<String, Object> getPanelConfig(String panelCode, String userName) {
+        if (userName != null && !userName.isBlank()) requirePanelPermission(panelCode, "view", userName);
+        Map<String, Object> cfg = loadConfig(panelCode);
+        if (userName != null && !userName.isBlank()) applyColumnPrefs(cfg, panelCode, userName);
+        return cfg;
+    }
+
+    // ---------- 表格列定制（阶段 C：按用户顺序/显隐/别名） ----------
+
+    private static final class ColumnPref {
+        final String name;
+        final String alias;
+        final boolean visible;
+        ColumnPref(String name, String alias, boolean visible) {
+            this.name = name;
+            this.alias = alias;
+            this.visible = visible;
+        }
+    }
+
+    /** 列名提取：列配置兼容字符串与对象（dataName/name/label）两种形态 */
+    private static String columnNameOf(Object col) {
+        if (col instanceof String s) return s;
+        if (col instanceof Map<?, ?> m) {
+            for (String k : new String[]{"dataName", "name", "label"}) {
+                Object v = m.get(k);
+                if (v != null && !String.valueOf(v).isBlank()) return String.valueOf(v);
+            }
+        }
+        return null;
+    }
+
+    private static boolean visibleFlag(Object v) {
+        if (v instanceof Boolean b) return b;
+        if (v instanceof Number n) return n.intValue() != 0;
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void applyColumnPrefs(Map<String, Object> cfg, String panelCode, String userName) {
+        List<Map<String, Object>> rows;
+        try {
+            rows = jdbcTemplate.queryForList(
+                    "SELECT col_name, seq, alias, visible FROM px_column_pref WHERE panel_code = ? AND owner = ? ORDER BY seq, id",
+                    panelCode, userName);
+        } catch (Exception e) {
+            return; // 表未建/库未迁移：保持配置默认
+        }
+        if (rows.isEmpty()) return;
+        Map<String, Object> metadata = (Map<String, Object>) cfg.get("metadata");
+        if (metadata == null) return;
+        if (!(metadata.get("panelPageDto") instanceof Map<?, ?> pageDto)) return;
+        if (!(pageDto.get("tablePages") instanceof List<?> pages)) return;
+
+        List<ColumnPref> prefs = new ArrayList<>();
+        for (Map<String, Object> r : rows) {
+            String name = String.valueOf(r.get("col_name"));
+            Object alias = r.get("alias");
+            prefs.add(new ColumnPref(name,
+                    alias == null ? "" : String.valueOf(alias),
+                    visibleFlag(r.get("visible"))));
+        }
+
+        // 应用到每个 tablePage 的 gridTabs（明细页签与其同源汇总页签都应用）
+        for (Object pageObj : pages) {
+            if (!(pageObj instanceof Map<?, ?> page)) continue;
+            if (!(page.get("gridTabs") instanceof List<?> tabs)) continue;
+            for (Object tabObj : tabs) {
+                if (!(tabObj instanceof Map<?, ?> tab)) continue;
+                if (!(tab.get("columns") instanceof List<?> cols)) continue;
+                List<Object> reordered = new ArrayList<>();
+                Set<String> seen = new HashSet<>();
+                for (ColumnPref p : prefs) {
+                    if (!p.visible) continue;
+                    Object col = findColumn(cols, p.name);
+                    if (col != null) {
+                        reordered.add(col);
+                        seen.add(p.name);
+                    }
+                }
+                // 未收录列（配置新增）按原序追加且默认显示
+                for (Object col : cols) {
+                    String name = columnNameOf(col);
+                    if (name == null || seen.contains(name)) continue;
+                    if (prefs.stream().anyMatch(p -> name.equals(p.name) && !p.visible)) continue;
+                    reordered.add(col);
+                }
+                ((Map<String, Object>) tab).put("columns", reordered);
+            }
+        }
+
+        // 注入别名表（表头显示用）与全量清单（弹窗初始化用，含隐藏列）；数据键/取值仍是中文列名
+        Map<String, String> aliases = new LinkedHashMap<>();
+        List<Map<String, Object>> columnPrefs = new ArrayList<>();
+        for (ColumnPref p : prefs) {
+            if (!p.alias.isBlank()) aliases.put(p.name, p.alias);
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("name", p.name);
+            m.put("alias", p.alias);
+            m.put("visible", p.visible);
+            columnPrefs.add(m);
+        }
+        metadata.put("columnAliases", aliases);
+        metadata.put("columnPrefs", columnPrefs);
+    }
+
+    private static Object findColumn(List<?> cols, String name) {
+        for (Object col : cols) {
+            if (name.equals(columnNameOf(col))) return col;
+        }
+        return null;
+    }
+
+    /** 保存列定制（空数组=恢复默认：删除该用户该面板全部行） */
+    @Transactional
+    public void saveColumnPrefs(String panelCode, String userName, List<Map<String, Object>> columns) {
+        if (panelCode == null || panelCode.isBlank()) throw new IllegalArgumentException("panelCode 不能为空");
+        if (userName == null || userName.isBlank()) throw new IllegalArgumentException("未登录用户不能保存表格调整");
+        requirePanelPermission(panelCode, "view", userName);
+        jdbcTemplate.update("DELETE FROM px_column_pref WHERE panel_code = ? AND owner = ?", panelCode, userName);
+        if (columns == null || columns.isEmpty()) return;
+        Set<String> aliases = new HashSet<>();
+        int seq = 10;
+        for (Map<String, Object> c : columns) {
+            String name = c.get("name") == null ? "" : String.valueOf(c.get("name")).trim();
+            if (name.isBlank()) continue;
+            String alias = c.get("alias") == null ? "" : String.valueOf(c.get("alias")).trim();
+            if (!alias.isEmpty() && !aliases.add(alias)) {
+                throw new IllegalArgumentException("栏名别名重复：" + alias);
+            }
+            jdbcTemplate.update(
+                    "INSERT INTO px_column_pref (panel_code, owner, col_name, seq, alias, visible, update_by) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?) "
+                            + "ON DUPLICATE KEY UPDATE seq = VALUES(seq), alias = VALUES(alias), visible = VALUES(visible), update_by = VALUES(update_by)",
+                    panelCode, userName, name, seq, alias, visibleFlag(c.get("visible")) ? 1 : 0, userName);
+            seq += 10;
+        }
     }
 
     // ---------- 权限矩阵 ----------
 
-    @SuppressWarnings("unchecked")
     public Map<String, Object> getPermMatrix(String panelCode) {
+        return getPermMatrix(panelCode, null);
+    }
+
+    /**
+     * 按登录用户权限过滤的权限矩阵：非 admin 时，未授权权限码对应的按钮 visible/operatable 置 false。
+     * userName 为空（内部调用）或 admin 时不过滤，保持全真（既有行为/e2e 不受影响）。
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getPermMatrix(String panelCode, String userName) {
+        if (userName != null && !userName.isBlank()) requirePanelPermission(panelCode, "view", userName);
         Map<String, Object> cfg = loadConfig(panelCode);
         Map<String, Object> metadata = (Map<String, Object>) cfg.get("metadata");
         List<Map<String, Object>> buttons = (List<Map<String, Object>>) metadata.get("panelButtons");
@@ -549,6 +798,16 @@ public class PxService implements PanelRuntimeService {
             a.put("operatable", true);
             actions.add(a);
         }
+        Set<String> grantedPerms = grantedPerms(userName, panelCode);
+        if (grantedPerms != null) {
+            for (Map<String, Object> a : actions) {
+                String perm = permOfButton(String.valueOf(a.get("name")));
+                if (perm != null && !grantedPerms.contains(perm)) {
+                    a.put("visible", false);
+                    a.put("operatable", false);
+                }
+            }
+        }
         Map<String, Object> privilege = new HashMap<>();
         privilege.put("actionPrivileges", actions);
         privilege.put("fieldPrivileges", new ArrayList<>());
@@ -556,6 +815,41 @@ public class PxService implements PanelRuntimeService {
         Map<String, Object> out = new HashMap<>();
         out.put("privilege", privilege);
         return out;
+    }
+
+    /**
+     * 用户在指定面板的已授权权限码；返回 null 表示不过滤（userName 空 / admin / RoleService 未装配）。
+     */
+    private Set<String> grantedPerms(String userName, String panelCode) {
+        if (userName == null || userName.isBlank() || roleService == null) return null;
+        Map<String, Object> perms = roleService.getPerms(userName);
+        if (Boolean.TRUE.equals(perms.get("isAdmin"))) return null;
+        Object panelPermsObj = perms.get("panelPerms");
+        if (!(panelPermsObj instanceof Map<?, ?> panelPerms)) return Set.of();
+        Object list = panelPerms.get(panelCode);
+        if (!(list instanceof List<?> codes)) return Set.of();
+        Set<String> out = new HashSet<>();
+        for (Object c : codes) out.add(String.valueOf(c));
+        return out;
+    }
+
+    /** 服务端最终权限裁判：前端按钮过滤不能替代 API 授权。 */
+    private void requirePanelPermission(String panelCode, String permission) {
+        requirePanelPermission(panelCode, permission, authenticatedUserName());
+    }
+
+    private void requirePanelPermission(String panelCode, String permission, String userName) {
+        if (roleService == null) return; // 纯业务单元测试使用未装配权限服务的构造器。
+        if (userName == null || userName.isBlank()) throw new AccessDeniedException("请先登录");
+        Set<String> granted = grantedPerms(userName, panelCode);
+        if (granted != null && !granted.contains(permission)) {
+            throw new AccessDeniedException("当前用户没有面板 " + panelCode + " 的 " + permission + " 权限");
+        }
+    }
+
+    private String authenticatedUserName() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.isAuthenticated() && auth.getName() != null ? auth.getName() : null;
     }
 
     // ---------- 字段 meta ----------
@@ -655,6 +949,7 @@ public class PxService implements PanelRuntimeService {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> getNewFormPermMatrix(String panelCode, String operationName) {
+        requirePanelPermission(panelCode, "add");
         Map<String, Object> stateField = fieldsOf(panelCode);
         String stateName = (String) stateField.get("stateFieldName");
         String af = autoCodeFieldOf(panelCode);
@@ -690,6 +985,7 @@ public class PxService implements PanelRuntimeService {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> getFormDescriptor(String panelCode, String code) {
+        requirePanelPermission(panelCode, "view");
         FormData fd = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, panelCode)
                 .eq(FormData::getFormNo, code));
@@ -755,6 +1051,9 @@ public class PxService implements PanelRuntimeService {
     @SuppressWarnings("unchecked")
     public Map<String, Object> queryFormDataList(String panelCode, String keyword,
                                                  Map<String, Object> condition, int pageNo, int pageSize) {
+        requirePanelPermission(panelCode, "query");
+        pageNo = Math.max(1, pageNo);
+        pageSize = Math.max(1, Math.min(pageSize, 500));
         if (ReportPanelRegistry.isReport(panelCode)) {
             return reportQueryService.query(panelCode, keyword, condition, pageNo, pageSize);
         }
@@ -1055,6 +1354,9 @@ public class PxService implements PanelRuntimeService {
     @Transactional
     public Map<String, Object> callButton(String panelCode, String buttonName,
                                           Map<String, Object> formData, Map<String, Object> buttonParam) {
+        if (panelCode == null || panelCode.isBlank()) throw new IllegalArgumentException("面板编码不能为空");
+        if (buttonName == null || buttonName.isBlank()) throw new IllegalArgumentException("按钮名称不能为空");
+        requirePanelPermission(panelCode, requiredPermission(panelCode, buttonName, formData));
         switch (buttonName) {
             case "刷新":
                 return new HashMap<>();
@@ -1139,6 +1441,9 @@ public class PxService implements PanelRuntimeService {
             case "生成销售出库单":     // 推式生单：销售订单 → 销售出库单
             case "生成销售出库单(普通销售)":
                 return createSaleOutFromSo(panelCode, formData);
+            case "生成销货单":         // 推式生单：产成品入库单 → 销货单（O2C 闭环）
+            case "生成销货单(普通销售)":
+                return createSaleInvFromFinishIn(panelCode, formData);
             // 审批流
             case "提交审批":
                 return submitApproval(panelCode, formData);
@@ -1149,12 +1454,32 @@ public class PxService implements PanelRuntimeService {
                 return rejectApproval(panelCode, formData);
             case "审批情况":
                 return approvalHistory(panelCode, formData);
+            case "核销":
+                return writeOff(panelCode, formData);
+            case "反核销":
+                return reverseWriteOff(panelCode, formData);
             default:
                 return panelActionRegistry.dispatch(new PanelActionContext(
                                 panelCode, buttonName, formData, buttonParam, currentUserName()))
                         .orElseThrow(() -> new IllegalStateException(
                                 "未定义按钮规则：" + buttonName + "（请注册 PanelActionHandler）"));
         }
+    }
+
+    private String requiredPermission(String panelCode, String buttonName, Map<String, Object> formData) {
+        if (Set.of("保存", "保存新增", "保存为草稿", "提交").contains(buttonName)) {
+            Object number = formData == null ? null : formData.get("编号");
+            if (number != null && !String.valueOf(number).isBlank()) {
+                FormData existing = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                        .eq(FormData::getPanelCode, panelCode)
+                        .eq(FormData::getFormNo, String.valueOf(number)));
+                if (existing != null) return "edit";
+            }
+            return "add";
+        }
+        String permission = permOfButton(buttonName);
+        // 领域 Handler 默认属于写操作；未登记动作不能因映射遗漏而绕过授权。
+        return permission == null ? "edit" : permission;
     }
 
     /**
@@ -1444,6 +1769,8 @@ public class PxService implements PanelRuntimeService {
     @SuppressWarnings("unchecked")
     private Map<String, Object> insertGenerated(String targetPanel, String sourcePanel, String sourceNo,
                                                 Map<String, Object> head, Map<String, Object> detail) {
+        // 生单同时要求目标面板新增权限，防止仅有来源面板权限的用户越权创建下游单据。
+        requirePanelPermission(targetPanel, "add");
         validateSourceLinks(targetPanel, null, detail);
         String newNo = generateFormNo(targetPanel);
         // 新建兜底：字段默认值 + 单据日期=当天 + 单据编号/锭号=form_no（修复：生单目标单必填字段缺失无法保存草稿）
@@ -2098,6 +2425,70 @@ public class PxService implements PanelRuntimeService {
         return insertGenerated("OUTSOURCE_FEE", "OUTSOURCE_ORDER", String.valueOf(no), data, detail);
     }
 
+    /**
+     * 推式生单：产成品入库单 → 销货单（补齐 O2C 的 FINISH_IN → SALE_INV 缺环）。
+     * 来源须已审核且有明细；逐行写入来源面板/单号/行号，供占用反查与追溯。
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createSaleInvFromFinishIn(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "FINISH_IN").eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("产成品入库单不存在：" + no);
+        if (!"已审核".equals(src.getStatus())) {
+            throw new IllegalStateException("仅已审核产成品入库单可生成销货单");
+        }
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> items = dm.get("items") instanceof List
+                ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
+        if (items.isEmpty()) throw new IllegalStateException("产成品入库单无明细：" + no);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("单据日期", LocalDate.now().toString());
+        data.put("业务类型", "普通销售");
+        data.put("客户", head.getOrDefault("客户", ""));
+        data.put("客户编码", head.getOrDefault("客户编码", ""));
+        data.put("结算客户", head.getOrDefault("结算客户", head.getOrDefault("客户", "")));
+        data.put("仓库", head.getOrDefault("仓库", "成品仓"));
+        data.put("销售订单号", head.getOrDefault("销售订单号", ""));
+        data.put("数据来源", "产成品入库单");
+        List<Map<String, Object>> rows = new ArrayList<>();
+        int rowNo = 0;
+        for (Map<String, Object> it : items) {
+            rowNo++;
+            double qty = num(firstValue(it, "实收数量", "数量"));
+            if (qty == 0) continue;
+            double price = num(firstValue(it, "单价", "成本价"));
+            double amount = Math.round(qty * price * 100) / 100.0;
+            Map<String, Object> r = new HashMap<>();
+            r.put("仓库", firstValue(it, "仓库") == null ? head.getOrDefault("仓库", "成品仓") : it.get("仓库"));
+            r.put("存货编码", firstValue(it, "存货编码", "产品编码"));
+            r.put("存货名称", firstValue(it, "存货名称", "产品名称", "存货"));
+            r.put("规格型号", firstValue(it, "规格型号"));
+            r.put("计量单位", firstValue(it, "计量单位", "生产单位", "主单位"));
+            r.put("数量", qty);
+            r.put("销售单位", firstValue(it, "计量单位", "生产单位", "主单位"));
+            r.put("单价", price);
+            r.put("含税单价", price);
+            r.put("售价", price);
+            r.put("含税售价", price);
+            r.put("销售金额", amount);
+            r.put("金额", amount);
+            r.put("含税金额", amount);
+            r.put("来源面板", "FINISH_IN");
+            r.put("来源单号", String.valueOf(no));
+            r.put("来源行号", rowNo);
+            r.put("来源数量", qty);
+            rows.add(r);
+        }
+        if (rows.isEmpty()) throw new IllegalStateException("产成品入库单明细数量全为零：" + no);
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("SALE_INV", "FINISH_IN", String.valueOf(no), data, detail);
+    }
+
     /** 推式生单：销售订单（SO_ORDER）→ 销售出库单（SALE_OUT） */
     @SuppressWarnings("unchecked")
     private Map<String, Object> createSaleOutFromSo(String panelCode, Map<String, Object> formData) {
@@ -2578,9 +2969,21 @@ public class PxService implements PanelRuntimeService {
             // 审批面板：审核时自动填写 单据日期 + 单据编号（缺才填，见 ensureAuditStamp）
             ensureAuditStamp(head, fd.getFormNo(), panelCode);
             fd.setData(toJson(head));
+            // 审核通过即落库存事务：出入库单在此增加/减少库存余额
+            postStockTxn(panelCode, fd.getFormNo(), head, parseData(fd.getDetailData()));
+            // 同一时刻生成应收/应付往来单（财务面板才触发）
+            postFinance(panelCode, fd.getFormNo(), head, parseData(fd.getDetailData()));
+            // 业财一体化：生成会计凭证分录
+            postAccounting(panelCode, fd.getFormNo(), head, parseData(fd.getDetailData()));
         } else if ("弃审".equals(action)) {
             if (!"已审核".equals(fd.getStatus())) throw new IllegalStateException("仅已审核状态可弃审");
             ensureNoEffectiveChildren(panelCode, fd.getFormNo(), "弃审");
+            // 弃审先冲销库存事务，避免余额表残留已撤销单据的出入库
+            reverseStockTxn(panelCode, fd.getFormNo());
+            // 同步冲销往来单
+            reverseFinance(panelCode, fd.getFormNo());
+            // 同步冲销会计凭证
+            reverseAccounting(panelCode, fd.getFormNo());
             Map<String, Object> head = parseData(fd.getData());
             head.remove("审核人");
             head.remove("审核时间");
@@ -2651,6 +3054,73 @@ public class PxService implements PanelRuntimeService {
         return new ArrayList<>();
     }
 
+    /** 审核通过时落库存事务；未注入服务或非库存面板时静默跳过，不影响既有流程。 */
+    private void postStockTxn(String panelCode, String formNo, Map<String, Object> head,
+                              Map<String, Object> detail) {
+        if (stockTxnService == null) return;
+        stockTxnService.post(panelCode, formNo, head, detail);
+    }
+
+    /** 弃审时冲销库存事务。 */
+    private void reverseStockTxn(String panelCode, String formNo) {
+        if (stockTxnService == null) return;
+        stockTxnService.reverse(panelCode, formNo);
+    }
+
+    /** 审核通过时生成应收/应付往来单；未注入服务或非财务面板时跳过。 */
+    private void postFinance(String panelCode, String formNo, Map<String, Object> head,
+                             Map<String, Object> detail) {
+        if (financeSettleService == null) return;
+        financeSettleService.post(panelCode, formNo, head, detail);
+    }
+
+    /** 弃审时冲销往来单。 */
+    private void reverseFinance(String panelCode, String formNo) {
+        if (financeSettleService == null) return;
+        financeSettleService.reverse(panelCode, formNo);
+    }
+
+    /** 审核通过时生成会计凭证分录（借贷平衡校验在服务内完成）。 */
+    private void postAccounting(String panelCode, String formNo, Map<String, Object> head,
+                                Map<String, Object> detail) {
+        if (accountingService == null) return;
+        java.math.BigDecimal amount = java.math.BigDecimal.valueOf(settlementAmount(detail));
+        if (amount.signum() == 0) return;
+        String partner = textOf(firstValue(head, "客户", "供应商", "往来单位"));
+        String summary = textOf(firstValue(head, "业务类型", "备注"));
+        accountingService.post(panelCode, formNo, amount, partner, summary, java.time.LocalDate.now());
+    }
+
+    /** 弃审时冲销会计凭证。 */
+    private void reverseAccounting(String panelCode, String formNo) {
+        if (accountingService == null) return;
+        accountingService.reverse(panelCode, formNo);
+    }
+
+    /** 明细金额合计：与往来/库存服务同一口径。 */
+    private double settlementAmount(Map<String, Object> detail) {
+        if (detail == null) return 0;
+        double total = 0;
+        for (Object rowsObject : detail.values()) {
+            if (!(rowsObject instanceof List<?> rows)) continue;
+            for (Object rowObject : rows) {
+                if (!(rowObject instanceof Map<?, ?> raw)) continue;
+                @SuppressWarnings("unchecked")
+                Map<String, Object> row = (Map<String, Object>) raw;
+                double amount = num(firstValue(row, "含税金额", "销售金额", "金额", "成本金额", "实收金额"));
+                if (amount == 0) {
+                    amount = num(firstValue(row, "实收数量", "数量")) * num(firstValue(row, "含税单价", "售价", "单价", "成本价"));
+                }
+                total += amount;
+            }
+        }
+        return total;
+    }
+
+    private static String textOf(Object value) {
+        return value == null ? "" : String.valueOf(value);
+    }
+
     private double sourceQuantity(Map<String, Object> row) {
         for (String field : List.of("报检数量", "到货数量", "数量", "派工数量", "报工数量", "检验数量", "实收数量", "金额")) {
             if (row.containsKey(field)) return num(row.get(field));
@@ -2702,10 +3172,44 @@ public class PxService implements PanelRuntimeService {
                 throw new IllegalStateException("来源明细已被其他下游单据选入：" + sourceNo + " 第 " + sourceRowNo + " 行");
             }
             if (current + reserved > limit + 0.000001) {
+                // 工序汇报单的来源行报工量为 0 时，「可执行 0.0」看不出原因，单独说清是还没报工
+                String unReported = unReportedProcessMessage(
+                        sourcePanel, sourceRows.get(sourceRowNo - 1), sourceNo, sourceRowNo);
+                if (unReported != null) throw new IllegalStateException(unReported);
                 throw new IllegalStateException("来源明细超量：" + sourceNo + " 第 " + sourceRowNo
                         + " 行，可执行 " + limit + "，已占用 " + reserved + "，本次 " + current);
             }
         }
+    }
+
+    /**
+     * 工序汇报单的来源行报工数量为 0 时，给一句能直接行动的话：
+     * 用户看到的是「该工序还没报工」，而不是「可执行 0.0」。
+     * 不适用时返回 null，仍走通用的来源超量提示。
+     */
+    static String unReportedProcessMessage(String sourcePanel, Map<String, Object> sourceRow,
+                                           String sourceNo, int sourceRowNo) {
+        if (!"PROCESS_REPORT".equals(sourcePanel) || sourceRow == null) return null;
+        Object value = sourceRow.get("报工数量");
+        double reported;
+        if (value instanceof Number number) {
+            reported = number.doubleValue();
+        } else if (value == null || String.valueOf(value).isBlank()) {
+            return null;
+        } else {
+            try {
+                reported = Double.parseDouble(String.valueOf(value).trim());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        if (reported > 0.000001) return null;
+        String code = pickText(sourceRow, "工序编码");
+        String name = pickText(sourceRow, "工序名称");
+        if (code.isBlank()) return null;
+        return "工序 " + code + (name.isBlank() ? "" : " " + name)
+                + " 尚未报工（工序汇报单 " + sourceNo + " 第 " + sourceRowNo
+                + " 行报工数量为 0），请先报工再报检";
     }
 
     private double reservedQuantity(String targetPanel, String targetNo, String sourcePanel, String sourceNo, int sourceRowNo) {
@@ -2735,6 +3239,10 @@ public class PxService implements PanelRuntimeService {
                     throw new IllegalStateException("第 " + (index + 1) + " 行报检数量必须大于 0");
                 }
             }
+            // 完工报检必须与上游加工单对得上，否则会出现"还在生产中就已报检完成"
+            validateReportAgainstUpstream(panelCode, document, rows);
+            // 工序报检的上游是工序汇报单：按工序逐项比对报工量
+            validateProcessInspectAgainstReport(panelCode, document, rows);
             return;
         }
 
@@ -2767,9 +3275,21 @@ public class PxService implements PanelRuntimeService {
                 throw new IllegalStateException("第 " + (index + 1) + " 行合格数量 + 不合格数量必须等于检验数量");
             }
             if (result.isEmpty()) throw new IllegalStateException("第 " + (index + 1) + " 行必须填写检验结果判定");
+            // 三态判定：不合格部分若含让步接收，结果不得判「合格」；判定值必须落在三态集合内
+            double concession = num(row.get("让步接收数量"));
+            if (concession < 0) throw new IllegalStateException("第 " + (index + 1) + " 行让步接收数量不能为负");
+            if (concession > unqualified + 0.000001) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行让步接收数量不能超过不合格数量");
+            }
+            if (!QUALITY_VERDICTS.contains(result)) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行检验结果判定必须是：合格 / 让步接收 / 部分报废 / 全批报废");
+            }
             if (unqualified <= 0 && !"合格".equals(result)) throw new IllegalStateException("第 " + (index + 1) + " 行无不合格数量时结果应为合格");
+            if (unqualified > 0 && "合格".equals(result)) throw new IllegalStateException("第 " + (index + 1) + " 行有不合格数量时不能判定合格");
+            if (concession > 0 && "全批报废".equals(result)) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行存在让步接收数量时不能判全批报废");
+            }
             if (unqualified > 0) {
-                if ("合格".equals(result)) throw new IllegalStateException("第 " + (index + 1) + " 行有不合格数量时不能判定合格");
                 double treated = treatmentByLine.getOrDefault(index + 1, 0.0);
                 if (Math.abs(treated - unqualified) > 0.000001) {
                     throw new IllegalStateException("第 " + (index + 1) + " 行不合格处理数量必须等于不合格数量");
@@ -2835,6 +3355,45 @@ public class PxService implements PanelRuntimeService {
     }
 
     // ---------- 审批流：提交审批 → 审批中 → 审批通过/审批驳回（全留痕，可扩展多级） ----------
+
+    /** 核销：把收款/付款单金额按业务日期分配到来往单。 */
+    private Map<String, Object> writeOff(String panelCode, Map<String, Object> formData) {
+        if (financePaymentService == null) throw new IllegalStateException("未启用财务核销服务");
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData fd = formOf(panelCode, no);
+        if (!"已审核".equals(fd.getStatus())) {
+            throw new IllegalStateException("仅已审核的收款/付款单可核销");
+        }
+        Map<String, Object> head = parseData(fd.getData());
+        String voucherType = "RECEIPT".equals(panelCode) ? "AR" : "AP";
+        List<FinanceVoucher> candidates = financeVoucherMapper == null
+                ? List.of()
+                : financeVoucherMapper.selectList(new LambdaQueryWrapper<FinanceVoucher>()
+                        .eq(FinanceVoucher::getVoucherType, voucherType)
+                        .ne(FinanceVoucher::getStatus, "已结算"));
+        int count = financePaymentService.execute(fd.getFormNo(), voucherType, candidates,
+                java.math.BigDecimal.valueOf(num(head.get("金额"))), currentUserName());
+        Map<String, Object> out = new HashMap<>();
+        out.put("编号", fd.getFormNo());
+        out.put("核销笔数", count);
+        out.put("单据状态", "已核销");
+        return out;
+    }
+
+    /** 反核销：撤销该收款/付款单的全部核销记录。 */
+    private Map<String, Object> reverseWriteOff(String panelCode, Map<String, Object> formData) {
+        if (financePaymentService == null) throw new IllegalStateException("未启用财务核销服务");
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData fd = formOf(panelCode, no);
+        int removed = financePaymentService.reverse(fd.getFormNo());
+        Map<String, Object> out = new HashMap<>();
+        out.put("编号", fd.getFormNo());
+        out.put("撤销笔数", removed);
+        out.put("单据状态", fd.getStatus());
+        return out;
+    }
 
     private FormData formOf(String panelCode, Object no) {
         if (no == null) throw new IllegalArgumentException("缺少表单编号");
@@ -2923,12 +3482,201 @@ public class PxService implements PanelRuntimeService {
         ensureAuditStamp(head, fd.getFormNo(), panelCode);
         fd.setData(toJson(head));
         formMapper.updateById(fd);
+        // 审批通过即等同于审核通过：出入库单在此落库存事务
+        postStockTxn(panelCode, fd.getFormNo(), head, parseData(fd.getDetailData()));
+        // 审批通过同样生成应收/应付往来单
+        postFinance(panelCode, fd.getFormNo(), head, parseData(fd.getDetailData()));
+        // 审批通过同样生成会计凭证
+        postAccounting(panelCode, fd.getFormNo(), head, parseData(fd.getDetailData()));
         recordApproval(panelCode, fd.getFormNo(), "APPROVE", "APPROVED", opinion);
         refreshSourceExecution(fd);
         Map<String, Object> out = new HashMap<>();
         out.put("编号", fd.getFormNo());
         out.put("单据状态", "已审核");
         return out;
+    }
+
+    /**
+     * 完工报检单与上游加工单的数量/产品校验。
+     *
+     * 拦截两类真实缺陷：
+     * 1. 报检数量超过加工单该产品的累计完工量 —— 否则"还在生产中就已经报检完成"
+     * 2. 报检的产品不在加工单产品明细里 —— 否则报了一张不属于这单的货
+     *
+     * 只对「完工报检类」生效（成品报检、首件报检）。
+     * 工序报检（PROCESS_INSPECT_APPLY）的上游是工序汇报单，走
+     * {@link #validateProcessInspectAgainstReport}，不能拿加工单的成品累计量当上限——
+     * 两者口径不同（加工单按成品套数汇总，工序报检按单道工序件数），混用会误拦。
+     */
+    private void validateReportAgainstUpstream(String panelCode, FormData document,
+                                               List<Map<String, Object>> rows) {
+        if (!Set.of("FINISH_INSPECT", "FIRST_INSPECT").contains(panelCode)) return;
+        Map<String, Object> head = parseData(document.getData());
+        String moNo = pickText(head, "加工单号", "生产加工单号", "来源单号");
+        if (moNo.isBlank()) return;
+
+        // 用 selectList 按面板过滤：selectOne 已被上层用来取当前单据，避免串用
+        FormData mo = null;
+        for (FormData candidate : formMapper.selectList(
+                new LambdaQueryWrapper<FormData>().eq(FormData::getPanelCode, "MANU_ORDER"))) {
+            if (moNo.equals(candidate.getFormNo())) {
+                mo = candidate;
+                break;
+            }
+        }
+        if (mo == null) return;
+
+        Map<String, Object> moDetail = parseData(mo.getDetailData());
+        Object productsObject = moDetail.get("products");
+        if (!(productsObject instanceof List<?> products) || products.isEmpty()) return;
+
+        // 产品编码 → 该产品的完工量（优先累计汇报套数，缺失时退到计划数量）
+        Map<String, Double> finishedByProduct = new LinkedHashMap<>();
+        Map<String, String> nameByProduct = new LinkedHashMap<>();
+        for (Object value : products) {
+            if (!(value instanceof Map<?, ?> product)) continue;
+            String code = pickText(product, "产品编码");
+            if (code.isBlank()) continue;
+            double planned = num(product.get("数量"));
+            double reported = num(product.get("累计汇报套数(工序单位)"));
+            // 累计汇报为 0 但计划有值时，按"尚未完工"处理（0），不拿计划数充当完工量
+            finishedByProduct.put(code, reported);
+            nameByProduct.put(code, pickText(product, "产品名称"));
+            if (planned < reported) finishedByProduct.put(code, planned);
+        }
+
+        // 同一产品多行报检时先汇总，避免逐行都能过、合计却超量
+        Map<String, Double> reportedByProduct = new LinkedHashMap<>();
+        for (Map<String, Object> row : rows) {
+            String code = pickText(row, "存货编码", "产品编码");
+            if (!code.isBlank()) reportedByProduct.merge(code, num(row.get("报检数量")), Double::sum);
+        }
+
+        for (Map.Entry<String, Double> entry : reportedByProduct.entrySet()) {
+            String code = entry.getKey();
+            if (!finishedByProduct.containsKey(code)) {
+                throw new IllegalStateException("报检的产品 " + code
+                        + " 不在加工单 " + moNo + " 的产品明细里，请先在加工单中增加该产品");
+            }
+            double finished = finishedByProduct.getOrDefault(code, 0.0);
+            if (entry.getValue() > finished + 0.000001) {
+                String name = nameByProduct.getOrDefault(code, "");
+                throw new IllegalStateException("第 " + code + " " + name + " 报检数量 "
+                        + trimNumber(entry.getValue()) + " 超过加工单 " + moNo
+                        + " 的累计完工量 " + trimNumber(finished) + "，请先完成报工再报检");
+            }
+        }
+    }
+
+    /** 按候选键取第一个非空字符串值；键或值为空时返回空串。 */
+    private static String pickText(Map<?, ?> row, String... keys) {
+        if (row == null) return "";
+        for (String key : keys) {
+            Object value = row.get(key);
+            if (value != null && !String.valueOf(value).isBlank()) {
+                return String.valueOf(value).trim();
+            }
+        }
+        return "";
+    }
+    /**
+     * 工序报检单与上游工序汇报单的对齐校验。
+     *
+     * 工序报检的上游不是加工单而是「工序汇报单」：一张汇报单里有多道工序，
+     * 每道工序各自有报工数量，报检必须按工序逐项比对，不能拿加工单的成品总量当上限。
+     *
+     * 拦截三类缺陷：
+     * 1. 报检的工序不在上游汇报单里 —— 报了没做过的工序
+     * 2. 该工序报工数量为 0 —— 工序还没开工
+     * 3. 同一工序报检数量超过报工数量 —— 报了还没做出来的货
+     */
+    private void validateProcessInspectAgainstReport(String panelCode, FormData document,
+                                                    List<Map<String, Object>> rows) {
+        if (!"PROCESS_INSPECT_APPLY".equals(panelCode)) return;
+
+        Map<String, Object> head = parseData(document.getData());
+        String sourceNo = pickText(head, "来源单号", "匹配来源单号");
+        if (sourceNo.isBlank()) return;
+
+        FormData report = null;
+        for (FormData candidate : formMapper.selectList(
+                new LambdaQueryWrapper<FormData>().eq(FormData::getPanelCode, "PROCESS_REPORT"))) {
+            if (sourceNo.equals(candidate.getFormNo())) {
+                report = candidate;
+                break;
+            }
+        }
+        if (report == null) return;
+
+        Object itemsObject = parseData(report.getDetailData()).get("items");
+        if (!(itemsObject instanceof List<?> reportRows) || reportRows.isEmpty()) return;
+
+        // 工序编码 → 该工序的报工数量
+        Map<String, Double> reportedByProcess = new LinkedHashMap<>();
+        // 产品编码 → 产品名称：用于校验报检的货确实在这张汇报单里
+        Map<String, String> productNameByCode = new LinkedHashMap<>();
+        for (Object value : reportRows) {
+            if (!(value instanceof Map<?, ?> row)) continue;
+            String processCode = pickText(row, "工序编码");
+            if (!processCode.isBlank()) {
+                reportedByProcess.merge(processCode, num(row.get("报工数量")), Double::sum);
+            }
+            String productCode = pickText(row, "产品编码", "存货编码");
+            if (!productCode.isBlank()) {
+                productNameByCode.putIfAbsent(productCode, pickText(row, "产品名称", "存货名称"));
+            }
+        }
+        if (reportedByProcess.isEmpty()) return;
+
+        // 产品归属：报检的存货必须在这张汇报单的产品里（汇报单没填产品编码时跳过，无从校验）
+        if (!productNameByCode.isEmpty()) {
+            for (Map<String, Object> row : rows) {
+                String itemCode = pickText(row, "存货编码", "产品编码");
+                if (itemCode.isBlank()) continue;
+                if (!productNameByCode.containsKey(itemCode)) {
+                    throw new IllegalStateException("报检的存货 " + itemCode + " " + pickText(row, "存货名称")
+                            + " 不在工序汇报单 " + sourceNo + " 的产品明细里（该单产品："
+                            + String.join("、", productNameByCode.keySet()) + "），请核对来源单");
+                }
+            }
+        }
+
+        // 同一工序多行报检先汇总，避免逐行都能过、合计却超量
+        Map<String, Double> applyByProcess = new LinkedHashMap<>();
+        Map<String, String> nameByProcess = new LinkedHashMap<>();
+        for (Map<String, Object> row : rows) {
+            String code = pickText(row, "工序编码");
+            if (code.isBlank()) continue;
+            applyByProcess.merge(code, num(row.get("报检数量")), Double::sum);
+            nameByProcess.putIfAbsent(code, pickText(row, "工序名称"));
+        }
+
+        for (Map.Entry<String, Double> entry : applyByProcess.entrySet()) {
+            String code = entry.getKey();
+            String name = nameByProcess.getOrDefault(code, "");
+            if (!reportedByProcess.containsKey(code)) {
+                throw new IllegalStateException("报检的工序 " + code + " " + name
+                        + " 不在工序汇报单 " + sourceNo + " 里，请先报工再报检");
+            }
+            double reported = reportedByProcess.getOrDefault(code, 0.0);
+            if (entry.getValue() <= 0.000001) continue;
+            // 报工量为 0 属于「工序还没开工」，跟「报多了」是两件事，分开提示
+            if (reported <= 0.000001) {
+                throw new IllegalStateException("工序 " + code + " " + name
+                        + " 尚未报工（工序汇报单 " + sourceNo + " 的报工数量为 0），请先报工再报检");
+            }
+            if (entry.getValue() > reported + 0.000001) {
+                throw new IllegalStateException("工序 " + code + " " + name + " 报检数量 "
+                        + trimNumber(entry.getValue()) + " 超过工序汇报单 " + sourceNo
+                        + " 的报工数量 " + trimNumber(reported) + "，请先补报工再报检");
+            }
+        }
+    }
+
+    /** 去掉多余的 .0，让错误信息里的数字更干净。 */
+    private static String trimNumber(double value) {
+        if (Math.abs(value - Math.rint(value)) < 0.000001) return String.valueOf((long) value);
+        return String.valueOf(value);
     }
 
     /** BOM 进入审核/审批状态前必须已有完整父件和至少一条子件，防止空草稿变成不可编辑的已审核单。 */
@@ -2986,6 +3734,7 @@ public class PxService implements PanelRuntimeService {
     }
 
     public List<Map<String, Object>> getApprovalHistory(String panelCode, String formNo) {
+        requirePanelPermission(panelCode, "audit");
         List<FormApproval> recs = approvalMapper.selectList(new LambdaQueryWrapper<FormApproval>()
                 .eq(FormApproval::getPanelCode, panelCode)
                 .eq(FormApproval::getFormNo, formNo)
@@ -3007,7 +3756,40 @@ public class PxService implements PanelRuntimeService {
 
     @Transactional
     public void deleteForms(String panelCode, List<String> rowCodes) {
+        requirePanelPermission(panelCode, "delete");
         for (String code : rowCodes) delete(panelCode, code);
+    }
+
+    /**
+     * 业务流程追踪：按单号正反向找全相关单据，返回每一步的状态、当前环节与卡点。
+     * 供业务流程图页面的「流程追踪」使用。
+     */
+    @Override
+    public Map<String, Object> traceProcess(String docNo) {
+        ProcessTraceService.TraceResult result = processTraceQueryService == null
+                ? new ProcessTraceService.TraceResult(List.of(), "", "", "", "追踪服务不可用")
+                : processTraceQueryService.trace(docNo);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("单号", docNo == null ? "" : docNo.trim());
+        out.put("环节数", result.steps().size());
+        out.put("当前环节", result.currentDocNo());
+        out.put("卡点单号", result.stalledDocNo());
+        out.put("卡点原因", result.stalledReason());
+        out.put("提示", result.message());
+        List<Map<String, Object>> steps = new ArrayList<>();
+        for (ProcessTraceService.Step step : result.steps()) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("序号", step.seq());
+            row.put("面板编码", step.panelCode());
+            row.put("环节", step.panelName());
+            row.put("单号", step.docNo());
+            row.put("单据状态", step.status());
+            row.put("阶段", step.state());
+            row.put("是否卡点", step.docNo().equals(result.stalledDocNo()));
+            steps.add(row);
+        }
+        out.put("steps", steps);
+        return out;
     }
 
     private void delete(String panelCode, String code) {
@@ -3090,6 +3872,10 @@ public class PxService implements PanelRuntimeService {
         else if ("SERIAL_NO".equals(panelCode)) biz = "XL-";     // 序列号登记（T+ 序列号惯例 XL）
         else if ("BOM".equals(panelCode)) biz = "BOM-";          // 物料清单（2026-08-25 多单据化：可新增多张 BOM）
         else if ("INV".equals(panelCode)) biz = "INV-"; // 存货类别单据
+        else if ("RECEIPT".equals(panelCode)) biz = "SK-";          // 收款单
+        else if ("RECEIPT_PAYABLE".equals(panelCode)) biz = "FK-";  // 付款单
+        else if ("PURCHASE_RETURN".equals(panelCode)) biz = "CT-";  // 采购退货单
+        else if ("SALE_RETURN".equals(panelCode)) biz = "XT-";      // 销售退货单
         else biz = "MO-";
         String base = biz + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         int seq = 1;

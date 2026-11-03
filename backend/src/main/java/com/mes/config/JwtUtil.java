@@ -20,14 +20,16 @@ public class JwtUtil {
     @Value("${mes.jwt.expire-hours:24}")
     private long expireHours;
 
-    // HS256 要求密钥至少 256 bit；不满足直接拒绝启动，避免用弱密钥签发可伪造的 token
     @PostConstruct
-    void requireStrongSecret() {
-        int bits = secret == null ? 0 : secret.getBytes(StandardCharsets.UTF_8).length * 8;
-        if (bits < 256) {
-            throw new IllegalStateException("JWT 密钥未配置或强度不足（当前 " + bits
-                    + " bit，HS256 至少需要 256 bit）。请设置环境变量 MES_JWT_SECRET 为至少 32 字节的随机串"
-                    + "（例如 openssl rand -hex 32 的输出）。历史密钥已公开泄露，禁止复用。");
+    void validateConfiguration() {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("必须通过 MES_JWT_SECRET 配置 JWT 密钥");
+        }
+        if (secret.getBytes(StandardCharsets.UTF_8).length < 64) {
+            throw new IllegalStateException("MES_JWT_SECRET 至少需要 64 字节，请使用密码学安全随机值");
+        }
+        if (expireHours <= 0) {
+            throw new IllegalStateException("MES_JWT_EXPIRE_HOURS 必须大于 0");
         }
     }
 

@@ -1,7 +1,5 @@
 package com.mes.config;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.mes.entity.SysUser;
 import com.mes.mapper.SysUserMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -34,11 +32,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String token = auth.substring(7);
             if (jwtUtil.validate(token)) {
                 String userName = jwtUtil.parseUserName(token);
-                SysUser user = userMapper.selectOne(
-                        new LambdaQueryWrapper<SysUser>().eq(SysUser::getUserName, userName));
-                // 与登录口径一致：禁用账号立即失效，不留 24h token 空窗
-                boolean enabled = user != null && (user.getEnabled() == null || user.getEnabled() != 0);
-                if (enabled) {
+                var user = userMapper.selectOne(
+                        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.mes.entity.SysUser>()
+                                .eq(com.mes.entity.SysUser::getUserName, userName));
+                if (user != null && (user.getEnabled() == null || user.getEnabled() != 0)) {
                     var authToken = new UsernamePasswordAuthenticationToken(userName, null, Collections.emptyList());
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }

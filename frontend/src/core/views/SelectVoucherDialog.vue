@@ -1,22 +1,22 @@
 <!-- SelectVoucherDialog.vue — 选单弹窗：内嵌来源面板列表（勾选 + 翻页切换单据 + 生单直接生成目标单据） -->
 <template>
-  <el-dialog :model-value="modelValue" :title="config?.title || '选单'" width="880px" append-to-body @update:model-value="close" @open="load(1)">
-    <div class="sel-tip">{{ config?.tip || '' }}</div>
+  <el-dialog :model-value="modelValue" :title="tt(config?.title || '选单')" width="880px" append-to-body @update:model-value="close" @open="load(1)">
+    <div class="sel-tip">{{ tt(config?.tip || '') }}</div>
     <el-table :data="rows" v-loading="loading" size="small" border height="340" @selection-change="onSel">
       <el-table-column type="selection" width="45" />
-      <el-table-column label="序号" width="50" align="center">
+      <el-table-column :label="tt('序号')" width="50" align="center">
         <template #default="{ $index }">{{ (pageNo - 1) * pageSize + $index + 1 }}</template>
       </el-table-column>
       <el-table-column
         v-for="c in columns"
         :key="c"
-        :label="c"
+        :label="tt(c)"
         :width="['单据编号', '单据日期', '预完工日', '预计交货日期'].includes(c) ? 120 : undefined"
         :min-width="['存货名称', '产品名称'].includes(c) ? 180 : undefined"
       >
         <template #default="{ row }">{{ cellText(c, row) }}</template>
       </el-table-column>
-      <el-table-column label="明细行" min-width="220">
+      <el-table-column :label="tt('明细行')" min-width="220">
         <template #default="{ row }">
           <span class="sel-item">{{ itemsText(row) }}</span>
         </template>
@@ -32,9 +32,9 @@
         @current-change="load"
       />
       <div class="sel-actions">
-        <el-button @click="close">取消</el-button>
+        <el-button @click="close">{{ tt('取消') }}</el-button>
         <el-button type="primary" :disabled="!selRows.length" :loading="generating" @click="generate">
-          {{ generateLabel }}
+          {{ tt(generateLabel) }}
         </el-button>
       </div>
     </div>
@@ -45,6 +45,7 @@
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { usePanelRuntime } from '@core/panel-runtime'
+import { tt } from '@/i18n'
 
 const engine = usePanelRuntime()
 
@@ -92,7 +93,7 @@ function itemsText(row) {
     const arr = d[key]
     if (Array.isArray(arr) && arr.length) {
       const names = arr.slice(0, 2).map((i) => i['存货名称'] || i['产品名称'] || '').filter(Boolean)
-      return names.join('、') + (arr.length > 2 ? ' 等 ' + arr.length + ' 行' : '')
+      return names.join('、') + (arr.length > 2 ? ' ' + tt('等') + ' ' + arr.length + ' ' + tt('行') : '')
     }
   }
   return ''
@@ -117,7 +118,7 @@ async function load(p) {
     rows.value = res.list || []
     total.value = res.totalSize || 0
   } catch (e) {
-    ElMessage.error(engine.errMsg(e) || '来源单据加载失败')
+    ElMessage.error(engine.errMsg(e) || tt('来源单据加载失败'))
   } finally {
     loading.value = false
   }
@@ -180,15 +181,15 @@ async function generate() {
       if (res && res['编号']) generated.push({ panel: props.panelCode, no: res['编号'], sourceNo: no })
     }
     if (generated.length) {
-      const panelNames = { MANU_ORDER: '生产加工单', PROCESS_REPORT: '工序汇报单', FINISH_IN: '产成品入库单', PU_IN: '进货单', ARRIVAL_IN: '到货单', FINISH_INSPECT: '成品报检单', INSPECTION: '检验单', DISPATCH: '工序派工单', PURCHASE_IN: '采购入库单' }
-      ElMessage.success('已生成 ' + generated.length + ' 张' + (panelNames[generated[0].panel] || generated[0].panel))
+      const panelNames = { MANU_ORDER: tt('生产加工单'), PROCESS_REPORT: tt('工序汇报单'), FINISH_IN: tt('产成品入库单'), PU_IN: tt('进货单'), ARRIVAL_IN: tt('到货单'), FINISH_INSPECT: tt('成品报检单'), INSPECTION: tt('检验单'), DISPATCH: tt('工序派工单'), PURCHASE_IN: tt('采购入库单') }
+      ElMessage.success(tt('已生成') + ' ' + generated.length + ' ' + tt('张') + (panelNames[generated[0].panel] || generated[0].panel))
       emit('generated', generated)
       close()
     } else {
-      ElMessage.warning('未生成任何单据')
+      ElMessage.warning(tt('未生成任何单据'))
     }
   } catch (e) {
-    ElMessage.error(engine.errMsg(e) || '生单失败')
+    ElMessage.error(engine.errMsg(e) || tt('生单失败'))
   } finally {
     generating.value = false
   }

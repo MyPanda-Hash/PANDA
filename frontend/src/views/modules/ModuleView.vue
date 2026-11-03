@@ -1,13 +1,13 @@
 <template>
   <div class="module-view">
     <div class="head">
-      <h3>{{ title }}</h3>
+      <h3>{{ tt(title) }}</h3>
       <span class="code">{{ code }}</span>
     </div>
     <el-empty :description="description" :image-size="90" />
     <div class="plan">
-      <div class="plan-title">模块规划要点</div>
-      <el-tag v-for="p in plan" :key="p" class="plan-tag" effect="plain">{{ p }}</el-tag>
+      <div class="plan-title">{{ tt('模块规划要点') }}</div>
+      <el-tag v-for="p in plan" :key="p" class="plan-tag" effect="plain">{{ tt(p) }}</el-tag>
     </div>
   </div>
 </template>
@@ -15,6 +15,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { tt } from '@/i18n'
 
 const route = useRoute()
 const title = computed(() => route.meta.title || '')
@@ -68,8 +69,9 @@ const planMap = {
   solutionCenter: ['行业方案', '应用市场'],
 }
 
-const description = computed(() => `【${title.value}】模块开发中，此处为功能占位页`)
-const plan = computed(() => planMap[code.value] || ['待规划'])
+// 显示层翻译：标题（菜单 meta）与规划要点渲染位走 tt()，code 标识不翻
+const description = computed(() => `【${tt(title.value)}】${tt('模块开发中，此处为功能占位页')}`)
+const plan = computed(() => (planMap[code.value] || ['待规划']).map(tt))
 </script>
 
 <style scoped>

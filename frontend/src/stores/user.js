@@ -15,6 +15,7 @@ export const useUserStore = defineStore('user', {
       isAdmin: !!ui?.isAdmin,
       visiblePanels: Array.isArray(ui?.visiblePanels) ? ui.visiblePanels : [],
       approvePanels: Array.isArray(ui?.approvePanels) ? ui.approvePanels : [],
+      panelPerms: (ui && typeof ui.panelPerms === 'object' && ui.panelPerms) || {},
     }
   },
   getters: {
@@ -46,6 +47,7 @@ export const useUserStore = defineStore('user', {
       this.isAdmin = !!u?.isAdmin
       this.visiblePanels = Array.isArray(u?.visiblePanels) ? u.visiblePanels : []
       this.approvePanels = Array.isArray(u?.approvePanels) ? u.approvePanels : []
+      this.panelPerms = (u && typeof u.panelPerms === 'object' && u.panelPerms) || {}
     },
     // 刷新权限（角色/面板配置变更后调用）
     async fetchPerms() {
@@ -56,10 +58,19 @@ export const useUserStore = defineStore('user', {
       this.isAdmin = !!p.isAdmin
       this.visiblePanels = Array.isArray(p.visiblePanels) ? p.visiblePanels : []
       this.approvePanels = Array.isArray(p.approvePanels) ? p.approvePanels : []
+      this.panelPerms = (p && typeof p.panelPerms === 'object' && p.panelPerms) || {}
       if (this.userInfo) {
-        this.userInfo = { ...this.userInfo, roleCode: this.roleCode, isAdmin: this.isAdmin, visiblePanels: this.visiblePanels, approvePanels: this.approvePanels }
+        this.userInfo = { ...this.userInfo, roleCode: this.roleCode, isAdmin: this.isAdmin, visiblePanels: this.visiblePanels, approvePanels: this.approvePanels, panelPerms: this.panelPerms }
         localStorage.setItem('mes_user', JSON.stringify(this.userInfo))
       }
+    },
+    // 11 项权限判定：admin 恒真；旧会话（无矩阵数据）不拦截非 view 动作，等重新登录后生效
+    hasPerm(panel, action) {
+      if (this.isAdmin) return true
+      const perms = this.panelPerms?.[panel]
+      if (Array.isArray(perms)) return perms.includes(action)
+      if (action === 'view') return this.visiblePanels.includes(panel)
+      return Object.keys(this.panelPerms || {}).length === 0 && this.visiblePanels.length > 0
     },
     async fetchUserInfo() {
       const info = await apiGetUserInfo()
@@ -90,6 +101,7 @@ export const useUserStore = defineStore('user', {
       this.isAdmin = false
       this.visiblePanels = []
       this.approvePanels = []
+      this.panelPerms = {}
       localStorage.removeItem('mes_token')
       localStorage.removeItem('mes_user')
     },

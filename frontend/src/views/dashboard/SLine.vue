@@ -12,8 +12,8 @@
       <span v-for="d in data" :key="d.date" class="lx">{{ d.date }}</span>
     </div>
     <div class="line-legend">
-      <span class="lg-k"><i class="lg-dot added"></i>新增</span>
-      <span class="lg-k"><i class="lg-dot done"></i>完工</span>
+      <span class="lg-k"><i class="lg-dot added"></i>{{ nameA }}</span>
+      <span class="lg-k"><i class="lg-dot done"></i>{{ nameB }}</span>
     </div>
   </div>
 </template>
@@ -24,6 +24,8 @@ import { computed } from 'vue'
 const props = defineProps({
   data: { type: Array, default: () => [] },
   compact: { type: Boolean, default: false },
+  nameA: { type: String, default: '新增' },
+  nameB: { type: String, default: '完工' },
 })
 
 const W = 320
@@ -80,7 +82,7 @@ const areaA = computed(() => {
 .line-x {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--t-text-3);
   padding: 2px 6px 0;
 }
@@ -112,12 +114,12 @@ const areaA = computed(() => {
 }
 .sline.compact .line-x {
   padding-top: 0;
-  font-size: 8px;
+  font-size: 11px;
 }
 .sline.compact .line-legend {
   justify-content: flex-end;
-  margin-top: 3px;
-  font-size: 9px;
+  margin-top: 4px;
+  font-size: 11px;
 }
 
 @media (prefers-reduced-motion: reduce) {

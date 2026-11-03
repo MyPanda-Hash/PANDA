@@ -2,7 +2,7 @@
  * light-mes 全流程连通性验证（2026-08-25）
  * 覆盖业务总览全部推式生单链路 + 状态流转 + 查询/报表；结束后清理测试数据。
  */
-const BASE = 'http://127.0.0.1:8080/api';
+const BASE = 'http://127.0.0.1:3308/api';
 let token = null;
 const created = []; // {panel, no}
 const results = [];

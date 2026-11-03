@@ -2,7 +2,7 @@ const { execFileSync } = require('node:child_process')
 const fs = require('node:fs')
 const path = require('node:path')
 
-const BASE = 'http://127.0.0.1:8080/api'
+const BASE = 'http://127.0.0.1:3308/api'
 const PANEL = 'QUOTE_ORDER'
 const U = {
   code: '\u7f16\u53f7',

@@ -97,7 +97,7 @@ if ! nginx -t 2>/dev/null; then
 '    index index.html;' '    client_max_body_size 200m;' \
 '    location / { try_files $uri $uri/ /index.html; }' \
 '    location /assets/ { expires 30d; add_header Cache-Control "public, immutable"; }' \
-'    location /api/ { proxy_pass http://127.0.0.1:8080; proxy_set_header Host $host;' \
+'    location /api/ { proxy_pass http://127.0.0.1:3308; proxy_set_header Host $host;' \
 '        proxy_set_header X-Real-IP $remote_addr; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;' \
 '        proxy_read_timeout 120s; }' '}' \
 > /etc/nginx/sites-available/light-mes
@@ -119,7 +119,7 @@ try {
   $r = Invoke-SSHCommand -SessionId $s.SessionId -Command @'
 echo "== 服务 =="; systemctl is-active light-mes mysql nginx | tr '\n' ' '; echo
 echo "== 登录 =="
-TOKEN=$(curl -s -m 10 http://127.0.0.1:8080/api/auth/login -X POST -H "Content-Type: application/json" -d '{"userName":"admin","password":"123456"}' | grep -o '"code":[0-9]*' | head -1)
+TOKEN=$(curl -s -m 10 http://127.0.0.1:3308/api/auth/login -X POST -H "Content-Type: application/json" -d '{"userName":"admin","password":"123456"}' | grep -o '"code":[0-9]*' | head -1)
 echo "登录 code: $TOKEN"
 echo "== 前端 =="; curl -s -o /dev/null -w "http_code: %{http_code}\n" http://127.0.0.1/
 echo "== 数据库 =="; mysql -uroot -proot -N -e "USE light_mes; SELECT CONCAT('menus=',(SELECT COUNT(*) FROM sys_menu),' panels=',(SELECT COUNT(*) FROM panel_config),' forms=',(SELECT COUNT(*) FROM form_data),' users=',(SELECT COUNT(*) FROM sys_user));" 2>/dev/null

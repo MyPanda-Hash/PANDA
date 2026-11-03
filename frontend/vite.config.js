@@ -2,6 +2,9 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 
+// 后端端口与 application.yml 的 MES_HTTP_PORT 同源（默认回归提交约定 8080），U 盘多机环境只改环境变量
+const backendOrigin = `http://localhost:${process.env.MES_HTTP_PORT || '8080'}`
+
 export default defineConfig({
   plugins: [vue()],
   resolve: {
@@ -17,7 +20,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: backendOrigin,
         changeOrigin: true,
       },
     },
@@ -28,7 +31,7 @@ export default defineConfig({
     port: 4173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: backendOrigin,
         changeOrigin: true,
       },
     },

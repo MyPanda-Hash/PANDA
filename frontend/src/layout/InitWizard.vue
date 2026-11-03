@@ -7,8 +7,8 @@
           <div class="wz-close" @click="skip">
             <el-icon><Close /></el-icon>
           </div>
-          <div class="wz-title">MES 初始化配置</div>
-          <div class="wz-subtitle">三步即可轻松完成行业功能初始化流程</div>
+          <div class="wz-title">{{ tt('MES 初始化配置') }}</div>
+          <div class="wz-subtitle">{{ tt('三步即可轻松完成行业功能初始化流程') }}</div>
         </div>
 
         <!-- 步骤指示 -->
@@ -16,31 +16,31 @@
           <div class="wz-step" :class="{ done: step > 1, active: step === 1 }">
             <span class="wz-step-no">1</span>
             <div class="wz-step-text">
-              <div class="wz-step-name">第一步</div>
-              <div class="wz-step-desc">选择行业细分 & 经营业态</div>
+              <div class="wz-step-name">{{ tt('第一步') }}</div>
+              <div class="wz-step-desc">{{ tt('选择行业细分 & 经营业态') }}</div>
             </div>
           </div>
           <div class="wz-step-arrow"><el-icon><ArrowRight /></el-icon></div>
           <div class="wz-step" :class="{ done: step > 2, active: step === 2 }">
             <span class="wz-step-no">2</span>
             <div class="wz-step-text">
-              <div class="wz-step-name">第二步</div>
-              <div class="wz-step-desc">行业特性选择 & 设置</div>
+              <div class="wz-step-name">{{ tt('第二步') }}</div>
+              <div class="wz-step-desc">{{ tt('行业特性选择 & 设置') }}</div>
             </div>
           </div>
           <div class="wz-step-arrow"><el-icon><ArrowRight /></el-icon></div>
           <div class="wz-step" :class="{ done: step > 3, active: step === 3 }">
             <span class="wz-step-no">3</span>
             <div class="wz-step-text">
-              <div class="wz-step-name">第三步</div>
-              <div class="wz-step-desc">完成初始化设置</div>
+              <div class="wz-step-name">{{ tt('第三步') }}</div>
+              <div class="wz-step-desc">{{ tt('完成初始化设置') }}</div>
             </div>
           </div>
         </div>
 
         <!-- 第一步：行业 & 业态 -->
         <div v-if="step === 1" class="wz-body">
-          <div class="wz-body-title">选择行业细分</div>
+          <div class="wz-body-title">{{ tt('选择行业细分') }}</div>
           <div class="wz-cards">
             <div
               v-for="i in industries"
@@ -50,11 +50,11 @@
               @click="form.industry = i.code"
             >
               <el-icon class="wz-card-icon"><component :is="i.icon" /></el-icon>
-              <span class="wz-card-name">{{ i.name }}</span>
-              <span class="wz-card-desc">{{ i.desc }}</span>
+              <span class="wz-card-name">{{ tt(i.name) }}</span>
+              <span class="wz-card-desc">{{ tt(i.desc) }}</span>
             </div>
           </div>
-          <div class="wz-body-title">选择经营业态</div>
+          <div class="wz-body-title">{{ tt('选择经营业态') }}</div>
           <div class="wz-cards">
             <div
               v-for="b in business"
@@ -63,15 +63,15 @@
               :class="{ active: form.business === b.code }"
               @click="form.business = b.code"
             >
-              <span class="wz-card-name">{{ b.name }}</span>
-              <span class="wz-card-desc">{{ b.desc }}</span>
+              <span class="wz-card-name">{{ tt(b.name) }}</span>
+              <span class="wz-card-desc">{{ tt(b.desc) }}</span>
             </div>
           </div>
         </div>
 
         <!-- 第二步：特性选择 -->
         <div v-if="step === 2" class="wz-body">
-          <div class="wz-body-title">选择启用模块</div>
+          <div class="wz-body-title">{{ tt('选择启用模块') }}</div>
           <div class="wz-cards">
             <div
               v-for="m in modules"
@@ -81,15 +81,15 @@
               @click="toggleModule(m.code)"
             >
               <span class="wz-check"><el-icon v-if="form.modules.includes(m.code)"><Check /></el-icon></span>
-              <span class="wz-card-name">{{ m.name }}</span>
-              <span class="wz-card-desc">{{ m.desc }}</span>
+              <span class="wz-card-name">{{ tt(m.name) }}</span>
+              <span class="wz-card-desc">{{ tt(m.desc) }}</span>
             </div>
           </div>
-          <div class="wz-body-title">报工方式</div>
+          <div class="wz-body-title">{{ tt('报工方式') }}</div>
           <el-radio-group v-model="form.reportMode" class="wz-radio-group">
-            <el-radio-button value="scan">扫码报工（推荐）</el-radio-button>
-            <el-radio-button value="manual">手工报工</el-radio-button>
-            <el-radio-button value="batch">批量报工</el-radio-button>
+            <el-radio-button value="scan">{{ tt('扫码报工（推荐）') }}</el-radio-button>
+            <el-radio-button value="manual">{{ tt('手工报工') }}</el-radio-button>
+            <el-radio-button value="batch">{{ tt('批量报工') }}</el-radio-button>
           </el-radio-group>
         </div>
 
@@ -100,29 +100,29 @@
               <el-icon><CircleCheckFilled /></el-icon>
             </div>
             <div class="wz-result-text">
-              完成行业化设置，自动为您匹配<br />
-              <span class="wz-result-hl">全新的专属桌面、菜单、选项功能、关注指标及相关报表</span>
+              {{ tt('完成行业化设置，自动为您匹配') }}<br />
+              <span class="wz-result-hl">{{ tt('全新的专属桌面、菜单、选项功能、关注指标及相关报表') }}</span>
             </div>
           </div>
           <div class="wz-summary">
             <div class="wz-summary-row">
-              <span class="wz-summary-label">行业细分</span>
-              <span>{{ industryName }}</span>
+              <span class="wz-summary-label">{{ tt('行业细分') }}</span>
+              <span>{{ tt(industryName) }}</span>
             </div>
             <div class="wz-summary-row">
-              <span class="wz-summary-label">经营业态</span>
-              <span>{{ businessName }}</span>
+              <span class="wz-summary-label">{{ tt('经营业态') }}</span>
+              <span>{{ tt(businessName) }}</span>
             </div>
             <div class="wz-summary-row">
-              <span class="wz-summary-label">启用模块</span>
-              <span>{{ moduleNames || '仅基础模块' }}</span>
+              <span class="wz-summary-label">{{ tt('启用模块') }}</span>
+              <span>{{ moduleNames || tt('仅基础模块') }}</span>
             </div>
             <div class="wz-summary-row">
-              <span class="wz-summary-label">报工方式</span>
-              <span>{{ reportModeName }}</span>
+              <span class="wz-summary-label">{{ tt('报工方式') }}</span>
+              <span>{{ tt(reportModeName) }}</span>
             </div>
             <div class="wz-summary-row">
-              <span class="wz-summary-label">当前工厂</span>
+              <span class="wz-summary-label">{{ tt('当前工厂') }}</span>
               <span>{{ user.factoryName }}</span>
             </div>
           </div>
@@ -130,13 +130,13 @@
 
         <!-- 底部按钮 -->
         <div class="wz-footer">
-          <div v-if="step === 1" class="wz-start" @click="next">开始配置</div>
+          <div v-if="step === 1" class="wz-start" @click="next">{{ tt('开始配置') }}</div>
           <template v-else>
-            <div class="wz-back" @click="prev">上一步</div>
-            <div v-if="step === 2" class="wz-start" @click="next">下一步</div>
-            <div v-else class="wz-start" @click="finish">完成设置</div>
+            <div class="wz-back" @click="prev">{{ tt('上一步') }}</div>
+            <div v-if="step === 2" class="wz-start" @click="next">{{ tt('下一步') }}</div>
+            <div v-else class="wz-start" @click="finish">{{ tt('完成设置') }}</div>
           </template>
-          <div class="wz-skip" @click="skip">下次再说</div>
+          <div class="wz-skip" @click="skip">{{ tt('下次再说') }}</div>
         </div>
       </div>
     </div>
@@ -147,6 +147,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
+import { tt } from '@/i18n'
 import { ElMessage } from 'element-plus'
 
 const app = useAppStore()
@@ -191,12 +192,12 @@ function toggleModule(code) {
 
 const industryName = computed(() => industries.find((i) => i.code === form.industry)?.name || '未选择')
 const businessName = computed(() => business.find((b) => b.code === form.business)?.name || '未选择')
-const moduleNames = computed(() => form.modules.map((c) => modules.find((m) => m.code === c)?.name).filter(Boolean).join('、'))
+const moduleNames = computed(() => form.modules.map((c) => tt(modules.find((m) => m.code === c)?.name)).filter(Boolean).join('、'))
 const reportModeName = computed(() => ({ scan: '扫码报工', manual: '手工报工', batch: '批量报工' })[form.reportMode])
 
 function next() {
   if (step.value === 1) {
-    if (!form.industry || !form.business) return ElMessage.warning('请先选择行业细分与经营业态')
+    if (!form.industry || !form.business) return ElMessage.warning(tt('请先选择行业细分与经营业态'))
   }
   if (step.value < 3) step.value++
 }
@@ -208,7 +209,7 @@ function prev() {
 function finish() {
   app.finishInitWizard()
   app.closeInitWizard(false)
-  ElMessage.success('初始化完成，已为您匹配专属桌面与菜单')
+  ElMessage.success(tt('初始化完成，已为您匹配专属桌面与菜单'))
 }
 
 function skip() {

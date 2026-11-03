@@ -10,9 +10,9 @@
   >
     <div class="rpd">
       <div class="rpd-toolbar">
-        <el-input v-model="keyword" placeholder="输入关键字过滤…" clearable size="small" style="width: 240px" @keyup.enter="open" />
-        <el-button size="small" type="primary" :icon="Search" @click="open">查询</el-button>
-        <span class="rpd-tip">{{ tipText }} · 共 {{ total }} 条</span>
+        <el-input v-model="keyword" :placeholder="tt('输入关键字过滤…')" clearable size="small" style="width: 240px" @keyup.enter="open" />
+        <el-button size="small" type="primary" :icon="Search" @click="open">{{ tt('查询') }}</el-button>
+        <span class="rpd-tip">{{ tt(tipText) }} · {{ tt('共') }} {{ total }} {{ tt('条') }}</span>
       </div>
       <el-table
         :data="rows"
@@ -24,12 +24,12 @@
         @selection-change="(r) => (selected = r)"
       >
         <el-table-column type="selection" width="45" />
-        <el-table-column v-for="c in columns" :key="c" :prop="c" :label="c" min-width="110" show-overflow-tooltip />
+        <el-table-column v-for="c in columns" :key="c" :prop="c" :label="tt(c)" min-width="110" show-overflow-tooltip />
       </el-table>
     </div>
     <template #footer>
-      <el-button @click="emit('update:modelValue', false)">取消</el-button>
-      <el-button type="primary" :disabled="!selected.length" @click="confirm">确定导入（{{ selected.length }} 行）</el-button>
+      <el-button @click="emit('update:modelValue', false)">{{ tt('取消') }}</el-button>
+      <el-button type="primary" :disabled="!selected.length" @click="confirm">{{ tt('确定导入') }}（{{ selected.length }} {{ tt('行') }}）</el-button>
     </template>
   </el-dialog>
 </template>
@@ -39,8 +39,11 @@ import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { usePanelRuntime } from '@core/panel-runtime'
+import { tt } from '@/i18n'
+import { useLocaleStore } from '@/stores/locale'
 
 const engine = usePanelRuntime()
+const localeStore = useLocaleStore()
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -59,7 +62,7 @@ const selected = ref([])
 const loading = ref(false)
 const total = ref(0)
 
-const title = ref('参照选择')
+const title = ref(tt('参照选择'))
 const multi = computed(() => !!props.field?.refMulti || !!props.field?.multi)
 const tipText = computed(() => {
   if (props.mode === 'detail') return '可勾选多行，确定后每行生成一条明细'
@@ -69,7 +72,7 @@ const tipText = computed(() => {
 
 async function open() {
   if (!props.field) return
-  title.value = (await engine.refPanelName(props.field)) + ' · 参照选择'
+  title.value = tt(await engine.refPanelName(props.field)) + ' · ' + tt('参照选择')
   loading.value = true
   selected.value = []
   rows.value = []
@@ -78,8 +81,9 @@ async function open() {
     const list = await engine.queryRefRows(props.field, { keyword: keyword.value })
     rows.value = list
     total.value = list.length
+    if (!localeStore.isZh) localeStore.ensureDict(localeStore.current, columns.value)
   } catch (e) {
-    ElMessage.error(engine.errMsg(e) || '参照数据加载失败')
+    ElMessage.error(engine.errMsg(e) || tt('参照数据加载失败'))
   } finally {
     loading.value = false
   }

@@ -9,6 +9,7 @@ import com.mes.mapper.SysDeptMapper;
 import com.mes.mapper.SysRoleMapper;
 import com.mes.mapper.SysUserMapper;
 import com.mes.service.RoleService;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -40,7 +41,7 @@ public class SysUserController {
 
     private void guard(Authentication auth) {
         if (auth == null || !roleService.isAdminUser(auth.getName())) {
-            throw new IllegalStateException("仅管理员可访问组织架构");
+            throw new AccessDeniedException("仅管理员可访问组织架构");
         }
     }
 

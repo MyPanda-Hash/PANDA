@@ -2,29 +2,30 @@
 <template>
   <el-dialog
     :model-value="modelValue"
-    :title="material && material['材料编码'] ? '子件 BOM：' + material['材料编码'] + ' ' + (material['材料名称'] || '') : '子件 BOM'"
+    :title="material && material['材料编码'] ? tt('子件 BOM：') + material['材料编码'] + ' ' + (material['材料名称'] || '') : tt('子件 BOM')"
     width="620px"
     append-to-body
     @update:model-value="close"
   >
-    <div class="sub-tip">父件：{{ material && material['材料编码'] ? material['材料编码'] + ' ' + (material['材料名称'] || '') : '-' }} 的下级子件（只读）</div>
+    <div class="sub-tip">{{ tt('父件：') }}{{ material && material['材料编码'] ? material['材料编码'] + ' ' + (material['材料名称'] || '') : '-' }}{{ tt(' 的下级子件（只读）') }}</div>
     <el-table :data="bomRows" size="small" border height="260">
-      <el-table-column label="材料编码" prop="材料编码" width="100" />
-      <el-table-column label="材料名称" prop="材料名称" min-width="150" />
-      <el-table-column label="规格型号" prop="规格型号" min-width="110" />
-      <el-table-column label="单位" prop="计量单位" width="70" />
-      <el-table-column label="定额需用数量" prop="定额需用数量" width="110" align="right" />
-      <el-table-column label="损耗率%" prop="损耗率%" width="90" align="right" />
+      <el-table-column :label="tt('材料编码')" prop="材料编码" width="100" />
+      <el-table-column :label="tt('材料名称')" prop="材料名称" min-width="150" />
+      <el-table-column :label="tt('规格型号')" prop="规格型号" min-width="110" />
+      <el-table-column :label="tt('单位')" prop="计量单位" width="70" />
+      <el-table-column :label="tt('定额需用数量')" prop="定额需用数量" width="110" align="right" />
+      <el-table-column :label="tt('损耗率%')" prop="损耗率%" width="90" align="right" />
     </el-table>
-    <div v-if="!bomRows.length" class="empty-tip">该材料暂无下级子件 BOM</div>
+    <div v-if="!bomRows.length" class="empty-tip">{{ tt('该材料暂无下级子件 BOM') }}</div>
     <template #footer>
-      <el-button type="primary" @click="close">关闭</el-button>
+      <el-button type="primary" @click="close">{{ tt('关闭') }}</el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
+import { tt } from '@/i18n'
 
 const props = defineProps({
   modelValue: Boolean,

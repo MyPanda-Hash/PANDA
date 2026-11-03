@@ -2,28 +2,28 @@
 <template>
   <div class="pda-page">
     <div class="pda-head">
-      <div class="pda-title">移动仓管（PDA）</div>
-      <div class="pda-sub">及时、精准的仓库移动作业：入库 → 上下架 → 出库 → 货位调整（点击单据直达对应面板）</div>
+      <div class="pda-title">{{ tt('移动仓管（PDA）') }}</div>
+      <div class="pda-sub">{{ tt('及时、精准的仓库移动作业：入库 → 上下架 → 出库 → 货位调整（点击单据直达对应面板）') }}</div>
     </div>
     <div class="pda-body">
       <div class="pda-flow">
         <div v-for="(s, i) in flow" :key="i" class="pda-step">
           <div class="pda-step-no">{{ i + 1 }}</div>
-          <div class="pda-step-name">{{ s.name }}</div>
-          <div class="pda-step-desc">{{ s.desc }}</div>
+          <div class="pda-step-name">{{ tt(s.name) }}</div>
+          <div class="pda-step-desc">{{ tt(s.desc) }}</div>
         </div>
       </div>
       <div class="pda-sec">
-        <span class="pda-sec-title">相关单据</span>
-        <span v-for="d in docs" :key="d.code" class="pda-btn" @click="go(d.code)">{{ d.label }}</span>
+        <span class="pda-sec-title">{{ tt('相关单据') }}</span>
+        <span v-for="d in docs" :key="d.code" class="pda-btn" @click="go(d.code)">{{ tt(d.label) }}</span>
       </div>
       <div class="pda-sec">
-        <span class="pda-sec-title">相关报表</span>
-        <span v-for="d in reports" :key="d.code" class="pda-btn" @click="go(d.code)">{{ d.label }}</span>
+        <span class="pda-sec-title">{{ tt('相关报表') }}</span>
+        <span v-for="d in reports" :key="d.code" class="pda-btn" @click="go(d.code)">{{ tt(d.label) }}</span>
       </div>
       <div class="pda-sec">
-        <span class="pda-sec-title">基础档案</span>
-        <span v-for="d in archives" :key="d.code" class="pda-btn" @click="go(d.code)">{{ d.label }}</span>
+        <span class="pda-sec-title">{{ tt('基础档案') }}</span>
+        <span v-for="d in archives" :key="d.code" class="pda-btn" @click="go(d.code)">{{ tt(d.label) }}</span>
       </div>
     </div>
   </div>
@@ -32,6 +32,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useTabsStore } from '@/stores/tabs'
+import { tt } from '@/i18n'
 
 const router = useRouter()
 const tabs = useTabsStore()

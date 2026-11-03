@@ -109,7 +109,7 @@ printf '%s\n' \
 '        add_header Cache-Control "public, immutable";' \
 '    }' \
 '    location /api/ {' \
-'        proxy_pass http://127.0.0.1:8080;' \
+'        proxy_pass http://127.0.0.1:3308;' \
 '        proxy_set_header Host $host;' \
 '        proxy_set_header X-Real-IP $remote_addr;' \
 '        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;' \
@@ -123,7 +123,7 @@ nginx -t && systemctl reload nginx
 
 echo "== 5/5 验证后端登录 =="
 sleep 4
-RESP=$(curl -s -m 10 http://127.0.0.1:8080/api/auth/login -X POST -H "Content-Type: application/json" -d '{"userName":"admin","password":"123456"}' || true)
+RESP=$(curl -s -m 10 http://127.0.0.1:3308/api/auth/login -X POST -H "Content-Type: application/json" -d '{"userName":"admin","password":"123456"}' || true)
 echo "后端响应: $(echo "$RESP" | head -c 160)"
 
 echo ""
@@ -133,7 +133,7 @@ echo " 浏览器访问: http://${DOMAIN:-<服务器公网IP>}/"
 echo " 登录账号: admin / 123456"
 echo ""
 echo " ⚠️ 接下来 3 件事（脚本管不了）:"
-echo "  1. 云控制台「安全组」放行 80 / 443 端口（有些还要放 8080 先测试）"
+echo "  1. 云控制台「安全组」放行 80 / 443 端口（有些还要放 3308 先测试）"
 echo "  2. 有域名则加 A 记录指向服务器公网 IP"
 echo "  3. HTTPS: 执行 certbot --nginx -d 你的域名"
 echo " ⚠️ 安全提醒: MySQL root 密码当前是 root，生产请修改"

@@ -6,7 +6,7 @@
         <div class="bar-track">
           <div class="bar-fill" :style="{ width: pct(d.value) + '%', background: colorOf(i) }"></div>
         </div>
-        <span class="bar-val">{{ d.value }}</span>
+        <span class="bar-val">{{ fmt(d.value) }}</span>
       </div>
     </template>
     <div v-else class="chart-empty">暂无数据</div>
@@ -26,8 +26,13 @@ const max = computed(() => {
   return m || 1
 })
 
+const numberFormat = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 1 })
+
 function pct(v) {
   return Math.round(((v || 0) / max.value) * 100)
+}
+function fmt(v) {
+  return numberFormat.format(Number(v || 0))
 }
 function colorOf(i) {
   return props.colors[i % props.colors.length]
@@ -41,14 +46,14 @@ function colorOf(i) {
   gap: 10px;
   padding: 4px 2px;
 }
+/* 网格：标签定宽、条自适应、数值按内容取宽（大数字不会挤到条形上） */
 .bar-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 .bar-label {
-  width: 88px;
-  flex-shrink: 0;
   font-size: 12px;
   color: var(--t-text-2);
   overflow: hidden;
@@ -57,25 +62,25 @@ function colorOf(i) {
   text-align: right;
 }
 .bar-track {
-  flex: 1;
-  height: 16px;
+  height: 8px;
   background: var(--t-border-light);
-  border-radius: 3px;
+  border-radius: 100px;
   overflow: hidden;
 }
 .bar-fill {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 100px;
   transition: width 0.4s ease;
   min-width: 2px;
 }
 .bar-val {
-  width: 34px;
-  flex-shrink: 0;
+  min-width: 34px;
   font-size: 13px;
   font-weight: 600;
   color: var(--t-text-1);
   text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 .chart-empty {
   color: var(--t-text-3);

@@ -1,14 +1,15 @@
 <template>
   <div class="nf">
-    <el-result icon="warning" title="404" sub-title="页面不存在">
+    <el-result icon="warning" title="404" :sub-title="tt('页面不存在')">
       <template #extra>
-        <el-button type="primary" @click="$router.replace('/dashboard')">回我的桌面</el-button>
+        <el-button type="primary" @click="$router.replace('/dashboard')">{{ tt('回我的桌面') }}</el-button>
       </template>
     </el-result>
   </div>
 </template>
 
 <script setup>
+import { tt } from '@/i18n'
 </script>
 
 <style scoped>

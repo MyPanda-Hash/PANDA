@@ -65,15 +65,22 @@ public class PxController {
     // ---------- 面板接口 ----------
 
     @GetMapping("/getPanelConfig")
-    public ApiResult<Map<String, Object>> getPanelConfig(Authentication auth, @RequestParam String panelCode) {
-        requireVisible(auth, panelCode);
-        return ApiResult.ok(service.getPanelConfig(panelCode));
+    public ApiResult<Map<String, Object>> getPanelConfig(@RequestParam String panelCode,
+                                                         Authentication authentication) {
+        // 服务端权限兜底：不可见面板直接拒绝，避免仅靠前端过滤
+        requireVisible(authentication, panelCode);
+        // 叠加登录用户的表格列定制（px_column_pref：顺序/显隐/别名；未认证不叠加）
+        String userName = authentication != null ? authentication.getName() : null;
+        return ApiResult.ok(service.getPanelConfig(panelCode, userName));
     }
 
     @GetMapping("/getPermMatrix")
-    public ApiResult<Map<String, Object>> getPermMatrix(Authentication auth, @RequestParam String panelCode) {
-        requireVisible(auth, panelCode);
-        return ApiResult.ok(service.getPermMatrix(panelCode));
+    public ApiResult<Map<String, Object>> getPermMatrix(@RequestParam String panelCode,
+                                                        Authentication authentication) {
+        requireVisible(authentication, panelCode);
+        // 按登录用户权限过滤按钮（admin/未认证不过滤，保持全真）
+        String userName = authentication != null ? authentication.getName() : null;
+        return ApiResult.ok(service.getPermMatrix(panelCode, userName));
     }
 
     @GetMapping("/getNewFormPermMatrix")
@@ -130,5 +137,26 @@ public class PxController {
         List<String> rowCodes = (List<String>) body.getOrDefault("rowCodes", List.of());
         service.deleteForms(panelCode, rowCodes);
         return ApiResult.ok(null);
+    }
+
+    /** 保存登录用户的表格列定制（columns 空数组=恢复默认） */
+    @PostMapping("/saveColumnPrefs")
+    public ApiResult<Void> saveColumnPrefs(@RequestBody Map<String, Object> body,
+                                           Authentication authentication) {
+        String panelCode = String.valueOf(body.getOrDefault("panelCode", ""));
+        String userName = authentication != null ? authentication.getName() : null;
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> columns = (List<Map<String, Object>>) body.getOrDefault("columns", List.of());
+        service.saveColumnPrefs(panelCode, userName, columns);
+        return ApiResult.ok(null);
+    }
+
+    /**
+     * 业务流程追踪：给定任意单号（销售订单号/加工单号/入库单号等），
+     * 正反向找全相关单据并判定每一步状态与卡点。
+     */
+    @GetMapping("/trace")
+    public ApiResult<Map<String, Object>> trace(@RequestParam String docNo) {
+        return ApiResult.ok(service.traceProcess(docNo));
     }
 }

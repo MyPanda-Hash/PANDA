@@ -5,7 +5,7 @@
 | 文档类型 | 项目说明 |
 | 适用场景 | 项目入门 |
 | 维护状态 | 生效 |
-| 最后整理 | 2026-08-27 |
+| 最后整理 | 2026-09-01 |
 | 文档导航 | [文档中心](docs/README.md) |
 
 轻 MES 当前提供可运行的制造业务基线，并开始作为需求驱动 PLM 的技术底座演进。前端使用 Vue 3，后端使用 Spring Boot，面板配置和业务数据统一存储在 MySQL。既有 T+ 形态只作为交互参考，新功能以实际 PLM 需求、领域模型和验收条件为准。
@@ -54,7 +54,9 @@ light-mes/
 
 ## 本地启动
 
-前置条件：Node.js、JDK 17+、MySQL 运行在本机 3308。
+前置条件：Node.js、JDK 17+、MySQL 运行在本机（默认端口 3308）。
+
+端口约定（U 盘多机环境，换机器只设环境变量、不改文件）：后端 HTTP 默认 `8080`（`MES_HTTP_PORT` 覆盖）、MySQL 默认 `localhost:3308`（`MES_DB_HOST`/`MES_DB_PORT` 覆盖）、数据库密码走 `SPRING_DATASOURCE_PASSWORD`。
 
 1. 初始化数据库：
 
@@ -69,7 +71,14 @@ light-mes/
    ```powershell
    $env:SPRING_DATASOURCE_PASSWORD = '<数据库密码>'
    $env:MES_JWT_SECRET = '<至少 64 位随机密钥>'
+   $env:ALIBABA_CLOUD_ACCESS_KEY_ID = '<OCR RAM 用户的新 AccessKeyId>'
+   $env:ALIBABA_CLOUD_ACCESS_KEY_SECRET = '<OCR RAM 用户的新 AccessKeySecret>'
+   # 可按容量调整，默认每用户每分钟 10 次、单实例最多并发 4 次
+   $env:ALIBABA_CLOUD_OCR_REQUESTS_PER_MINUTE = '10'
+   $env:ALIBABA_CLOUD_OCR_MAX_CONCURRENT = '4'
    ```
+
+   OCR 凭据仅由后端读取。请使用只授权 OCR 调用的独立 RAM 用户，不要把凭据写入前端、配置文件或 Git；已在聊天、日志等位置明文出现的凭据必须先轮换。
 
 3. 构建并启动后端：
 
@@ -86,7 +95,7 @@ light-mes/
    npm run dev
    ```
 
-前端地址为 `http://localhost:5173`，后端地址为 `http://localhost:8080`。初始化数据提供开发账号 `admin / 123456`，首次部署后必须修改。
+前端地址为 `http://localhost:5173`，后端地址为 `http://localhost:8080`（默认值，`MES_HTTP_PORT` 覆盖时同步变化）。初始化数据提供开发账号 `admin / 123456`，首次部署后必须修改。
 
 构建产物已经生成时，也可以从项目根目录运行 `start-project.bat`，统一启动后端和 `http://localhost:4173` 前端预览。
 

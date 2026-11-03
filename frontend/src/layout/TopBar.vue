@@ -8,11 +8,11 @@
       <el-dropdown @command="(f) => user.switchFactory(f)">
         <span
           class="factory"
-          :aria-label="user.factoryName || '选择工厂'"
-          :title="user.factoryName || '选择工厂'"
+          :aria-label="user.factoryName || tt('选择工厂')"
+          :title="user.factoryName || tt('选择工厂')"
         >
           <el-icon><OfficeBuilding /></el-icon>
-          <span class="factory-name">{{ user.factoryName || '选择工厂' }}</span>
+          <span class="factory-name">{{ user.factoryName || tt('选择工厂') }}</span>
           <el-icon class="caret"><ArrowDown /></el-icon>
         </span>
         <template #dropdown>
@@ -23,7 +23,7 @@
           </el-dropdown-menu>
         </template>
       </el-dropdown>
-      <el-tooltip content="刷新企业名字" placement="bottom">
+      <el-tooltip :content="tt('刷新企业名字')" placement="bottom">
         <el-icon class="refresh-icon" @click="refreshFactories"><Refresh /></el-icon>
       </el-tooltip>
     </div>
@@ -34,12 +34,12 @@
       <span class="attestation">
         <span class="att-box">
           <el-icon class="att-icon"><CircleCheckFilled /></el-icon>
-          <span class="att-text">已认证</span>
+          <span class="att-text">{{ tt('已认证') }}</span>
         </span>
         <span class="company">{{ user.factoryName }}</span>
       </span>
-      <span class="t-user-info" id="logindate">登录日期 {{ user.loginDateText }}</span>
-      <span class="t-user-info" id="serviceEndTime">服务到期 {{ user.serviceEnd }}</span>
+      <span class="t-user-info" id="logindate">{{ tt('登录日期') }} {{ user.loginDateText }}</span>
+      <span class="t-user-info" id="serviceEndTime">{{ tt('服务到期') }} {{ user.serviceEnd }}</span>
     </div>
 
     <!-- ===== 右：搜索 / 更新公告 / 移动端 / 通知角标 / 全屏 / 帮助 / 用户 ===== -->
@@ -49,7 +49,7 @@
         <el-input
           v-model="keyword"
           class="search-input"
-          placeholder="搜索-产品功能"
+          :placeholder="tt('搜索-产品功能')"
           clearable
           @input="onSearchInput"
           @focus="onSearchInput"
@@ -64,7 +64,7 @@
             <div v-for="m in matched" :key="m.path" class="search-item" @mousedown.prevent @click="go(m)">
               <el-icon class="s-icon"><component :is="m.icon || 'Folder'" /></el-icon>
               <span class="s-content">
-                <span class="s-title">{{ m.fullTitle || m.title }}</span>
+                <span class="s-title">{{ tt(m.fullTitle || m.title) }}</span>
                 <span class="s-meta">
                   <span v-if="m.panelCode" class="s-code">{{ m.panelCode }}</span>
                   <span class="s-path" :title="m.path">{{ m.path }}</span>
@@ -72,7 +72,7 @@
               </span>
             </div>
           </template>
-          <div v-else class="search-empty">无匹配菜单</div>
+          <div v-else class="search-empty">{{ tt('无匹配菜单') }}</div>
         </div>
       </div>
 
@@ -80,12 +80,12 @@
       <el-popover v-model:visible="noticePop" placement="bottom-end" :width="340" trigger="click" @show="loadNotices">
         <template #reference>
           <span class="gonggao">
-            更新公告
+            {{ tt('更新公告') }}
             <span v-if="hasUnread" class="new-icon">new</span>
           </span>
         </template>
         <div class="nc-head">
-          <span class="nc-title">更新公告</span>
+          <span class="nc-title">{{ tt('更新公告') }}</span>
         </div>
         <div class="nc-list">
           <div v-for="n in notices" :key="n.id" class="nc-item" :class="{ unread: !n.read }" @click="openNotice(n)">
@@ -95,12 +95,12 @@
             </div>
             <div class="nc-item-time">{{ n.time }}</div>
           </div>
-          <el-empty v-if="!notices.length" description="暂无公告" :image-size="50" />
+          <el-empty v-if="!notices.length" :description="tt('暂无公告')" :image-size="50" />
         </div>
       </el-popover>
 
       <!-- 移动端 -->
-      <el-tooltip content="移动端扫码报工（建设中）" placement="bottom">
+      <el-tooltip :content="tt('移动端扫码报工（建设中）')" placement="bottom">
         <span class="bar-icon"><el-icon><Iphone /></el-icon></span>
       </el-tooltip>
 
@@ -108,21 +108,38 @@
       <NoticeCenter />
 
       <!-- 全屏 -->
-      <el-tooltip :content="app.fullscreen ? '退出全屏' : '全屏'" placement="bottom">
+      <el-tooltip :content="app.fullscreen ? tt('退出全屏') : tt('全屏')" placement="bottom">
         <span class="bar-icon" @click="app.toggleFullscreen"><el-icon><FullScreen /></el-icon></span>
       </el-tooltip>
 
+      <!-- 界面语言（阶段 A：tt() 显示层翻译，纯前端热切换） -->
+      <el-dropdown @command="(l) => locale.set(l)" popper-class="t-dropdown-popper">
+        <span class="bar-icon lang-icon" tabindex="0" :title="tt('切换语言')">{{ locale.currentShort }}</span>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item
+              v-for="l in locale.available"
+              :key="l.locale"
+              :command="l.locale"
+              :disabled="l.locale === locale.current"
+            >
+              {{ l.nameNative }}（{{ l.nameZh }}）
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+
       <!-- 帮助下拉 -->
       <el-dropdown @command="onHelpCommand" popper-class="t-dropdown-popper">
-        <el-tooltip content="帮助" placement="bottom">
+        <el-tooltip :content="tt('帮助')" placement="bottom">
           <span class="bar-icon"><el-icon><QuestionFilled /></el-icon></span>
         </el-tooltip>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="docs">帮助文档</el-dropdown-item>
-            <el-dropdown-item command="ai">AI 智能帮助</el-dropdown-item>
-            <el-dropdown-item command="guide">显示新手引导</el-dropdown-item>
-            <el-dropdown-item command="about" divided>关于</el-dropdown-item>
+            <el-dropdown-item command="docs">{{ tt('帮助文档') }}</el-dropdown-item>
+            <el-dropdown-item command="ai">{{ tt('AI 智能帮助') }}</el-dropdown-item>
+            <el-dropdown-item command="guide">{{ tt('显示新手引导') }}</el-dropdown-item>
+            <el-dropdown-item command="about" divided>{{ tt('关于') }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -135,21 +152,21 @@
         </span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item v-if="user.isAdmin" command="org"><el-icon><OfficeBuilding /></el-icon>组织架构</el-dropdown-item>
-            <el-dropdown-item command="account"><el-icon><User /></el-icon>账号管理</el-dropdown-item>
-            <el-dropdown-item command="pwd"><el-icon><Key /></el-icon>修改密码</el-dropdown-item>
-            <el-dropdown-item command="ui"><el-icon><Setting /></el-icon>界面设置</el-dropdown-item>
-            <el-dropdown-item command="dark"><el-icon><Brush /></el-icon>{{ app.dark ? '切换亮色' : '换肤（暗色）' }}</el-dropdown-item>
-            <el-dropdown-item command="desk"><el-icon><Monitor /></el-icon>工作台设置</el-dropdown-item>
-            <el-dropdown-item command="init"><el-icon><MagicStick /></el-icon>初始化向导</el-dropdown-item>
-            <el-dropdown-item command="logout" divided><el-icon><SwitchButton /></el-icon>退出</el-dropdown-item>
+            <el-dropdown-item v-if="user.isAdmin" command="org"><el-icon><OfficeBuilding /></el-icon>{{ tt('组织架构') }}</el-dropdown-item>
+            <el-dropdown-item command="account"><el-icon><User /></el-icon>{{ tt('账号管理') }}</el-dropdown-item>
+            <el-dropdown-item command="pwd"><el-icon><Key /></el-icon>{{ tt('修改密码') }}</el-dropdown-item>
+            <el-dropdown-item command="ui"><el-icon><Setting /></el-icon>{{ tt('界面设置') }}</el-dropdown-item>
+            <el-dropdown-item command="dark"><el-icon><Brush /></el-icon>{{ app.dark ? tt('切换亮色') : tt('换肤（暗色）') }}</el-dropdown-item>
+            <el-dropdown-item command="desk"><el-icon><Monitor /></el-icon>{{ tt('工作台设置') }}</el-dropdown-item>
+            <el-dropdown-item command="init"><el-icon><MagicStick /></el-icon>{{ tt('初始化向导') }}</el-dropdown-item>
+            <el-dropdown-item command="logout" divided><el-icon><SwitchButton /></el-icon>{{ tt('退出') }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
     </div>
 
     <!-- 公告详情 -->
-    <el-dialog v-model="noticeDetailVisible" title="更新公告" width="560px" append-to-body>
+    <el-dialog v-model="noticeDetailVisible" :title="tt('更新公告')" width="560px" append-to-body>
       <div v-if="currentNotice" class="nc-detail">
         <div class="nc-detail-head">
           <span class="nc-detail-title">{{ currentNotice.title }}</span>
@@ -161,43 +178,43 @@
     </el-dialog>
 
     <!-- 账号管理 -->
-    <el-dialog v-model="accountVisible" title="账号管理" width="440px" append-to-body>
+    <el-dialog v-model="accountVisible" :title="tt('账号管理')" width="440px" append-to-body>
       <el-descriptions :column="1" border size="small">
-        <el-descriptions-item label="账号">{{ user.account }}</el-descriptions-item>
-        <el-descriptions-item label="姓名">{{ user.realName }}</el-descriptions-item>
-        <el-descriptions-item label="当前工厂">{{ user.factoryName }}</el-descriptions-item>
-        <el-descriptions-item label="角色">{{ (user.userInfo?.roles || []).join('、') || '未分配' }}</el-descriptions-item>
-        <el-descriptions-item label="服务到期">{{ user.serviceEnd }}</el-descriptions-item>
+        <el-descriptions-item :label="tt('账号')">{{ user.account }}</el-descriptions-item>
+        <el-descriptions-item :label="tt('姓名')">{{ user.realName }}</el-descriptions-item>
+        <el-descriptions-item :label="tt('当前工厂')">{{ user.factoryName }}</el-descriptions-item>
+        <el-descriptions-item :label="tt('角色')">{{ (user.userInfo?.roles || []).join('、') || tt('未分配') }}</el-descriptions-item>
+        <el-descriptions-item :label="tt('服务到期')">{{ user.serviceEnd }}</el-descriptions-item>
       </el-descriptions>
     </el-dialog>
 
     <!-- 修改密码 -->
-    <el-dialog v-model="pwdVisible" title="修改密码" width="420px" append-to-body>
+    <el-dialog v-model="pwdVisible" :title="tt('修改密码')" width="420px" append-to-body>
       <el-form :model="pwdForm" label-width="80px">
-        <el-form-item label="原密码">
-          <el-input v-model="pwdForm.old" type="password" show-password placeholder="请输入原密码" />
+        <el-form-item :label="tt('原密码')">
+          <el-input v-model="pwdForm.old" type="password" show-password :placeholder="tt('请输入原密码')" />
         </el-form-item>
-        <el-form-item label="新密码">
-          <el-input v-model="pwdForm.next" type="password" show-password placeholder="至少 6 位" />
+        <el-form-item :label="tt('新密码')">
+          <el-input v-model="pwdForm.next" type="password" show-password :placeholder="tt('至少 6 位')" />
         </el-form-item>
-        <el-form-item label="确认密码">
-          <el-input v-model="pwdForm.confirm" type="password" show-password placeholder="再次输入新密码" />
+        <el-form-item :label="tt('确认密码')">
+          <el-input v-model="pwdForm.confirm" type="password" show-password :placeholder="tt('再次输入新密码')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="pwdVisible = false">取消</el-button>
-        <el-button type="primary" @click="changePwd">确定</el-button>
+        <el-button @click="pwdVisible = false">{{ tt('取消') }}</el-button>
+        <el-button type="primary" @click="changePwd">{{ tt('确定') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 关于 -->
-    <el-dialog v-model="aboutVisible" title="关于轻MES" width="420px" append-to-body>
+    <el-dialog v-model="aboutVisible" :title="tt('关于轻MES')" width="420px" append-to-body>
       <div class="about">
         <div class="about-logo">轻<span>MES</span></div>
-        <div class="about-row">版本：v0.2.0（门户壳 T+ 形态）</div>
-        <div class="about-row">参考：畅捷通 T+ 门户（h2t.chanjet.com）</div>
-        <div class="about-row">技术栈：Vue3 + Element Plus / Spring Boot 3 + MySQL</div>
-        <div class="about-row about-copy">© 2026 轻MES 项目组</div>
+        <div class="about-row">{{ tt('版本：v0.2.0（门户壳 T+ 形态）') }}</div>
+        <div class="about-row">{{ tt('参考：畅捷通 T+ 门户（h2t.chanjet.com）') }}</div>
+        <div class="about-row">{{ tt('技术栈：Vue3 + Element Plus / Spring Boot 3 + MySQL') }}</div>
+        <div class="about-row about-copy">{{ tt('© 2026 轻MES 项目组') }}</div>
       </div>
     </el-dialog>
 
@@ -212,6 +229,8 @@ import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
 import { useTabsStore } from '@/stores/tabs'
+import { useLocaleStore } from '@/stores/locale'
+import { tt } from '@/i18n'
 import { flatMenus, menuTree as rawMenuTree, filterMenuTree } from '@/business/menus'
 import { apiGetNotices } from '@/business/api'
 import { ElMessage } from 'element-plus'
@@ -222,6 +241,7 @@ import DeskSettingsDialog from './DeskSettingsDialog.vue'
 const app = useAppStore()
 const user = useUserStore()
 const tabs = useTabsStore()
+const locale = useLocaleStore()
 const router = useRouter()
 
 // ---------- 内嵌搜索 ----------
@@ -261,7 +281,11 @@ function onDocClick(e) {
   if (searchWrapRef.value && !searchWrapRef.value.contains(e.target)) searchOpen.value = false
 }
 
-onMounted(() => document.addEventListener('mousedown', onDocClick))
+onMounted(() => {
+  document.addEventListener('mousedown', onDocClick)
+  // App 挂载时（登录页）尚无 token，/locale/list 会 401；顶栏登录后才挂载，此时补拉语言注册表
+  locale.loadAvailable()
+})
 onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 
 // ---------- 更新公告 ----------
@@ -288,7 +312,7 @@ function openNotice(n) {
 // ---------- 工厂 ----------
 async function refreshFactories() {
   await user.fetchFactories()
-  ElMessage.success('企业信息已刷新')
+  ElMessage.success(tt('企业信息已刷新'))
 }
 
 // ---------- 帮助下拉 ----------
@@ -323,13 +347,13 @@ function onUserCommand(cmd) {
 
 function changePwd() {
   const f = pwdForm.value
-  if (!f.old || !f.next || !f.confirm) return ElMessage.warning('请填写完整')
-  if (f.old !== '123456') return ElMessage.error('原密码不正确（演示账号原密码 123456）')
-  if (f.next.length < 6) return ElMessage.warning('新密码至少 6 位')
-  if (f.next !== f.confirm) return ElMessage.warning('两次输入的新密码不一致')
+  if (!f.old || !f.next || !f.confirm) return ElMessage.warning(tt('请填写完整'))
+  if (f.old !== '123456') return ElMessage.error(tt('原密码不正确（演示账号原密码 123456）'))
+  if (f.next.length < 6) return ElMessage.warning(tt('新密码至少 6 位'))
+  if (f.next !== f.confirm) return ElMessage.warning(tt('两次输入的新密码不一致'))
   pwdVisible.value = false
   pwdForm.value = { old: '', next: '', confirm: '' }
-  ElMessage.success('密码修改成功（演示环境不落库）')
+  ElMessage.success(tt('密码修改成功（演示环境不落库）'))
 }
 </script>
 
@@ -569,6 +593,13 @@ function changePwd() {
 }
 .bar-icon:hover {
   color: var(--t-primary);
+}
+.lang-icon {
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 26px;
+  justify-content: center;
+  outline: none;
 }
 
 .user {

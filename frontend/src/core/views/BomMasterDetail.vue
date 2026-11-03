@@ -4,8 +4,8 @@
     <div class="bom-md-sec">
       <div class="bom-md-head">
         <div>
-          <span class="bom-md-title">{{ reverse ? '子件（物料/原材料）' : '父件（产成品/物料）' }}</span>
-          <span class="bom-md-count">共 {{ masters.length }} 项</span>
+          <span class="bom-md-title">{{ reverse ? tt('子件（物料/原材料）') : tt('父件（产成品/物料）') }}</span>
+          <span class="bom-md-count">{{ tt('共') }} {{ masters.length }} {{ tt('项') }}</span>
         </div>
       </div>
       <el-table
@@ -18,58 +18,58 @@
         v-loading="loading"
         @row-click="onMasterClick"
       >
-        <el-table-column type="index" label="序号" width="60" align="center" :index="(index) => index + 1" />
+        <el-table-column type="index" :label="tt('序号')" width="60" align="center" :index="(index) => index + 1" />
         <template v-if="!reverse">
-          <el-table-column prop="父件编码" label="父件编码" min-width="130">
+          <el-table-column prop="父件编码" :label="tt('父件编码')" min-width="130">
             <template #default="{ row }">
               <button v-if="editable" type="button" class="bom-ref" @click.stop="openRef('父件编码', row)">
-                {{ row['父件编码'] || '请选择' }}
+                {{ row['父件编码'] || tt('请选择') }}
                 <el-icon><Search /></el-icon>
               </button>
               <span v-else>{{ row['父件编码'] || '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="父件名称" label="父件名称" min-width="160" show-overflow-tooltip>
+          <el-table-column prop="父件名称" :label="tt('父件名称')" min-width="160" show-overflow-tooltip>
             <template #default="{ row }">
               <el-input v-if="editable" v-model="row['父件名称']" @change="syncParent" />
               <span v-else>{{ row['父件名称'] || '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="版本号" label="版本号" width="110">
+          <el-table-column prop="版本号" :label="tt('版本号')" width="110">
             <template #default="{ row }">
               <el-input v-if="editable" v-model="row['版本号']" @change="syncParent" />
               <span v-else>{{ row['版本号'] || '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="默认BOM" label="默认BOM" width="100" align="center">
+          <el-table-column prop="默认BOM" :label="tt('默认BOM')" width="100" align="center">
             <template #default="{ row }">
               <el-switch v-if="editable" v-model="row['默认BOM']" @change="syncParent" />
               <span v-else>{{ fmtBool(row['默认BOM']) }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="计量单位" label="计量单位" width="120">
+          <el-table-column prop="计量单位" :label="tt('计量单位')" width="120">
             <template #default="{ row }">
               <el-select v-if="editable" v-model="row['计量单位']" filterable allow-create @change="syncParent">
-                <el-option v-for="option in optionsOf('计量单位')" :key="option" :label="option" :value="option" />
+                <el-option v-for="option in optionsOf('计量单位')" :key="option" :label="tt(option)" :value="option" />
               </el-select>
               <span v-else>{{ row['计量单位'] || '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="生产数量" label="生产数量" width="120" align="right">
+          <el-table-column prop="生产数量" :label="tt('生产数量')" width="120" align="right">
             <template #default="{ row }">
               <el-input-number v-if="editable" v-model="row['生产数量']" :controls="false" @change="syncParent" />
               <span v-else>{{ row['生产数量'] ?? '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="生产车间" label="生产车间" min-width="140">
+          <el-table-column prop="生产车间" :label="tt('生产车间')" min-width="140">
             <template #default="{ row }">
               <el-select v-if="editable" v-model="row['生产车间']" filterable allow-create @change="syncParent">
-                <el-option v-for="option in optionsOf('生产车间')" :key="option" :label="option" :value="option" />
+                <el-option v-for="option in optionsOf('生产车间')" :key="option" :label="tt(option)" :value="option" />
               </el-select>
               <span v-else>{{ row['生产车间'] || '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="虚拟件" label="虚拟件" width="90" align="center">
+          <el-table-column prop="虚拟件" :label="tt('虚拟件')" width="90" align="center">
             <template #default="{ row }">
               <el-switch v-if="editable" v-model="row['虚拟件']" @change="syncParent" />
               <span v-else>{{ fmtBool(row['虚拟件']) }}</span>
@@ -77,10 +77,10 @@
           </el-table-column>
         </template>
         <template v-else>
-          <el-table-column prop="子件编码" label="子件编码" min-width="110" show-overflow-tooltip />
-          <el-table-column prop="子件名称" label="子件名称" min-width="150" show-overflow-tooltip />
-          <el-table-column prop="规格型号" label="规格型号" min-width="120" show-overflow-tooltip />
-          <el-table-column prop="子件计量单位" label="单位" width="90" />
+          <el-table-column prop="子件编码" :label="tt('子件编码')" min-width="110" show-overflow-tooltip />
+          <el-table-column prop="子件名称" :label="tt('子件名称')" min-width="150" show-overflow-tooltip />
+          <el-table-column prop="规格型号" :label="tt('规格型号')" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="子件计量单位" :label="tt('单位')" width="90" />
         </template>
       </el-table>
     </div>
@@ -88,85 +88,85 @@
     <div class="bom-md-sec">
       <div class="bom-md-head">
         <div>
-          <span class="bom-md-title">{{ reverse ? '父件（该子件被用于）' : '子件' }}：{{ curMasterLabel }}</span>
-          <span class="bom-md-count">共 {{ curRows.length }} 项</span>
+          <span class="bom-md-title">{{ reverse ? tt('父件（该子件被用于）') : tt('子件') }}：{{ curMasterLabel }}</span>
+          <span class="bom-md-count">{{ tt('共') }} {{ curRows.length }} {{ tt('项') }}</span>
         </div>
-        <el-button v-if="editable" type="primary" size="small" :icon="Plus" @click="addChild">新增子件</el-button>
+        <el-button v-if="editable" type="primary" size="small" :icon="Plus" @click="addChild">{{ tt('新增子件') }}</el-button>
       </div>
       <el-table :data="curRows" :row-key="childRowKey" border size="small" height="260">
-        <el-table-column type="index" label="序号" width="60" align="center" :index="(index) => index + 1" />
+        <el-table-column type="index" :label="tt('序号')" width="60" align="center" :index="(index) => index + 1" />
         <template v-if="!reverse">
-          <el-table-column prop="子件编码" label="子件编码" min-width="130">
+          <el-table-column prop="子件编码" :label="tt('子件编码')" min-width="130">
             <template #default="{ row }">
               <button v-if="editable" type="button" class="bom-ref" @click.stop="openRef('子件编码', row)">
-                {{ row['子件编码'] || '请选择' }}
+                {{ row['子件编码'] || tt('请选择') }}
                 <el-icon><Search /></el-icon>
               </button>
               <span v-else>{{ row['子件编码'] || '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="子件名称" label="子件名称" min-width="160" show-overflow-tooltip>
+          <el-table-column prop="子件名称" :label="tt('子件名称')" min-width="160" show-overflow-tooltip>
             <template #default="{ row }">
               <el-input v-if="editable" v-model="row['子件名称']" @change="emitRows" />
               <span v-else>{{ row['子件名称'] || '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="规格型号" label="规格型号" min-width="130">
+          <el-table-column prop="规格型号" :label="tt('规格型号')" min-width="130">
             <template #default="{ row }">
               <el-input v-if="editable" v-model="row['规格型号']" @change="emitRows" />
               <span v-else>{{ row['规格型号'] || '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="子件计量单位" label="单位" width="110">
+          <el-table-column prop="子件计量单位" :label="tt('单位')" width="110">
             <template #default="{ row }">
               <el-select v-if="editable" v-model="row['子件计量单位']" filterable allow-create @change="emitRows">
-                <el-option v-for="option in optionsOf('子件计量单位')" :key="option" :label="option" :value="option" />
+                <el-option v-for="option in optionsOf('子件计量单位')" :key="option" :label="tt(option)" :value="option" />
               </el-select>
               <span v-else>{{ row['子件计量单位'] || '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="定额数量" label="定额数量" width="120" align="right">
+          <el-table-column prop="定额数量" :label="tt('定额数量')" width="120" align="right">
             <template #default="{ row }">
               <el-input-number v-if="editable" v-model="row['定额数量']" :controls="false" @change="emitRows" />
               <span v-else>{{ row['定额数量'] ?? '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="损耗率%" label="损耗率%" width="110" align="right">
+          <el-table-column prop="损耗率%" :label="tt('损耗率%')" width="110" align="right">
             <template #default="{ row }">
               <el-input-number v-if="editable" v-model="row['损耗率%']" :controls="false" @change="emitRows" />
               <span v-else>{{ row['损耗率%'] ?? '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="需用数量" label="需用数量" width="120" align="right">
+          <el-table-column prop="需用数量" :label="tt('需用数量')" width="120" align="right">
             <template #default="{ row }">
               <el-input-number v-if="editable" v-model="row['需用数量']" :controls="false" @change="emitRows" />
               <span v-else>{{ row['需用数量'] ?? '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="备注" label="备注" min-width="150">
+          <el-table-column prop="备注" :label="tt('备注')" min-width="150">
             <template #default="{ row }">
               <el-input v-if="editable" v-model="row['备注']" @change="emitRows" />
               <span v-else>{{ row['备注'] || '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column v-if="editable" label="操作" width="64" fixed="right" align="center">
+          <el-table-column v-if="editable" :label="tt('操作')" width="64" fixed="right" align="center">
             <template #default="{ row }">
-              <el-button link type="danger" :icon="Delete" title="删除子件" @click="removeChild(row)" />
+              <el-button link type="danger" :icon="Delete" :title="tt('删除子件')" @click="removeChild(row)" />
             </template>
           </el-table-column>
         </template>
         <template v-else>
-          <el-table-column prop="父件编码" label="父件编码" min-width="110" show-overflow-tooltip />
-          <el-table-column prop="父件名称" label="父件名称" min-width="150" show-overflow-tooltip />
-          <el-table-column prop="版本号" label="版本号" width="100" />
-          <el-table-column prop="默认BOM" label="默认BOM" width="90" align="center">
+          <el-table-column prop="父件编码" :label="tt('父件编码')" min-width="110" show-overflow-tooltip />
+          <el-table-column prop="父件名称" :label="tt('父件名称')" min-width="150" show-overflow-tooltip />
+          <el-table-column prop="版本号" :label="tt('版本号')" width="100" />
+          <el-table-column prop="默认BOM" :label="tt('默认BOM')" width="90" align="center">
             <template #default="{ row }">{{ fmtBool(row['默认BOM']) }}</template>
           </el-table-column>
-          <el-table-column prop="计量单位" label="计量单位" width="90" />
-          <el-table-column prop="生产数量" label="生产数量" width="90" align="right" />
+          <el-table-column prop="计量单位" :label="tt('计量单位')" width="90" />
+          <el-table-column prop="生产数量" :label="tt('生产数量')" width="90" align="right" />
         </template>
       </el-table>
-      <div v-if="!curRows.length && !editable" class="bom-md-empty">请选择上方 {{ reverse ? '子件' : '父件' }} 查看对应明细</div>
+      <div v-if="!curRows.length && !editable" class="bom-md-empty">{{ tt('请选择上方') }} {{ reverse ? tt('子件') : tt('父件') }} {{ tt('查看对应明细') }}</div>
     </div>
 
     <RefPickDialog v-model="refVisible" :field="refPick?.field" mode="header" @confirm="onRefConfirm" />
@@ -176,6 +176,7 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { Delete, Plus, Search } from '@element-plus/icons-vue'
+import { tt } from '@/i18n'
 import RefPickDialog from './RefPickDialog.vue'
 
 const props = defineProps({
@@ -272,7 +273,7 @@ const curMasterLabel = computed(() => {
   const label = props.reverse
     ? `${master['子件编码'] || ''} ${master['子件名称'] || ''}`
     : `${master['父件编码'] || ''} ${master['父件名称'] || ''}`
-  return label.trim() || '待选择父件'
+  return label.trim() || tt('待选择父件')
 })
 const curRows = computed(() => {
   if (props.editable && !props.reverse) return localRows.value
@@ -351,13 +352,13 @@ function onRefConfirm(rows) {
 
 function validate() {
   if (!props.editable || props.reverse) return ''
-  if (!String(parentDraft['父件编码'] || '').trim()) return '父件编码不能为空'
-  if (!String(parentDraft['父件名称'] || '').trim()) return '父件名称不能为空'
-  if (!localRows.value.length) return '请至少添加一行子件'
+  if (!String(parentDraft['父件编码'] || '').trim()) return tt('父件编码不能为空')
+  if (!String(parentDraft['父件名称'] || '').trim()) return tt('父件名称不能为空')
+  if (!localRows.value.length) return tt('请至少添加一行子件')
   for (let index = 0; index < localRows.value.length; index++) {
     const row = localRows.value[index]
-    if (!String(row['子件编码'] || '').trim()) return `子件第 ${index + 1} 行子件编码不能为空`
-    if (row['子件编码'] === parentDraft['父件编码']) return `子件第 ${index + 1} 行不能与父件相同`
+    if (!String(row['子件编码'] || '').trim()) return tt('子件第') + ' ' + (index + 1) + ' ' + tt('行子件编码不能为空')
+    if (row['子件编码'] === parentDraft['父件编码']) return tt('子件第') + ' ' + (index + 1) + ' ' + tt('行不能与父件相同')
   }
   syncParent()
   return ''
@@ -373,7 +374,7 @@ function masterRowCls({ row }) {
 }
 
 function fmtBool(value) {
-  return value === true || value === 'true' || value === 1 || value === '1' ? '是' : ''
+  return value === true || value === 'true' || value === 1 || value === '1' ? tt('是') : ''
 }
 
 defineExpose({ validate })

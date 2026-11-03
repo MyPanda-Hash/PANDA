@@ -15,10 +15,10 @@
           type="button"
           class="nc-ref"
           :class="[`type-${cfg.type}`, { active: visible === cfg.type }]"
-          :aria-label="`${cfg.title}${badge[cfg.type] ? `，${badge[cfg.type]} 条` : ''}`"
+          :aria-label="`${tt(cfg.title)}${badge[cfg.type] ? `，${badge[cfg.type]} ${tt('条')}` : ''}`"
           @click="visible = visible === cfg.type ? null : cfg.type"
         >
-          <el-tooltip :content="cfg.title" placement="bottom">
+          <el-tooltip :content="tt(cfg.title)" placement="bottom">
             <el-badge :value="badge[cfg.type]" :max="99" :hidden="!badge[cfg.type]" class="nc-badge">
               <el-icon><component :is="cfg.icon" /></el-icon>
             </el-badge>
@@ -27,10 +27,10 @@
       </template>
       <div class="nc-head">
         <div class="nc-heading">
-          <span class="nc-title">{{ cfg.title }}</span>
+          <span class="nc-title">{{ tt(cfg.title) }}</span>
           <span class="nc-scope">{{ user.account || user.realName }}</span>
         </div>
-        <span class="nc-more" @click="openHistory(cfg)">全部 {{ badge[cfg.type] || 0 }} 项</span>
+        <span class="nc-more" @click="openHistory(cfg)">{{ tt('全部') }} {{ badge[cfg.type] || 0 }} {{ tt('项') }}</span>
       </div>
       <div v-loading="loadingMap[cfg.type]" class="nc-list">
         <div
@@ -47,31 +47,31 @@
           <div class="nc-item-summary">{{ n.content }}</div>
           <div class="nc-item-time">{{ n.time }}</div>
         </div>
-        <el-empty v-if="!listMap[cfg.type]?.length" description="暂无数据" :image-size="50" />
+        <el-empty v-if="!listMap[cfg.type]?.length" :description="tt('暂无数据')" :image-size="50" />
       </div>
     </el-popover>
 
-    <el-dialog v-model="detailVisible" :title="current?.typeTitle || '消息通知'" width="560px" append-to-body>
+    <el-dialog v-model="detailVisible" :title="current?.typeTitle ? tt(current.typeTitle) : tt('消息通知')" width="560px" append-to-body>
       <div v-if="current" class="nc-detail">
         <div class="nc-detail-head">
-          <el-tag size="small" :type="current.tagType">{{ current.typeTitle }}</el-tag>
+          <el-tag size="small" :type="current.tagType">{{ tt(current.typeTitle) }}</el-tag>
           <span class="nc-detail-title">{{ current.title }}</span>
         </div>
         <div class="nc-detail-time">{{ current.time }}</div>
         <div class="nc-detail-content">{{ current.content }}</div>
       </div>
       <template #footer>
-        <el-button @click="openHistory(currentCrg)">全部记录</el-button>
-        <el-button :disabled="!hasPrev" @click="step(-1)">上一条</el-button>
-        <el-button :disabled="!hasNext" @click="step(1)">下一条</el-button>
-        <el-button @click="detailVisible = false">关闭</el-button>
+        <el-button @click="openHistory(currentCrg)">{{ tt('全部记录') }}</el-button>
+        <el-button :disabled="!hasPrev" @click="step(-1)">{{ tt('上一条') }}</el-button>
+        <el-button :disabled="!hasNext" @click="step(1)">{{ tt('下一条') }}</el-button>
+        <el-button @click="detailVisible = false">{{ tt('关闭') }}</el-button>
         <el-button v-if="current?.targetPath" type="primary" @click="goCurrent">
-          {{ current.actionLabel || '前往处理' }}
+          {{ current.actionLabel || tt('前往处理') }}
         </el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="historyVisible" :title="`${historyCrg.title}记录`" width="620px" append-to-body>
+    <el-dialog v-model="historyVisible" :title="`${tt(historyCrg.title)}${tt('记录')}`" width="620px" append-to-body>
       <div class="nc-history">
         <div
           v-for="n in historyList"
@@ -81,14 +81,14 @@
           @click="openDetail(n, historyCrg)"
         >
           <div class="nc-item-top">
-            <el-tag size="small" :type="n.tagType" class="nc-h-tag">{{ n.typeTitle }}</el-tag>
+            <el-tag size="small" :type="n.tagType" class="nc-h-tag">{{ tt(n.typeTitle) }}</el-tag>
             <span class="nc-item-title">{{ n.title }}</span>
             <span v-if="!n.read" class="nc-dot"></span>
           </div>
           <div class="nc-item-summary">{{ n.content }}</div>
           <div class="nc-item-time">{{ n.time }}</div>
         </div>
-        <el-empty v-if="!historyList.length" description="暂无历史消息" :image-size="60" />
+        <el-empty v-if="!historyList.length" :description="tt('暂无历史消息')" :image-size="60" />
       </div>
     </el-dialog>
   </div>
@@ -99,6 +99,7 @@ import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiGetBadge, apiGetNotices } from '@/business/api'
 import { useUserStore } from '@/stores/user'
+import { tt } from '@/i18n'
 
 const router = useRouter()
 const user = useUserStore()

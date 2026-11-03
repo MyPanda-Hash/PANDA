@@ -23,7 +23,7 @@ import java.util.Set;
 public class MenuPanelRegistry {
 
     static final String RESOURCE = "panels/missing-panel-configs.json";
-    static final String VERSION = "menu-panel-1.0";
+    static final String VERSION = "MP1.0";
     static final Set<String> PANEL_CODES = Set.of(
             "LOCATION_ADJUST", "OUTSOURCE_FEE", "OUTSOURCE_IN", "OUTSOURCE_ISSUE", "OUTSOURCE_ORDER",
             "PU_COST_ALLOC", "PU_INVOICE", "PU_REQ_ANALYSIS", "SERIAL_NO", "SERIAL_STATUS",

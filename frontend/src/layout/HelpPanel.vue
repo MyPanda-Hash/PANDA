@@ -17,7 +17,7 @@
             :class="{ active: app.helpTab === t.key }"
             @click="app.helpTab = t.key"
           >
-            <span>{{ t.title }}</span>
+            <span>{{ tt(t.title) }}</span>
             <span v-if="t.key === 'message' && unread" class="hp-badge">{{ unread }}</span>
           </li>
         </ul>
@@ -27,8 +27,8 @@
         <!-- 动态 -->
         <div v-if="app.helpTab === 'dynamic'" class="hp-list">
           <div v-for="d in dynamics" :key="d.id" class="hp-dyn">
-            <div class="hp-dyn-title">{{ d.title }}</div>
-            <div class="hp-dyn-desc">{{ d.desc }}</div>
+            <div class="hp-dyn-title">{{ tt(d.title) }}</div>
+            <div class="hp-dyn-desc">{{ tt(d.desc) }}</div>
             <div class="hp-dyn-time">{{ d.time }}</div>
           </div>
         </div>
@@ -37,12 +37,12 @@
         <div v-if="app.helpTab === 'message'" class="hp-list">
           <div v-for="m in messages" :key="m.id" class="hp-msg" :class="{ unread: !m.read }">
             <div class="hp-msg-top">
-              <span class="hp-msg-title">{{ m.title }}</span>
+              <span class="hp-msg-title">{{ tt(m.title) }}</span>
               <span v-if="!m.read" class="hp-dot"></span>
             </div>
             <div class="hp-msg-time">{{ m.time }}</div>
           </div>
-          <el-empty v-if="!messages.length" description="暂无消息" :image-size="50" />
+          <el-empty v-if="!messages.length" :description="tt('暂无消息')" :image-size="50" />
         </div>
 
         <!-- 知识库 -->
@@ -50,27 +50,27 @@
           <el-collapse v-model="openFaqs">
             <el-collapse-item v-for="f in faqs" :key="f.q" :name="f.q">
               <template #title>
-                <span class="hp-faq-q">{{ f.q }}</span>
+                <span class="hp-faq-q">{{ tt(f.q) }}</span>
               </template>
-              <div class="hp-faq-a">{{ f.a }}</div>
+              <div class="hp-faq-a">{{ tt(f.a) }}</div>
             </el-collapse-item>
           </el-collapse>
         </div>
 
         <!-- 帮助教程 -->
         <div v-if="app.helpTab === 'help'" class="hp-list">
-          <div class="hp-section-title">新手引导</div>
+          <div class="hp-section-title">{{ tt('新手引导') }}</div>
           <div v-for="(s, i) in guide" :key="s.title" class="hp-guide">
             <span class="hp-guide-step">{{ i + 1 }}</span>
             <div class="hp-guide-body">
-              <div class="hp-guide-title">{{ s.title }}</div>
-              <div class="hp-guide-desc">{{ s.desc }}</div>
+              <div class="hp-guide-title">{{ tt(s.title) }}</div>
+              <div class="hp-guide-desc">{{ tt(s.desc) }}</div>
             </div>
           </div>
-          <div class="hp-section-title mt16">常用操作</div>
+          <div class="hp-section-title mt16">{{ tt('常用操作') }}</div>
           <div v-for="s in shortcuts" :key="s.title" class="hp-shortcut" @click="doShortcut(s)">
             <el-icon><component :is="s.icon" /></el-icon>
-            <span>{{ s.title }}</span>
+            <span>{{ tt(s.title) }}</span>
           </div>
         </div>
       </div>
@@ -83,6 +83,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useTabsStore } from '@/stores/tabs'
+import { tt } from '@/i18n'
 
 const app = useAppStore()
 const tabs = useTabsStore()
