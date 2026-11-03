@@ -1,14 +1,13 @@
 @echo off
-chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
 set "ROOT=%~dp0"
 
-rem U ç›˜å¤šæœºç¯å¢ƒï¼šå„æœºç«¯å£ä¸åŒæ—¶ä¸æ”¹ä»»ä½•æ–‡ä»¶ï¼Œåªè®¾ç¯å¢ƒå˜é‡ï¼ˆcmd æˆ–ç³»ç»Ÿç¯å¢ƒå˜é‡å‡å¯ï¼‰ï¼š
-rem   set MES_DB_PORT=3306        ï¼ˆMySQL ç«¯å£ï¼Œé»˜è®¤ 3308ï¼‰
-rem   set MES_HTTP_PORT=8081      ï¼ˆåç«¯ HTTP ç«¯å£ï¼Œé»˜è®¤ 8080ï¼‰
-rem   set SPRING_DATASOURCE_PASSWORD=xxx ï¼ˆMySQL å¯†ç ï¼Œå¿…å¡«ï¼‰
-rem   set MES_JWT_SECRET=xxx       ï¼ˆè‡³å°‘ 64 ä½å¯†ç å­¦å®‰å…¨éšæœºå€¼ï¼Œå¿…å¡«ï¼‰
+rem U ÅÌ¶à»ú»·¾³£º¸÷»ú¶Ë¿Ú²»Í¬Ê±²»¸ÄÈÎºÎÎÄ¼ş£¬Ö»Éè»·¾³±äÁ¿£¨cmd »òÏµÍ³»·¾³±äÁ¿¾ù¿É£©£º
+rem   set MES_DB_PORT=3306        £¨MySQL ¶Ë¿Ú£¬Ä¬ÈÏ 3308£©
+rem   set MES_HTTP_PORT=8081      £¨ºó¶Ë HTTP ¶Ë¿Ú£¬Ä¬ÈÏ 8080£©
+rem   set SPRING_DATASOURCE_PASSWORD=xxx £¨MySQL ÃÜÂë£¬±ØÌî£©
+rem   set MES_JWT_SECRET=xxx       £¨ÖÁÉÙ 64 Î»ÃÜÂëÑ§°²È«Ëæ»úÖµ£¬±ØÌî£©
 if not defined MES_DB_PORT set "MES_DB_PORT=3308"
 if not defined MES_HTTP_PORT set "MES_HTTP_PORT=8080"
 
@@ -17,59 +16,59 @@ if errorlevel 1 goto :fail
 
 where npm >nul 2>&1
 if errorlevel 1 (
-  echo [é”™è¯¯] æœªæ‰¾åˆ° npmï¼Œè¯·ç¡®è®¤ Node.js å·²åŠ å…¥ PATHã€‚
+  echo [´íÎó] Î´ÕÒµ½ npm£¬ÇëÈ·ÈÏ Node.js ÒÑ¼ÓÈë PATH¡£
   goto :fail
 )
 
 if not exist "%ROOT%backend\target\light-mes-backend-0.1.0.jar" (
-  echo [é”™è¯¯] æœªæ‰¾åˆ°åç«¯ jarï¼Œè¯·å…ˆè¿è¡Œ backend\build.batã€‚
+  echo [´íÎó] Î´ÕÒµ½ºó¶Ë jar£¬ÇëÏÈÔËĞĞ backend\build.bat¡£
   goto :fail
 )
 if not exist "%ROOT%frontend\dist\index.html" (
-  echo [é”™è¯¯] æœªæ‰¾åˆ°å‰ç«¯æ„å»ºäº§ç‰©ï¼Œè¯·å…ˆåœ¨ frontend ç›®å½•è¿è¡Œ npm run buildã€‚
+  echo [´íÎó] Î´ÕÒµ½Ç°¶Ë¹¹½¨²úÎï£¬ÇëÏÈÔÚ frontend Ä¿Â¼ÔËĞĞ npm run build¡£
   goto :fail
 )
 
 netstat -ano | findstr ":%MES_DB_PORT%" | findstr "LISTENING" >nul 2>&1
 if errorlevel 1 (
-  echo [é”™è¯¯] MySQL æœªåœ¨ %MES_DB_PORT% ç«¯å£è¿è¡Œï¼Œè¯·å…ˆå¯åŠ¨ MySQLï¼ˆæˆ– set MES_DB_PORT=å®é™…ç«¯å£ï¼‰ã€‚
+  echo [´íÎó] MySQL Î´ÔÚ %MES_DB_PORT% ¶Ë¿ÚÔËĞĞ£¬ÇëÏÈÆô¶¯ MySQL£¨»ò set MES_DB_PORT=Êµ¼Ê¶Ë¿Ú£©¡£
   goto :fail
 )
-echo [1/3] MySQL å·²è¿è¡Œï¼ˆ%MES_DB_PORT%ï¼‰
+echo [1/3] MySQL ÒÑÔËĞĞ£¨%MES_DB_PORT%£©
 
 if not defined SPRING_DATASOURCE_PASSWORD (
-  echo [é”™è¯¯] æœªè®¾ç½® SPRING_DATASOURCE_PASSWORDï¼Œè¯·å…ˆé…ç½®æ•°æ®åº“å¯†ç ã€‚
+  echo [´íÎó] Î´ÉèÖÃ SPRING_DATASOURCE_PASSWORD£¬ÇëÏÈÅäÖÃÊı¾İ¿âÃÜÂë¡£
   goto :fail
 )
 if not defined MES_JWT_SECRET (
-  echo [é”™è¯¯] æœªè®¾ç½® MES_JWT_SECRETï¼Œè¯·å…ˆé…ç½®è‡³å°‘ 64 ä½éšæœºå¯†é’¥ã€‚
+  echo [´íÎó] Î´ÉèÖÃ MES_JWT_SECRET£¬ÇëÏÈÅäÖÃÖÁÉÙ 64 Î»Ëæ»úÃÜÔ¿¡£
   goto :fail
 )
 
 netstat -ano | findstr ":%MES_HTTP_PORT%" | findstr "LISTENING" >nul 2>&1
 if errorlevel 1 (
-  echo [2/3] å¯åŠ¨åç«¯ï¼ˆ%MES_HTTP_PORT%ï¼‰...
+  echo [2/3] Æô¶¯ºó¶Ë£¨%MES_HTTP_PORT%£©...
   start "light-mes-backend" /min "%JAVA_HOME%\bin\java.exe" -jar "%ROOT%backend\target\light-mes-backend-0.1.0.jar"
 ) else (
-  echo [2/3] åç«¯å·²è¿è¡Œï¼ˆ%MES_HTTP_PORT%ï¼‰
+  echo [2/3] ºó¶ËÒÑÔËĞĞ£¨%MES_HTTP_PORT%£©
 )
 
 netstat -ano | findstr ":4173" | findstr "LISTENING" >nul 2>&1
 if errorlevel 1 (
-  echo [3/3] å¯åŠ¨å‰ç«¯é¢„è§ˆï¼ˆ4173ï¼‰...
+  echo [3/3] Æô¶¯Ç°¶ËÔ¤ÀÀ£¨4173£©...
   start "light-mes-frontend" /min /D "%ROOT%frontend" cmd /c npm run preview
 ) else (
-  echo [3/3] å‰ç«¯å·²è¿è¡Œï¼ˆ4173ï¼‰
+  echo [3/3] Ç°¶ËÒÑÔËĞĞ£¨4173£©
 )
 
 timeout /t 5 /nobreak >nul
 start "" http://127.0.0.1:4173/
-echo è®¿é—®åœ°å€: http://127.0.0.1:4173/
+echo ·ÃÎÊµØÖ·: http://127.0.0.1:4173/
 goto :end
 
 :fail
 echo.
-echo å¯åŠ¨ä¸­æ­¢ã€‚
+echo Æô¶¯ÖĞÖ¹¡£
 
 :end
 pause

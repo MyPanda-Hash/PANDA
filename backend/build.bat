@@ -1,29 +1,28 @@
 @echo off
-chcp 65001 >nul
 setlocal
 call "%~dp0..\tools\detect-jdk.bat"
 if errorlevel 1 goto :fail
 
 set "MAVEN_HOME=%~dp0..\tools\apache-maven-3.9.9"
 if not exist "%MAVEN_HOME%\bin\mvn.cmd" (
-  echo [é”™è¯¯] æœªæ‰¾åˆ°ä¾¿æº Mavenï¼š%MAVEN_HOME%
+  echo [´íÎó] Î´ÕÒµ½±ãĞ¯ Maven£º%MAVEN_HOME%
   goto :fail
 )
 
 cd /d "%~dp0"
-echo [æ„å»º] æ­£åœ¨æ‰“åŒ…åç«¯ï¼ˆè·³è¿‡æµ‹è¯•ï¼‰...
+echo [¹¹½¨] ÕıÔÚ´ò°üºó¶Ë£¨Ìø¹ı²âÊÔ£©...
 call "%MAVEN_HOME%\bin\mvn.cmd" -s "%~dp0..\tools\settings.xml" -q clean package -DskipTests
 if errorlevel 1 (
-  echo [FAIL] æ„å»ºå¤±è´¥ï¼Œè¯·æŸ¥çœ‹ä¸Šæ–¹é”™è¯¯ä¿¡æ¯
+  echo [FAIL] ¹¹½¨Ê§°Ü£¬Çë²é¿´ÉÏ·½´íÎóĞÅÏ¢
   goto :fail
 )
 
 echo.
-echo [OK] æ„å»ºæˆåŠŸ: target\light-mes-backend-0.1.0.jar
+echo [OK] ¹¹½¨³É¹¦: target\light-mes-backend-0.1.0.jar
 goto :end
 
 :fail
 echo.
-echo æ„å»ºä¸­æ­¢ã€‚
+echo ¹¹½¨ÖĞÖ¹¡£
 :end
 pause
