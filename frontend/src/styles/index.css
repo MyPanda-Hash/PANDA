@@ -18,6 +18,12 @@
   --t-border-light: #edf1ef;
   --t-hover-bg: #e9f3f0;
 
+  /* AI 入口浅色底（与主色同族，明暗两套各自成立；对齐 antd colorPrimaryBg 的用法） */
+  --t-primary-tint: #e8f1ef;
+  --t-primary-tint-hover: #d7e7e3;
+  --t-primary-tint-press: #c8ded9;
+  --t-primary-tint-border: #b8d3ce;
+
   --el-color-primary: #116a5b;
   --el-color-primary-light-3: #58958a;
   --el-color-primary-light-5: #88b4ac;
@@ -43,6 +49,12 @@ html.dark {
   --t-border: #35423d;
   --t-border-light: #303c37;
   --t-hover-bg: #293a34;
+
+  /* 深色下用主色的半透明叠加，避免浅色底在深色顶栏里发白 */
+  --t-primary-tint: rgba(88, 176, 158, 0.16);
+  --t-primary-tint-hover: rgba(88, 176, 158, 0.26);
+  --t-primary-tint-press: rgba(88, 176, 158, 0.34);
+  --t-primary-tint-border: rgba(88, 176, 158, 0.42);
 
   --el-bg-color: #222c28;
   --el-bg-color-page: #18201d;

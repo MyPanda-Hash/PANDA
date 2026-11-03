@@ -44,6 +44,14 @@
 
     <!-- ===== 右：搜索 / 更新公告 / 移动端 / 通知角标 / 全屏 / 帮助 / 用户 ===== -->
     <div class="t-right">
+      <!-- AI 数字员工入口：新标签打开独立的 AI 对话服务（后续接账号单点登录） -->
+      <el-tooltip :content="tt('打开 AI 数字员工')" placement="bottom">
+        <button type="button" class="ai-entry" @click="goAiAssistant">
+          <el-icon class="ai-entry-ic"><MagicStick /></el-icon>
+          <span class="ai-entry-label">{{ tt('AI 数字员工') }}</span>
+        </button>
+      </el-tooltip>
+
       <!-- 内嵌全局搜索（T+ 形态：顶栏内输入框 + 下拉结果） -->
       <div class="search-wrap" ref="searchWrapRef">
         <el-input
@@ -232,7 +240,8 @@ import { useTabsStore } from '@/stores/tabs'
 import { useLocaleStore } from '@/stores/locale'
 import { tt } from '@/i18n'
 import { flatMenus, menuTree as rawMenuTree, filterMenuTree } from '@/business/menus'
-import { apiGetNotices } from '@/business/api'
+import { apiGetNotices, apiGetAiSsoTicket } from '@/business/api'
+import { openAiAssistant } from '@/business/ai-assistant'
 import { ElMessage } from 'element-plus'
 import NoticeCenter from './NoticeCenter.vue'
 import UiSettingsDialog from './UiSettingsDialog.vue'
@@ -313,6 +322,12 @@ function openNotice(n) {
 async function refreshFactories() {
   await user.fetchFactories()
   ElMessage.success(tt('企业信息已刷新'))
+}
+
+// ---------- AI 数字员工入口 ----------
+// 向后端要 60 秒票据后免密进入；后端没配密钥就退回只打开对话页
+function goAiAssistant() {
+  openAiAssistant(apiGetAiSsoTicket)
 }
 
 // ---------- 帮助下拉 ----------
@@ -464,6 +479,39 @@ function changePwd() {
   align-items: center;
   gap: 14px;
   flex-shrink: 0;
+}
+
+/* AI 数字员工入口：设计库规格（控件高 32 / 圆角 6 / 图标 16 / 间距 6），品牌绿浅色底做唯一记忆点 */
+.ai-entry {
+  height: 32px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--t-primary-tint-border);
+  border-radius: 6px;
+  background: var(--t-primary-tint);
+  color: var(--t-primary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+.ai-entry:hover {
+  background: var(--t-primary-tint-hover);
+  border-color: var(--t-primary);
+}
+.ai-entry:active {
+  background: var(--t-primary-tint-press);
+}
+.ai-entry:focus-visible {
+  outline: 2px solid var(--t-primary);
+  outline-offset: 1px;
+}
+.ai-entry-ic {
+  font-size: 16px;
 }
 
 .search-wrap {
@@ -792,6 +840,7 @@ function changePwd() {
   }
   /* 次要图标与文字入口隐藏，保留通知/用户 */
   .refresh-icon,
+  .ai-entry,
   .gonggao,
   .bar-icon {
     display: none;
