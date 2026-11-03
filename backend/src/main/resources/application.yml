@@ -13,8 +13,8 @@ spring:
   datasource:
     # 主机/端口环境变量化（默认回归提交约定 localhost:3308），多机 U 盘环境不再改文件
     url: jdbc:mysql://${MES_DB_HOST:localhost}:${MES_DB_PORT:3308}/light_mes?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: root
-    password: "${SPRING_DATASOURCE_PASSWORD:CHANGE_ME}" # 本地/生产环境均通过环境变量注入
+    username: "${SPRING_DATASOURCE_USERNAME:root}"
+    password: "${SPRING_DATASOURCE_PASSWORD:}" # 本地/生产环境均通过环境变量注入
     driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:
@@ -23,7 +23,8 @@ spring:
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # SQL 仅按日志级别输出，避免生产环境默认打印业务参数。
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
   global-config:
     db-config:
       id-type: auto
@@ -31,8 +32,8 @@ mybatis-plus:
 mes:
   jwt:
     # 生产环境必须通过环境变量 MES_JWT_SECRET 注入随机值（历史版本曾提交真实密钥且已公开，须轮换）
-    secret: "CHANGE_ME_RANDOM_HEX_64"
-    expire-hours: 24
+    secret: "${MES_JWT_SECRET:}"
+    expire-hours: "${MES_JWT_EXPIRE_HOURS:24}"
   ocr:
     access-key-id: "${ALIBABA_CLOUD_ACCESS_KEY_ID:}"
     access-key-secret: "${ALIBABA_CLOUD_ACCESS_KEY_SECRET:}"

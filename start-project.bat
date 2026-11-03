@@ -8,6 +8,7 @@ rem U 盘多机环境：各机端口不同时不改任何文件，只设环境�
 rem   set MES_DB_PORT=3306        （MySQL 端口，默认 3308）
 rem   set MES_HTTP_PORT=8081      （后端 HTTP 端口，默认 8080）
 rem   set SPRING_DATASOURCE_PASSWORD=xxx （MySQL 密码，必填）
+rem   set MES_JWT_SECRET=xxx       （至少 64 位密码学安全随机值，必填）
 if not defined MES_DB_PORT set "MES_DB_PORT=3308"
 if not defined MES_HTTP_PORT set "MES_HTTP_PORT=8080"
 
@@ -37,7 +38,12 @@ if errorlevel 1 (
 echo [1/3] MySQL 已运行（%MES_DB_PORT%）
 
 if not defined SPRING_DATASOURCE_PASSWORD (
-  echo [警告] 未设置 SPRING_DATASOURCE_PASSWORD，后端可能连不上数据库。
+  echo [错误] 未设置 SPRING_DATASOURCE_PASSWORD，请先配置数据库密码。
+  goto :fail
+)
+if not defined MES_JWT_SECRET (
+  echo [错误] 未设置 MES_JWT_SECRET，请先配置至少 64 位随机密钥。
+  goto :fail
 )
 
 netstat -ano | findstr ":%MES_HTTP_PORT%" | findstr "LISTENING" >nul 2>&1
@@ -58,7 +64,7 @@ if errorlevel 1 (
 
 timeout /t 5 /nobreak >nul
 start "" http://127.0.0.1:4173/
-echo 访问地址: http://127.0.0.1:4173/  账号: admin / 123456
+echo 访问地址: http://127.0.0.1:4173/
 goto :end
 
 :fail
