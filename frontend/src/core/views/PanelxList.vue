@@ -138,10 +138,12 @@
       <div class="report-heading">
         <strong>{{ panelName }}</strong>
         <span>{{ reportPeriod }}</span>
+
       </div>
       <el-table
         class="report-table"
         :data="list"
+        @header-contextmenu="(column, ev) => openColMenu('report', column.property, ev)"
         border
         stripe
         size="small"
@@ -167,11 +169,24 @@
           <el-table-column
             v-else
             :prop="column.prop"
-            :label="column.label"
             :min-width="column.width"
             :align="column.align"
+            :label-class-name="'hcol-' + column.prop"
             show-overflow-tooltip
-          />
+          >
+            <template #header>
+              <input
+                v-if="renaming.on && renaming.scope === 'report' && renaming.prop === column.prop"
+                v-model="renaming.text"
+                class="col-rename-input"
+                :ref="(el) => el && el.focus()"
+                @keyup.enter="commitRename"
+                @keyup.esc="cancelRename"
+                @blur="commitRename"
+              />
+              <span v-else class="col-hd" title="拖拽调序 · 双击改名 · 右键显隐" @dblclick="startRename('report', column.prop, column.label)">{{ column.label }}</span>
+            </template>
+          </el-table-column>
         </template>
       </el-table>
     </div>
@@ -198,9 +213,22 @@
             <span class="dt-ic" title="点行切换当前单据">定位</span>
           </span>
         </div>
-        <el-table :data="mainRows" border size="small" :row-class-name="mainRowCls" @row-click="onMainRowClick" @row-dblclick="openMaintain">
+        <el-table class="blk-main" :data="mainRows" border size="small" :row-class-name="mainRowCls" @row-click="onMainRowClick" @row-dblclick="openMaintain" @header-contextmenu="(column, ev) => openColMenu('main', column.property, ev)">
           <el-table-column type="index" label="序号" width="60" align="center" :index="(i) => i + 1" />
-          <el-table-column v-for="c in mainCols" :key="c" :prop="c" :label="c" min-width="110" show-overflow-tooltip />
+          <el-table-column v-for="c in mainCols" :key="c" :prop="c" :label-class-name="'hcol-' + c" min-width="110" show-overflow-tooltip>
+            <template #header>
+              <input
+                v-if="renaming.on && renaming.scope === 'main' && renaming.prop === c"
+                v-model="renaming.text"
+                class="col-rename-input"
+                :ref="(el) => el && el.focus()"
+                @keyup.enter="commitRename"
+                @keyup.esc="cancelRename"
+                @blur="commitRename"
+              />
+              <span v-else class="col-hd" title="拖拽调序 · 双击改名 · 右键显隐" @dblclick="startRename('main', c, mainColLabel(c))">{{ mainColLabel(c) }}</span>
+            </template>
+          </el-table-column>
         </el-table>
       </div>
       <!-- ══════════ ③ 表中 · 明细区块（配置驱动：区块内多页签，同 T+）══════════ -->
@@ -212,9 +240,18 @@
           <span class="dt-ics">
             <el-button v-if="detailEditable(b)" size="small" type="primary" :icon="Plus" @click="addInlineDetailRow(b)">新增数据</el-button>
             <span class="dt-ic" v-for="ic in b.isMain ? iconA : iconB" :key="ic" @click="onIcon(ic, b)">{{ ic }}</span>
+            <el-dropdown trigger="click" @command="(cmd) => onMoreCommand(cmd, b)">
+              <span class="dt-ic">更多▼</span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="列设置">列设置</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </span>
         </div>
         <el-table
+          :class="'blk-' + b.id"
           :data="blockRows(b)"
           :height="tableH(b)"
           border
@@ -228,17 +265,30 @@
           @cell-dblclick="(row, col, cell, ev) => onDetailCellDblclick(row, col, ev, b)"
           @row-click="(row) => onRowClick(row, b)"
           @click.capture="(e) => onTableClick(b, e)"
+          @header-contextmenu="(column, ev) => openColMenu(b, column.property, ev)"
         >
           <el-table-column v-if="delMode && b.isMain" type="selection" width="45" fixed="left" />
           <el-table-column
             v-for="c in blockCols(b)"
             :key="c.prop"
             :prop="c.prop"
-            :label="c.label"
             :min-width="c.width"
             :align="c.align"
+            :label-class-name="'hcol-' + c.prop"
             :show-overflow-tooltip="!detailEditable(b)"
           >
+            <template #header>
+              <input
+                v-if="renaming.on && renaming.scope === b.id && renaming.prop === c.prop"
+                v-model="renaming.text"
+                class="col-rename-input"
+                :ref="(el) => el && el.focus()"
+                @keyup.enter="commitRename"
+                @keyup.esc="cancelRename"
+                @blur="commitRename"
+              />
+              <span v-else class="col-hd" title="拖拽调序 · 双击改名 · 右键显隐" @dblclick="startRename(b.id, c.prop, c.label)">{{ c.label }}</span>
+            </template>
             <template #default="{ row }">
               <template v-if="detailEditable(b) && !row._placeholder">
                 <span v-if="c.field.computed" class="inline-computed-value">{{ formatFieldValue(c.field, row[c.prop]) }}</span>
@@ -369,6 +419,23 @@
     <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
     <DetailMaintainDialog v-model="maintainVisible" :panel-code="panelCode" :row="maintainRow" @saved="onMaintainSaved" />
     <VoucherFormDialog v-model="formVisible" :panel-code="formPanel || panelCode" :code="formCode" @saved="onFormSaved" />
+    <!-- 列设置浮层：显隐管理（拖拽表头调序 / 双击表头改名 / 右键表头打开） -->
+    <Teleport to="body">
+      <div v-if="colMenu.visible" class="col-menu" :style="{ left: colMenu.x + 'px', top: colMenu.y + 'px' }" @click.stop>
+        <div class="col-menu-title">列设置 · {{ colMenu.title }}</div>
+        <div class="col-menu-list">
+          <label v-for="c in colMenu.cols" :key="c.prop" class="col-menu-item">
+            <el-checkbox :model-value="c.visible" size="small" @update:model-value="(v) => onColMenuToggle(c.prop, v)" />
+            <span class="col-menu-name">{{ c.label }}</span>
+          </label>
+        </div>
+        <div class="col-menu-tip">表格里直接操作：拖拽表头调顺序 · 双击表头改栏名 · 右键表头打开本菜单</div>
+        <div class="col-menu-foot">
+          <el-button size="small" text @click="onColMenuReset">恢复默认</el-button>
+          <el-button size="small" text @click="colMenu.visible = false">关闭</el-button>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -389,6 +456,8 @@ import BomMasterDetail from './BomMasterDetail.vue'
 import ImportDialog from './ImportDialog.vue'
 import DetailMaintainDialog from './DetailMaintainDialog.vue'
 import VoucherFormDialog from './VoucherFormDialog.vue'
+import { defaultSettings, withReordered } from './tableColCustom'
+import { useColSettings } from './useColSettings'
 
 const engine = usePanelRuntime()
 const route = useRoute()
@@ -449,7 +518,16 @@ const reportPeriod = computed(() => {
   if (end) return `截至 ${end}`
   return '当前业务数据'
 })
-const reportColumns = computed(() => gridTabs.value[0]?.columns || [])
+// 报表列设置（顺序/栏名/显隐，与明细表格共用机制，key = :_report）
+const reportColSettings = computed(() => {
+  const cols = gridTabs.value[0]?.columns || []
+  const saved = getColSettings('report')
+  if (!saved) return cols
+  const visibleSaved = saved.filter((s) => s.visible !== false && cols.includes(s.prop)).map((s) => s.prop)
+  const extras = cols.filter((c) => !saved.some((s) => s.prop === c))
+  return [...visibleSaved, ...extras]
+})
+const reportColumns = computed(() => reportColSettings.value)
 const reportColumnTree = computed(() => {
   const groups = gridTabs.value[0]?.columnGroups || []
   const owner = new Map()
@@ -607,7 +685,14 @@ const mainGrid = computed(() => {
   const tp = cfgCache.value?.metadata?.panelPageDto?.tablePages?.[0]
   return tp?.mainTable || null
 })
-const mainCols = computed(() => (mainGrid.value?.columns || []).filter((c) => c !== '序号'))
+const mainCols = computed(() => {
+  const cols = (mainGrid.value?.columns || []).filter((c) => c !== '序号')
+  const saved = getColSettings({ key: '_main' })
+  if (!saved) return cols
+  const visibleSaved = saved.filter((s) => s.visible !== false && cols.includes(s.prop)).map((s) => s.prop)
+  const extras = cols.filter((c) => !saved.some((s) => s.prop === c))
+  return [...visibleSaved, ...extras]
+})
 // 主表固定 5 行（不足补占位，与明细区一致）
 const mainRows = computed(() => {
   const l = list.value
@@ -761,9 +846,18 @@ function tableH(b) {
 
 function blockCols(b) {
   const t = activeTab(b)
-  return (t.cols || []).map((c) => {
+  const saved = getColSettings(b)
+  let cols = (t.cols || [])
+  if (saved) {
+    // 用户自定义顺序 + 显隐；配置新增列自动追加到末尾
+    const savedProps = saved.filter((s) => s.visible !== false && cols.includes(s.prop)).map((s) => s.prop)
+    const extras = cols.filter((c) => !saved.some((s) => s.prop === c))
+    cols = [...savedProps, ...extras]
+  }
+  return cols.map((c) => {
     const f = fieldDefOf(c)
-    return { prop: c, label: c, field: f, width: colW(f), align: f.dataType === '小数' || f.dataType === '整数' ? 'right' : 'left' }
+    const savedCol = saved?.find((s) => s.prop === c)
+    return { prop: c, label: savedCol?.label || c, field: f, width: colW(f), align: f.dataType === '小数' || f.dataType === '整数' ? 'right' : 'left' }
   })
 }
 
@@ -818,11 +912,79 @@ function colW(f) {
 
 // ---------- 明细右键/图标操作（作用于当前活动区块） ----------
 const ctxItems = ['定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改', '销售订单查询', '存货中心', '更多']
-const iconA = ['☑ Ctrl+V列粘贴', '定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改', '销售订单查询', '存货中心', '更多▼']
-const iconB = ['现存量提取', '定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改', '更多▼']
+const iconA = ['☑ Ctrl+V列粘贴', '定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改', '销售订单查询', '存货中心']
+const iconB = ['现存量提取', '定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改']
 
 const ctxBlock = ref(null)
 const ctx = reactive({ visible: false, x: 0, y: 0, row: null })
+// ---------- 列设置（顺序/栏名/显隐）：共享状态机见 useColSettings.js，组件只注入差异点 ----------
+function spliceMove(arr, from, to) {
+  const nv = [...arr]
+  const [m] = nv.splice(from, 1)
+  nv.splice(t, 0, m)
+  return nv
+}
+
+function reorderBlock(b, from, to) {
+  const vis = blockCols(b).map((c) => c.prop)
+  const f = vis.indexOf(from)
+  const t = vis.indexOf(to)
+  if (f < 0 || t < 0 || f === t) return
+  saveColSettings(b, withReordered(getColSettings(b) || defaultSettings(activeTab(b)?.cols || []), spliceMove(vis, f, t)))
+}
+
+function reorderMain(from, to) {
+  const f = mainCols.value.indexOf(from)
+  const t = mainCols.value.indexOf(to)
+  if (f < 0 || t < 0 || f === t) return
+  const mainDefaults = (mainGrid.value?.columns || []).filter((c) => c !== '序号')
+  saveColSettings('main', withReordered(getColSettings('main') || defaultSettings(mainDefaults), spliceMove(mainCols.value, f, t)))
+}
+
+function mainColLabel(c) {
+  return getColSettings('main')?.find((s) => s.prop === c)?.label || c
+}
+
+const dragSig = computed(() =>
+  JSON.stringify({
+    blocks: blocks.value.map((b) => ({ id: b.id, cols: blockCols(b).map((c) => c.prop) })),
+    main: mainCols.value,
+  })
+)
+
+const {
+  menu: colMenu, renaming, lastPointer,
+  getSettings: getColSettings, saveSettings: saveColSettings,
+  openMenu: openColMenu, onMenuToggle: onColMenuToggle, onMenuReset: onColMenuReset,
+  startRename, cancelRename, commitRename,
+} = useColSettings({
+  panelCode,
+  // target：'report' | 'main' | 明细 block 对象
+  resolveTarget(target) {
+    if (target === 'main') return { key: '_main', defaults: (mainGrid.value?.columns || []).filter((c) => c !== '序号'), title: mainGrid.value?.label || '主表' }
+    if (target === 'report') return { key: '_report', defaults: gridTabs.value[0]?.columns || [], title: panelName.value || '报表' }
+    return { key: target?.key || activeTab(target)?.key || '_default', defaults: activeTab(target)?.cols || [], title: activeTab(target)?.label || '明细' }
+  },
+  targetFromScope(scope) {
+    if (scope === 'main' || scope === 'report') return scope
+    return blocks.value.find((x) => x.id === scope) || null
+  },
+  dragTargets() {
+    const list = blocks.value.map((b) => ({ selector: '.blk-' + b.id, onReorder: (f, t) => reorderBlock(b, f, t) }))
+    if (mainGrid.value) list.push({ selector: '.blk-main', onReorder: reorderMain })
+    return list
+  },
+  dragSignature: dragSig,
+})
+
+function onMoreCommand(cmd, b) {
+  ctxBlock.value = b
+  if (cmd === '列设置') {
+    openColMenu(b, null, { clientX: lastPointer.x, clientY: lastPointer.y, preventDefault() {} })
+    return
+  }
+  ElMessage.info(`演示环境暂未实现「${cmd}」，界面与 T+ 保持一致`)
+}
 
 const activeCols = computed(() => (ctxBlock.value ? blockCols(ctxBlock.value) : []))
 const activeData = computed(() => (ctxBlock.value ? blockData(ctxBlock.value) : []))
@@ -913,6 +1075,7 @@ function exportActive() {
 
 async function onIcon(it, b) {
   ctxBlock.value = b
+
   if (it === '复制到剪贴板') {
     copyActive()
     return
@@ -1418,7 +1581,9 @@ function qOptions(qr) {
 function reportLeaf(column) {
   const field = fieldDefOf(column)
   const numeric = field.dataType === '小数' || field.dataType === '整数'
-  return { prop: column, label: column, width: colW(field), align: numeric ? 'right' : 'left' }
+  const saved = getColSettings('report')
+  const savedCol = saved?.find((s) => s.prop === column)
+  return { prop: column, label: savedCol?.label || column, width: colW(field), align: numeric ? 'right' : 'left' }
 }
 
 async function reportPage(pageNo) {
@@ -1786,6 +1951,9 @@ async function onButton(action) {
   }
 }
 
+// 请求序号防竞态：快速切面板/连续查询时丢弃过期响应，避免旧面板数据写入当前页面
+let loadSeq = 0
+
 async function load() {
   delMode.value = false
   delSel.value = []
@@ -1793,12 +1961,14 @@ async function load() {
     ElMessage.error('面板编号无效，请从菜单重新进入')
     return
   }
+  const seq = ++loadSeq
   loading.value = true
   try {
     await loadCrg()
     const params = { panelCode: panelCode.value, condition: { ...condition }, pageNo: query.pageNo, pageSize: query.pageSize }
     if (query.keyword) params.keyword = query.keyword
     const res = await engine.queryFormDataList(params)
+    if (seq !== loadSeq) return
     list.value = res.list || []
     total.value = res.totalSize || 0
     if (curIdx.value >= list.value.length) curIdx.value = 0
@@ -1810,10 +1980,11 @@ async function load() {
       router.replace({ path: route.path, query: { ...route.query, focus: undefined } })
     }
   } catch (e) {
+    if (seq !== loadSeq) return
     const msg = engine.errMsg(e) || '加载失败'
     ElMessage.error(msg)
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
@@ -2828,3 +2999,7 @@ onUnmounted(() => {
   }
 }
 </style>
+
+
+
+

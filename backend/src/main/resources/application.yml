@@ -23,6 +23,7 @@ mybatis-plus:
 
 mes:
   jwt:
-    # 生产环境必须通过环境变量 MES_JWT_SECRET 注入随机值（历史版本曾提交真实密钥且已公开，须轮换）
-    secret: "CHANGE_ME_RANDOM_HEX_64"
+    # 必须通过环境变量 MES_JWT_SECRET 注入至少 32 字节随机串（openssl rand -hex 32）。
+    # 历史密钥曾提交进仓库且已公开，禁止复用；未配置或强度不足时应用拒绝启动（见 JwtUtil）。
+    secret: "${MES_JWT_SECRET:}"
     expire-hours: 24

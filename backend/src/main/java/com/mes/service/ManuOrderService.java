@@ -1,6 +1,7 @@
 package com.mes.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mes.entity.ManuOrder;
 import com.mes.entity.ManuOrderItem;
@@ -102,10 +103,15 @@ public class ManuOrderService {
         ManuOrder db = orderMapper.selectById(id);
         if (db == null) throw new IllegalArgumentException("单据不存在");
         if (db.getStatus() != 1) throw new IllegalStateException("仅已审核状态可弃审");
+        // 审计字段必须显式写 null：MyBatis-Plus 默认 NOT_NULL 策略不会把 updateById 里的 null 字段写进 UPDATE
+        orderMapper.update(null, new LambdaUpdateWrapper<ManuOrder>()
+                .eq(ManuOrder::getId, id)
+                .set(ManuOrder::getStatus, 0)
+                .set(ManuOrder::getAuditBy, null)
+                .set(ManuOrder::getAuditTime, null));
         db.setStatus(0);
         db.setAuditBy(null);
         db.setAuditTime(null);
-        orderMapper.updateById(db);
         return db;
     }
 

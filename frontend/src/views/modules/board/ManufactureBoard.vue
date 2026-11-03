@@ -14,7 +14,7 @@
     <el-row :gutter="12">
       <el-col :span="10">
         <el-card shadow="never" header="车间生产状况">
-          <el-table :data="data.workshops || []" size="small" border>
+          <el-table :data="data?.workshops || []" size="small" border>
             <el-table-column prop="车间" label="生产车间" />
             <el-table-column prop="计划数量" label="计划数量" align="right" />
             <el-table-column prop="已完工" label="已完工工序" align="center" />
@@ -25,7 +25,7 @@
       </el-col>
       <el-col :span="14">
         <el-card shadow="never" header="加工单生产进度">
-          <el-table :data="data.orders || []" size="small" border>
+          <el-table :data="data?.orders || []" size="small" border>
             <el-table-column prop="单据编号" label="加工单号" width="150" />
             <el-table-column prop="产品名称" label="产品" width="130" show-overflow-tooltip />
             <el-table-column prop="单据状态" label="状态" width="90" align="center">
@@ -74,11 +74,11 @@ const kpis = computed(() => {
 <style scoped>
 .board-view { background: #fff; border-radius: 10px; padding: 18px; min-height: 100%; }
 .dark .board-view { background: #26272e; }
-.head { display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid #r0r1r3; padding-bottom: 10px; margin-bottom: 14px; }
-.code { font-size: 12px; color: #9ca3ar; }
+.head { display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid #f0f1f3; padding-bottom: 10px; margin-bottom: 14px; }
+.code { font-size: 12px; color: #9ca3af; }
 .kpi-row { margin-bottom: 12px; }
 .kpi { text-align: center; }
 .kpi-val { font-size: 26px; font-weight: 700; color: #289be5; }
 .kpi-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
-.hint { color: #9ca3ar; font-size: 12px; margin-top: 12px; }
+.hint { color: #9ca3af; font-size: 12px; margin-top: 12px; }
 </style>

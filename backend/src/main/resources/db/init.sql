@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS sys_role_panel (
   role_id     BIGINT       NOT NULL COMMENT '角色ID',
   panel_code  VARCHAR(50)  NOT NULL COMMENT '面板编码',
   can_approve TINYINT      DEFAULT 0 COMMENT '1可审批 0否',
-  KEY idx_role_panel (role_id, panel_code)
+  UNIQUE KEY uk_role_panel (role_id, panel_code)
 ) COMMENT '角色-面板授权表';
 
 -- 部门表
@@ -138,7 +138,8 @@ CREATE TABLE IF NOT EXISTS form_data (
   audit_by    VARCHAR(50)  COMMENT '审核人',
   audit_time  DATETIME     COMMENT '审核时间',
   close_time  DATETIME     COMMENT '关闭时间',
-  KEY idx_panel_no (panel_code, form_no)
+  -- 单号在全系统按 (panel_code, form_no) 定位，必须唯一；并发取号依赖此约束兜底
+  UNIQUE KEY uk_panel_form (panel_code, form_no)
 ) COMMENT '表单数据表';
 
 -- 生产加工单面板配置（对齐实测 T+ 轻MES：三明细分录 + 明细/汇总子页签 + T+ 工具栏分组）

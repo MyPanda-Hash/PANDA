@@ -379,10 +379,26 @@ public class ReportQueryService {
     }
 
     private List<Map<String, Object>> stockLedger(Map<String, Object> condition) {
-        List<Map<String, Object>> selected = filter(movements(), null, condition);
-        selected.sort(Comparator.comparing(r -> text(r.get("单据日期"))));
+        // 带开始日期时：开始日期之前的移动（含期初结存行）先折叠为期初余额，结存不得漏掉期初；
+        // 不带开始日期时保持原展示：期初结存行作为台账首行出现，结存从 0 累计
+        LocalDate start = date(condition.get("开始日期"));
         BigDecimal balanceQty = BigDecimal.ZERO;
         BigDecimal balanceAmount = BigDecimal.ZERO;
+        List<Map<String, Object>> inPeriod = new ArrayList<>();
+        for (Map<String, Object> movement : movements()) {
+            LocalDate movementDate = date(movement.get("单据日期"));
+            boolean initial = "INITIAL".equals(text(movement.get("方向")));
+            boolean beforeStart = start != null && movementDate != null && movementDate.isBefore(start);
+            if (start != null && (beforeStart || initial)) {
+                boolean outgoing = "OUT".equals(text(movement.get("方向")));
+                balanceQty = outgoing ? balanceQty.subtract(number(movement.get("数量"))) : balanceQty.add(number(movement.get("数量")));
+                balanceAmount = outgoing ? balanceAmount.subtract(number(movement.get("金额"))) : balanceAmount.add(number(movement.get("金额")));
+            } else {
+                inPeriod.add(movement);
+            }
+        }
+        List<Map<String, Object>> selected = filter(inPeriod, null, condition);
+        selected.sort(Comparator.comparing(r -> text(r.get("单据日期"))));
         List<Map<String, Object>> out = new ArrayList<>();
         for (Map<String, Object> movement : selected) {
             String direction = text(movement.get("方向"));
@@ -783,6 +799,14 @@ public class ReportQueryService {
     }
 
     private List<Map<String, Object>> outsourceOrderProductStats() {
+        // 已入库数量：按 加工单号+产品 归集 OUTSOURCE_IN 实收数量（与 outsourceOrderExecution 同口径）
+        Map<String, BigDecimal> received = new HashMap<>();
+        for (Doc doc : docs("OUTSOURCE_IN")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String key = join(firstText(doc.head(), "委外加工单号"), item.get("产品编码"), item.get("产品名称"));
+                received.merge(key, number(item.get("实收数量")), BigDecimal::add);
+            }
+        }
         Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
         for (Map<String, Object> source : outsourceOrderProductDetail()) {
             String key = join(source.get("委外供应商"), source.get("产品编码"), source.get("产品名称"));
@@ -795,6 +819,9 @@ public class ReportQueryService {
             add(target, "加工单数", BigDecimal.ONE);
             add(target, "订单数量", source.get("数量"));
             add(target, "金额", source.get("金额"));
+            add(target, "已入库数量", received.getOrDefault(
+                    join(text(source.get("单据编号")), source.get("产品编码"), source.get("产品名称")),
+                    BigDecimal.ZERO));
         }
         for (Map<String, Object> target : groups.values()) {
             target.put("委外金额", target.get("金额"));
@@ -804,6 +831,14 @@ public class ReportQueryService {
     }
 
     private List<Map<String, Object>> outsourceOrderMaterialStats() {
+        // 已发料数量：按 加工单号+材料 归集 OUTSOURCE_ISSUE 发料数量
+        Map<String, BigDecimal> issued = new HashMap<>();
+        for (Doc doc : docs("OUTSOURCE_ISSUE")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String key = join(firstText(doc.head(), "委外加工单号"), item.get("材料编码"), item.get("材料名称"));
+                issued.merge(key, number(item.get("数量")), BigDecimal::add);
+            }
+        }
         Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
         for (Map<String, Object> source : outsourceOrderMaterialDetail()) {
             String key = join(source.get("委外供应商"), source.get("材料编码"), source.get("材料名称"));
@@ -815,6 +850,9 @@ public class ReportQueryService {
                     "未发料数量", BigDecimal.ZERO));
             add(target, "加工单数", BigDecimal.ONE);
             add(target, "计划数量", source.get("计划数量"));
+            add(target, "已发料数量", issued.getOrDefault(
+                    join(text(source.get("单据编号")), source.get("材料编码"), source.get("材料名称")),
+                    BigDecimal.ZERO));
         }
         for (Map<String, Object> target : groups.values()) {
             target.put("未发料数量", number(target.get("计划数量")).subtract(number(target.get("已发料数量"))));
@@ -947,6 +985,15 @@ public class ReportQueryService {
     }
 
     private List<Map<String, Object>> manufactureMaterialStats() {
+        // 已领料数量：按 加工单号+材料 归集 MATERIAL_OUT 出库数量
+        Map<String, BigDecimal> picked = new HashMap<>();
+        for (Doc doc : docs("MATERIAL_OUT")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String orderNo = text(first(item, doc.head(), "加工单号", "来源单号"));
+                String key = join(orderNo, item.get("材料编码"), item.get("材料名称"));
+                picked.merge(key, number(first(item, Map.of(), "数量", "实发数量")), BigDecimal::add);
+            }
+        }
         Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
         for (Map<String, Object> source : manufactureMaterialDetail()) {
             String key = join(source.get("材料编码"), source.get("材料名称"));
@@ -957,6 +1004,9 @@ public class ReportQueryService {
                     "已领料数量", BigDecimal.ZERO, "未领料数量", BigDecimal.ZERO));
             add(target, "加工单数", BigDecimal.ONE);
             add(target, "计划数量", source.get("计划数量"));
+            add(target, "已领料数量", picked.getOrDefault(
+                    join(text(source.get("单据编号")), source.get("材料编码"), source.get("材料名称")),
+                    BigDecimal.ZERO));
         }
         for (Map<String, Object> target : groups.values()) {
             target.put("未领料数量", number(target.get("计划数量")).subtract(number(target.get("已领料数量"))));

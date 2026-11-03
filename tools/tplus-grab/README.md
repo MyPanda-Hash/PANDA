@@ -38,6 +38,30 @@ node tools/tplus-grab/grab.cjs --url "https://h4t.chanjet.com/tplus/BAPView/Vouc
 
 输出（out 目录下）：`<name>.dom.json`（列定义/查询字段/页签/工具栏/样式快照）、`<name>.png`（真实页面截图）、`<name>.html`（骨架复刻）。
 
+### 菜单驱动批量补抓（isc-remaining-capture.cjs）
+
+按门户左侧菜单（预载锚点 `a[code]`）逐项打开页面并抓取，适合报表等无法直连 URL 的入口：
+
+```bash
+# 先用 grab.cjs --login 建立会话（或复用 profile-crawl 会话），然后：
+node tools/tplus-grab/isc-remaining-capture.cjs --list <剩余清单.json> --out <输出目录>
+# 单页：--only <编码>；已存在产物自动跳过，可重复运行续抓
+```
+
+输入清单为 `{vouchers:[{grp,code,text}],reports:[...]}`；输出 `<编码>-<名称>.dom.json/.png` 与 `capture-summary.json`。只点菜单与关闭提示弹窗，不触碰任何写操作按钮。参考批次：`docs/ref/tplus-live/mech-20260901/isc/`。
+
+### 单据按钮命令证据（voucher-buttons-capture.cjs）
+
+对单据页（Voucher.aspx）采集工具栏命令绑定，格式同 `mech-20260827/qc` 的 `*.buttons.json` / `*.implementation.json`：
+
+```bash
+# 先有会话（grab.cjs --login 或 profile-crawl），目标=批次目录内已有 dom.json 且 URL 为 Voucher.aspx 的页：
+node tools/tplus-grab/voucher-buttons-capture.cjs --dir <批次目录>
+# 单页：--only <编码>；仅列表态：--no-add-state；已存在产物自动跳过
+```
+
+输出：`<编码>-<名称>.buttons.json`（列表态工具栏树：commandId=元素 id、快捷键、可用状态、命令模型）、`<编码>-<名称>.implementation.json`（点击一次顶层「新增」后的卡片态枚举，不保存数据）、`buttons-capture-summary.json`。人读汇总：`node tools/tplus-grab/buttons-summary-gen.cjs --dir <批次目录>` 生成 `智能供应链-按钮功能汇总.md`。
+
 ## 像素对比闭环（DSH 会话内）
 
 ```text

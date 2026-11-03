@@ -1,5 +1,5 @@
 -- 库存看板种子数据（幂等：form_no 已存在则跳过）
--- 对齐演示风格：华东铝业/铝棒等基础档案；执行：mysql -uroot -proot light_mes < seed_stock.sql
+-- 对齐演示风格：华东铝业/铝棒等基础档案；执行示例（密码请自行交互输入，勿写入脚本）：mysql -u<用户> -p light_mes < seed_stock.sql
 
 INSERT INTO form_data (panel_code, form_no, data, detail_data, status, create_by, create_time, audit_by, audit_time)
 SELECT 'FINISH_IN', 'FI-2026-08-0001',

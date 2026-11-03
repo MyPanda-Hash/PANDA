@@ -97,7 +97,15 @@
               <span class="dt-ic" v-if="ti === 0">销售订单查询</span>
               <span class="dt-ic">存货中心</span>
               <span class="dt-ic" v-if="visibleFields(tab).some((field) => field.dataName === '现存量')" @click="refreshTabCurrentStock(tab)">现存量提取</span>
-              <span class="dt-ic">更多</span>
+              <el-dropdown trigger="click" @command="(cmd) => onFormMore(cmd, tab)">
+                <span class="dt-ic">更多▼</span>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="列设置">列设置</el-dropdown-item>
+                    <el-dropdown-item command="批量修改">批量修改</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
               <span v-if="tab.key === 'materials' && selectedProduct" class="filter-hint">当前产品：{{ selectedProduct }} 的 BOM 子件</span>
               <span class="tab-hint">{{ tabHint(tab) }}</span>
             </div>
@@ -106,6 +114,7 @@
           <!-- 明细视图 -->
           <template v-if="(subActive[tab.key] || 'detail') === 'detail'">
             <el-table
+              :class="'blk-f-' + tab.key"
               :data="tabData(tab)"
               size="small"
               border
@@ -115,6 +124,7 @@
               :row-class-name="(o) => (tab.key === 'products' ? prodRowCls(o) : '')"
               @click.capture="(e) => onTableClickCapture(tab, e)"
               @row-click="(row) => onRowClickDetail(tab, row)"
+              @header-contextmenu="(column, ev) => openFormColMenu(tab, column.property, ev)"
             >
               <el-table-column v-if="tab.subTable" type="expand" width="40">
                 <template #default="{ row }">
@@ -151,10 +161,22 @@
               <el-table-column
                 v-for="dr in visibleFields(tab)"
                 :key="dr.dataName"
-                :label="dr.dataName"
                 min-width="110"
+                :label-class-name="'hcol-' + dr.dataName"
                 :class-name="dr.computed ? 'computed-col' : ''"
               >
+                <template #header>
+                  <input
+                    v-if="formRenaming.on && formRenaming.scope === tab.key && formRenaming.prop === dr.dataName"
+                    v-model="formRenaming.text"
+                    class="col-rename-input"
+                    :ref="(el) => el && el.focus()"
+                    @keyup.enter="commitFormRename"
+                    @keyup.esc="cancelFormRename"
+                    @blur="commitFormRename"
+                  />
+                  <span v-else class="col-hd" title="拖拽调序 · 双击改名 · 右键显隐" @dblclick="startFormRename(tab.key, dr.dataName, formColLabel(tab, dr.dataName))">{{ formColLabel(tab, dr.dataName) }}</span>
+                </template>
                 <template #default="{ row }">
                   <template v-if="dr.dataType === '参照'">
                     <span v-if="dr.dataName === '材料编码' && tab.key === 'materials'" class="mat-cell">
@@ -280,6 +302,23 @@
     <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
     <ImportDialog v-model="impVisible" :fields="impFields" :target-label="impLabel" @imported="onImported" />
     <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
+    <!-- 列设置浮层：显隐管理（拖拽表头调序 / 双击表头改名 / 右键表头打开） -->
+    <Teleport to="body">
+      <div v-if="formColMenu.visible" class="col-menu" :style="{ left: formColMenu.x + 'px', top: formColMenu.y + 'px' }" @click.stop>
+        <div class="col-menu-title">列设置 · {{ formColMenu.title }}</div>
+        <div class="col-menu-list">
+          <label v-for="c in formColMenu.cols" :key="c.prop" class="col-menu-item">
+            <el-checkbox :model-value="c.visible" size="small" @update:model-value="(v) => onFormColToggle(c.prop, v)" />
+            <span class="col-menu-name">{{ c.label }}</span>
+          </label>
+        </div>
+        <div class="col-menu-tip">表格里直接操作：拖拽表头调顺序 · 双击表头改栏名 · 右键表头打开本菜单</div>
+        <div class="col-menu-foot">
+          <el-button size="small" text @click="onFormColReset">恢复默认</el-button>
+          <el-button size="small" text @click="formColMenu.visible = false">关闭</el-button>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -304,6 +343,8 @@ import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
 import ImportDialog from './ImportDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
+import { defaultSettings, withReordered } from './tableColCustom'
+import { useColSettings } from './useColSettings'
 
 const engine = usePanelRuntime()
 const { SHORTCUTS } = engine
@@ -493,8 +534,64 @@ const tabs = computed(() => {
   return [{ key: 'detail', label: d.label || '明细', fields: d.fields || [], isRequired: true }]
 })
 
+// ---------- 列设置（顺序/栏名/显隐）：共享状态机见 useColSettings.js（拖拽表头调序 / 双击表头改名 / 右键表头显隐） ----------
+function formColDefaults(tab) {
+  return (tab.fields || []).filter((r) => !r.hidden).map((f) => f.dataName)
+}
+
 function visibleFields(tab) {
-  return (tab.fields || []).filter((r) => !r.hidden)
+  const base = (tab.fields || []).filter((r) => !r.hidden)
+  const saved = getFormColSettings(tab)
+  if (!saved) return base
+  const savedNames = saved.filter((s) => s.visible !== false && base.some((f) => f.dataName === s.prop)).map((s) => s.prop)
+  const extras = base.filter((f) => !saved.some((s) => s.prop === f.dataName))
+  return [...savedNames.map((n) => base.find((f) => f.dataName === n)), ...extras]
+}
+
+function formColLabel(tab, dataName) {
+  return getFormColSettings(tab)?.find((s) => s.prop === dataName)?.label || dataName
+}
+
+const formDragSig = computed(() =>
+  JSON.stringify(tabs.value.map((tab) => ({ key: tab.key, cols: visibleFields(tab).map((f) => f.dataName) })))
+)
+
+function reorderForm(tab, from, to) {
+  const vis = visibleFields(tab).map((f) => f.dataName)
+  const f = vis.indexOf(from)
+  const t = vis.indexOf(to)
+  if (f < 0 || t < 0 || f === t) return
+  const nv = [...vis]
+  const [m] = nv.splice(f, 1)
+  nv.splice(t, 0, m)
+  saveFormColSettings(tab, withReordered(getFormColSettings(tab) || defaultSettings(formColDefaults(tab)), nv))
+}
+
+const {
+  menu: formColMenu, renaming: formRenaming, lastPointer: formLastPointer,
+  getSettings: getFormColSettings, saveSettings: saveFormColSettings,
+  openMenu: openFormColMenu, onMenuToggle: onFormColToggle, onMenuReset: onFormColReset,
+  startRename: startFormRename, cancelRename: cancelFormRename, commitRename: commitFormRename,
+} = useColSettings({
+  panelCode,
+  resolveTarget(tab) {
+    return { key: tab.key, defaults: formColDefaults(tab), title: tab.label || '明细' }
+  },
+  targetFromScope(scope) {
+    return tabs.value.find((t) => t.key === scope) || null
+  },
+  dragTargets() {
+    return tabs.value.map((tab) => ({ selector: '.blk-f-' + tab.key, onReorder: (f, t) => reorderForm(tab, f, t) }))
+  },
+  dragSignature: formDragSig,
+})
+
+function onFormMore(cmd, tab) {
+  if (cmd === '列设置') {
+    openFormColMenu(tab, null, { clientX: formLastPointer.x, clientY: formLastPointer.y, preventDefault() {} })
+    return
+  }
+  ElMessage.info(`演示环境暂未实现「${cmd}」，界面与 T+ 保持一致`)
 }
 
 const visibleMeta = computed(() => (meta.value || []).filter((r) => !r.hidden))

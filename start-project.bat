@@ -29,6 +29,11 @@ if errorlevel 1 (
 )
 echo [1/3] MySQL 已运行（3308）
 
+if not defined MES_JWT_SECRET (
+  for /f %%i in ('powershell -NoProfile -Command "[guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N')"') do set "MES_JWT_SECRET=%%i"
+  echo [提示] 已生成本次启动专用的 MES_JWT_SECRET（重启会变化，已登录用户需重新登录；生产环境请固定配置）
+)
+
 netstat -ano | findstr ":8080" | findstr "LISTENING" >nul 2>&1
 if errorlevel 1 (
   echo [2/3] 启动后端（8080）...
