@@ -30,11 +30,14 @@
           <span class="doc-chip">{{ tt('单据') }}：{{ cur['编号'] || cur['单据编号'] || '-' }}</span>
           <span v-if="cur['类别']" class="doc-cat">{{ tt(cur['类别']) }}</span>
           <span v-if="cur['单据状态']" class="doc-status" :class="cur['单据状态']">{{ tt(cur['单据状态']) }}</span>
-          <span class="page-btn" :title="tt('首页')" @click="pageFirst">◁</span>
-          <span class="page-btn" :title="tt('上一张')" @click="page(-1)">◀</span>
-          <span class="page-no">{{ tt('第') }} {{ curNo }}/{{ total }} {{ tt('张') }}</span>
-          <span class="page-btn" :title="tt('下一张')" @click="page(1)">▶</span>
-          <span class="page-btn" :title="tt('末页')" @click="pageLast">▷</span>
+          <!-- BOM 只读浏览：翻页在父件表里做（10/20/50），这里不再保留逐张单据箭头 -->
+          <template v-if="!bomBrowseAll">
+            <span class="page-btn" :title="tt('首页')" @click="pageFirst">◁</span>
+            <span class="page-btn" :title="tt('上一张')" @click="page(-1)">◀</span>
+            <span class="page-no">{{ tt('第') }} {{ curNo }}/{{ total }} {{ tt('张') }}</span>
+            <span class="page-btn" :title="tt('下一张')" @click="page(1)">▶</span>
+            <span class="page-btn" :title="tt('末页')" @click="pageLast">▷</span>
+          </template>
         </template>
       </div>
     </div>
@@ -223,7 +226,14 @@
         :reverse="panelCode === 'BOM_REV'"
         :editable="panelCode === 'BOM' && draftEditable"
         :loading="loading"
+        :pager="bomBrowseAll"
+        :total="bomPagerTotal"
+        :page-no="query.pageNo"
+        :page-size="query.pageSize"
         @update:rows="onBomRowsUpdate"
+        @page-change="onBomPageChange"
+        @page-size-change="onBomPageSizeChange"
+        @select-master="onBomSelectMaster"
       />
       <template v-else>
       <!-- ══════════ ③b 主表预览表格（配置 mainTable 时显示：主表字段列，点行切换当前单据，明细联动） -->
@@ -252,11 +262,11 @@
         </div>
         <el-table
           :data="blockRows(b)"
-          :height="tableH(b)"
+          :max-height="tableH(b)"
           border
           size="small"
           :show-summary="tabView(b, activeTab(b)) !== 'summary'"
-          :summary-method="sumMethod"
+          :summary-method="(payload) => sumMethodOf(b, payload)"
           :sum-text="tt('合计')"
           :row-class-name="(o) => rowCls(o, b)"
           @selection-change="(r) => (delSel = r)"
@@ -349,6 +359,27 @@
             </template>
           </el-table-column>
         </el-table>
+        <!-- 明细区翻页条：每页 10/20/50 行可选，超过一页才出现翻页箭头；合计按整块全部行计算 -->
+        <div v-if="blockAllRows(b).length" class="dg-pager">
+          <span class="dg-count">{{ tt('共') }} {{ blockAllRows(b).length }} {{ tt('行') }}</span>
+          <span class="dg-per">
+            <span class="dg-per-label">{{ tt('每页') }}</span>
+            <el-select
+              :model-value="blockSize(b)"
+              size="small"
+              class="dg-size"
+              @change="(v) => setBlockSize(b, v)"
+            >
+              <el-option v-for="n in ROWS_PER_PAGE_OPTIONS" :key="n" :label="String(n)" :value="n" />
+            </el-select>
+            <span class="dg-per-label">{{ tt('行') }}</span>
+          </span>
+          <template v-if="blockPageCount(b) > 1">
+            <span class="page-btn" :title="tt('上一页')" @click="stepBlockPage(b, -1)">◀</span>
+            <span class="page-no">{{ tt('第') }} {{ blockPage(b) }}/{{ blockPageCount(b) }} {{ tt('页') }}</span>
+            <span class="page-btn" :title="tt('下一页')" @click="stepBlockPage(b, 1)">▶</span>
+          </template>
+        </div>
       </div>
       </template>
 
@@ -472,11 +503,22 @@ import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
 import BomMasterDetail from './BomMasterDetail.vue'
+import { flattenDocDetailRows } from './master-detail-rows.js'
 import ImportDialog from './ImportDialog.vue'
 import DetailMaintainDialog from './DetailMaintainDialog.vue'
 import VoucherFormDialog from './VoucherFormDialog.vue'
 import ScanFillDialog from './ScanFillDialog.vue'
 import ColumnPrefsDialog from './ColumnPrefsDialog.vue'
+import {
+  DEFAULT_PAGE_SIZE,
+  ROWS_PER_PAGE_OPTIONS,
+  clampPage,
+  gridHeight,
+  normalizePageSize,
+  padRows,
+  pageCount,
+  pageSlice,
+} from './list-grid-paging.js'
 
 const engine = usePanelRuntime()
 // 权限过滤经引擎通道取用（core 层不直接依赖 business 层）
@@ -493,8 +535,13 @@ const invalidPanel = computed(() => !panelCode.value || panelCode.value === 'und
 
 // 物料清单维护和正反向查询统一使用父件/子件主从视图；仅 BOM 草稿开放编辑。
 const isBomMasterPanel = computed(() => ['BOM', 'BOM_FWD', 'BOM_REV'].includes(String(panelCode.value)))
+// 只读浏览时父件表列出「所有单据的父件」，点哪行看哪行的子件；编辑草稿时仍只维护当前单据
+const bomBrowseAll = computed(() => isBomMasterPanel.value && !(panelCode.value === 'BOM' && draftEditable.value))
 const bomMasterRows = computed(() => {
-  if (panelCode.value === 'BOM') return cur.value?.detail?.['children'] || []
+  if (panelCode.value === 'BOM') {
+    if (draftEditable.value) return cur.value?.detail?.['children'] || []
+    return flattenDocDetailRows(list.value, 'children')
+  }
   return list.value || [] // BOM_FWD/BOM_REV：后端返回的展平行（父件-子件对）
 })
 const bomMasterFields = computed(() => (
@@ -506,6 +553,33 @@ function onBomRowsUpdate(rows) {
   if (panelCode.value !== 'BOM' || !draftEditable.value) return
   if (!cur.value.detail) cur.value.detail = {}
   cur.value.detail.children = rows
+}
+
+// ---------- 父件表分页（只读浏览时替代「第 N 张单据」逐张翻） ----------
+const bomPagerTotal = computed(() => total.value || 0)
+
+async function onBomPageChange(next) {
+  const last = Math.max(1, Math.ceil(bomPagerTotal.value / Math.max(1, query.pageSize)))
+  const target = Math.max(1, Math.min(Number(next) || 1, last))
+  if (target === query.pageNo) return
+  query.pageNo = target
+  await load()
+}
+
+async function onBomPageSizeChange(size) {
+  const next = normalizePageSize(size)
+  if (next === query.pageSize) return
+  query.pageSize = next
+  query.pageNo = 1
+  await load()
+}
+
+// 点父件行 → 当前单据跟着切过去，表头「单据：xxx」与子件都对得上
+function onBomSelectMaster(row) {
+  const docNo = row && row._docNo
+  if (!docNo) return
+  const index = list.value.findIndex((doc) => (doc['编号'] || doc['单据编号'] || '') === docNo)
+  if (index >= 0) curIdx.value = index
 }
 
 const query = reactive({ keyword: '', pageNo: 1, pageSize: 20 })
@@ -709,8 +783,8 @@ const mainCols = computed(() => (mainGrid.value?.columns || []).filter((c) => c 
 const mainRows = computed(() => {
   const l = list.value
   if (!l.length) return []
-  const rows = l.slice(0, 5).map((r) => r)
-  while (rows.length < 5) rows.push({ _placeholder: true })
+  const rows = l.slice(0, MIN_ROWS).map((r) => r)
+  while (rows.length < MIN_ROWS) rows.push({ _placeholder: true })
   return rows
 })
 function onMainRowClick(row) {
@@ -778,6 +852,8 @@ function isOn(b, item) {
 function switchTab(b, item) {
   view[b.id + ':tab'] = item.key
   view[b.id + ':' + item.key + ':view'] = item.kind === 'sum' ? 'summary' : 'detail'
+  // 切换明细/汇总页签后回到第 1 页，避免停在上一页签的页码上看到空表
+  view[b.id + ':page'] = 1
 }
 
 // 明细数据：单据类取 cur.detail[block.key]；平铺类（档案/报表）把当前行当明细
@@ -824,11 +900,9 @@ function summaryRows(rows, b) {
   return out
 }
 
-// 所有表格固定展示 5 行：不足补空占位行（{_placeholder:true}），超出 5 行鼠标滚动（见 docs/frontend/前端面板设计.md）
-const MIN_ROWS = 5
-const ROW_H = 31
-const HEAD_H = 32
-const FOOT_H = 32
+// 每页行数（10/20/50，用户可选）：表格高度跟每页行数走，超出一页翻页；不足补空占位行保持高度稳定
+// 计算逻辑在 core/views/list-grid-paging.js（纯函数，有单测），见 docs/frontend/前端面板设计.md
+const MIN_ROWS = DEFAULT_PAGE_SIZE
 
 function blockData(b) {
   const t = activeTab(b)
@@ -845,15 +919,43 @@ function blockData(b) {
   return tabView(b, t) === 'summary' ? summaryRows(rows, t) : rows
 }
 
+// ---------- 明细区翻页：每页行数可选（10/20/50），表格高度跟行数走，合计按整块全部行算 ----------
+function blockAllRows(b) {
+  return blockData(b)
+}
+
+function blockSize(b) {
+  return normalizePageSize(view[b.id + ':size'])
+}
+
+function blockPage(b) {
+  return clampPage(view[b.id + ':page'] || 1, blockAllRows(b).length, blockSize(b))
+}
+
+function blockPageCount(b) {
+  return pageCount(blockAllRows(b).length, blockSize(b))
+}
+
+function setBlockSize(b, size) {
+  view[b.id + ':size'] = normalizePageSize(size)
+  view[b.id + ':page'] = 1
+}
+
+function stepBlockPage(b, delta) {
+  const next = clampPage(blockPage(b) + delta, blockAllRows(b).length, blockSize(b))
+  view[b.id + ':page'] = next
+}
+
 function blockRows(b) {
-  const out = blockData(b).map((r) => r)
-  while (out.length < MIN_ROWS) out.push({ _placeholder: true })
-  return out
+  const size = blockSize(b)
+  const rows = pageSlice(blockAllRows(b), blockPage(b), size)
+  // 占位只补到 10 行（每页 20/50 而数据不足时不补空白行），表格不会被撑到把翻页条挤出屏幕
+  return padRows(rows, Math.min(size, MIN_ROWS))
 }
 
 function tableH(b) {
   const hasFooter = tabView(b, activeTab(b)) !== 'summary'
-  return HEAD_H + MIN_ROWS * ROW_H + (hasFooter ? FOOT_H : 0)
+  return gridHeight(blockSize(b), hasFooter)
 }
 
 function blockCols(b) {
@@ -875,9 +977,18 @@ function num(v) {
 }
 
 function sumMethod({ columns, data }) {
+  return computeSums(columns, data)
+}
+
+// 明细区块的合计：按「整块全部行」算，翻页后合计不跟着变成单页小计
+function sumMethodOf(b, { columns }) {
+  return computeSums(columns, blockAllRows(b))
+}
+
+function computeSums(columns, rows) {
   const sums = []
   // 占位行不参与合计
-  const real = (data || []).filter((r) => !r._placeholder)
+  const real = (rows || []).filter((r) => !r._placeholder)
   columns.forEach((col, i) => {
     if (i === 0) {
       sums[i] = '合计'
@@ -1210,6 +1321,8 @@ function addInlineDetailRow(b) {
   if (!cur.value.detail) cur.value.detail = {}
   const rows = cur.value.detail[tabKey] || (cur.value.detail[tabKey] = [])
   rows.push(newDetailRow(tabKey))
+  // 新行追加在末尾：翻到最后一页，否则用户看不到刚加的行
+  view[b.id + ':page'] = pageCount(blockAllRows(b).length, blockSize(b))
 }
 
 function primaryDetailRefField(b) {
@@ -1664,9 +1777,14 @@ async function loadCrg() {
   const curTab = tabs.tabs.find((x) => x.path === route.path)
   if (curTab) curTab.title = panelName.value
   queryFields.value = tp?.queryFields || []
-  // 面板可配置每页条数（如档案类大列表 pageSize=100），未配置时保持默认 20
+  // 面板可配置每页条数（如档案类大列表 pageSize=100），未配置时保持默认 20；
+  // BOM 只读浏览默认 10 项（父件表自己带 10/20/50 切换）
+  const defaultPageSize = isBomMasterPanel.value && !(panelCode.value === 'BOM' && draftEditable.value) ? 10 : 20
   if (tp?.pageSize && query.pageSize !== tp.pageSize) {
     query.pageSize = tp.pageSize
+    query.pageNo = 1
+  } else if (!tp?.pageSize && query.pageSize !== defaultPageSize) {
+    query.pageSize = defaultPageSize
     query.pageNo = 1
   }
   gridTabs.value = tp?.gridTabs || []
@@ -2544,6 +2662,35 @@ onUnmounted(() => {
   padding: 0 6px;
   font-size: 12px;
   color: #555;
+}
+/* 明细区翻页条：贴表格下方，行高与页码按钮同为 24px，不抢表格的视觉重量 */
+.dg-pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 8px;
+  border-top: 1px solid #e3e8f0;
+  background: #fafbfd;
+  font-size: 12px;
+  color: #555;
+}
+.dg-count,
+.dg-per-label {
+  color: #64748b;
+}
+.dg-per {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.dg-size {
+  width: 74px;
+}
+.dg-pager .page-btn {
+  border-radius: 4px;
+}
+.dg-pager .page-no {
+  padding: 0 2px;
 }
 .report-count {
   color: #64748b;

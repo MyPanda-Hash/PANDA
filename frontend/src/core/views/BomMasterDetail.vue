@@ -12,13 +12,14 @@
         :data="masters"
         border
         size="small"
-        height="230"
+        :height="masterTableHeight"
         highlight-current-row
         :row-class-name="masterRowCls"
         v-loading="loading"
         @row-click="onMasterClick"
       >
         <el-table-column type="index" :label="tt('序号')" width="60" align="center" :index="(index) => index + 1" />
+        <el-table-column v-if="pager" prop="_docNo" :label="tt('单据编号')" min-width="140" show-overflow-tooltip />
         <template v-if="!reverse">
           <el-table-column prop="父件编码" :label="tt('父件编码')" min-width="130">
             <template #default="{ row }">
@@ -83,6 +84,27 @@
           <el-table-column prop="子件计量单位" :label="tt('单位')" width="90" />
         </template>
       </el-table>
+      <!-- 父件表分页：共 N 项 / 每页 10·20·50 / 第 a/b 页，替代「第 N 张单据」逐张翻 -->
+      <div v-if="pager" class="bom-md-pager">
+        <span class="bom-md-count">{{ tt('共') }} {{ total }} {{ tt('项') }}</span>
+        <span class="bom-md-per">
+          <span>{{ tt('每页') }}</span>
+          <el-select
+            :model-value="normalizedPageSize"
+            size="small"
+            class="bom-md-size"
+            @change="(value) => emit('page-size-change', value)"
+          >
+            <el-option v-for="option in ROWS_PER_PAGE_OPTIONS" :key="option" :label="String(option)" :value="option" />
+          </el-select>
+          <span>{{ tt('项') }}</span>
+        </span>
+        <template v-if="masterPageCount > 1">
+          <span class="page-btn" :title="tt('上一页')" @click="emit('page-change', pageNo - 1)">◀</span>
+          <span class="page-no">{{ tt('第') }} {{ pageNo }}/{{ masterPageCount }} {{ tt('页') }}</span>
+          <span class="page-btn" :title="tt('下一页')" @click="emit('page-change', pageNo + 1)">▶</span>
+        </template>
+      </div>
     </div>
 
     <div class="bom-md-sec">
@@ -177,6 +199,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { Delete, Plus, Search } from '@element-plus/icons-vue'
 import { tt } from '@/i18n'
+import { ROWS_PER_PAGE_OPTIONS, gridHeight, normalizePageSize, pageCount } from './list-grid-paging.js'
 import RefPickDialog from './RefPickDialog.vue'
 
 const props = defineProps({
@@ -186,8 +209,13 @@ const props = defineProps({
   reverse: { type: Boolean, default: false },
   editable: { type: Boolean, default: false },
   loading: { type: Boolean, default: false },
+  // 父件表分页：只读浏览时把所有单据的父件放进同一张表，按 10/20/50 分页（服务端分页）
+  pager: { type: Boolean, default: false },
+  total: { type: Number, default: 0 },
+  pageNo: { type: Number, default: 1 },
+  pageSize: { type: Number, default: 10 },
 })
-const emit = defineEmits(['update:rows'])
+const emit = defineEmits(['update:rows', 'page-change', 'page-size-change', 'select-master'])
 
 const PARENT_KEYS = [
   '物料清单编码', '父件编码', '父件名称', '版本号', '默认BOM',
@@ -196,7 +224,7 @@ const PARENT_KEYS = [
 const masterKey = computed(() => (props.reverse ? '子件编码' : '父件编码'))
 const localRows = ref([])
 const parentDraft = reactive({})
-const activeKey = ref('')
+const activeId = ref('')
 const syncing = ref(false)
 const rowIds = new WeakMap()
 let rowSeq = 0
@@ -224,7 +252,7 @@ function resetFromProps() {
   const first = localRows.value[0] || {}
   for (const key of PARENT_KEYS) parentDraft[key] = first[key] ?? defaultValue(key)
   parentDraft['物料清单编码'] = first['物料清单编码'] || props.documentNo || ''
-  if (!localRows.value.length && !props.reverse) activeKey.value = parentDraft['父件编码'] || '__draft__'
+  if (!localRows.value.length && !props.reverse) activeId.value = parentDraft['父件编码'] || '__draft__'
   syncing.value = false
 }
 
@@ -234,30 +262,47 @@ watch(
   { immediate: true }
 )
 
+// 父件行的唯一标识：只读浏览时同一父件可能出现在多张 BOM 单里，用「单据#父件」区分
+// （否则两张 BOM 都挂 CP001 时，子件会把两单的行混在一起显示）
+function rowIdentity(row) {
+  const key = row ? row[masterKey.value] : ''
+  const docNo = (row && row._docNo) || ''
+  return docNo ? `${docNo}#${key}` : key
+}
+
 const masters = computed(() => {
   if (props.editable && !props.reverse) return [parentDraft]
   const seen = new Map()
   for (const row of localRows.value) {
-    const key = row[masterKey.value]
-    if (!key || seen.has(key)) continue
-    seen.set(key, row)
+    const id = rowIdentity(row)
+    if (!id || seen.has(id)) continue
+    seen.set(id, row)
   }
   return [...seen.values()]
+})
+
+const normalizedPageSize = computed(() => normalizePageSize(props.pageSize))
+const masterPageCount = computed(() => pageCount(props.total, normalizedPageSize.value))
+// 高度按「本页实际项数」算：不足一页时不留一大片空白，最少给 3 行；编辑单张单据保持原来的 230px
+const masterTableHeight = computed(() => {
+  if (!props.pager) return 230
+  const rows = Math.max(3, Math.min(normalizedPageSize.value, masters.value.length || normalizedPageSize.value))
+  return gridHeight(rows)
 })
 
 watch(
   masters,
   (list) => {
     if (!list.length) {
-      activeKey.value = ''
+      activeId.value = ''
       return
     }
     if (props.editable && !props.reverse) {
-      activeKey.value = parentDraft['父件编码'] || '__draft__'
+      activeId.value = parentDraft['父件编码'] || '__draft__'
       return
     }
-    if (!list.some((master) => master[masterKey.value] === activeKey.value)) {
-      activeKey.value = list[0][masterKey.value]
+    if (!list.some((master) => rowIdentity(master) === activeId.value)) {
+      activeId.value = rowIdentity(list[0])
     }
   },
   { immediate: true }
@@ -265,7 +310,7 @@ watch(
 
 const curMaster = computed(() => {
   if (props.editable && !props.reverse) return parentDraft
-  return masters.value.find((master) => master[masterKey.value] === activeKey.value) || null
+  return masters.value.find((master) => rowIdentity(master) === activeId.value) || null
 })
 const curMasterLabel = computed(() => {
   const master = curMaster.value
@@ -277,8 +322,9 @@ const curMasterLabel = computed(() => {
 })
 const curRows = computed(() => {
   if (props.editable && !props.reverse) return localRows.value
-  if (!activeKey.value) return []
-  return localRows.value.filter((row) => row[masterKey.value] === activeKey.value)
+  if (!activeId.value) return []
+  // 同一父件出现在多张单据时，只显示当前选中那一张的子件
+  return localRows.value.filter((row) => rowIdentity(row) === activeId.value)
 })
 
 function emitRows() {
@@ -289,7 +335,7 @@ function emitRows() {
 function syncParent() {
   if (!props.editable) return
   parentDraft['物料清单编码'] = parentDraft['物料清单编码'] || props.documentNo || ''
-  activeKey.value = parentDraft['父件编码'] || '__draft__'
+  activeId.value = parentDraft['父件编码'] || '__draft__'
   for (const row of localRows.value) {
     for (const key of PARENT_KEYS) row[key] = parentDraft[key]
   }
@@ -365,12 +411,14 @@ function validate() {
 }
 
 function onMasterClick(row) {
-  activeKey.value = props.editable && !props.reverse ? (row['父件编码'] || '__draft__') : row[masterKey.value]
+  activeId.value = props.editable && !props.reverse ? (row['父件编码'] || '__draft__') : rowIdentity(row)
+  // 只读浏览时点父件要同步当前单据，表头的「单据：xxx」才跟手上这行一致
+  if (!props.editable && row._docNo) emit('select-master', row)
 }
 
 function masterRowCls({ row }) {
-  const key = props.editable && !props.reverse ? (row['父件编码'] || '__draft__') : row[masterKey.value]
-  return key === activeKey.value ? 'row-cur' : ''
+  const id = props.editable && !props.reverse ? (row['父件编码'] || '__draft__') : rowIdentity(row)
+  return id === activeId.value ? 'row-cur' : ''
 }
 
 function fmtBool(value) {
@@ -413,6 +461,50 @@ defineExpose({ validate })
   margin-left: 12px;
   font-size: 12px;
   color: #909399;
+}
+/* 父件表分页条：贴表格下方，与明细区翻页条同一套视觉 */
+.bom-md-pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 12px;
+  border-top: 1px solid #e3e8f0;
+  background: #fafbfd;
+  font-size: 12px;
+  color: #555;
+  white-space: nowrap;
+}
+.bom-md-per {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #909399;
+  white-space: nowrap;
+}
+.bom-md-size {
+  width: 74px;
+  flex: 0 0 auto;
+}
+.bom-md-pager .page-btn {
+  width: 24px;
+  height: 24px;
+  line-height: 22px;
+  text-align: center;
+  border: 1px solid #c9cfdb;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  color: #333;
+}
+.bom-md-pager .page-btn:hover {
+  border-color: var(--t-primary, #116a5b);
+  color: var(--t-primary, #116a5b);
+}
+.bom-md-pager .page-no {
+  padding: 0 2px;
+  color: #555;
 }
 .bom-md-empty {
   padding: 14px;
