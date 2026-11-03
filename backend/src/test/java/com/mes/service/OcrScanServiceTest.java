@@ -95,6 +95,21 @@ class OcrScanServiceTest {
     }
 
     @Test
+    void rejectsVisiblePanelWithoutAddPermission() throws Exception {
+        var service = service();
+        when(roleService.getPerms("worker")).thenReturn(Map.of(
+                "isAdmin", false,
+                "visiblePanels", List.of("PU_REQ"),
+                "panelPerms", Map.of("PU_REQ", List.of("view", "query"))));
+
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> service.scan("PU_REQ", oversizedImage, "worker"));
+
+        verify(panelRuntimeService, never()).getPanelConfig(any());
+        verify(gateway, never()).recognize(any());
+    }
+
+    @Test
     void rejectsReadonlyDocumentBeforeCallingCloud() throws Exception {
         var service = service();
         allowPanel("worker", "READONLY_DOC");
@@ -132,7 +147,8 @@ class OcrScanServiceTest {
     private void allowPanel(String userName, String panelCode) {
         when(roleService.getPerms(userName)).thenReturn(Map.of(
                 "isAdmin", false,
-                "visiblePanels", List.of(panelCode)));
+                "visiblePanels", List.of(panelCode),
+                "panelPerms", Map.of(panelCode, List.of("view", "add"))));
     }
 
     private MockMultipartFile png(int width, int height) throws Exception {

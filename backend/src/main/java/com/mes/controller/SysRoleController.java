@@ -3,6 +3,7 @@ package com.mes.controller;
 import com.mes.dto.ApiResult;
 import com.mes.entity.SysRole;
 import com.mes.service.RoleService;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +23,7 @@ public class SysRoleController {
 
     private void guard(Authentication auth) {
         if (auth == null || !roleService.isAdminUser(auth.getName())) {
-            throw new IllegalStateException("仅管理员可访问组织架构");
+            throw new AccessDeniedException("仅管理员可访问组织架构");
         }
     }
 

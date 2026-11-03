@@ -66,13 +66,14 @@ public class OcrScanService {
         if (userName == null || userName.isBlank()) throw new AccessDeniedException("请先登录");
         Map<String, Object> permissions = roleService.getPerms(userName);
         if (Boolean.TRUE.equals(permissions.get("isAdmin"))) return;
-        Object visiblePanels = permissions.get("visiblePanels");
-        if (visiblePanels instanceof Iterable<?> panels) {
-            for (Object panel : panels) {
-                if (panelCode.equals(String.valueOf(panel))) return;
+        Object panelPermsObject = permissions.get("panelPerms");
+        if (panelPermsObject instanceof Map<?, ?> panelPerms
+                && panelPerms.get(panelCode) instanceof Iterable<?> granted) {
+            for (Object permission : granted) {
+                if ("add".equals(String.valueOf(permission))) return;
             }
         }
-        throw new AccessDeniedException("当前用户无权使用该面板的扫描填单");
+        throw new AccessDeniedException("当前用户没有该面板的新增权限，不能扫描填单");
     }
 
     @SuppressWarnings("unchecked")

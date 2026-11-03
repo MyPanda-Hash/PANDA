@@ -38,4 +38,12 @@ public interface PanelRuntimeService {
                                    Map<String, Object> formData, Map<String, Object> buttonParam);
 
     void deleteForms(String panelCode, List<String> rowCodes);
+
+    /**
+     * 业务流程追踪：按单号正反向找全相关单据并判定卡点。
+     * 默认不支持，由 PxService 实现。
+     */
+    default Map<String, Object> traceProcess(String docNo) {
+        throw new UnsupportedOperationException("traceProcess is not supported by this runtime");
+    }
 }

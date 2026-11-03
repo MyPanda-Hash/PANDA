@@ -3,6 +3,8 @@ package com.mes.config;
 import com.mes.dto.ApiResult;
 import com.mes.ocr.OcrRateLimitException;
 import com.mes.ocr.OcrServiceException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.multipart.MultipartException;
@@ -13,6 +15,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(AccessDeniedException.class)
     public ApiResult<Void> handleAccessDenied(AccessDeniedException e) {
@@ -63,6 +67,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ApiResult<Void> handleOther(Exception e) {
-        return ApiResult.fail(500, e.getMessage() == null ? "服务器内部错误" : e.getMessage());
+        // 未预期异常的数据库、连接串和内部实现细节不得直接返回客户端。
+        log.error("未处理异常: {}", e.toString(), e);
+        return ApiResult.fail(500, "服务器内部错误");
     }
 }

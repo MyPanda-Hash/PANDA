@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mes.entity.FormData;
+import com.mes.entity.StockBalance;
 import com.mes.mapper.FormDataMapper;
 import org.springframework.stereotype.Service;
 
@@ -31,10 +32,40 @@ public class ReportQueryService {
 
     private final FormDataMapper formMapper;
     private final ObjectMapper json;
+    private final StockBalanceService stockBalanceService;
+    private final AccountingService accountingService;
+    private final MpsQueryService mpsQueryService;
+    private final MrpQueryService mrpQueryService;
+    private final KitQueryService kitQueryService;
+    private final PickQueryService pickQueryService;
+    private final SpcQueryService spcQueryService;
+    private final FinanceStatementQueryService financeStatementQueryService;
 
-    public ReportQueryService(FormDataMapper formMapper, ObjectMapper json) {
+    @org.springframework.beans.factory.annotation.Autowired
+    public ReportQueryService(FormDataMapper formMapper, ObjectMapper json,
+                              StockBalanceService stockBalanceService,
+                              AccountingService accountingService,
+                              MpsQueryService mpsQueryService,
+                              MrpQueryService mrpQueryService,
+                              KitQueryService kitQueryService,
+                              PickQueryService pickQueryService,
+                              SpcQueryService spcQueryService,
+                              FinanceStatementQueryService financeStatementQueryService) {
         this.formMapper = formMapper;
         this.json = json;
+        this.stockBalanceService = stockBalanceService;
+        this.accountingService = accountingService;
+        this.mpsQueryService = mpsQueryService;
+        this.mrpQueryService = mrpQueryService;
+        this.kitQueryService = kitQueryService;
+        this.pickQueryService = pickQueryService;
+        this.spcQueryService = spcQueryService;
+        this.financeStatementQueryService = financeStatementQueryService;
+    }
+
+    /** 简化构造：无账务/库存/计划服务时报表回退到实时聚合。 */
+    public ReportQueryService(FormDataMapper formMapper, ObjectMapper json) {
+        this(formMapper, json, null, null, null, null, null, null, null, null);
     }
 
     public Map<String, Object> query(String panelCode, String keyword, Map<String, Object> condition,
@@ -123,8 +154,31 @@ public class ReportQueryService {
             case "QC_ITEM_STATS" -> qualityItemStats();
             case "PRODUCT_FORWARD_TRACE" -> qualityTrace(false);
             case "MATERIAL_REVERSE_TRACE" -> qualityTrace(true);
+            case "ACCOUNT_BALANCE" -> accountingService == null ? List.of() : accountingService.accountBalances();
+            case "ACCOUNT_DETAIL" -> accountingService == null
+                    ? List.of() : accountingService.accountDetail(text(condition.get("科目编码")));
+            case "ACCOUNTING_ENTRY" -> accountingService == null
+                    ? List.of() : accountingService.accountDetail(null);
+            case "ACCOUNT" -> accountingAccounts();
+            case "MPS_PLAN" -> mpsQueryService == null ? List.of() : mpsQueryService.planRows();
+            case "MRP_RESULT" -> mrpQueryService == null ? List.of() : mrpQueryService.run();
+            case "KIT_ANALYSIS" -> kitQueryService == null ? List.of() : kitQueryService.analyze();
+            case "PICK_WORKBENCH" -> pickQueryService == null ? List.of() : pickQueryService.workbench();
+            case "SPC_CONTROL" -> spcQueryService == null ? List.of() : spcQueryService.controlCharts();
+            case "SETTLE_CUSTOMER" -> financeStatementQueryService == null
+                    ? List.of() : financeStatementQueryService.customerStatement();
+            case "SETTLE_SUPPLIER" -> financeStatementQueryService == null
+                    ? List.of() : financeStatementQueryService.supplierStatement();
+            case "AGING_ANALYSIS" -> financeStatementQueryService == null
+                    ? List.of()
+                    : financeStatementQueryService.aging(textOf(condition, "截止日期", "截止时间", "日期"));
             default -> List.of();
         };
+    }
+
+    /** 会计科目列表：直接读 stock_txn 同库的 accounting_account 表。 */
+    private List<Map<String, Object>> accountingAccounts() {
+        return accountingService == null ? List.of() : accountingService.listAccounts();
     }
 
     // ---------- inventory document reports ----------
@@ -310,12 +364,41 @@ public class ReportQueryService {
         }
     }
 
+    /**
+     * 库存状况表：读 stock_balance 余额表（唯一权威口径）。
+     * 余额表为空时回退到 form_data 实时聚合，保证老库升级后报表仍可用。
+     */
     private List<Map<String, Object>> stockStatus() {
+        List<StockBalance> balances = stockBalanceService == null ? List.of() : stockBalanceService.list();
+        if (!balances.isEmpty()) return fromBalances(balances);
+        return stockStatusFromMovements();
+    }
+
+    private List<Map<String, Object>> fromBalances(List<StockBalance> balances) {
+        Map<String, String> warehouseCodes = warehouseCodes();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (StockBalance balance : balances) {
+            String warehouse = text(balance.getWarehouse());
+            BigDecimal qty = balance.getQuantity() == null ? BigDecimal.ZERO : balance.getQuantity();
+            BigDecimal amount = balance.getAmount() == null ? BigDecimal.ZERO : balance.getAmount();
+            out.add(row(
+                    "仓库编码", warehouseCodes.getOrDefault(warehouse, ""), "仓库", warehouse,
+                    "库位", text(balance.getLocation()), "批次号", text(balance.getBatchNo()),
+                    "存货编码", text(balance.getItemCode()), "存货", text(balance.getItemName()),
+                    "规格型号", text(balance.getSpec()), "主计量", text(balance.getUnit()),
+                    "现存量(主)", qty, "结存金额", amount, "结存单价(主)", divide(amount, qty)));
+        }
+        return out;
+    }
+
+    /** 兼容路径：余额表未初始化时按出入库流水实时聚合。 */
+    private List<Map<String, Object>> stockStatusFromMovements() {
         Map<String, Map<String, Object>> balances = new LinkedHashMap<>();
         for (Map<String, Object> movement : movements()) {
             String key = join(movement.get("仓库"), movement.get("存货编码"), movement.get("存货"));
             Map<String, Object> balance = balances.computeIfAbsent(key, ignored -> row(
                     "仓库编码", movement.get("仓库编码"), "仓库", movement.get("仓库"),
+                    "库位", "", "批次号", "",
                     "存货编码", movement.get("存货编码"), "存货", movement.get("存货"),
                     "规格型号", movement.get("规格型号"), "主计量", movement.get("主单位"),
                     "现存量(主)", BigDecimal.ZERO, "结存金额", BigDecimal.ZERO));
@@ -1229,6 +1312,9 @@ public class ReportQueryService {
         List<Map<String, Object>> out = new ArrayList<>();
         LocalDate start = date(condition.get("开始日期"));
         LocalDate end = date(condition.get("结束日期"));
+        // 截止日期是账龄等报表的时间边界参数（由 build() 消费），不是行字段，不能参与逐行模糊匹配，
+        // 否则账龄这种没有「截止日期」列的结果会被整表过滤成空。
+        String cutoff = textOf(condition, "截止日期", "截止时间");
         for (Map<String, Object> row : source) {
             LocalDate rowDate = date(first(row, row, "单据日期", "预开工日", "创建时间"));
             if (start != null && rowDate != null && rowDate.isBefore(start)) continue;
@@ -1237,7 +1323,9 @@ public class ReportQueryService {
             for (Map.Entry<String, Object> entry : condition.entrySet()) {
                 String key = entry.getKey();
                 String expected = text(entry.getValue());
-                if (expected.isBlank() || key.equals("开始日期") || key.equals("结束日期")) continue;
+                if (expected.isBlank()) continue;
+                if (key.equals("开始日期") || key.equals("结束日期")) continue;
+                if (!cutoff.isEmpty() && (key.equals("截止日期") || key.equals("截止时间"))) continue;
                 if (!aliasValues(row, key).stream().anyMatch(value -> text(value).contains(expected))) {
                     hit = false;
                     break;
@@ -1362,6 +1450,16 @@ public class ReportQueryService {
 
     private String text(Object value) {
         return value == null ? "" : String.valueOf(value).trim();
+    }
+
+    /** 按候选键取第一个非空查询条件值；面板查询字段名可能有多种写法。 */
+    private String textOf(Map<String, Object> condition, String... keys) {
+        if (condition == null) return "";
+        for (String key : keys) {
+            String value = text(condition.get(key));
+            if (!value.isEmpty()) return value;
+        }
+        return "";
     }
 
     private BigDecimal number(Object value) {

@@ -21,8 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 角色与面板权限：角色 CRUD、角色-面板授权（11 项权限矩阵）、当前用户权限计算。
  * 权限模型：admin（is_admin=1）拥有全部面板与全部权限；普通角色按 sys_role_panel 分配面板与
  * 11 项权限码（perms 逗号分隔，view/query/add/edit/delete/export/print/audit/price/review/adjust），
- * 含 audit 才拥有审批通过/驳回权限（can_approve 列由 audit 派生同步写，保持旧链路兼容）；
- * 提交审批与查看审批历史为公开权限（所有登录用户）。review/adjust 为预留权限位（暂无对应按钮）。
+ * 含 audit 才拥有审批组按钮（提交、通过、驳回、审批情况、弃审）权限（can_approve 列由 audit 派生
+ * 同步写，保持旧链路兼容）。review/adjust 为预留权限位（暂无对应按钮）。
  */
 @Service
 public class RoleService {
@@ -51,10 +51,15 @@ public class RoleService {
 
     private static Map<String, String> buildModuleGroups() {
         Map<String, String> m = new LinkedHashMap<>();
+        m.put("pdm", "产品数据");
         m.put("prod", "生产管理");
         m.put("outsource", "委外管理");
         m.put("sales", "销售管理");
         m.put("purchase", "采购管理");
+        m.put("wms", "仓存管理");
+        m.put("finance", "应收应付");
+        m.put("accounting", "账务处理");
+        m.put("plan", "计划管理");
         m.put("distribution", "配货管理");
         m.put("inv", "库存核算");
         m.put("pda", "移动仓管");

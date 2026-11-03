@@ -99,4 +99,13 @@ public class PxController {
         service.saveColumnPrefs(panelCode, userName, columns);
         return ApiResult.ok(null);
     }
+
+    /**
+     * 业务流程追踪：给定任意单号（销售订单号/加工单号/入库单号等），
+     * 正反向找全相关单据并判定每一步状态与卡点。
+     */
+    @GetMapping("/trace")
+    public ApiResult<Map<String, Object>> trace(@RequestParam String docNo) {
+        return ApiResult.ok(service.traceProcess(docNo));
+    }
 }

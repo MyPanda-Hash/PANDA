@@ -89,7 +89,38 @@ CREATE TABLE IF NOT EXISTS manu_order (
   create_time   DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '制单时间',
   audit_by      VARCHAR(50)  COMMENT '审核人',
   audit_time    DATETIME     COMMENT '审核时间',
-  close_time    DATETIME     COMMENT '关闭时间'
+  close_time    DATETIME     COMMENT '关闭时间',
+  -- 预留扩展列（30 个）：新增结构化业务字段优先占用空闲列，不直接 ALTER TABLE 加列
+  ext_str1      VARCHAR(200)  COMMENT '预留扩展-文本1',
+  ext_str2      VARCHAR(200)  COMMENT '预留扩展-文本2',
+  ext_str3      VARCHAR(200)  COMMENT '预留扩展-文本3',
+  ext_str4      VARCHAR(200)  COMMENT '预留扩展-文本4',
+  ext_str5      VARCHAR(200)  COMMENT '预留扩展-文本5',
+  ext_str6      VARCHAR(200)  COMMENT '预留扩展-文本6',
+  ext_str7      VARCHAR(200)  COMMENT '预留扩展-文本7',
+  ext_str8      VARCHAR(200)  COMMENT '预留扩展-文本8',
+  ext_str9      VARCHAR(200)  COMMENT '预留扩展-文本9',
+  ext_str10     VARCHAR(200)  COMMENT '预留扩展-文本10',
+  ext_num1      DECIMAL(18,4) COMMENT '预留扩展-数值1',
+  ext_num2      DECIMAL(18,4) COMMENT '预留扩展-数值2',
+  ext_num3      DECIMAL(18,4) COMMENT '预留扩展-数值3',
+  ext_num4      DECIMAL(18,4) COMMENT '预留扩展-数值4',
+  ext_num5      DECIMAL(18,4) COMMENT '预留扩展-数值5',
+  ext_num6      DECIMAL(18,4) COMMENT '预留扩展-数值6',
+  ext_num7      DECIMAL(18,4) COMMENT '预留扩展-数值7',
+  ext_num8      DECIMAL(18,4) COMMENT '预留扩展-数值8',
+  ext_num9      DECIMAL(18,4) COMMENT '预留扩展-数值9',
+  ext_num10     DECIMAL(18,4) COMMENT '预留扩展-数值10',
+  ext_date1     DATETIME      COMMENT '预留扩展-日期1',
+  ext_date2     DATETIME      COMMENT '预留扩展-日期2',
+  ext_date3     DATETIME      COMMENT '预留扩展-日期3',
+  ext_date4     DATETIME      COMMENT '预留扩展-日期4',
+  ext_date5     DATETIME      COMMENT '预留扩展-日期5',
+  ext_flag1     TINYINT       COMMENT '预留扩展-标志1',
+  ext_flag2     TINYINT       COMMENT '预留扩展-标志2',
+  ext_flag3     TINYINT       COMMENT '预留扩展-标志3',
+  ext_flag4     TINYINT       COMMENT '预留扩展-标志4',
+  ext_flag5     TINYINT       COMMENT '预留扩展-标志5'
 ) COMMENT '生产加工单主表';
 
 -- 生产加工单工序分录
@@ -107,7 +138,38 @@ CREATE TABLE IF NOT EXISTS manu_order_item (
   defect_qty    DECIMAL(18,4) DEFAULT 0 COMMENT '不良数量',
   start_time    DATETIME     COMMENT '开工时间',
   end_time      DATETIME     COMMENT '完工时间',
-  remark        VARCHAR(200) COMMENT '备注'
+  remark        VARCHAR(200) COMMENT '备注',
+  -- 预留扩展列（30 个）：新增结构化业务字段优先占用空闲列，不直接 ALTER TABLE 加列
+  ext_str1      VARCHAR(200)  COMMENT '预留扩展-文本1',
+  ext_str2      VARCHAR(200)  COMMENT '预留扩展-文本2',
+  ext_str3      VARCHAR(200)  COMMENT '预留扩展-文本3',
+  ext_str4      VARCHAR(200)  COMMENT '预留扩展-文本4',
+  ext_str5      VARCHAR(200)  COMMENT '预留扩展-文本5',
+  ext_str6      VARCHAR(200)  COMMENT '预留扩展-文本6',
+  ext_str7      VARCHAR(200)  COMMENT '预留扩展-文本7',
+  ext_str8      VARCHAR(200)  COMMENT '预留扩展-文本8',
+  ext_str9      VARCHAR(200)  COMMENT '预留扩展-文本9',
+  ext_str10     VARCHAR(200)  COMMENT '预留扩展-文本10',
+  ext_num1      DECIMAL(18,4) COMMENT '预留扩展-数值1',
+  ext_num2      DECIMAL(18,4) COMMENT '预留扩展-数值2',
+  ext_num3      DECIMAL(18,4) COMMENT '预留扩展-数值3',
+  ext_num4      DECIMAL(18,4) COMMENT '预留扩展-数值4',
+  ext_num5      DECIMAL(18,4) COMMENT '预留扩展-数值5',
+  ext_num6      DECIMAL(18,4) COMMENT '预留扩展-数值6',
+  ext_num7      DECIMAL(18,4) COMMENT '预留扩展-数值7',
+  ext_num8      DECIMAL(18,4) COMMENT '预留扩展-数值8',
+  ext_num9      DECIMAL(18,4) COMMENT '预留扩展-数值9',
+  ext_num10     DECIMAL(18,4) COMMENT '预留扩展-数值10',
+  ext_date1     DATETIME      COMMENT '预留扩展-日期1',
+  ext_date2     DATETIME      COMMENT '预留扩展-日期2',
+  ext_date3     DATETIME      COMMENT '预留扩展-日期3',
+  ext_date4     DATETIME      COMMENT '预留扩展-日期4',
+  ext_date5     DATETIME      COMMENT '预留扩展-日期5',
+  ext_flag1     TINYINT       COMMENT '预留扩展-标志1',
+  ext_flag2     TINYINT       COMMENT '预留扩展-标志2',
+  ext_flag3     TINYINT       COMMENT '预留扩展-标志3',
+  ext_flag4     TINYINT       COMMENT '预留扩展-标志4',
+  ext_flag5     TINYINT       COMMENT '预留扩展-标志5'
 ) COMMENT '生产加工单工序分录';
 
 -- ===== 元数据驱动表单引擎（自研类 PanelX，不依赖外部平台）=====
@@ -140,8 +202,84 @@ CREATE TABLE IF NOT EXISTS form_data (
   audit_by    VARCHAR(50)  COMMENT '审核人',
   audit_time  DATETIME     COMMENT '审核时间',
   close_time  DATETIME     COMMENT '关闭时间',
-  KEY idx_panel_no (panel_code, form_no)
+  version     INT          DEFAULT 1 COMMENT '单据版本号，变更单递增',
+  parent_no   VARCHAR(50)  NULL COMMENT '父单号：变更单指向被变更原单',
+  current_version TINYINT  DEFAULT 1 COMMENT '是否当前生效版本：1 生效，0 已被取代',
+  KEY idx_panel_no (panel_code, form_no),
+  KEY idx_parent_no (panel_code, parent_no)
 ) COMMENT '表单数据表';
+
+-- 库存余额表：四维（存货 + 仓库 + 库位 + 批次），单厂自用不引入组织维度
+CREATE TABLE IF NOT EXISTS stock_balance (
+  id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+  item_code       VARCHAR(50)   NOT NULL COMMENT '存货编码',
+  item_name       VARCHAR(200)  NULL COMMENT '存货名称',
+  spec            VARCHAR(200)  NULL COMMENT '规格型号',
+  unit            VARCHAR(20)   NULL COMMENT '计量单位',
+  warehouse       VARCHAR(50)   NOT NULL COMMENT '仓库',
+  location        VARCHAR(50)   NOT NULL DEFAULT '' COMMENT '库位',
+  batch_no        VARCHAR(50)   NOT NULL DEFAULT '' COMMENT '批次号',
+  quantity        DECIMAL(18,4) NOT NULL DEFAULT 0 COMMENT '结存数量',
+  locked_quantity DECIMAL(18,4) NOT NULL DEFAULT 0 COMMENT '锁定量（已占用未出库）',
+  amount          DECIMAL(18,4) NOT NULL DEFAULT 0 COMMENT '结存金额',
+  update_time     DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  ext_str1      VARCHAR(200)  COMMENT '预留扩展-文本1',
+  ext_str2      VARCHAR(200)  COMMENT '预留扩展-文本2',
+  ext_str3      VARCHAR(200)  COMMENT '预留扩展-文本3',
+  ext_str4      VARCHAR(200)  COMMENT '预留扩展-文本4',
+  ext_str5      VARCHAR(200)  COMMENT '预留扩展-文本5',
+  ext_str6      VARCHAR(200)  COMMENT '预留扩展-文本6',
+  ext_str7      VARCHAR(200)  COMMENT '预留扩展-文本7',
+  ext_str8      VARCHAR(200)  COMMENT '预留扩展-文本8',
+  ext_str9      VARCHAR(200)  COMMENT '预留扩展-文本9',
+  ext_str10     VARCHAR(200)  COMMENT '预留扩展-文本10',
+  ext_num1      DECIMAL(18,4) COMMENT '预留扩展-数值1',
+  ext_num2      DECIMAL(18,4) COMMENT '预留扩展-数值2',
+  ext_num3      DECIMAL(18,4) COMMENT '预留扩展-数值3',
+  ext_num4      DECIMAL(18,4) COMMENT '预留扩展-数值4',
+  ext_num5      DECIMAL(18,4) COMMENT '预留扩展-数值5',
+  ext_num6      DECIMAL(18,4) COMMENT '预留扩展-数值6',
+  ext_num7      DECIMAL(18,4) COMMENT '预留扩展-数值7',
+  ext_num8      DECIMAL(18,4) COMMENT '预留扩展-数值8',
+  ext_num9      DECIMAL(18,4) COMMENT '预留扩展-数值9',
+  ext_num10     DECIMAL(18,4) COMMENT '预留扩展-数值10',
+  ext_date1     DATETIME      COMMENT '预留扩展-日期1',
+  ext_date2     DATETIME      COMMENT '预留扩展-日期2',
+  ext_date3     DATETIME      COMMENT '预留扩展-日期3',
+  ext_date4     DATETIME      COMMENT '预留扩展-日期4',
+  ext_date5     DATETIME      COMMENT '预留扩展-日期5',
+  ext_flag1     TINYINT       COMMENT '预留扩展-标记1',
+  ext_flag2     TINYINT       COMMENT '预留扩展-标记2',
+  ext_flag3     TINYINT       COMMENT '预留扩展-标记3',
+  ext_flag4     TINYINT       COMMENT '预留扩展-标记4',
+  ext_flag5     TINYINT       COMMENT '预留扩展-标记5',
+  UNIQUE KEY uk_stock_dim (item_code, warehouse, location, batch_no),
+  KEY idx_stock_item (item_code)
+) COMMENT '库存余额表';
+
+-- 库存事务表：出入库流水，余额由其聚合，保留追溯
+CREATE TABLE IF NOT EXISTS stock_txn (
+  id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+  panel_code  VARCHAR(50)   NOT NULL COMMENT '来源面板编码',
+  form_no     VARCHAR(50)   NOT NULL COMMENT '来源单据编号',
+  row_no      INT           NOT NULL DEFAULT 0 COMMENT '来源行号',
+  direction   VARCHAR(10)   NOT NULL COMMENT '方向：IN/OUT/INITIAL',
+  item_code   VARCHAR(50)   NOT NULL COMMENT '存货编码',
+  item_name   VARCHAR(200)  NULL COMMENT '存货名称',
+  spec        VARCHAR(200)  NULL COMMENT '规格型号',
+  unit        VARCHAR(20)   NULL COMMENT '计量单位',
+  warehouse   VARCHAR(50)   NOT NULL COMMENT '仓库',
+  location    VARCHAR(50)   NOT NULL DEFAULT '' COMMENT '库位',
+  batch_no    VARCHAR(50)   NOT NULL DEFAULT '' COMMENT '批次号',
+  quantity    DECIMAL(18,4) NOT NULL DEFAULT 0 COMMENT '数量（正数）',
+  price       DECIMAL(18,4) NOT NULL DEFAULT 0 COMMENT '单价',
+  amount      DECIMAL(18,4) NOT NULL DEFAULT 0 COMMENT '金额（正数）',
+  biz_date    DATE          NULL COMMENT '业务日期',
+  create_time DATETIME      DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_txn_doc (panel_code, form_no),
+  KEY idx_txn_item (item_code, warehouse),
+  KEY idx_txn_date (biz_date)
+) COMMENT '库存事务表';
 
 -- 生产加工单面板配置（对齐实测 T+ 轻MES：三明细分录 + 明细/汇总子页签 + T+ 工具栏分组）
 INSERT INTO panel_config (panel_code, panel_name, category, config) VALUES
@@ -403,18 +541,8 @@ INSERT INTO panel_config (panel_code, panel_name, category, config) VALUES
 ('PARTNER_INV', '往来单位存货设置', '基础档案', '{"metadata":{"panelCode":"PARTNER_INV","panelName":"往来单位存货设置","panelCategory":"基础档案","panelState":{"dataName":"状态","dataType":"STRING","defaultOptions":["启用","停用"]},"panelPageDto":{"tablePages":[{"tableName":"往来单位存货设置列表","queryFields":[{"dataName":"往来单位编码","dataType":"文本"},{"dataName":"往来单位名称","dataType":"文本"}],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["往来单位编码","往来单位名称","往来单位简称","往来单位分类","存货编码","存货名称","规格型号","存货分类","计量单位","往来单位存货编码","往来单位存货名称","开票名称","开票规格型号","开票计量单位"]}],"topBarBtn":[{"buttonName":"新增流程"},{"buttonName":"删除"},{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"往来单位存货设置","fieldNames":"往来单位编码,往来单位名称,往来单位简称,往来单位分类,存货编码,存货名称,规格型号,存货分类,计量单位,往来单位存货编码,往来单位存货名称,开票名称,开票规格型号,开票计量单位","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"删除"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"新增流程"},{"buttonName":"删除"},{"buttonName":"刷新"},{"buttonName":"保存"},{"buttonName":"放弃"}],"buttonGroups":[{"name":"新增","actions":["新增"]},{"name":"修改","actions":["修改"]},{"name":"删除","actions":["删除","删除单据"]},{"name":"查找","actions":["查找","刷新"]},{"name":"打印","actions":["打印","预览"]},{"name":"导入","actions":["下载模板","导入"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"往来单位编码","dataType":"文本","isRequired":true},{"dataName":"往来单位名称","dataType":"文本","isRequired":true},{"dataName":"往来单位简称","dataType":"文本"},{"dataName":"往来单位分类","dataType":"文本"},{"dataName":"存货编码","dataType":"文本","isRequired":true},{"dataName":"存货名称","dataType":"文本","isRequired":true},{"dataName":"规格型号","dataType":"文本"},{"dataName":"存货分类","dataType":"文本"},{"dataName":"计量单位","dataType":"文本","isRequired":true},{"dataName":"往来单位存货编码","dataType":"文本"},{"dataName":"往来单位存货名称","dataType":"文本"},{"dataName":"开票名称","dataType":"文本"},{"dataName":"开票规格型号","dataType":"文本"},{"dataName":"开票计量单位","dataType":"文本"}]},"detail":{"tabs":[]}}'),
 ('OP_CONV', '工序辅单位换算率设置', '基础档案', '{"metadata":{"panelCode":"OP_CONV","panelName":"工序辅单位换算率设置","panelCategory":"基础档案","panelState":{"dataName":"状态","dataType":"STRING","defaultOptions":["启用","停用"]},"panelPageDto":{"tablePages":[{"tableName":"工序辅单位换算率设置列表","queryFields":[{"dataName":"存货编码","dataType":"文本"},{"dataName":"存货名称","dataType":"文本"}],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["存货编码","存货名称","规格型号","工序名称","工序单位","按辅单位计价","工序计价辅单位","辅单位换算率","描述","最近修改日期"]}],"topBarBtn":[{"buttonName":"新增流程"},{"buttonName":"删除"},{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"工序辅单位换算率设置","fieldNames":"存货编码,存货名称,规格型号,工序名称,工序单位,按辅单位计价,工序计价辅单位,辅单位换算率,描述,最近修改日期","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"删除"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"新增流程"},{"buttonName":"删除"},{"buttonName":"刷新"},{"buttonName":"保存"},{"buttonName":"放弃"}],"buttonGroups":[{"name":"新增","actions":["新增"]},{"name":"修改","actions":["修改"]},{"name":"删除","actions":["删除","删除单据"]},{"name":"查找","actions":["查找","刷新"]},{"name":"打印","actions":["打印","预览"]},{"name":"导入","actions":["下载模板","导入"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"存货编码","dataType":"文本","isRequired":true},{"dataName":"存货名称","dataType":"文本","isRequired":true},{"dataName":"规格型号","dataType":"文本"},{"dataName":"工序名称","dataType":"文本","isRequired":true},{"dataName":"工序单位","dataType":"文本","isRequired":true},{"dataName":"按辅单位计价","dataType":"是否","defaultValue":false},{"dataName":"工序计价辅单位","dataType":"文本","isRequired":true},{"dataName":"辅单位换算率","dataType":"小数","defaultValue":1,"isRequired":true},{"dataName":"描述","dataType":"文本"},{"dataName":"最近修改日期","dataType":"日期"}]},"detail":{"tabs":[]}}'),
 ('INV_PRICE', '存货价格本', '基础档案', '{"metadata":{"panelCode":"INV_PRICE","panelName":"存货价格本","panelCategory":"基础档案","singleDoc":true,"panelState":{"dataName":"状态","dataType":"STRING","defaultOptions":["启用","停用"]},"buttonGroups":[{"name":"新增","actions":["新增"]},{"name":"修改","actions":["修改"]},{"name":"保存","actions":["保存","保存新增"]},{"name":"删除","actions":["删除","删除单据"]},{"name":"查找","actions":["查找","刷新"]},{"name":"打印","actions":["打印","预览"]},{"name":"导入","actions":["下载模板","导入"]},{"name":"更多","actions":["复制","导出","退出"]}],"panelButtons":[{"buttonName":"新增流程"},{"buttonName":"删除"},{"buttonName":"刷新"},{"buttonName":"保存"},{"buttonName":"放弃"}],"panelPageDto":{"formPages":[{"events":[],"formName":"存货价格本","fieldNames":"备注","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"删除"},{"buttonName":"放弃"}]}],"tablePages":[{"events":[],"gridTabs":[{"label":"价格明细","columns":["存货编码",                                "存货名称",                                "规格型号",                                "品牌",                                "计量单位",                                "采购价",                                "委外价",                                "零售价",                                "普通客户价",                                "一级批发价",                                "二级批发价",                                "三级批发价",                                "四级批发价",                                "五级批发价",                                "最新售价",                                "最低售价",                                "最新进价",                                "最高进价",                                "加价率%",                                "最近修改日期",                                "最高委外价",                                "扣率%",                                "备注",                                "操作员",                                "建档人"],"rowSource":"rows"}],"tableName":"存货价格本列表","topBarBtn":[{"buttonName":"新增流程"},{"buttonName":"删除"},{"buttonName":"刷新"}],"queryFields":[],"rowOperationBarBtn":[]}]},"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"备注","dataType":"文本"}]},"detail":{"tabs":[{"key":"prices","label":"价格明细","fields":[{ "dataName": "存货编码", "dataType": "文本", "isRequired": true }, { "dataName": "存货名称", "dataType": "文本", "isRequired": true }, { "dataName": "规格型号", "dataType": "文本" }, { "dataName": "品牌", "dataType": "文本" }, { "dataName": "计量单位", "dataType": "文本", "isRequired": true }, { "dataName": "采购价", "dataType": "小数", "defaultValue": 0 }, { "dataName": "委外价", "dataType": "小数", "defaultValue": 0 }, { "dataName": "零售价", "dataType": "小数", "defaultValue": 0 }, { "dataName": "普通客户价", "dataType": "小数", "defaultValue": 0 }, { "dataName": "一级批发价", "dataType": "小数", "defaultValue": 0 }, { "dataName": "二级批发价", "dataType": "小数", "defaultValue": 0 }, { "dataName": "三级批发价", "dataType": "小数", "defaultValue": 0 }, { "dataName": "四级批发价", "dataType": "小数", "defaultValue": 0 }, { "dataName": "五级批发价", "dataType": "小数", "defaultValue": 0 }, { "dataName": "最新售价", "dataType": "小数", "defaultValue": 0 }, { "dataName": "最低售价", "dataType": "小数", "defaultValue": 0 }, { "dataName": "最新进价", "dataType": "小数", "defaultValue": 0 }, { "dataName": "最高进价", "dataType": "小数", "defaultValue": 0 }, { "dataName": "加价率%", "dataType": "小数", "defaultValue": 0 }, { "dataName": "最近修改日期", "dataType": "日期" }, { "dataName": "最高委外价", "dataType": "小数", "defaultValue": 0 }, { "dataName": "扣率%", "dataType": "小数", "defaultValue": 0 }, { "dataName": "备注", "dataType": "文本" }, { "dataName": "操作员", "dataType": "文本" }, { "dataName": "建档人", "dataType": "文本" }],"isRequired":false}]}}'),
-('SYS_OPT', '选项设置', '系统设置', '{"metadata":{"panelCode":"SYS_OPT","panelName":"选项设置","panelCategory":"系统设置","panelPageDto":{"tablePages":[{"tableName":"选项设置列表","queryFields":[],"gridTabs":[{"label":"列表","rowSource":"rows","columns":[]}],"topBarBtn":[{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"选项设置","fieldNames":"数量小数位,单价小数位,金额小数位,允许负库存出库,单据保存后自动审核,启用批号管理,单据编码前缀,默认仓库,默认生产车间","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"刷新"}],"buttonGroups":[{"name":"保存","actions":["保存"]},{"name":"更多","actions":["放弃","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"数量小数位","dataType":"文本","defaultValue":"2"},{"dataName":"单价小数位","dataType":"文本","defaultValue":"2"},{"dataName":"金额小数位","dataType":"文本","defaultValue":"2"},{"dataName":"允许负库存出库","dataType":"是否","defaultValue":false},{"dataName":"单据保存后自动审核","dataType":"是否","defaultValue":false},{"dataName":"启用批号管理","dataType":"是否","defaultValue":false},{"dataName":"单据编码前缀","dataType":"文本","defaultValue":"MO/SO/RK/CP/IC/IO/MD/ID"},{"dataName":"默认仓库","dataType":"文本","defaultValue":"成品仓"},{"dataName":"默认生产车间","dataType":"文本","defaultValue":"熔铸车间"}]},"detail":{"tabs":[]}}'),
-('SYS_BOARD_AUTH', '看板授权', '系统设置', '{"metadata":{"panelCode":"SYS_BOARD_AUTH","panelName":"看板授权","panelCategory":"系统设置","panelPageDto":{"tablePages":[{"tableName":"看板授权列表","queryFields":[],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["看板名称","角色","授权人","授权时间","启用"]}],"topBarBtn":[{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"看板授权","fieldNames":"看板名称,角色,授权人,授权时间,启用","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"刷新"}],"buttonGroups":[{"name":"查找","actions":["查找","刷新"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"看板名称","dataType":"文本"},{"dataName":"角色","dataType":"文本"},{"dataName":"授权人","dataType":"文本"},{"dataName":"授权时间","dataType":"日期"},{"dataName":"启用","dataType":"是否","defaultValue":false}]},"detail":{"tabs":[]}}'),
-('SYS_BILL_DESIGN', '单据设计', '系统设置', '{"metadata":{"panelCode":"SYS_BILL_DESIGN","panelName":"单据设计","panelCategory":"系统设置","panelPageDto":{"tablePages":[{"tableName":"单据设计列表","queryFields":[],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["单据编码","单据名称","版本","状态","最近修改时间"]}],"topBarBtn":[{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"单据设计","fieldNames":"单据编码,单据名称,版本,状态,最近修改时间","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"刷新"}],"buttonGroups":[{"name":"查找","actions":["查找","刷新"]},{"name":"设计","actions":["打开设计器"]},{"name":"更多","actions":["导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"单据编码","dataType":"文本"},{"dataName":"单据名称","dataType":"文本"},{"dataName":"版本","dataType":"文本"},{"dataName":"状态","dataType":"下拉框","options":["已发布","草稿","修改中"]},{"dataName":"最近修改时间","dataType":"日期"}]},"detail":{"tabs":[]}}'),
 ('SYS_CODE', '单据编码设置', '系统设置', '{"metadata":{"panelCode":"SYS_CODE","panelName":"单据编码设置","panelCategory":"系统设置","panelPageDto":{"tablePages":[{"tableName":"单据编码设置列表","queryFields":[],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["单据名称","编码前缀","日期格式","流水号位数","当前值","启用"]}],"topBarBtn":[{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"单据编码设置","fieldNames":"单据名称,编码前缀,日期格式,流水号位数,当前值,启用","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"刷新"}],"buttonGroups":[{"name":"查找","actions":["查找","刷新"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"单据名称","dataType":"文本"},{"dataName":"编码前缀","dataType":"文本"},{"dataName":"日期格式","dataType":"下拉框","options":["yyyy-MM-dd","yyyyMMdd","yyyy"]},{"dataName":"流水号位数","dataType":"小数","defaultValue":4},{"dataName":"当前值","dataType":"文本"},{"dataName":"启用","dataType":"是否","defaultValue":false}]},"detail":{"tabs":[]}}'),
 ('SYS_PRINT', '打印管理中心', '系统设置', '{"metadata":{"panelCode":"SYS_PRINT","panelName":"打印管理中心","panelCategory":"系统设置","panelPageDto":{"tablePages":[{"tableName":"打印管理中心列表","queryFields":[],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["模板名称","所属单据","模板类型","状态","更新时间"]}],"topBarBtn":[{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"打印管理中心","fieldNames":"模板名称,所属单据,模板类型,状态,更新时间","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"刷新"}],"buttonGroups":[{"name":"查找","actions":["查找","刷新"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"模板名称","dataType":"文本"},{"dataName":"所属单据","dataType":"文本"},{"dataName":"模板类型","dataType":"下拉框","options":["打印模板","标签模板","导出模板"]},{"dataName":"状态","dataType":"下拉框","options":["启用","停用"]},{"dataName":"更新时间","dataType":"日期"}]},"detail":{"tabs":[]}}'),
-('SYS_ALARM', '预警设置', '系统设置', '{"metadata":{"panelCode":"SYS_ALARM","panelName":"预警设置","panelCategory":"系统设置","panelPageDto":{"tablePages":[{"tableName":"预警设置列表","queryFields":[],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["预警名称","预警类型","预警条件","启用"]}],"topBarBtn":[{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"预警设置","fieldNames":"预警名称,预警类型,预警条件,启用","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"刷新"}],"buttonGroups":[{"name":"查找","actions":["查找","刷新"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"预警名称","dataType":"文本"},{"dataName":"预警类型","dataType":"下拉框","options":["库存预警","生产预警","到期预警"]},{"dataName":"预警条件","dataType":"文本"},{"dataName":"启用","dataType":"是否","defaultValue":false}]},"detail":{"tabs":[]}}'),
-('SYS_TASK', '任务管理', '系统设置', '{"metadata":{"panelCode":"SYS_TASK","panelName":"任务管理","panelCategory":"系统设置","panelPageDto":{"tablePages":[{"tableName":"任务管理列表","queryFields":[],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["任务名称","任务类型","状态","上次执行时间","下次执行时间"]}],"topBarBtn":[{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"任务管理","fieldNames":"任务名称,任务类型,状态,上次执行时间,下次执行时间","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"刷新"}],"buttonGroups":[{"name":"查找","actions":["查找","刷新"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"任务名称","dataType":"文本"},{"dataName":"任务类型","dataType":"下拉框","options":["数据备份","报表生成","定时任务"]},{"dataName":"状态","dataType":"下拉框","options":["运行中","已停止","失败"]},{"dataName":"上次执行时间","dataType":"文本"},{"dataName":"下次执行时间","dataType":"文本"}]},"detail":{"tabs":[]}}'),
-('SYS_SCREEN', '大屏设备管理', '系统设置', '{"metadata":{"panelCode":"SYS_SCREEN","panelName":"大屏设备管理","panelCategory":"系统设置","panelPageDto":{"tablePages":[{"tableName":"大屏设备管理列表","queryFields":[],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["设备编码","设备名称","状态","分辨率","备注"]}],"topBarBtn":[{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"大屏设备管理","fieldNames":"设备编码,设备名称,状态,分辨率,备注","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"刷新"}],"buttonGroups":[{"name":"查找","actions":["查找","刷新"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"设备编码","dataType":"文本"},{"dataName":"设备名称","dataType":"文本"},{"dataName":"状态","dataType":"下拉框","options":["在线","离线"]},{"dataName":"分辨率","dataType":"文本"},{"dataName":"备注","dataType":"文本"}]},"detail":{"tabs":[]}}'),
-('SYS_SCREEN_DL', '大屏客户端下载中心', '系统设置', '{"metadata":{"panelCode":"SYS_SCREEN_DL","panelName":"大屏客户端下载中心","panelCategory":"系统设置","panelPageDto":{"tablePages":[{"tableName":"大屏客户端下载中心列表","queryFields":[],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["客户端名称","版本","更新日期","说明"]}],"topBarBtn":[{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"大屏客户端下载中心","fieldNames":"客户端名称,版本,更新日期,说明","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"刷新"}],"buttonGroups":[{"name":"查找","actions":["查找","刷新"]},{"name":"下载","actions":["下载客户端"]},{"name":"更多","actions":["退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"客户端名称","dataType":"文本"},{"dataName":"版本","dataType":"文本"},{"dataName":"更新日期","dataType":"日期"},{"dataName":"说明","dataType":"文本"}]},"detail":{"tabs":[]}}'),
-('SYS_MOBILE', '移动单据设置', '系统设置', '{"metadata":{"panelCode":"SYS_MOBILE","panelName":"移动单据设置","panelCategory":"系统设置","panelPageDto":{"tablePages":[{"tableName":"移动单据设置列表","queryFields":[],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["单据名称","单据编码","移动端启用","说明"]}],"topBarBtn":[{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"移动单据设置","fieldNames":"单据名称,单据编码,移动端启用,说明","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"刷新"}],"buttonGroups":[{"name":"查找","actions":["查找","刷新"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"单据名称","dataType":"文本"},{"dataName":"单据编码","dataType":"文本"},{"dataName":"移动端启用","dataType":"是否","defaultValue":false},{"dataName":"说明","dataType":"文本"}]},"detail":{"tabs":[]}}'),
-('SYS_MOBILE_TPL', '移动模板设置', '系统设置', '{"metadata":{"panelCode":"SYS_MOBILE_TPL","panelName":"移动模板设置","panelCategory":"系统设置","panelPageDto":{"tablePages":[{"tableName":"移动模板设置列表","queryFields":[],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["模板名称","所属单据","状态","更新时间"]}],"topBarBtn":[{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"移动模板设置","fieldNames":"模板名称,所属单据,状态,更新时间","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"刷新"}],"buttonGroups":[{"name":"查找","actions":["查找","刷新"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"模板名称","dataType":"文本"},{"dataName":"所属单据","dataType":"文本"},{"dataName":"状态","dataType":"下拉框","options":["启用","停用"]},{"dataName":"更新时间","dataType":"日期"}]},"detail":{"tabs":[]}}'),
-('SYS_PRINT_DEFAULT', '打印出厂值设置', '系统设置', '{"metadata":{"panelCode":"SYS_PRINT_DEFAULT","panelName":"打印出厂值设置","panelCategory":"系统设置","panelPageDto":{"tablePages":[{"tableName":"打印出厂值设置列表","queryFields":[],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["模板名称","所属单据","类型","状态"]}],"topBarBtn":[{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"打印出厂值设置","fieldNames":"模板名称,所属单据,类型,状态","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"刷新"}],"buttonGroups":[{"name":"查找","actions":["查找","刷新"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"模板名称","dataType":"文本"},{"dataName":"所属单据","dataType":"文本"},{"dataName":"类型","dataType":"下拉框","options":["出厂模板","自定义模板"]},{"dataName":"状态","dataType":"下拉框","options":["启用","停用"]}]},"detail":{"tabs":[]}}'),
 ('INIT_BALANCE', '库存期初余额', '期初单据', '{"metadata":{"panelCode":"INIT_BALANCE","panelName":"库存期初余额","panelCategory":"期初单据","autoCodeField":"期初余额单号","panelState":{"dataName":"单据状态","dataType":"STRING","defaultOptions":["草稿","已审核"]},"panelPageDto":{"tablePages":[{"tableName":"库存期初余额列表","queryFields":[{"dataName":"期初余额单号","dataType":"文本"},{"dataName":"单据日期","dataType":"日期"}],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["存货编码","存货名称","规格型号","计量单位","数量","主单价","金额","制单人","审核人"]}],"topBarBtn":[{"buttonName":"新增流程"},{"buttonName":"删除"},{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"库存期初余额","fieldNames":"期初余额单号,单据日期,仓库,备注","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"审核"},{"buttonName":"删除"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"新增流程"},{"buttonName":"保存"},{"buttonName":"删除"},{"buttonName":"刷新"},{"buttonName":"提交审批"},{"buttonName":"审批通过"},{"buttonName":"审批驳回"},{"buttonName":"审批情况"},{"buttonName":"弃审"}],"buttonGroups":[{"name":"新增","actions":["新增"]},{"name":"修改","actions":["修改"]},{"name":"删除","actions":["删除","删除单据"]},{"name":"审批","actions":["提交审批","审批通过","审批驳回","审批情况","弃审"]},{"name":"查找","actions":["查找","刷新"]},{"name":"打印","actions":["打印","预览"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"期初余额单号","dataType":"文本","isRequired":true,"autoCode":true},{"dataName":"单据日期","dataType":"日期","defaultValue":"2026-08-14"},{"dataName":"仓库","dataType":"下拉框","options":["原料仓","辅料仓","成品仓","半成品仓","不良品仓"],"isRequired":true},{"dataName":"备注","dataType":"文本"}]},"detail":{"tabs":[{"key":"items","label":"明细","isRequired":true,"summaryItems":[],"fields":[{"dataName":"存货编码","dataType":"文本","isRequired":true},{"dataName":"存货名称","dataType":"文本","isRequired":true},{"dataName":"规格型号","dataType":"文本"},{"dataName":"计量单位","dataType":"文本","isRequired":true},{"dataName":"数量","dataType":"小数","defaultValue":0,"isRequired":true},{"dataName":"主单价","dataType":"小数","defaultValue":0},{"dataName":"金额","dataType":"小数","defaultValue":0},{"dataName":"制单人","dataType":"文本"},{"dataName":"审核人","dataType":"文本"}]}]}}'),
 ('INIT_AP', '期初暂估入库单', '期初单据', '{"metadata":{"panelCode":"INIT_AP","panelName":"期初暂估入库单","panelCategory":"期初单据","autoCodeField":"期初暂估单号","panelState":{"dataName":"单据状态","dataType":"STRING","defaultOptions":["草稿","已审核"]},"panelPageDto":{"tablePages":[{"tableName":"期初暂估入库单列表","queryFields":[{"dataName":"期初暂估单号","dataType":"文本"},{"dataName":"单据日期","dataType":"日期"}],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["仓库","存货名称","规格型号","计量单位","实收数量","单价","金额"]}],"topBarBtn":[{"buttonName":"新增流程"},{"buttonName":"删除"},{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"期初暂估入库单","fieldNames":"期初暂估单号,单据日期,供应商,仓库,备注","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"审核"},{"buttonName":"删除"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"新增流程"},{"buttonName":"保存"},{"buttonName":"删除"},{"buttonName":"刷新"},{"buttonName":"提交审批"},{"buttonName":"审批通过"},{"buttonName":"审批驳回"},{"buttonName":"审批情况"},{"buttonName":"弃审"}],"buttonGroups":[{"name":"新增","actions":["新增"]},{"name":"修改","actions":["修改"]},{"name":"删除","actions":["删除","删除单据"]},{"name":"审批","actions":["提交审批","审批通过","审批驳回","审批情况","弃审"]},{"name":"查找","actions":["查找","刷新"]},{"name":"打印","actions":["打印","预览"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"期初暂估单号","dataType":"文本","isRequired":true,"autoCode":true},{"dataName":"单据日期","dataType":"日期","defaultValue":"2026-08-14"},{"dataName":"供应商","dataType":"文本","isRequired":true},{"dataName":"仓库","dataType":"下拉框","options":["原料仓","辅料仓","成品仓","半成品仓","不良品仓"],"isRequired":true},{"dataName":"备注","dataType":"文本"}]},"detail":{"tabs":[{"key":"items","label":"明细","isRequired":true,"summaryItems":[],"fields":[{"dataName":"仓库","dataType":"文本","isRequired":true},{"dataName":"存货名称","dataType":"文本","isRequired":true},{"dataName":"规格型号","dataType":"文本"},{"dataName":"计量单位","dataType":"文本","isRequired":true},{"dataName":"实收数量","dataType":"小数","defaultValue":0,"isRequired":true},{"dataName":"单价","dataType":"小数","defaultValue":0},{"dataName":"金额","dataType":"小数","defaultValue":0}]}]}}'),
 ('INIT_AR', '期初销售出库单', '期初单据', '{"metadata":{"panelCode":"INIT_AR","panelName":"期初销售出库单","panelCategory":"期初单据","autoCodeField":"期初出库单号","panelState":{"dataName":"单据状态","dataType":"STRING","defaultOptions":["草稿","已审核"]},"panelPageDto":{"tablePages":[{"tableName":"期初销售出库单列表","queryFields":[{"dataName":"期初出库单号","dataType":"文本"},{"dataName":"单据日期","dataType":"日期"}],"gridTabs":[{"label":"列表","rowSource":"rows","columns":["仓库","存货名称","规格型号","计量单位","数量"]}],"topBarBtn":[{"buttonName":"新增流程"},{"buttonName":"删除"},{"buttonName":"刷新"}],"rowOperationBarBtn":[],"events":[]}],"formPages":[{"formName":"期初销售出库单","fieldNames":"期初出库单号,单据日期,客户,仓库,备注","bottomOperationBarBtn":[{"buttonName":"保存"},{"buttonName":"审核"},{"buttonName":"删除"},{"buttonName":"放弃"}],"events":[]}]},"panelButtons":[{"buttonName":"新增流程"},{"buttonName":"保存"},{"buttonName":"删除"},{"buttonName":"刷新"},{"buttonName":"提交审批"},{"buttonName":"审批通过"},{"buttonName":"审批驳回"},{"buttonName":"审批情况"},{"buttonName":"弃审"}],"buttonGroups":[{"name":"新增","actions":["新增"]},{"name":"修改","actions":["修改"]},{"name":"删除","actions":["删除","删除单据"]},{"name":"审批","actions":["提交审批","审批通过","审批驳回","审批情况","弃审"]},{"name":"查找","actions":["查找","刷新"]},{"name":"打印","actions":["打印","预览"]},{"name":"更多","actions":["复制","导出","退出"]}],"version":"1.0"},"dataSchema":{"type":"object","fields":[{"dataName":"期初出库单号","dataType":"文本","isRequired":true,"autoCode":true},{"dataName":"单据日期","dataType":"日期","defaultValue":"2026-08-14"},{"dataName":"客户","dataType":"文本","isRequired":true},{"dataName":"仓库","dataType":"下拉框","options":["原料仓","辅料仓","成品仓","半成品仓","不良品仓"],"isRequired":true},{"dataName":"备注","dataType":"文本"}]},"detail":{"tabs":[{"key":"items","label":"明细","isRequired":true,"summaryItems":[],"fields":[{"dataName":"仓库","dataType":"文本","isRequired":true},{"dataName":"存货名称","dataType":"文本","isRequired":true},{"dataName":"规格型号","dataType":"文本"},{"dataName":"计量单位","dataType":"文本","isRequired":true},{"dataName":"数量","dataType":"小数","defaultValue":0,"isRequired":true}]}]}}'),
@@ -452,13 +580,6 @@ INSERT INTO form_data (id, panel_code, form_no, data, detail_data, status, creat
 (4079, 'OP_CONV', 'OC-001', '{"编号":"OC-001","存货编码":"CP001","存货名称":"铝棒 Φ80","规格型号":"Φ80×3000","工序名称":"热处理","工序单位":"件","按辅单位计价":true,"工序计价辅单位":"kg","辅单位换算率":8.2,"描述":"单重 8.2kg","最近修改日期":"2026-08-10"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
 (4080, 'OP_CONV', 'OC-002', '{"编号":"OC-002","存货编码":"CP004","存货名称":"减速箱体 A","规格型号":"JS-400","工序名称":"热处理","工序单位":"件","按辅单位计价":true,"工序计价辅单位":"kg","辅单位换算率":42,"描述":"单重 42kg","最近修改日期":"2026-08-11"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
 (4081, 'INV_PRICE', '存货价格本', '{"备注":"存货价格本"}', '{"prices":[{"编号":"IP-001","存货编码":"CP001","存货名称":"铝棒 Φ80","规格型号":"Φ80×3000","品牌":"轻铝","计量单位":"件","采购价":10.2,"委外价":0,"零售价":19.5,"普通客户价":15.5,"一级批发价":14.5,"二级批发价":13.8,"三级批发价":13.2,"四级批发价":12.8,"五级批发价":12.2,"最新售价":15.5,"最低售价":12.2,"最新进价":10.2,"最高进价":10.8,"加价率%":15,"最近修改日期":"2026-08-10","最高委外价":0,"扣率%":0,"备注":"","操作员":"admin","建档人":"admin"},{"编号":"IP-002","存货编码":"CP002","存货名称":"铝板 6061","规格型号":"1500×3000×2","品牌":"轻铝","计量单位":"件","采购价":8.6,"委外价":0,"零售价":16,"普通客户价":12.8,"一级批发价":11.8,"二级批发价":11.2,"三级批发价":10.6,"四级批发价":10.2,"五级批发价":9.8,"最新售价":12.8,"最低售价":9.8,"最新进价":8.6,"最高进价":9.2,"加价率%":15,"最近修改日期":"2026-08-10","最高委外价":0,"扣率%":0,"备注":"","操作员":"admin","建档人":"admin"},{"编号":"IP-003","存货编码":"CP003","存货名称":"铝型材-散热片","规格型号":"XD-6063-T5","品牌":"轻铝","计量单位":"件","采购价":18.4,"委外价":0,"零售价":28,"普通客户价":22.6,"一级批发价":21.2,"二级批发价":20.4,"三级批发价":19.6,"四级批发价":18.8,"五级批发价":18.2,"最新售价":22.6,"最低售价":18.2,"最新进价":18.4,"最高进价":19,"加价率%":15,"最近修改日期":"2026-08-11","最高委外价":0,"扣率%":0,"备注":"","操作员":"admin","建档人":"admin"},{"编号":"IP-004","存货编码":"CP004","存货名称":"减速箱体 A","规格型号":"JS-400","品牌":"精工","计量单位":"件","采购价":210,"委外价":0,"零售价":320,"普通客户价":260,"一级批发价":245,"二级批发价":235,"三级批发价":225,"四级批发价":218,"五级批发价":210,"最新售价":260,"最低售价":210,"最新进价":210,"最高进价":225,"加价率%":12,"最近修改日期":"2026-08-11","最高委外价":0,"扣率%":0,"备注":"","操作员":"admin","建档人":"admin"},{"编号":"IP-005","存货编码":"CP005","存货名称":"轴套 C","规格型号":"ZT-C-30","品牌":"精工","计量单位":"件","采购价":4.6,"委外价":0,"零售价":9,"普通客户价":6.8,"一级批发价":6.2,"二级批发价":5.8,"三级批发价":5.4,"四级批发价":5,"五级批发价":4.8,"最新售价":6.8,"最低售价":4.8,"最新进价":4.6,"最高进价":5,"加价率%":15,"最近修改日期":"2026-08-12","最高委外价":0,"扣率%":0,"备注":"","操作员":"admin","建档人":"admin"}]}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4086, 'SYS_OPT', 'SYS_OPT-001', '{"编号":"SYS_OPT-001","状态":"启用"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4087, 'SYS_BOARD_AUTH', 'SYS_BA-001', '{"编号":"SYS_BA-001","看板名称":"生产看板","角色":"车间主任","授权人":"admin","授权时间":"2026-08-14","启用":true}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4088, 'SYS_BOARD_AUTH', 'SYS_BA-002', '{"编号":"SYS_BA-002","看板名称":"生产看板","角色":"生产主管","授权人":"admin","授权时间":"2026-08-14","启用":true}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4089, 'SYS_BOARD_AUTH', 'SYS_BA-003', '{"编号":"SYS_BA-003","看板名称":"生产库存看板","角色":"仓库管理员","授权人":"admin","授权时间":"2026-08-14","启用":true}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4090, 'SYS_BILL_DESIGN', 'SYS_BD-001', '{"编号":"SYS_BD-001","单据编码":"MP05","单据名称":"生产加工单","版本":"V3.1","状态":"已发布","最近修改时间":"2026-08-14"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4091, 'SYS_BILL_DESIGN', 'SYS_BD-002', '{"编号":"SYS_BD-002","单据编码":"SA03","单据名称":"销售订单","版本":"V1.0","状态":"已发布","最近修改时间":"2026-08-14"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4092, 'SYS_BILL_DESIGN', 'SYS_BD-003', '{"编号":"SYS_BD-003","单据编码":"ST1001","单据名称":"采购入库单","版本":"V1.0","状态":"已发布","最近修改时间":"2026-08-14"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
 (4093, 'SYS_CODE', 'SYS_CODE-001', '{"编号":"SYS_CODE-001","单据名称":"生产加工单","编码前缀":"MO-","日期格式":"yyyy-MM-dd","流水号位数":4,"当前值":"MO-2026-08-0012","启用":true}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
 (4094, 'SYS_CODE', 'SYS_CODE-002', '{"编号":"SYS_CODE-002","单据名称":"销售订单","编码前缀":"SO-","日期格式":"yyyy-MM-dd","流水号位数":4,"当前值":"SO-2026-08-0005","启用":true}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
 (4095, 'SYS_CODE', 'SYS_CODE-003', '{"编号":"SYS_CODE-003","单据名称":"采购入库单","编码前缀":"RK-","日期格式":"yyyy-MM-dd","流水号位数":4,"当前值":"RK-2026-08-0001","启用":true}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
@@ -466,22 +587,6 @@ INSERT INTO form_data (id, panel_code, form_no, data, detail_data, status, creat
 (4097, 'SYS_PRINT', 'SYS_PRINT-001', '{"编号":"SYS_PRINT-001","模板名称":"生产加工单默认模板","所属单据":"生产加工单","模板类型":"打印模板","状态":"启用","更新时间":"2026-08-14"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
 (4098, 'SYS_PRINT', 'SYS_PRINT-002', '{"编号":"SYS_PRINT-002","模板名称":"销售订单默认模板","所属单据":"销售订单","模板类型":"打印模板","状态":"启用","更新时间":"2026-08-14"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
 (4099, 'SYS_PRINT', 'SYS_PRINT-003', '{"编号":"SYS_PRINT-003","模板名称":"工序流转卡模板","所属单据":"生产加工单","模板类型":"标签模板","状态":"启用","更新时间":"2026-08-14"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4100, 'SYS_ALARM', 'SYS_ALARM-001', '{"编号":"SYS_ALARM-001","预警名称":"最低库存预警","预警类型":"库存预警","预警条件":"现存量 <= 安全库存","启用":true}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4101, 'SYS_ALARM', 'SYS_ALARM-002', '{"编号":"SYS_ALARM-002","预警名称":"生产完工预警","预警类型":"生产预警","预警条件":"预完工日到期未完工","启用":true}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4102, 'SYS_ALARM', 'SYS_ALARM-003', '{"编号":"SYS_ALARM-003","预警名称":"超额领料预警","预警类型":"生产预警","预警条件":"领用量 > 计划数量","启用":true}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4103, 'SYS_TASK', 'SYS_TASK-001', '{"编号":"SYS_TASK-001","任务名称":"每日数据备份","任务类型":"数据备份","状态":"运行中","上次执行时间":"2026-08-14 02:00","下次执行时间":"2026-08-15 02:00"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4104, 'SYS_TASK', 'SYS_TASK-002', '{"编号":"SYS_TASK-002","任务名称":"生产看板数据刷新","任务类型":"定时任务","状态":"运行中","上次执行时间":"2026-08-14 09:00","下次执行时间":"2026-08-14 10:00"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4105, 'SYS_SCREEN', 'SYS_SCREEN-001', '{"编号":"SYS_SCREEN-001","设备编码":"DP001","设备名称":"车间一号大屏","状态":"在线","分辨率":"1920×1080","备注":"生产看板"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4106, 'SYS_SCREEN', 'SYS_SCREEN-002', '{"编号":"SYS_SCREEN-002","设备编码":"DP002","设备名称":"展厅大屏","状态":"离线","分辨率":"3840×2160","备注":""}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4107, 'SYS_SCREEN_DL', 'SYS_DL-001', '{"编号":"SYS_DL-001","客户端名称":"T+ 大屏客户端（Windows）","版本":"v3.2.1","更新日期":"2026-08-01","说明":"支持 Win10/11 x64"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4108, 'SYS_SCREEN_DL', 'SYS_DL-002', '{"编号":"SYS_DL-002","客户端名称":"T+ 大屏客户端（Android）","版本":"v3.1.0","更新日期":"2026-07-20","说明":"支持安卓电视盒子"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4109, 'SYS_MOBILE', 'SYS_MB-001', '{"编号":"SYS_MB-001","单据名称":"工序汇报单","单据编码":"MR10","移动端启用":true,"说明":"扫码报工"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4110, 'SYS_MOBILE', 'SYS_MB-002', '{"编号":"SYS_MB-002","单据名称":"生产加工单","单据编码":"MP05","移动端启用":true,"说明":""}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4111, 'SYS_MOBILE', 'SYS_MB-003', '{"编号":"SYS_MB-003","单据名称":"销售订单","单据编码":"SA03","移动端启用":false,"说明":""}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4112, 'SYS_MOBILE_TPL', 'SYS_MT-001', '{"编号":"SYS_MT-001","模板名称":"移动报工模板","所属单据":"工序汇报单","状态":"启用","更新时间":"2026-08-14"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4113, 'SYS_MOBILE_TPL', 'SYS_MT-002', '{"编号":"SYS_MT-002","模板名称":"移动审批模板","所属单据":"生产加工单","状态":"启用","更新时间":"2026-08-14"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4114, 'SYS_PRINT_DEFAULT', 'SYS_PD-001', '{"编号":"SYS_PD-001","模板名称":"出厂-生产加工单","所属单据":"生产加工单","类型":"出厂模板","状态":"启用"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
-(4115, 'SYS_PRINT_DEFAULT', 'SYS_PD-002', '{"编号":"SYS_PD-002","模板名称":"出厂-销售订单","所属单据":"销售订单","类型":"出厂模板","状态":"启用"}', '{}', '启用', 'admin', NOW(), 'admin', NOW()),
 (4030, 'INV', 'INV', '{"备注":"存货"}', '{"items":[{"所属类别":"包装物","存货编码":"CL005","存货名称":"包装木箱","规格型号":"1200×800","计价方式":"移动平均","品牌":"","计量单位":"件","属性":"外购","参考成本":5,"最新成本":5,"建档日期":"2026-01-15","停用":false},{"所属类别":"原材料","存货编码":"CL001","存货名称":"45#圆钢","规格型号":"Φ60","计价方式":"移动平均","品牌":"","计量单位":"kg","属性":"外购","参考成本":4.2,"最新成本":4.2,"建档日期":"2026-01-05","停用":false},{"所属类别":"原材料","存货编码":"CL002","存货名称":"6061铝锭","规格型号":"A00","计价方式":"移动平均","品牌":"","计量单位":"kg","属性":"外购","参考成本":12.8,"最新成本":12.8,"建档日期":"2026-01-05","停用":false},{"所属类别":"原材料","存货编码":"CL003","存货名称":"6063铝棒","规格型号":"Φ120","计价方式":"移动平均","品牌":"","计量单位":"kg","属性":"外购","参考成本":13.5,"最新成本":13.5,"建档日期":"2026-01-05","停用":false},{"所属类别":"产成品","存货编码":"CP001","存货名称":"铝棒 Φ80","规格型号":"Φ80×3000","计价方式":"移动平均","品牌":"轻铝","计量单位":"件","属性":"自制","参考成本":10.2,"最新成本":10.2,"建档日期":"2026-01-05","停用":false},{"所属类别":"产成品","存货编码":"CP002","存货名称":"铝板 6061","规格型号":"1500×3000×2","计价方式":"移动平均","品牌":"轻铝","计量单位":"件","属性":"自制","参考成本":8.6,"最新成本":8.6,"建档日期":"2026-01-05","停用":false},{"所属类别":"产成品","存货编码":"CP003","存货名称":"铝型材-散热片","规格型号":"XD-6063-T5","计价方式":"移动平均","品牌":"轻铝","计量单位":"件","属性":"自制","参考成本":18.4,"最新成本":18.4,"建档日期":"2026-01-06","停用":false},{"所属类别":"产成品","存货编码":"CP004","存货名称":"减速箱体 A","规格型号":"JS-400","计价方式":"个别计价","品牌":"精工","计量单位":"件","属性":"自制","参考成本":210,"最新成本":210,"建档日期":"2026-01-08","停用":false},{"所属类别":"产成品","存货编码":"CP005","存货名称":"轴套 C","规格型号":"ZT-C-30","计价方式":"移动平均","品牌":"精工","计量单位":"件","属性":"自制","参考成本":4.6,"最新成本":4.6,"建档日期":"2026-01-10","停用":false},{"所属类别":"辅助材料","存货编码":"CL004","存货名称":"切削液","规格型号":"20L/桶","计价方式":"移动平均","品牌":"","计量单位":"升","属性":"外购","参考成本":18,"最新成本":18,"建档日期":"2026-01-12","停用":false}]}', '启用', 'admin', NOW(), 'admin', NOW()),
 (4116, 'INIT_BALANCE', 'IB-001', '{"编号":"IB-001","期初余额单号":"IB-2026-08-0001","单据状态":"已审核","单据日期":"2026-08-01","仓库":"原料仓","备注":"期初建账","创建时间":"2026-08-01 09:00","更新时间":"2026-08-01 09:05","发起人编号":"tplusdemo12853"}', '{"items":[{"存货编码":"CL002","存货名称":"6061铝锭","规格型号":"A00","计量单位":"kg","数量":5000,"主单价":12.8,"金额":64000,"制单人":"admin","审核人":"系统管理员"},{"存货编码":"CL001","存货名称":"45#圆钢","规格型号":"Φ60","计量单位":"kg","数量":800,"主单价":4.2,"金额":3360,"制单人":"admin","审核人":"系统管理员"},{"存货编码":"CL004","存货名称":"切削液","规格型号":"20L/桶","计量单位":"升","数量":200,"主单价":18,"金额":3600,"制单人":"admin","审核人":"系统管理员"}]}', '已审核', 'admin', NOW(), 'admin', NOW()),
 (4117, 'INIT_BALANCE', 'IB-002', '{"编号":"IB-002","期初余额单号":"IB-2026-08-0002","单据状态":"已审核","单据日期":"2026-08-01","仓库":"成品仓","备注":"期初库存","创建时间":"2026-08-01 09:10","更新时间":"2026-08-01 09:15","发起人编号":"tplusdemo12853"}', '{"items":[{"存货编码":"CP001","存货名称":"铝棒 Φ80","规格型号":"Φ80×3000","计量单位":"件","数量":800,"主单价":10.2,"金额":8160,"制单人":"admin","审核人":"系统管理员"},{"存货编码":"CP002","存货名称":"铝板 6061","规格型号":"1500×3000×2","计量单位":"件","数量":450,"主单价":8.6,"金额":3870,"制单人":"admin","审核人":"系统管理员"}]}', '已审核', 'admin', NOW(), 'admin', NOW()),
@@ -779,8 +884,8 @@ UPDATE panel_config SET module_group = 'archives' WHERE (module_group IS NULL OR
 UPDATE panel_config SET module_group = 'query' WHERE (module_group IS NULL OR module_group = '') AND panel_code IN (
   'BOM_FWD','BOM_REV');
 UPDATE panel_config SET module_group = 'sys' WHERE (module_group IS NULL OR module_group = '') AND panel_code IN (
-  'SYS_ALARM','SYS_BILL_DESIGN','SYS_BOARD_AUTH','SYS_CODE','SYS_MOBILE','SYS_MOBILE_TPL','SYS_OPT','SYS_PRINT','SYS_PRINT_DEFAULT',
-  'SYS_SCREEN','SYS_SCREEN_DL','SYS_TASK','COST_MAINTAIN','INIT_AP','INIT_AR','INIT_BALANCE');
+  'SYS_CODE','SYS_PRINT',
+  'COST_MAINTAIN','INIT_AP','INIT_AR','INIT_BALANCE');
 UPDATE panel_config SET module_group = 'other' WHERE module_group IS NULL OR module_group = '';
 
 -- ============================================================

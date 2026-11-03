@@ -22,6 +22,12 @@ public class FormData {
     private String auditBy;
     private LocalDateTime auditTime;
     private LocalDateTime closeTime;
+    /** 单据版本号，初始 1；变更单在父单基础上递增。 */
+    private Integer version;
+    /** 父单号：变更单指向被变更的原单，普通单据为空。 */
+    private String parentNo;
+    /** 是否当前生效版本：1 生效，0 已被变更单取代。 */
+    private Boolean currentVersion;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -47,4 +53,10 @@ public class FormData {
     public void setAuditTime(LocalDateTime auditTime) { this.auditTime = auditTime; }
     public LocalDateTime getCloseTime() { return closeTime; }
     public void setCloseTime(LocalDateTime closeTime) { this.closeTime = closeTime; }
+    public Integer getVersion() { return version; }
+    public void setVersion(Integer version) { this.version = version; }
+    public String getParentNo() { return parentNo; }
+    public void setParentNo(String parentNo) { this.parentNo = parentNo; }
+    public Boolean getCurrentVersion() { return currentVersion; }
+    public void setCurrentVersion(Boolean currentVersion) { this.currentVersion = currentVersion; }
 }
