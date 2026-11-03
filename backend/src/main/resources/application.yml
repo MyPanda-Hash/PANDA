@@ -51,3 +51,10 @@ mes:
     read-timeout-ms: "${ALIBABA_CLOUD_MT_READ_TIMEOUT_MS:10000}"
     cache-ttl-seconds: 30
     max-keys-per-request: 50
+  # AI 数字员工（doc-nexus-ai）单点登录：与对方 DOC_NEXUS_MES_SSO_SECRET 用同一密钥；
+  # 密钥留空时 /api/ai/sso-ticket 返回 503，前端回落到「只打开对话页」。
+  ai:
+    sso:
+      secret: "${MES_AI_SSO_SECRET:}"
+      base-url: "${MES_AI_BASE_URL:http://localhost:18091}"
+      ticket-ttl-seconds: 60

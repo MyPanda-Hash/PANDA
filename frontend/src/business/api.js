@@ -36,6 +36,12 @@ export async function apiGetNotices(type) {
   return res?.data ?? res
 }
 
+/** AI 数字员工免密入口：后端签 60 秒票据，返回 { ticket, url } */
+export async function apiGetAiSsoTicket() {
+  const res = await request.get('/ai/sso-ticket')
+  return res?.data ?? res
+}
+
 export async function apiPageManuOrders(params) {
   const res = await request.get('/manu/order/page', { params })
   return res?.data ?? res
