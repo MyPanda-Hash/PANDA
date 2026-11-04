@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 @Service
 public class PxService implements PanelRuntimeService {
@@ -77,6 +79,20 @@ public class PxService implements PanelRuntimeService {
         }
         return null;
     }
+
+    // ---------- 自定义字段（面板自助加字段）----------
+    // 借鉴 YINJIA-MES 的「字段管理（动态字段 + 备用列池）」：把「加一个字段」从改库/改配置交给
+    // 有该面板「修改」权限的用户。本项目面板数据本来就存在 form_data 的 JSON 里（不是物理列），
+    // 所以不需要备用列池、不需要 DDL —— 加字段 = 登记一条 px_custom_field 元数据，读取出口并进配置。
+    // 不写 panel_config.config：4 个 Registry 启动时会整体覆盖该 JSON（与 px_column_pref 同一理由）。
+    private static final Set<String> CUSTOM_FIELD_TYPES = Set.of("文本", "下拉框", "日期", "是否", "小数", "整数");
+    private static final Set<String> CUSTOM_FIELD_SCOPES = Set.of("header", "detail");
+    private static final int CUSTOM_FIELD_NAME_MAX = 40;
+    /** 字段名规范与列名同口径：禁空格与 . % ( ) / —— 点号会被当成「参照带出列」解析 */
+    private static final Pattern CUSTOM_FIELD_NAME_RE =
+            Pattern.compile("[^\\s.%(/)]{1," + CUSTOM_FIELD_NAME_MAX + "}");
+    /** 自定义字段缓存：加/停用后立即失效，不靠时间窗（否则刚加的字段要等一会儿才出现） */
+    private final Map<String, List<Map<String, Object>>> customFieldCache = new ConcurrentHashMap<>();
 
     @Autowired
     public PxService(PanelConfigMapper panelMapper, FormDataMapper formMapper,
@@ -128,6 +144,8 @@ public class PxService implements PanelRuntimeService {
         try {
             Map<String, Object> config = json.readValue(pc.getConfig(), new TypeReference<Map<String, Object>>() {});
             applyRuntimeConfigUpgrades(panelCode, config);
+            // 用户自助加的自定义字段：读出口合并（不改库里的 config JSON）
+            applyCustomFields(config, panelCode);
             return config;
         } catch (Exception e) {
             throw new IllegalStateException("面板配置解析失败：" + e.getMessage());
@@ -772,6 +790,293 @@ public class PxService implements PanelRuntimeService {
                     panelCode, userName, name, seq, alias, visibleFlag(c.get("visible")) ? 1 : 0, userName);
             seq += 10;
         }
+    }
+
+    // ---------- 自定义字段（面板自助加字段：登记元数据 → 读出口合并） ----------
+
+    /** 该面板已登记的自定义字段（按 seq,id 排序；结果按面板缓存，加/停用即失效） */
+    private List<Map<String, Object>> customFields(String panelCode) {
+        List<Map<String, Object>> cached = customFieldCache.get(panelCode);
+        if (cached != null) return cached;
+        List<Map<String, Object>> rows;
+        try {
+            rows = jdbcTemplate.queryForList(
+                    "SELECT scope, tab_key, data_name, data_type, options, field_width, is_required, in_grid "
+                            + "FROM px_custom_field WHERE panel_code = ? ORDER BY seq, id",
+                    panelCode);
+        } catch (Exception e) {
+            return List.of(); // 表未建（老库未迁移）：按无自定义字段处理，不影响原有功能
+        }
+        customFieldCache.put(panelCode, rows);
+        return rows;
+    }
+
+    /** 把自定义字段并进面板配置：表头进 dataSchema.fields（+ formPages.fieldNames），明细进 detail.tabs[].fields（+ 首块 gridTabs 列） */
+    @SuppressWarnings("unchecked")
+    private void applyCustomFields(Map<String, Object> config, String panelCode) {
+        if (jdbcTemplate == null) return;
+        List<Map<String, Object>> rows = customFields(panelCode);
+        if (rows.isEmpty()) return;
+
+        Map<String, Object> dataSchema = config.get("dataSchema") instanceof Map<?, ?> schema
+                ? (Map<String, Object>) schema : null;
+        List<Map<String, Object>> headerFields = new ArrayList<>();
+        if (dataSchema != null && dataSchema.get("fields") instanceof List<?> fields) {
+            headerFields = (List<Map<String, Object>>) fields;
+        }
+        List<Map<String, Object>> detailTabs = new ArrayList<>();
+        if (config.get("detail") instanceof Map<?, ?> detail && detail.get("tabs") instanceof List<?> tabs) {
+            detailTabs = (List<Map<String, Object>>) tabs;
+        }
+        Object formPagesObj = metadataOf(config) == null ? null : metadataOf(config).get("panelPageDto");
+        List<Map<String, Object>> formPages = formPagesObj instanceof Map<?, ?> pageDto
+                && pageDto.get("formPages") instanceof List<?> pages
+                ? (List<Map<String, Object>>) pages : List.of();
+        List<Object> firstGridColumns = firstGridColumns(config);
+
+        for (Map<String, Object> row : rows) {
+            String scope = String.valueOf(row.getOrDefault("scope", "detail"));
+            String tabKey = String.valueOf(row.getOrDefault("tab_key", ""));
+            Map<String, Object> def = customFieldDefinition(row);
+            if ("header".equals(scope)) {
+                headerFields.add(def);
+                // 表头字段还受 formPages.fieldNames 白名单约束（前端按该顺序取字段），不在白名单里就显示不出来
+                for (Map<String, Object> page : formPages) {
+                    Object names = page.get("fieldNames");
+                    if (names == null) continue;
+                    String merged = String.valueOf(names).isBlank()
+                            ? String.valueOf(def.get("dataName"))
+                            : names + "," + def.get("dataName");
+                    page.put("fieldNames", merged);
+                }
+            } else {
+                int index = -1;
+                for (int i = 0; i < detailTabs.size(); i++) {
+                    if (tabKey.equals(String.valueOf(detailTabs.get(i).get("key")))) {
+                        index = i;
+                        break;
+                    }
+                }
+                if (index < 0) continue; // 页签已被删掉：字段先留着，等页签回来再显示
+                Object tabFieldsObj = detailTabs.get(index).get("fields");
+                if (tabFieldsObj instanceof List<?> tabFields) {
+                    ((List<Map<String, Object>>) tabFields).add(def);
+                }
+                // 第一个明细页签的列来自 gridTabs[0].columns（见 PanelxList buildBlocks），不补列就不显示
+                if (index == 0 && firstGridColumns != null && visibleFlag(row.get("in_grid"))) {
+                    firstGridColumns.add(def.get("dataName"));
+                }
+            }
+        }
+    }
+
+    private static Map<String, Object> metadataOf(Map<String, Object> config) {
+        return config.get("metadata") instanceof Map<?, ?> m ? (Map<String, Object>) m : null;
+    }
+
+    /** 首个 tablePage 的 gridTabs[0].columns（可写引用；无则不补列） */
+    @SuppressWarnings("unchecked")
+    private static List<Object> firstGridColumns(Map<String, Object> config) {
+        Map<String, Object> metadata = metadataOf(config);
+        if (metadata == null) return null;
+        if (!(metadata.get("panelPageDto") instanceof Map<?, ?> pageDto)) return null;
+        if (!(pageDto.get("tablePages") instanceof List<?> pages) || pages.isEmpty()) return null;
+        if (!(pages.get(0) instanceof Map<?, ?> page)) return null;
+        if (!(page.get("gridTabs") instanceof List<?> tabs) || tabs.isEmpty()) return null;
+        if (!(tabs.get(0) instanceof Map<?, ?> tab)) return null;
+        return tab.get("columns") instanceof List<?> cols ? (List<Object>) cols : null;
+    }
+
+    /** 自定义字段 → 与内置字段同形状的字段定义（custom 标记供前端「停用」仅对自定义字段开放） */
+    private static Map<String, Object> customFieldDefinition(Map<String, Object> row) {
+        String dataType = String.valueOf(row.getOrDefault("data_type", "文本"));
+        Map<String, Object> def = new LinkedHashMap<>();
+        def.put("dataName", String.valueOf(row.get("data_name")));
+        def.put("dataType", dataType);
+        def.put("custom", true);
+        def.put("isRequired", visibleFlag(row.get("is_required")));
+        def.put("defaultValue", List.of("小数", "整数").contains(dataType) ? 0
+                : "是否".equals(dataType) ? Boolean.FALSE : "");
+        if ("下拉框".equals(dataType)) {
+            List<Object> options = new ArrayList<>();
+            for (String option : splitOptions(row.get("options"))) options.add(option);
+            def.put("options", options);
+        }
+        Object width = row.get("field_width");
+        if (width != null && !String.valueOf(width).isBlank()) {
+            try {
+                def.put("fieldWidth", Integer.parseInt(String.valueOf(width).trim()));
+            } catch (NumberFormatException ignored) {
+                // 列宽存坏了不阻断：前端按类型推算
+            }
+        }
+        return def;
+    }
+
+    private static List<String> splitOptions(Object raw) {
+        if (raw == null) return List.of();
+        List<String> out = new ArrayList<>();
+        for (String part : String.valueOf(raw).split("[,，]")) {
+            String option = part.trim();
+            if (!option.isEmpty() && !out.contains(option)) out.add(option);
+        }
+        return out;
+    }
+
+    /**
+     * 新增自定义字段。守卫（服务端强制，前端只做提示）：
+     * 面板「修改」权限 / 位置合法 / 字段名规范且不重名 / 类型受支持 / 下拉框必须有词表 / 明细页签必须存在。
+     */
+    @Transactional
+    public Map<String, Object> addCustomField(String panelCode, Map<String, Object> body) {
+        if (panelCode == null || panelCode.isBlank()) throw new IllegalArgumentException("panelCode 不能为空");
+        String userName = authenticatedUserName();
+        requirePanelPermission(panelCode, "edit", userName);
+        if (jdbcTemplate == null) throw new IllegalStateException("当前运行环境不支持自定义字段");
+
+        String scope = trimTo(body.get("scope"), "detail");
+        if (!CUSTOM_FIELD_SCOPES.contains(scope)) {
+            throw new IllegalArgumentException("字段位置只能是 header（表头）或 detail（明细）");
+        }
+        String dataName = trimTo(body.get("dataName"), "");
+        if (!CUSTOM_FIELD_NAME_RE.matcher(dataName).matches()) {
+            throw new IllegalArgumentException("字段名不能为空、不超过 " + CUSTOM_FIELD_NAME_MAX
+                    + " 字，且不能包含空格与 . % ( ) / 这些字符");
+        }
+        String dataType = trimTo(body.get("dataType"), "文本");
+        if (!CUSTOM_FIELD_TYPES.contains(dataType)) {
+            throw new IllegalArgumentException("不支持的字段类型：" + dataType + "（可选 文本/下拉框/日期/是否/小数/整数）");
+        }
+        String options = trimTo(body.get("options"), "");
+        if ("下拉框".equals(dataType) && splitOptions(options).isEmpty()) {
+            throw new IllegalArgumentException("下拉框字段必须给出词表（逗号分隔）");
+        }
+        String tabKey = "";
+        if ("detail".equals(scope)) {
+            tabKey = trimTo(body.get("tabKey"), "");
+            Map<String, Object> cfg = loadConfig(panelCode);
+            boolean exists = false;
+            if (cfg.get("detail") instanceof Map<?, ?> detail && detail.get("tabs") instanceof List<?> tabs) {
+                for (Object tab : tabs) {
+                    if (tab instanceof Map<?, ?> t && tabKey.equals(String.valueOf(t.get("key")))) exists = true;
+                }
+            }
+            if (!exists) throw new IllegalArgumentException("明细页签不存在：" + tabKey);
+        }
+        // 重名：内置字段（已加载的配置里已含自定义字段，所以一次判断覆盖两者）
+        if (findFieldNames(panelCode, scope, tabKey).contains(dataName)) {
+            throw new IllegalArgumentException("该面板已有同名字段：" + dataName + "（换个名字或先停用原字段）");
+        }
+        Object width = body.get("fieldWidth");
+        Integer fieldWidth = null;
+        if (width != null && !String.valueOf(width).isBlank()) {
+            try {
+                fieldWidth = Integer.parseInt(String.valueOf(width).trim());
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("列宽必须是数字（像素）");
+            }
+            if (fieldWidth < 60 || fieldWidth > 400) throw new IllegalArgumentException("列宽需在 60–400 之间");
+        }
+        int seq = nextFieldSeq(panelCode);
+        jdbcTemplate.update(
+                "INSERT INTO px_custom_field (panel_code, scope, tab_key, data_name, data_type, options, "
+                        + "field_width, is_required, in_grid, seq, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                panelCode, scope, tabKey, dataName, dataType,
+                splitOptions(options).isEmpty() ? null : String.join(",", splitOptions(options)),
+                fieldWidth, visibleFlag(body.get("isRequired")) ? 1 : 0,
+                body.containsKey("inGrid") && !visibleFlag(body.get("inGrid")) ? 0 : 1,
+                seq, userName);
+        logFieldAction(panelCode, scope, tabKey, dataName, dataType, "add", userName,
+                "列宽=" + (fieldWidth == null ? "默认" : fieldWidth) + "，必填=" + visibleFlag(body.get("isRequired")));
+        customFieldCache.remove(panelCode);
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("dataName", dataName);
+        out.put("scope", scope);
+        out.put("tabKey", tabKey);
+        out.put("dataType", dataType);
+        out.put("seq", seq);
+        return out;
+    }
+
+    /** 停用自定义字段：只删元数据，业务数据（form_data 里的 JSON 键）原样保留，重新加同名字段即恢复显示 */
+    @Transactional
+    public void retireCustomField(String panelCode, Map<String, Object> body) {
+        if (panelCode == null || panelCode.isBlank()) throw new IllegalArgumentException("panelCode 不能为空");
+        String userName = authenticatedUserName();
+        requirePanelPermission(panelCode, "edit", userName);
+        if (jdbcTemplate == null) throw new IllegalStateException("当前运行环境不支持自定义字段");
+        String scope = trimTo(body.get("scope"), "detail");
+        String tabKey = "detail".equals(scope) ? trimTo(body.get("tabKey"), "") : "";
+        String dataName = trimTo(body.get("dataName"), "");
+        if (dataName.isEmpty()) throw new IllegalArgumentException("要停用的字段名不能为空");
+        int removed = jdbcTemplate.update(
+                "DELETE FROM px_custom_field WHERE panel_code = ? AND scope = ? AND tab_key = ? AND data_name = ?",
+                panelCode, scope, tabKey, dataName);
+        if (removed == 0) {
+            throw new IllegalArgumentException("只能停用自定义字段（内置字段请改面板配置）：" + dataName);
+        }
+        logFieldAction(panelCode, scope, tabKey, dataName, "", "retire", userName, "已录入数据保留");
+        customFieldCache.remove(panelCode);
+    }
+
+    /** 该面板某位置（表头 / 某明细页签）已在用的字段名，重名判断用 */
+    @SuppressWarnings("unchecked")
+    private Set<String> findFieldNames(String panelCode, String scope, String tabKey) {
+        Map<String, Object> cfg = loadConfig(panelCode);
+        Set<String> names = new HashSet<>();
+        if ("header".equals(scope)) {
+            if (cfg.get("dataSchema") instanceof Map<?, ?> schema && schema.get("fields") instanceof List<?> fields) {
+                for (Object f : fields) {
+                    if (f instanceof Map<?, ?> field && field.get("dataName") != null) {
+                        names.add(String.valueOf(field.get("dataName")));
+                    }
+                }
+            }
+            return names;
+        }
+        if (cfg.get("detail") instanceof Map<?, ?> detail && detail.get("tabs") instanceof List<?> tabs) {
+            for (Object t : tabs) {
+                if (!(t instanceof Map<?, ?> tab) || !tabKey.equals(String.valueOf(tab.get("key")))) continue;
+                if (tab.get("fields") instanceof List<?> fields) {
+                    for (Object f : fields) {
+                        if (f instanceof Map<?, ?> field && field.get("dataName") != null) {
+                            names.add(String.valueOf(field.get("dataName")));
+                        }
+                    }
+                }
+            }
+        }
+        return names;
+    }
+
+    private int nextFieldSeq(String panelCode) {
+        try {
+            Integer max = jdbcTemplate.queryForObject(
+                    "SELECT COALESCE(MAX(seq), 0) FROM px_custom_field WHERE panel_code = ?", Integer.class, panelCode);
+            return (max == null ? 0 : max) + 10;
+        } catch (Exception e) {
+            return 10;
+        }
+    }
+
+    private void logFieldAction(String panelCode, String scope, String tabKey, String dataName,
+                                String dataType, String action, String userName, String detail) {
+        try {
+            jdbcTemplate.update(
+                    "INSERT INTO px_field_log (panel_code, scope, tab_key, data_name, data_type, action, op_by, detail) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    panelCode, scope, tabKey, dataName, dataType, action,
+                    userName == null ? "" : userName, detail);
+        } catch (Exception ignored) {
+            // 审计表缺失不影响主流程（与 px_column_pref 的降级口径一致）
+        }
+    }
+
+    private static String trimTo(Object value, String fallback) {
+        if (value == null) return fallback;
+        String text = String.valueOf(value).trim();
+        return text.isEmpty() ? fallback : text;
     }
 
     // ---------- 权限矩阵 ----------

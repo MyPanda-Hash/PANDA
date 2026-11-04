@@ -158,6 +158,14 @@
                   { dim: nodeProps.data.dim, stalled: nodeProps.data.stalled },
                 ]"
               >
+                <!-- 连线锚点：Vue Flow 需要节点里有 Handle 才能把边接到卡片边缘；
+                     只留「左进右出」两个，边不指定 handle id 时自动取，避免多锚点解析错位 -->
+                <Handle id="in" type="target" :position="Position.Left" class="fn-handle" />
+                <Handle id="out" type="source" :position="Position.Right" class="fn-handle" />
+                <Handle id="in-t" type="target" :position="Position.Top" class="fn-handle" />
+                <Handle id="out-b" type="source" :position="Position.Bottom" class="fn-handle" />
+                <Handle id="out-t" type="source" :position="Position.Top" class="fn-handle" />
+                <Handle id="in-b" type="target" :position="Position.Bottom" class="fn-handle" />
                 <div class="fn-icon">
                   <AntIcon :name="nodeProps.data.icon" :size="18" />
                 </div>
@@ -304,11 +312,11 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { VueFlow, MarkerType, useVueFlow } from '@vue-flow/core'
+import { VueFlow, MarkerType, useVueFlow, Handle, Position } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useTabsStore } from '@/stores/tabs'
 import { tt } from '@/i18n'
@@ -317,6 +325,7 @@ import AntIcon from '@/business/components/AntIcon.vue'
 import { traceProcess, queryFormDataList } from '@/business/engine'
 
 const router = useRouter()
+const route = useRoute()
 const tabs = useTabsStore()
 const localeStore = useLocaleStore()
 
@@ -535,28 +544,34 @@ const modules = [
       { code: 'SO_ORDER', label: '销售订单' },
       { code: 'SALE_INV', label: '销货单' },
       { code: 'SALE_OUT', label: '销售出库单' },
+      { code: 'SALE_RETURN', label: '销售退货单' },
       { code: 'SALE_INVOICE', label: '销售发票' },
-      { code: 'EXPENSE', label: '费用单' },
       { code: 'SALE_COST_ALLOC', label: '销售费用分摊单' },
+      { code: 'EXPENSE', label: '费用单' },
     ],
+    /**
+     * 主链右流、支链下挂：每个节点只在自己那一列往下走，避免长距离回绕。
+     * 退货单挂在销售订单右侧下方（退货入库、冲减应收），审核只是动作不画成节点。
+     */
     edges: [
-      { from: 'QUOTE_ORDER', to: 'SO_ORDER' },
-      { from: 'SO_ORDER', to: 'SALE_INV' },
-      { from: 'SO_ORDER', to: 'SALE_OUT' },
-      { from: 'SALE_INV', to: 'SALE_OUT' },
-      { from: 'SALE_INV', to: 'SALE_INVOICE' },
-      { from: 'EXPENSE', to: 'SALE_COST_ALLOC' },
-      { from: 'SALE_INVOICE', to: 'SALE_COST_ALLOC' },
+      { from: 'QUOTE_ORDER', to: 'SO_ORDER', label: '生单' },
+      { from: 'SO_ORDER', to: 'SALE_INV', label: '选单' },
+      { from: 'SALE_INV', to: 'SALE_INVOICE', label: '选单' },
+      { from: 'SO_ORDER', to: 'SALE_OUT', label: '生单' },
+      { from: 'SO_ORDER', to: 'SALE_RETURN', label: '退货' },
+      { from: 'SALE_INVOICE', to: 'SALE_COST_ALLOC', label: '分摊' },
+      { from: 'EXPENSE', to: 'SALE_COST_ALLOC', label: '选单' },
     ],
     pos: {
-      QUOTE_ORDER: [20, 60], SO_ORDER: [320, 60], SALE_INV: [620, 60], SALE_INVOICE: [920, 60],
-      SALE_OUT: [320, 250], SALE_COST_ALLOC: [620, 250], EXPENSE: [920, 250],
+      QUOTE_ORDER: [20, 40], SO_ORDER: [320, 40], SALE_INV: [620, 40], SALE_INVOICE: [920, 40],
+      SALE_OUT: [320, 240], SALE_RETURN: [620, 240], SALE_COST_ALLOC: [920, 240],
+      EXPENSE: [620, 440],
     },
     docs: [
       { code: 'QUOTE_ORDER', label: '报价单' }, { code: 'SO_ORDER', label: '销售订单' },
       { code: 'SALE_INV', label: '销货单' }, { code: 'SALE_OUT', label: '销售出库单' },
-      { code: 'SALE_INVOICE', label: '销售发票' }, { code: 'EXPENSE', label: '费用单' },
-      { code: 'SALE_COST_ALLOC', label: '销售费用分摊单' },
+      { code: 'SALE_RETURN', label: '销售退货单' }, { code: 'SALE_INVOICE', label: '销售发票' },
+      { code: 'SALE_COST_ALLOC', label: '销售费用分摊单' }, { code: 'EXPENSE', label: '费用单' },
     ],
     archives: [{ code: 'PARTNER', label: '往来单位(客户)' }, { code: 'INV', label: '存货' }, { code: 'DEPT', label: '部门' }, { code: 'EMP', label: '员工' }, { code: 'UOM', label: '计量单位' }, { code: 'WH', label: '仓库' }],
     reports: [
@@ -635,14 +650,24 @@ const modules = [
       { code: 'PURCHASE_IN', label: '采购入库单' },
       { code: 'FINISH_IN', label: '产成品入库单' },
       { code: 'OTHER_IN', label: '其他入库单' },
+      { code: 'STOCK_STATUS', label: '库存结存' },
       { code: 'SALE_OUT', label: '销售出库单' },
       { code: 'MATERIAL_OUT', label: '材料出库单' },
       { code: 'OTHER_OUT', label: '其他出库单' },
     ],
-    edges: [],
+    /** 六张出入库单都汇到中间「库存结存」：入库加、出库减，结存由 STOCK_STATUS 实时聚合 */
+    edges: [
+      { from: 'PURCHASE_IN', to: 'STOCK_STATUS', label: '入库' },
+      { from: 'FINISH_IN', to: 'STOCK_STATUS', label: '入库' },
+      { from: 'OTHER_IN', to: 'STOCK_STATUS', label: '入库' },
+      { from: 'STOCK_STATUS', to: 'SALE_OUT', label: '出库' },
+      { from: 'STOCK_STATUS', to: 'MATERIAL_OUT', label: '出库' },
+      { from: 'STOCK_STATUS', to: 'OTHER_OUT', label: '出库' },
+    ],
     pos: {
-      PURCHASE_IN: [40, 60], FINISH_IN: [40, 240], OTHER_IN: [40, 420],
-      SALE_OUT: [640, 60], MATERIAL_OUT: [640, 240], OTHER_OUT: [640, 420],
+      PURCHASE_IN: [20, 40], FINISH_IN: [20, 220], OTHER_IN: [20, 400],
+      STOCK_STATUS: [420, 220],
+      SALE_OUT: [820, 40], MATERIAL_OUT: [820, 220], OTHER_OUT: [820, 400],
     },
     docs: [
       { code: 'PURCHASE_IN', label: '采购入库单' }, { code: 'FINISH_IN', label: '产成品入库单' },
@@ -1052,7 +1077,7 @@ async function fitNow() {
   requestAnimationFrame(() => fitView({ padding: 0.12, maxZoom: 1, minZoom: 0.75 }))
 }
 
-const EDGE_COLOR = '#bfbfbf'
+const EDGE_COLOR = '#98a2b3'
 
 /**
  * 流程图布局：原始 pos 是按 1400px 画布手摆的坐标，直接放进本页会超出可视区，
@@ -1061,7 +1086,7 @@ const EDGE_COLOR = '#bfbfbf'
  */
 const CARD_W = 176   // 与 .fn-card 宽度一致
 const CARD_H = 56    // 与 .fn-card 高度一致
-const GAP_X = 32
+const GAP_X = 72
 const GAP_Y = 56
 /** 行吸附网格：原始 pos 的 Y 常以 120/170/250 这类手工值出现，按 60 取整才能把同层归到一行。 */
 const ROW_SNAP = 60
@@ -1104,6 +1129,38 @@ function layoutNodes(module) {
     })
   })
   return out
+}
+
+/**
+ * 连线方向：按上下游相对位置挑锚点，让直角折线尽量走直线。
+ * - 主要往右：右出左进（水平直达或只拐一次）
+ * - 主要往下/上：下出上进（竖直直达，不再绕成 S 形）
+ * 边的显式 sourceHandle/targetHandle 优先，配置里可覆盖。
+ */
+function edgeHandles(e, layout) {
+  const a = layout[e.from] || { x: 0, y: 0 }
+  const b = layout[e.to] || { x: 0, y: 0 }
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  // 跨行就是竖直支链：从上往下走「下出上进」，从下往上走「上出下进」，
+  // 只有同一行才走「右出左进」。这样支链是直的，不再绕成 S 形长弯。
+  if (dy > 0) {
+    return {
+      sourceHandle: 'out-b',
+      targetHandle: 'in-t',
+      sourcePosition: Position.Bottom,
+      targetPosition: Position.Top,
+    }
+  }
+  if (dy < 0) {
+    return {
+      sourceHandle: 'out-t',
+      targetHandle: 'in-b',
+      sourcePosition: Position.Top,
+      targetPosition: Position.Bottom,
+    }
+  }
+  return { sourceHandle: 'out', targetHandle: 'in', sourcePosition: Position.Right, targetPosition: Position.Left }
 }
 
 function buildFlow() {
@@ -1163,18 +1220,24 @@ function buildFlow() {
       target: e.to,
       // 正交连线：制造业流程图用直角折线比贝塞尔曲线更易读
       type: 'smoothstep',
-      pathOptions: { borderRadius: 6, offset: 16 },
-      ...(e.sourceHandle ? { sourceHandle: e.sourceHandle } : {}),
-      ...(e.targetHandle ? { targetHandle: e.targetHandle } : {}),
+      pathOptions: { borderRadius: 6, offset: 8 },
+      ...edgeHandles(e, layout),
+      // 流转标签：写在线上，让人不用悬停就知道这条箭头是生单还是选单
+      label: e.label ? tt(e.label) : '',
+      labelShowBg: true,
+      labelBgPadding: [5, 3],
+      labelBgBorderRadius: 4,
+      labelBgStyle: { fill: '#ffffff', fillOpacity: 1, stroke: '#e6e9ef' },
+      labelStyle: { fill: '#59616e', fontSize: '11px' },
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        width: 12,
-        height: 12,
+        width: 14,
+        height: 14,
         color: flowing ? '#1677ff' : (bothHit ? '#52c41a' : EDGE_COLOR),
       },
       style: bothHit
-        ? { stroke: flowing ? '#1677ff' : '#95de64', strokeWidth: flowing ? 2 : 1.6 }
-        : { stroke: EDGE_COLOR, strokeWidth: 1.2, opacity: tracked.value ? 0.35 : 1 },
+        ? { stroke: flowing ? '#1677ff' : '#95de64', strokeWidth: flowing ? 2.2 : 1.8 }
+        : { stroke: EDGE_COLOR, strokeWidth: 1.6, opacity: tracked.value ? 0.35 : 1 },
       animated: flowing,
       class: flowing ? 'bo-edge-flow' : (bothHit ? 'bo-edge-done' : ''),
       // 边标签说明流转条件（到货/报检/合格入库/不合格退回…），追踪态下命中边才显示
@@ -1207,21 +1270,17 @@ onMounted(() => {
 onUnmounted(() => window.removeEventListener('resize', fitNow))
 
 /**
- * 打开具体单据的表单页，而不是列表页。
- * 路由约定见 PanelxList.openForm：/panelx/form/{panelCode}?code={单号}
- * 带 code 时 PanelxForm 直接渲染该单据，省掉用户再自己找一遍。
+ * 打开具体单据：统一走列表页（PanelxList），不再跳表单页。
+ * 一个单据只有一个样子——列表页有单据栏、列头筛选、表头内联编辑，能力比表单页全。
+ * 带 code 定位到该单（PanelxList.load 读 ?code=），带 from 让列表页出现「返回」回到业务总览。
  */
 function openDoc(panelCode, docNo, title) {
   if (!panelCode) return
-  if (docNo) {
-    const path = '/panelx/form/' + panelCode
-    const query = { code: docNo }
-    router.push({ path, query })
-    tabs.open({ path, title: title || docNo, query })
-    return
-  }
-  // 没有具体单号（未追踪或该环节没命中）时退回列表页
-  go('/panelx/list/' + panelCode, title)
+  const path = '/panelx/list/' + panelCode
+  const query = { from: route.path }
+  if (docNo) query.code = docNo
+  router.push({ path, query })
+  tabs.open({ path, title: title || docNo || panelCode, query })
 }
 
 function onNodeClick({ node }) {
@@ -1465,6 +1524,12 @@ function go(path, title) {
 .fn-card:hover {
   border-color: #1677ff;
   background: #fafcff;
+}
+
+/* 连线锚点：保留 Vue Flow 默认尺寸（改尺寸会让边锚点算错），只做视觉弱化 */
+.fn-handle {
+  background: transparent;
+  border-color: transparent;
 }
 
 .fn-card.dim {

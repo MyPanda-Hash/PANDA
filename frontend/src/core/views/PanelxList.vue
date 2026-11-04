@@ -6,17 +6,31 @@
         <el-icon><Search /></el-icon>
         <span>{{ tt('查询') }}</span>
       </button>
-      <div class="tb-group" v-for="(g, gi) in toolbarGroups" :key="'g' + gi">
-        <span class="tb-main" :class="{ disabled: isDisabled(btnName(g)) }" @click="onButton(btnName(g))">
-          <span class="act-name">{{ tt(g.name) }}</span>
-        </span>
-        <span v-if="actsOf(g).length > 1" class="tb-caret" @click.stop="toggleGroup(gi)">▼</span>
-        <div v-if="openGroup === gi" class="tb-menu">
-          <!-- 下拉排除主按钮（组按钮=第一个 action，下拉只列其余动作，避免「审核」重复）；显示名走 tt()，动作值保持原文 -->
-          <div class="ctx-item" :class="{ disabled: isDisabled(a) }" v-for="a in dropItems(g)" :key="a" @click="onGroupAction(a)">{{ tt(a) }}</div>
+      <template v-for="(g, gi) in toolbarGroups" :key="'g' + gi">
+        <div class="tb-group">
+          <span class="tb-main" :class="{ disabled: !isCatchAllGroup(g) && isDisabled(btnName(g)) }" @click.stop="onGroupMain(gi, g)">
+            <span class="act-name">{{ groupLabel(g) }}</span>
+          </span>
+          <span v-if="dropItems(g).length" class="tb-caret" @click.stop="toggleGroup(gi)">▼</span>
+          <div v-if="openGroup === gi" class="tb-menu">
+            <!-- 下拉排除主按钮；显示名走 tt()，动作值保持原文 -->
+            <div class="ctx-item" :class="{ disabled: isDisabled(a) }" v-for="a in dropItems(g)" :key="a" @click="onGroupAction(a)">{{ tt(a) }}</div>
+          </div>
         </div>
-      </div>
+        <!-- 审批中：通过做主按钮，驳回并列露出（两个决策都不藏进下拉） -->
+        <span v-if="secondaryOf(g).length" class="tb-group">
+          <span class="tb-main danger" @click="onButton(secondaryOf(g)[0])">
+            <span class="act-name">{{ tt(secondaryOf(g)[0]) }}</span>
+          </span>
+        </span>
+      </template>
       <div class="tools-right">
+        <!-- 外部入口（业务总览流程图/生单跳转等）带 ?from= 时给「返回」，
+             让用户能从单据页回到来处；菜单直接进入的应用内导航不带，不显示返回 -->
+        <button v-if="fromPath" type="button" class="toolbar-back-btn" :title="tt('返回到来源页面')" @click="goBack">
+          <el-icon><ArrowLeft /></el-icon>
+          <span>{{ tt('返回') }}</span>
+        </button>
         <template v-if="reportMode">
           <span class="doc-chip">{{ tt(panelName) }}</span>
           <span class="report-count">{{ tt('共') }} {{ total }} {{ tt('条') }}</span>
@@ -100,7 +114,13 @@
     <div v-else class="fields header-fields udl-fields" :class="{ 'is-draft': draftEditable }">
       <div class="field" v-for="field in headerFields" :key="headerFieldKey(field)">
         <label :class="{ req: field.isRequired }">{{ tt(headerFieldLabel(field)) }}</label>
-        <template v-if="draftEditable">
+        <!-- 表头参照带出列（部门.负责人）：档案属性镜像，只读显示 -->
+        <div
+          v-if="isCarriedCol(headerFieldKey(field))"
+          class="field-readonly carried-cell"
+          :title="tt('取自参照档案，修改请到档案里改')"
+        >{{ cellText(cur, headerFieldKey(field)) }}</div>
+        <template v-else-if="draftEditable">
           <div v-if="isRefSelect(field)" class="query-ref-select">
             <el-select
               v-model="cur[headerFieldKey(field)]"
@@ -215,7 +235,25 @@
       </el-table>
     </div>
 
-    <div v-else class="body" :class="{ 'draft-body': draftEditable }" v-loading="loading && !isBomMasterPanel">
+    <div v-else class="body-outer">
+      <!-- 左侧单据选择栏（镜像当前页单据，点行切单据；窄屏自动隐藏） -->
+      <DocSelectRail
+        v-if="showDocRail"
+        :rows="list"
+        :current-no="String(cur['编号'] || cur['单据编号'] || cur['单号'] || '')"
+        :total="total"
+        :page-no="query.pageNo"
+        :page-size="query.pageSize"
+        :keyword="query.keyword"
+        :collapsed="railCollapsed"
+        :loading="loading"
+        @select="onRailSelect"
+        @page="onRailPage"
+        @search="onRailSearch"
+        @toggle="toggleRail"
+        @create="directAdd"
+      />
+      <div class="body" :class="{ 'draft-body': draftEditable }" v-loading="loading && !isBomMasterPanel">
       <!-- ══════════ 物料清单专用：父件表格 + 子件表格联动（BOM/BOM_FWD/BOM_REV） ══════════ -->
       <BomMasterDetail
         v-if="isBomMasterPanel"
@@ -240,24 +278,32 @@
       <div v-if="mainGrid" class="main-grid">
         <div class="dt-head">
           <span class="dt-tab on">{{ mainGrid.label }}</span>
-          <span class="dt-ics">
-            <span class="dt-ic" :title="tt('点行切换当前单据')">{{ tt('定位') }}</span>
-          </span>
         </div>
-        <el-table :data="mainRows" border size="small" :row-class-name="mainRowCls" @row-click="onMainRowClick" @row-dblclick="openMaintain">
+        <el-table :data="mainFilteredRows()" border size="small" :row-class-name="mainRowCls" @row-click="onMainRowClick" @row-dblclick="openMaintain">
           <el-table-column type="index" :label="tt('序号')" width="60" align="center" :index="(i) => i + 1" />
-          <el-table-column v-for="c in mainCols" :key="c" :prop="c" :label="c" min-width="110" show-overflow-tooltip />
+          <el-table-column v-for="c in mainCols" :key="c" :prop="c" :label="tt(c)" min-width="110" show-overflow-tooltip>
+            <template #header>
+              <ColumnFilterHeader
+                :label="tt(columnAliases[c] || c)"
+                :model-value="mainFilterOf(c)"
+                :active="!!parseColumnFilter(mainFilterOf(c))"
+                @update:model-value="(v) => setMainFilter(c, v)"
+                @clear="setMainFilter(c, '')"
+              />
+            </template>
+            <template #default="{ row }">{{ cellText(row, c) }}</template>
+          </el-table-column>
         </el-table>
       </div>
       <!-- ══════════ ③ 表中 · 明细区块（配置驱动：区块内多页签，同 T+）══════════ -->
       <div class="detail" v-for="(b, bi) in blocks" :key="b.id">
-        <div v-if="isApproved && bi === 0" class="approved-stamp">{{ tt('已审批') }}</div>
         <div class="dt-head">
+          <span v-if="isApproved && bi === 0" class="approved-stamp">{{ tt('已审批') }}</span>
           <span v-for="it in headItems(b)" :key="it.kind + it.key" class="dt-tab" :class="{ on: isOn(b, it) }" @click="switchTab(b, it)">{{ tt(it.label) }}</span>
           <span v-if="b.id === 'B' && activeTab(b).key === 'materials' && selectedProduct" class="filter-hint">{{ tt('当前产品') }}：{{ selectedProduct }} {{ tt('的 BOM 子件') }}</span>
           <span class="dt-ics">
             <el-button v-if="detailEditable(b)" size="small" type="primary" :icon="Plus" @click="addInlineDetailRow(b)">{{ tt('新增数据') }}</el-button>
-            <span class="dt-ic" v-for="ic in b.isMain ? iconA : iconB" :key="ic" @click="onIcon(ic, b)">{{ iconLabel(ic) }}</span>
+            <span class="dt-ic" v-for="ic in blockIcons(b)" :key="ic" @click="onIcon(ic, b)">{{ tt(ic) }}</span>
           </span>
         </div>
         <el-table
@@ -285,8 +331,20 @@
             :align="c.align"
             :show-overflow-tooltip="!detailEditable(b)"
           >
+            <!-- 列头筛选：点表头右侧漏斗出输入框，生效后列头显示「筛选词 ×」 -->
+            <template #header>
+              <ColumnFilterHeader
+                :label="c.label"
+                :model-value="filterOf(b, c.prop)"
+                :active="hasFilter(b, c.prop)"
+                @update:model-value="(v) => setFilter(b, c.prop, v)"
+                @clear="setFilter(b, c.prop, '')"
+              />
+            </template>
             <template #default="{ row }">
-              <template v-if="detailEditable(b) && !row._placeholder">
+              <!-- 参照带出列（存货名称.品牌）：档案属性镜像，只显示不编辑 -->
+              <span v-if="c.carried" class="carried-cell" :title="tt('取自参照档案，修改请到档案里改')">{{ cellText(row, c.prop) }}</span>
+              <template v-else-if="detailEditable(b) && !row._placeholder">
                 <span v-if="c.field.computed" class="inline-computed-value">{{ formatFieldValue(c.field, row[c.prop]) }}</span>
                 <el-select
                   v-else-if="isRefSelect(c.field)"
@@ -355,13 +413,17 @@
                 <span>{{ row[c.prop] }}</span>
                 <span v-if="hasSubBom(row[c.prop])" class="mat-star" :title="tt('该材料有下级子件 BOM，点击行查看')">*</span>
               </span>
-              <span v-else>{{ row[c.prop] ?? '' }}</span>
+              <span v-else>{{ cellText(row, c.prop) }}</span>
             </template>
           </el-table-column>
         </el-table>
         <!-- 明细区翻页条：每页 10/20/50 行可选，超过一页才出现翻页箭头；合计按整块全部行计算 -->
-        <div v-if="blockAllRows(b).length" class="dg-pager">
+        <div v-if="blockAllRows(b).length || filterCountOf(b)" class="dg-pager">
           <span class="dg-count">{{ tt('共') }} {{ blockAllRows(b).length }} {{ tt('行') }}</span>
+          <span v-if="filterCountOf(b)" class="dg-filter-hint">
+            {{ tt('已筛选') }} {{ filterCountOf(b) }} {{ tt('列') }}
+            <el-button link type="primary" size="small" @click="clearBlockFilters(b)">{{ tt('清除筛选') }}</el-button>
+          </span>
           <span class="dg-per">
             <span class="dg-per-label">{{ tt('每页') }}</span>
             <el-select
@@ -383,6 +445,7 @@
       </div>
       </template>
 
+      </div>
     </div>
 
     <!-- ══════════ ④ 表尾（固定在页面底部，滚动明细时始终可见；备注 + 审核行）══════════ -->
@@ -482,18 +545,27 @@
       :columns="colPrefsColumns"
       @save="onColumnPrefsSaved"
     />
+    <!-- 字段管理：面板自助加字段（明细/表头），保存后重取配置即出现在列表与表单里 -->
+    <FieldManagerDialog
+      v-model="fieldMgrVisible"
+      :panel-code="panelCode"
+      :panel-name="panelName"
+      :config="cfgCache"
+      @done="onFieldManageDone"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, onDeactivated, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onActivated, onUnmounted, onDeactivated, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search } from '@element-plus/icons-vue'
+import { ArrowLeft, Plus, Search } from '@element-plus/icons-vue'
 import { useTabsStore } from '@/stores/tabs'
 import { useUserStore } from '@/stores/user'
 import { usePanelRuntime } from '@core/panel-runtime'
-import { ensureScanFillAction, ensureColumnPrefsAction } from '@core/button-groups'
+import { filterSupportedActions } from '@core/action-support'
+import { ensureAuditAction, ensureFieldManageAction, ensureScanFillAction, ensureColumnPrefsAction, ensureSelectAction, hasSelectConfig, isApprovalGroup, isCatchAllGroup, primaryActionOf, approvalSecondaryOf, supportsAudit } from '@core/button-groups'
 import { isDocApproved } from '@core/doc-status'
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
@@ -509,6 +581,11 @@ import DetailMaintainDialog from './DetailMaintainDialog.vue'
 import VoucherFormDialog from './VoucherFormDialog.vue'
 import ScanFillDialog from './ScanFillDialog.vue'
 import ColumnPrefsDialog from './ColumnPrefsDialog.vue'
+import FieldManagerDialog from './FieldManagerDialog.vue'
+import ColumnFilterHeader from './ColumnFilterHeader.vue'
+import DocSelectRail from './DocSelectRail.vue'
+import { activeFilterCount, applyColumnFilters, parseColumnFilter } from './column-filter.js'
+import { buildRefIndex, carriedValue, splitDotted } from './ref-carry.js'
 import {
   DEFAULT_PAGE_SIZE,
   ROWS_PER_PAGE_OPTIONS,
@@ -605,6 +682,21 @@ const detailRefPick = ref(null)
 const detailRefSaving = ref(false)
 const inlineSaving = ref(false)
 const reportMode = computed(() => cfgCache.value?.metadata?.report === true || cfgCache.value?.metadata?.panelCategory === '报表')
+/**
+ * 外部入口带来的来源页（如业务总览流程图 ?from=/scm/businessOverview）：
+ * 只有这种「从别处跳进来」的访问才显示「返回」，菜单直接打开的面板不显示。
+ */
+const fromPath = computed(() => {
+  const from = route.query.from
+  return typeof from === 'string' && from.startsWith('/') ? from : ''
+})
+
+function goBack() {
+  const from = fromPath.value
+  if (!from) return
+  tabs.close(route.path)
+  router.push(from)
+}
 const reportPageCount = computed(() => Math.max(1, Math.ceil(total.value / query.pageSize)))
 const reportPeriod = computed(() => {
   const start = condition['开始日期']
@@ -620,6 +712,12 @@ const columnAliases = ref({})
 const colPrefsVisible = ref(false)
 const colPrefsColumns = ref([])
 const supportsColPrefs = computed(() => typeof engine.saveColumnPrefs === 'function')
+// 字段管理（面板自助加字段）：引擎提供能力 + 当前用户有本面板「修改」权限才显示入口
+// （服务端 addCustomField/retireCustomField 会再判一次 edit 权限，前端显隐只是少一个点不开的菜单）
+const fieldMgrVisible = ref(false)
+const supportsFieldManage = computed(() => (
+  typeof engine.addCustomField === 'function' && (user.isAdmin || user.hasPerm(panelCode.value, 'edit'))
+))
 const reportColumnTree = computed(() => {
   const groups = gridTabs.value[0]?.columnGroups || []
   const owner = new Map()
@@ -680,8 +778,9 @@ function selectConfigFor(action = '选单') {
   const cfg = cfgCache.value || {}
   const configs = cfg.selectConfigs || {}
   if (configs[action]) return configs[action]
-  if (action === '选单') return cfg.selectConfig || Object.values(configs)[0]
-  return null
+  // 单来源面板的组动作常写成「选销售订单」「选报价单」，都指向同一份 selectConfig
+  if (cfg.selectConfig && (action === '选单' || action.startsWith('选'))) return cfg.selectConfig
+  return action === '选单' ? Object.values(configs)[0] : null
 }
 const delMode = ref(false)
 const delSel = ref([])
@@ -710,6 +809,8 @@ function onMaintainSaved() {
 
 // ---------- 单据浏览器：翻页切单据 ----------
 const curIdx = ref(0)
+/** 上一次 load 完成时对应的面板编码：keep-alive 复用时据此判断是否需要重载（见 onActivated） */
+const loadedPanelCode = ref('')
 const cur = computed(() => {
   const l = list.value
   if (!l.length) return {}
@@ -768,6 +869,43 @@ async function pageLast() {
   curIdx.value = list.value.length - 1
 }
 
+// ══════════ 左侧「单据选择」栏（镜像当前页单据，点行切单据）══════════
+// 只在多张单据的单据类面板出现：一张单据没什么可选的，报表面板没有"当前单据"概念，
+// BOM 面板已有父件表自己那套分页，都不叠这个栏。
+const RAIL_COLLAPSED_KEY = 'mes.doc-rail.collapsed'
+const railCollapsed = ref(readRailCollapsed())
+function readRailCollapsed() {
+  try { return localStorage.getItem(RAIL_COLLAPSED_KEY) === '1' } catch (e) { return false }
+}
+const showDocRail = computed(() => (
+  !reportMode.value
+  && !isBomMasterPanel.value
+  && cfgCache.value?.metadata?.panelCategory === '单据'
+  && total.value > 1
+))
+function toggleRail() {
+  railCollapsed.value = !railCollapsed.value
+  try { localStorage.setItem(RAIL_COLLAPSED_KEY, railCollapsed.value ? '1' : '0') } catch (e) { /* 隐私模式写不了就算了 */ }
+}
+/** 点侧栏行：只切当前单据下标，不重新请求（行数据就是主列表那一份） */
+function onRailSelect(index) {
+  if (index >= 0 && index < list.value.length) curIdx.value = index
+}
+async function onRailPage(page) {
+  const lastPage = Math.max(1, Math.ceil(total.value / query.pageSize))
+  const next = Math.min(Math.max(1, Number(page) || 1), lastPage)
+  if (next === query.pageNo) return
+  query.pageNo = next
+  await load()
+  curIdx.value = 0
+}
+async function onRailSearch(keyword) {
+  query.keyword = String(keyword || '').trim()
+  query.pageNo = 1
+  await load()
+  curIdx.value = 0
+}
+
 // ══════════ 明细区块模型（配置驱动，见 docs/frontend/前端面板设计.md）══════════
 // 视图状态：view[blockId + ':tab'] = 当前页签 key；view[blockId + ':' + tabKey + ':view'] = 'detail' | 'summary'
 const view = reactive({})
@@ -816,7 +954,9 @@ function buildBlocks(cfg) {
     })
   }
   // B 区：detail.tabs[1..n] 合并为一个区块、页签内切换（同 T+：材料明细/工序明细共区块）
-  const rest = tabs.slice(1).map((t) => {
+  // 带 block:"B" 的页签即使排在第一位也放进 B 区：表头单据没有明细行、只额外多一个网格时
+  //（如收款单的「核销明细」），detail.tabs[0] 会被 A 区当成字段 schema 吃掉，页签就永远不出现。
+  const rest = tabs.filter((t, i) => i > 0 || t.block === 'B').map((t) => {
     const cols = (t.fields || []).filter((f) => !f.hidden).map((f) => f.dataName)
     return cols.length ? mkTab(t.key, t.label, cols, t.summaryItems || [], t.summaryItems?.length ? t.label + '汇总' : '', !!(t.summaryItems?.length)) : null
   }).filter(Boolean)
@@ -919,9 +1059,110 @@ function blockData(b) {
   return tabView(b, t) === 'summary' ? summaryRows(rows, t) : rows
 }
 
+// ---------- 列头筛选（明细表格 / 主表预览共用，纯内存过滤，不写库） ----------
+// 语法与匹配规则在 core/views/column-filter.js（有单测）：普通文本=包含，= != > >= < <= 走比较。
+// 合计按**筛选后**的行算 —— 筛出「铝棒」时合计就应该是铝棒那一批，否则数字对不上眼。
+const colFilters = reactive({})
+function filterKeyOf(b, prop) {
+  return `${b.id}:${activeTab(b).key}:${prop}`
+}
+function filterOf(b, prop) {
+  return colFilters[filterKeyOf(b, prop)] || ''
+}
+function setFilter(b, prop, value) {
+  const key = filterKeyOf(b, prop)
+  if (parseColumnFilter(value)) colFilters[key] = value
+  else delete colFilters[key]
+  view[b.id + ':page'] = 1
+}
+function filtersOfBlock(b) {
+  const out = {}
+  for (const prop of activeTab(b).cols || []) {
+    const value = filterOf(b, prop)
+    if (parseColumnFilter(value)) out[prop] = value
+  }
+  return out
+}
+function filterCountOf(b) {
+  return activeFilterCount(filtersOfBlock(b))
+}
+function hasFilter(b, prop) {
+  return !!parseColumnFilter(filterOf(b, prop))
+}
+function clearBlockFilters(b) {
+  for (const prop of activeTab(b).cols || []) delete colFilters[filterKeyOf(b, prop)]
+  view[b.id + ':page'] = 1
+}
+const mainFilters = reactive({})
+function setMainFilter(prop, value) {
+  if (parseColumnFilter(value)) mainFilters[prop] = value
+  else delete mainFilters[prop]
+}
+function mainFilteredRows() {
+  return applyColumnFilters(mainRows.value, mainFilters, mainCols.value)
+}
+
+// ---------- 参照带出列（存货名称.品牌 / 部门.负责人） ----------
+// 列名写成「参照字段.属性」时，行里没这个键（选单/导入/生单/历史数据都没有）就按参照值去
+// 档案里查属性显示，不再要求必须经过参照选择。索引由引擎取一次并缓存，规则见 ref-carry.js。
+const carryPlans = ref({})
+const carryPending = ref(false)
+
+/** 收集本面板所有「X.Y」列（明细各页签字段/列表列 + 主表 + 表头），逐个建带出方案 */
+async function loadCarryPlans() {
+  if (typeof engine.archiveIndex !== 'function') return
+  const props = new Set()
+  const push = (name) => { if (splitDotted(name)) props.add(String(name)) }
+  for (const tab of cfgCache.value?.detail?.tabs || []) {
+    for (const field of tab.fields || []) push(field?.dataName)
+  }
+  for (const tab of gridTabs.value || []) {
+    for (const col of tab.columns || []) push(columnNameOf(col))
+  }
+  for (const col of mainCols.value) push(col)
+  for (const field of headerFields.value) push(headerFieldKey(field))
+  if (!props.size) {
+    carryPlans.value = {}
+    return
+  }
+  carryPending.value = true
+  try {
+    const plans = {}
+    for (const prop of props) {
+      const { source, field } = splitDotted(prop)
+      const def = fieldDefOf(source)
+      if (!def || def.dataType !== '参照') continue
+      const refPanel = def.refPanel || def.ref?.panel
+      const refField = def.refField || def.ref?.field || def.ref?.refField
+      if (!refPanel || !refField) continue
+      const index = await engine.archiveIndex(refPanel, refField)
+      if (!index || !index.size) continue
+      plans[prop] = { sourceFields: [...new Set([source, refField])], field, index }
+    }
+    carryPlans.value = plans
+  } catch (e) {
+    carryPlans.value = {}
+  } finally {
+    carryPending.value = false
+  }
+}
+
+/** 单元格显示值：带出列按档案解析，普通列取行内值 */
+function cellText(row, prop) {
+  const plan = carryPlans.value[prop]
+  if (plan) return carriedValue(row, prop, plan)
+  const value = row?.[prop]
+  return value === undefined || value === null ? '' : value
+}
+
+/** 带出列是「档案属性的镜像」，不提供行内编辑（要改请到档案里改） */
+function isCarriedCol(prop) {
+  return !!carryPlans.value[prop]
+}
+
 // ---------- 明细区翻页：每页行数可选（10/20/50），表格高度跟行数走，合计按整块全部行算 ----------
 function blockAllRows(b) {
-  return blockData(b)
+  return applyColumnFilters(blockData(b), filtersOfBlock(b), activeTab(b).cols || [])
 }
 
 function blockSize(b) {
@@ -962,8 +1203,21 @@ function blockCols(b) {
   const t = activeTab(b)
   return (t.cols || []).map((c) => {
     const f = fieldDefOf(c)
-    return { prop: c, label: tt(columnAliases.value[c] || c), field: f, width: colW(f), align: f.dataType === '小数' || f.dataType === '整数' ? 'right' : 'left' }
+    return {
+      prop: c,
+      label: tt(columnAliases.value[c] || columnLabel(c)),
+      field: f,
+      width: colW(f),
+      align: f.dataType === '小数' || f.dataType === '整数' ? 'right' : 'left',
+      carried: isCarriedCol(c),
+    }
   })
+}
+
+/** 表头显示名：参照带出列 `存货名称.品牌` 显示为「品牌」（点号只是取值路径，不是列名） */
+function columnLabel(prop) {
+  const dotted = splitDotted(prop)
+  return dotted ? dotted.field : prop
 }
 
 const showFooter = computed(() => {
@@ -1014,6 +1268,13 @@ function rowCls({ row }, b) {
 }
 
 // ---------- 明细表格列宽（按字段类型推算，横向滚动同 T+） ----------
+/** 列名提取：列配置兼容字符串与对象（dataName/name/label）两种形态 */
+function columnNameOf(col) {
+  if (typeof col === 'string') return col
+  const name = col?.dataName ?? col?.name ?? col?.label
+  return name === undefined || name === null ? '' : String(name)
+}
+
 function colW(f) {
   const t = f.dataType || '文本'
   if (t === '是否') return 74
@@ -1024,17 +1285,17 @@ function colW(f) {
   return n.length <= 2 ? 96 : Math.min(Math.max(n.length * 16 + 30, 96), 220)
 }
 
-// ---------- 明细右键/图标操作（作用于当前活动区块） ----------
-const ctxItems = ['定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改', '销售订单查询', '存货中心', '更多']
-const iconA = ['☑ Ctrl+V列粘贴', '定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改', '销售订单查询', '存货中心', '更多▼']
-const iconB = ['现存量提取', '定位', '复制到剪贴板', '从剪贴板粘贴', '另存为EXCEL模板', '批量修改', '更多▼']
-
-// 工具条装饰符（☑/▼）不进翻译键：拆出装饰仅翻译文字部分；onIcon 分发仍按原值匹配
-function iconLabel(ic) {
-  const deco = ic.startsWith('☑ ') ? '☑ ' : ''
-  const arr = ic.endsWith('▼') ? '▼' : ''
-  return deco + tt(ic.slice(deco.length, ic.length - arr.length)) + arr
+// ---------- 明细右键/工具条操作（2026-11-03：只保留已实现的动作，未实现的不占位） ----------
+// 工具条只放真能执行的：复制当前区块到剪贴板、导出当前区块 CSV；
+// 「现存量提取」只在区块确实有「现存量」列时出现（否则按库存状况表回填 0 行，等于空动作），主表/明细同口径。
+const TOOL_ICONS = ['复制到剪贴板', '另存为EXCEL模板']
+function blockHasStockColumn(b) {
+  return blockCols(b).some((c) => c.prop === '现存量')
 }
+function blockIcons(b) {
+  return blockHasStockColumn(b) ? ['现存量提取', ...TOOL_ICONS] : TOOL_ICONS
+}
+const ctxItems = ['定位', '复制到剪贴板', '另存为EXCEL模板']
 
 const ctxBlock = ref(null)
 const ctx = reactive({ visible: false, x: 0, y: 0, row: null })
@@ -1072,15 +1333,38 @@ const openGroup = ref(-1)
 function actsOf(g) {
   return g.actions || g.items || []
 }
-// 下拉项 = 除主按钮（第一个 action）外的其余动作（2026-08-20：避免下拉与组按钮重复）
-function dropItems(g) {
-  return actsOf(g).slice(1)
-}
+// 主按钮：审批组跟着单据状态走（草稿→提交审批 / 审批中→审批通过 / 已审核→弃审），
+// 其它组仍是第一个动作（禁用即灰、点击不执行）。
 function btnName(g) {
-  return actsOf(g)[0] || g.name
+  return primaryActionOf(g, isDisabled) || g.name
+}
+/** 按钮文字：审批组直接写当前能做的动作，不再永远显示组名「审批」 */
+function groupLabel(g) {
+  return isApprovalGroup(g) ? tt(btnName(g)) : tt(g.name)
+}
+// 下拉项 = 除主按钮外的其余动作；审批组只列当前真能点的（不摆灰项）
+function dropItems(g) {
+  const primary = btnName(g)
+  const rest = actsOf(g).filter((a) => a !== primary)
+  if (!isApprovalGroup(g)) return rest
+  const secondary = approvalSecondaryOf(g, primary, isDisabled)
+  return rest.filter((a) => !isDisabled(a) && !secondary.includes(a))
+}
+/** 与主按钮并列露出的动作（审批中的「审批驳回」） */
+function secondaryOf(g) {
+  return approvalSecondaryOf(g, btnName(g), isDisabled)
 }
 function toggleGroup(gi) {
   openGroup.value = openGroup.value === gi ? -1 : gi
+}
+/** 主按钮点击：审批组等按状态取动作执行；收纳组（更多/工具/设置）只展开菜单 */
+function onGroupMain(gi, g) {
+  if (isCatchAllGroup(g)) {
+    toggleGroup(gi)
+    return
+  }
+  openGroup.value = -1
+  onButton(btnName(g))
 }
 function onGroupAction(a) {
   openGroup.value = -1
@@ -1108,22 +1392,43 @@ async function copyActive() {
   ElMessage.success(tt('已复制') + ` ${rows.length} ` + tt('行到剪贴板'))
 }
 
-function exportActive() {
+/**
+ * 「另存为EXCEL模板」：把当前区块导出成真正的 .xlsx（SheetJS 按需加载，不进首屏 chunk）。
+ * 数值列写成数字单元格（Excel 里天然右对齐、可继续求和），日期保持 yyyy-MM-dd 文本。
+ */
+async function exportActive() {
   const cols = activeCols.value
   const rows = (activeData.value || []).filter((r) => !r._placeholder)
-  const esc = (v) => {
-    const s = String(v ?? '')
-    return /[",\n\t]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
+  const cellOf = (c, raw) => {
+    if (raw === undefined || raw === null || raw === '') return ''
+    if (c.align === 'right') {
+      const n = Number(String(raw).replace(/,/g, ''))
+      return Number.isFinite(n) ? n : raw
+    }
+    return raw
   }
-  const csv = '\ufeff' + cols.map((c) => esc(c.label)).join(',') + '\n' + rows.map((r) => cols.map((c) => esc(r[c.prop])).join(',')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${panelCode.value}-${ctxBlock.value?.id || 'list'}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
-  ElMessage.success('已导出 ' + a.download)
+  const aoa = [cols.map((c) => c.label), ...rows.map((r) => cols.map((c) => cellOf(c, r[c.prop])))]
+  const fileName = `${panelCode.value}-${ctxBlock.value?.id || 'list'}.xlsx`
+  try {
+    const XLSX = await import('xlsx')
+    const ws = XLSX.utils.aoa_to_sheet(aoa)
+    ws['!cols'] = cols.map((c) => ({ wch: Math.min(Math.max(String(c.label).length * 2 + 6, 10), 42) }))
+    const rawName = String(activeTab(ctxBlock.value)?.label || '明细')
+    const sheetName = rawName.replace(/[[\]*?/\\:]/g, ' ').trim().slice(0, 31) || 'Sheet1'
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, sheetName)
+    const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array', compression: true })
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    a.click()
+    URL.revokeObjectURL(url)
+    ElMessage.success(tt('已导出') + ' ' + fileName)
+  } catch (error) {
+    ElMessage.error(tt('导出失败') + '：' + (error?.message || tt('未知错误')))
+  }
 }
 
 async function onIcon(it, b) {
@@ -1143,9 +1448,7 @@ async function onIcon(it, b) {
     } catch (error) {
       ElMessage.error(engine.errMsg(error) || tt('现存量提取失败'))
     }
-    return
   }
-  ElMessage.info(tt('演示环境暂未实现') + '「' + tt(it) + '」，' + tt('界面与 T+ 保持一致'))
 }
 
 async function onCtxItem(it) {
@@ -1162,9 +1465,7 @@ async function onCtxItem(it) {
   }
   if (it === '另存为EXCEL模板') {
     exportActive()
-    return
   }
-  ElMessage.info(tt('演示环境暂未实现') + '「' + tt(it) + '」，' + tt('界面与 T+ 保持一致'))
 }
 
 // ---------- 查询区 ----------
@@ -1789,11 +2090,29 @@ async function loadCrg() {
   }
   gridTabs.value = tp?.gridTabs || []
   columnAliases.value = cfg?.metadata?.columnAliases || {}
-  groups.value = filterGroups(filterButtonGroups(ensureColumnPrefsAction(ensureScanFillAction(
-    cfg?.metadata?.buttonGroups,
-    cfg?.metadata,
-  ), supportsColPrefs.value && (gridTabs.value[0]?.columns || []).length > 0), panelCode.value, user))
+  const hasSelect = hasSelectConfig(cfg) || hasSelectConfig(cfg?.metadata)
+  const configured = ensureAuditAction(
+    ensureSelectAction(
+      ensureFieldManageAction(
+        ensureColumnPrefsAction(
+          ensureScanFillAction(cfg?.metadata?.buttonGroups, cfg?.metadata),
+          supportsColPrefs.value && (gridTabs.value[0]?.columns || []).length > 0,
+        ),
+        supportsFieldManage.value,
+      ),
+      hasSelect,
+    ),
+    supportsAudit(cfg?.metadata),
+  )
+  // 只留真有实现的动作：后端 callButton 未实现的动作点了只会抛「未定义按钮规则」，不如不显示
+  groups.value = filterGroups(filterButtonGroups(
+    filterSupportedActions(configured, { reportMode: reportMode.value, hasSelect }),
+    panelCode.value,
+    user,
+  ))
   ensurePanelDict()
+  // 参照带出列（X.Y）需要按参照面板取档案索引：配置到位后再后台加载，不阻塞首屏
+  loadCarryPlans()
   return cfg
 }
 
@@ -1815,9 +2134,8 @@ function columnPrefList() {
   const saved = cfgCache.value?.metadata?.columnPrefs
   if (Array.isArray(saved) && saved.length) return saved
   // 无定制：默认全显、无别名（列对象兼容 dataName/name/label，与后端 columnNameOf 同口径）
-  return (gridTabs.value[0]?.columns || []).map((c) => (typeof c === 'string'
-    ? { name: c, alias: '', visible: true }
-    : { name: String(c?.dataName ?? c?.name ?? c?.label ?? ''), alias: '', visible: true })).filter((x) => x.name)
+  return (gridTabs.value[0]?.columns || []).map((c) => ({ name: columnNameOf(c), alias: '', visible: true }))
+    .filter((x) => x.name)
 }
 
 async function onColumnPrefsSaved(columns) {
@@ -1828,6 +2146,18 @@ async function onColumnPrefsSaved(columns) {
     ElMessage.success(columns.length ? tt('表格调整已保存') : tt('已恢复默认列设置'))
   } catch (e) {
     ElMessage.error(engine.errMsg(e) || tt('保存失败'))
+  }
+}
+
+/** 字段管理保存后：重取面板配置（新字段由读取出口合并进来），并清掉旧列筛选状态 */
+async function onFieldManageDone() {
+  try {
+    cfgCache.value = null
+    await loadCrg()
+    for (const key of Object.keys(colFilters)) delete colFilters[key]
+    ElMessage.success(tt('字段已更新'))
+  } catch (e) {
+    ElMessage.error(engine.errMsg(e) || tt('刷新失败'))
   }
 }
 
@@ -1899,9 +2229,24 @@ async function directAdd() {
   }
 }
 
+/** 置灰按钮的原因文案：此前静默忽略，用户点「生单」「审批通过」看不到任何反馈。 */
+function disabledReason(action) {
+  const st = current.value?.['单据状态']
+  if (!current.value) return '请先选择一张单据'
+  if (action.startsWith('生成')) return '需单据已审核后才可生单，请先审核'
+  if (action === '审核') return `仅草稿可审核，当前为「${st || '-'}」`
+  if (action === '弃审') return `仅已审核可弃审，当前为「${st || '-'}」`
+  if (action === '提交审批') return `仅草稿可提交审批，当前为「${st || '-'}」`
+  if (action === '审批通过' || action === '审批驳回' || action === '驳回审批') {
+    return `仅审批中可审批，当前为「${st || '-'}」`
+  }
+  if (['保存', '保存新增', '保存为草稿'].includes(action)) return '当前单据不可编辑，无法保存'
+  if (['中止执行', '整单中止'].includes(action)) return '仅已审核/生产中/已完工可中止'
+  return `当前状态不可执行「${action}」`
+}
+
 async function onButton(action) {
-  // 2026-08-25：灰按钮（disabled）点击直接忽略，不执行、不弹提示（如草稿态「生成XX」生单按钮）
-  if (isDisabled(action)) return
+  if (isDisabled(action)) return ElMessage.warning(tt(disabledReason(action)))
   if (APPROVE_ACTIONS.includes(action) && !user.isAdmin && !user.approvePanels.includes(panelCode.value)) {
     return ElMessage.warning(tt('当前角色无审批权限'))
   }
@@ -1912,6 +2257,10 @@ async function onButton(action) {
   if (action === '表格调整') {
     colPrefsColumns.value = columnPrefList()
     colPrefsVisible.value = true
+    return
+  }
+  if (action === '字段管理') {
+    fieldMgrVisible.value = true
     return
   }
   if (action === '查询' || action === '查找') {
@@ -1963,7 +2312,7 @@ async function onButton(action) {
       selVisible.value = true
       return
     }
-    ElMessage.info(tt('演示环境暂未实现「选单」，界面与 T+ 保持一致'))
+    ElMessage.warning(tt('该面板未配置选单来源'))
     return
   }
   if (action === '新增' || action === '新建' || action === '新增流程') {
@@ -2145,9 +2494,7 @@ async function onButton(action) {
     ))
     if (actionIndex >= 0) curIdx.value = actionIndex
   } catch (e) {
-    const msg = engine.errMsg(e) || '按钮执行失败'
-    if (msg.includes('演示环境暂未实现')) ElMessage.info(msg)
-    else ElMessage.error(msg)
+    ElMessage.error(engine.errMsg(e) || '按钮执行失败')
   }
 }
 
@@ -2205,13 +2552,16 @@ async function load() {
     const res = await engine.queryFormDataList(params)
     list.value = res.list || []
     total.value = res.totalSize || 0
+    loadedPanelCode.value = panelCode.value
     if (curIdx.value >= list.value.length) curIdx.value = 0
-    // 2026-08-25：?focus=单号 定位（选单/生单从表单页跳转过来时直接显示目标单据）
-    const focus = route.query.focus
-    if (focus) {
-      const fi = list.value.findIndex((r) => (r['编号'] || r['单据编号'] || r['锭号']) === String(focus))
+    // ?focus= 或 ?code= 定位到指定单据：focus 是旧参数（选单/生单跳转），code 是业务总览等外部入口用的
+    const target = route.query.focus ?? route.query.code
+    if (target) {
+      const wanted = String(target)
+      const fi = list.value.findIndex((r) => (r['编号'] || r['单据编号'] || r['锭号']) === wanted)
       if (fi >= 0) curIdx.value = fi
-      router.replace({ path: route.path, query: { ...route.query, focus: undefined } })
+      // focus 用完即清（旧的即时定位语义）；code 保留在地址栏，刷新仍定位同一张单
+      if (route.query.focus) router.replace({ path: route.path, query: { ...route.query, focus: undefined } })
     }
   } catch (e) {
     const msg = engine.errMsg(e) || '加载失败'
@@ -2484,6 +2834,18 @@ onMounted(() => {
   load()
 })
 
+/**
+ * keep-alive 复用：PortalLayout 用 <keep-alive :max="20"> 缓存面板页，同一面板第二次进入时
+ * onMounted 不再执行。从业务总览再点一张别的单据时，若不在这里重载，会停在上次那张上。
+ * 只在「带 ?code=/?focus= 定位」或「面板编码变了」时重载，普通页签来回切换保持原状。
+ */
+onActivated(() => {
+  if (invalidPanel.value) return
+  const wanted = route.query.code ?? route.query.focus
+  if (route.query.new) return // 新增走 ?new=1 自己的 watch
+  if (wanted || panelCode.value !== loadedPanelCode.value) load()
+})
+
 onDeactivated(() => {
   // keep-alive 切离时关闭弹窗（防止 append-to-body 弹窗残留）
   newVisible.value = false
@@ -2510,6 +2872,9 @@ onUnmounted(() => {
 .panelx-list {
   font-size: 13px;
   color: #333;
+  /* 面板占满内容区（portal-content 有确定高度）：这样左侧单据栏才有确定高度、
+     明细区自己滚、表尾「备注」永远贴在底部，不会被单据栏撑出屏幕。 */
+  height: 100%;
   min-height: 100%;
   display: flex;
   flex-direction: column;
@@ -2540,6 +2905,27 @@ onUnmounted(() => {
   cursor: pointer;
 }
 .toolbar-query-btn:hover {
+  background: #e7eef8;
+  color: #0d5bd3;
+}
+/* 返回：只在从外部入口（业务总览等）带 ?from= 进来时出现，放右侧与其他单据信息同区 */
+.toolbar-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  margin-right: 12px;
+  padding: 0 10px;
+  border: 1px solid #c9cfdb;
+  border-radius: 3px;
+  background: #fff;
+  color: #263548;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.toolbar-back-btn:hover {
+  border-color: #0d5bd3;
   background: #e7eef8;
   color: #0d5bd3;
 }
@@ -2583,6 +2969,14 @@ onUnmounted(() => {
 .tb-main.disabled {
   color: #b3b9c4;
   cursor: not-allowed;
+}
+/* 审批驳回：与「审批通过」并列的第二个决策，用克制的危险色区分，但不抢主按钮 */
+.tb-main.danger {
+  color: #c84d3f;
+}
+.tb-main.danger:hover {
+  color: #a93a2e;
+  background: #fdf1ef;
 }
 .tb-caret {
   display: inline-flex;
@@ -2692,6 +3086,17 @@ onUnmounted(() => {
 .dg-pager .page-no {
   padding: 0 2px;
 }
+/* 列头筛选生效提示：与「共 N 行」同行，不额外占一行高度 */
+.dg-filter-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--t-primary-dark, #0d584c);
+}
+/* 参照带出列（存货名称.品牌）：跟普通文本同样的观感，但不可编辑 */
+.carried-cell {
+  color: #475569;
+}
 .report-count {
   color: #64748b;
   font-size: 12px;
@@ -2706,6 +3111,25 @@ onUnmounted(() => {
   padding: 10px 12px 8px;
   border-bottom: 1px solid #e5e9f0;
   background: #fff;
+}
+/* 内联表头栅格（2026-11-03）：与表单页同口径，等宽列铺满，宽屏下不再挤在左边 */
+.fields.header-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px 16px;
+  align-items: start;
+}
+.fields.header-fields .field {
+  min-width: 0;
+}
+.fields.header-fields .field :deep(.el-input),
+.fields.header-fields .field :deep(.el-select),
+.fields.header-fields .field :deep(.el-date-editor),
+.fields.header-fields .field :deep(.el-input-number),
+.fields.header-fields .field :deep(.ref-ctl),
+.fields.header-fields .field :deep(.query-ref),
+.fields.header-fields .field :deep(.query-ref-select) {
+  width: 100% !important;
 }
 .field {
   display: flex;
@@ -2814,10 +3238,20 @@ onUnmounted(() => {
 }
 
 /* ═══════ ③ 明细区块 ═══════ */
+/* 正文区：左侧单据栏 + 右主区横向并排；主区 flex:1 且 min-width:0，明细表的横向滚动留在表内 */
+.body-outer {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  min-height: 0;
+  overflow: hidden;
+}
 .body {
   flex: 1;
+  min-width: 0;
   padding: 8px 10px 0;
   min-height: 0;
+  overflow: auto;
 }
 .report-body {
   flex: 1;
@@ -2867,21 +3301,22 @@ onUnmounted(() => {
   background: #fff;
   position: relative;
 }
+/* 已审批印章：跟着页签行内排（2026-11-03 修正）——此前是绝对定位盖在左上角，
+   正好压在「明细/汇总」页签上，把可点的页签挡掉了；改成页签行里的一个行内标签，既不遮控件也不占新行 */
 .approved-stamp {
-  position: absolute;
-  top: 3px;
-  left: 6px;
-  z-index: 9;
-  transform: rotate(-12deg);
+  flex: none;
+  transform: rotate(-8deg);
   color: #16a34a;
   border: 2px solid #16a34a;
   border-radius: 4px;
-  padding: 0 10px;
-  font-size: 14px;
+  padding: 0 6px;
+  margin-right: 4px;
+  font-size: 12px;
   font-weight: 700;
+  line-height: 18px;
   background: rgba(240, 253, 244, 0.92);
   pointer-events: none;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   box-shadow: 0 1px 3px rgba(22, 163, 74, 0.25);
 }
 .dt-head {
@@ -2900,6 +3335,9 @@ onUnmounted(() => {
   border-right: 1px solid #d0d7e3;
   user-select: none;
   position: relative;
+  /* 页签名不换行：窄屏（768）下曾被「已审批」印章挤成两行「明/细」 */
+  white-space: nowrap;
+  flex: none;
 }
 .dt-tab:hover {
   color: #0d5bd3;

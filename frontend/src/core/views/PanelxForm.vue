@@ -3,19 +3,39 @@
     <div class="card">
       <!-- 工具栏（T+ 分组形态） -->
       <div class="tools">
-        <span v-for="g in groups" :key="g.name" class="tb-group">
-          <span class="tb-main" :class="{ disabled: isDisabled(g.actions[0]) }" @click="onButton(g.actions[0])">{{ tt(g.name) }}</span>
-          <el-dropdown v-if="g.actions.length > 1" @command="(a) => onButton(a)" trigger="click">
-            <span class="tb-caret"><el-icon><ArrowDown /></el-icon></span>
+        <template v-for="g in groups" :key="g.name">
+          <!-- 收纳组（更多/工具/设置）：整块按钮只负责展开菜单，不执行第一个动作 -->
+          <el-dropdown v-if="isCatchAllGroup(g)" @command="(a) => onButton(a)" trigger="click">
+            <span class="tb-group">
+              <span class="tb-main">{{ tt(g.name) }}</span>
+              <span class="tb-caret"><el-icon><ArrowDown /></el-icon></span>
+            </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item v-for="a in g.actions.slice(1)" :key="a" :command="a" :disabled="isDisabled(a)">
+                <el-dropdown-item v-for="a in dropOf(g)" :key="a" :command="a" :disabled="isDisabled(a)">
                   <span class="act-name">{{ tt(a) }}</span><span v-if="SHORTCUTS[a]" class="act-sc">{{ SHORTCUTS[a] }}</span>
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
-        </span>
+          <span v-else class="tb-group">
+            <span class="tb-main" :class="{ disabled: isDisabled(primaryOf(g)) }" @click="onButton(primaryOf(g))">{{ groupLabel(g) }}</span>
+            <el-dropdown v-if="dropOf(g).length" @command="(a) => onButton(a)" trigger="click">
+              <span class="tb-caret"><el-icon><ArrowDown /></el-icon></span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-for="a in dropOf(g)" :key="a" :command="a" :disabled="isDisabled(a)">
+                    <span class="act-name">{{ tt(a) }}</span><span v-if="SHORTCUTS[a]" class="act-sc">{{ SHORTCUTS[a] }}</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </span>
+          <!-- 审批中：通过做主按钮，驳回并列露出 -->
+          <span v-if="secondaryOf(g).length" class="tb-group">
+            <span class="tb-main danger" @click="onButton(secondaryOf(g)[0])">{{ tt(secondaryOf(g)[0]) }}</span>
+          </span>
+        </template>
         <span class="tb-group">
           <span v-if="!embedded" class="tb-main back" @click="back">{{ tt('返回') }}</span>
         </span>
@@ -48,7 +68,7 @@
           <!-- 参照字段：点击弹窗拉取基础档案面板数据，勾选导入（开发约束十一-1） -->
           <!-- 双模：参照数据 ≤20 行下拉直选，>20 行弹窗搜索定位（数据量跨越阈值自动切换） -->
           <el-select
-            v-if="isRefSelect(r)"
+            v-else-if="isRefSelect(r)"
             v-model="form[r.code]"
             clearable
             filterable
@@ -106,16 +126,7 @@
             </div>
             <div class="dt-actions">
               <el-button v-if="editable" type="primary" :icon="Plus" @click="addDetailRow(tab)" class="add-data-btn">{{ tt('新增数据') }}</el-button>
-              <span class="dt-ic" v-if="ti === 0">{{ tt('Ctrl+V列粘贴') }}</span>
-              <span class="dt-ic">{{ tt('定位') }}</span>
-              <span class="dt-ic">{{ tt('复制到剪贴板') }}</span>
-              <span class="dt-ic">{{ tt('从剪贴板粘贴') }}</span>
-              <span class="dt-ic">{{ tt('另存为EXCEL模板') }}</span>
-              <span class="dt-ic">{{ tt('批量修改') }}</span>
-              <span class="dt-ic" v-if="ti === 0">{{ tt('销售订单查询') }}</span>
-              <span class="dt-ic">{{ tt('存货中心') }}</span>
               <span class="dt-ic" v-if="visibleFields(tab).some((field) => field.dataName === '现存量')" @click="refreshTabCurrentStock(tab)">{{ tt('现存量提取') }}</span>
-              <span class="dt-ic">{{ tt('更多') }}</span>
               <span v-if="tab.key === 'materials' && selectedProduct" class="filter-hint">{{ tt('当前产品') }}：{{ selectedProduct }} {{ tt('的 BOM 子件') }}</span>
               <span class="tab-hint">{{ tt(tabHint(tab)) }}</span>
             </div>
@@ -325,7 +336,8 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Back, Plus, Delete, ArrowDown, Search } from '@element-plus/icons-vue'
 import { usePanelRuntime } from '@core/panel-runtime'
-import { ensureScanFillAction } from '@core/button-groups'
+import { ensureScanFillAction, ensureSelectAction, hasSelectConfig, isApprovalGroup, isCatchAllGroup, primaryActionOf, approvalSecondaryOf } from '@core/button-groups'
+import { filterSupportedActions } from '@core/action-support'
 import { isDocApproved } from '@core/doc-status'
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
@@ -400,13 +412,14 @@ function selectConfigFor(action = '选单') {
   const payload = payloadCache.value || {}
   const configs = payload.selectConfigs || {}
   if (configs[action]) return configs[action]
-  if (action === '选单') return payload.selectConfig || Object.values(configs)[0]
-  return null
+  // 单来源面板的组动作常写成「选销售订单」「选报价单」，都指向同一份 selectConfig
+  if (payload.selectConfig && (action === '选单' || action.startsWith('选'))) return payload.selectConfig
+  return action === '选单' ? Object.values(configs)[0] : null
 }
 
 async function openSelectDialog(cfg = selectConfigFor()) {
   if (!cfg) {
-    ElMessage.info(tt('演示环境暂未实现「选单」，界面与 T+ 保持一致'))
+    ElMessage.warning(tt('该面板未配置选单来源'))
     return
   }
   selectCrg.value = cfg
@@ -579,6 +592,24 @@ function isDisabled(action) {
     return !['已审核', '生产中'].includes(s) || !isEdit.value
   }
   return map[action] === true
+}
+
+// ---------- 工具栏主按钮（审批组跟着状态走，同列表页口径） ----------
+function primaryOf(g) {
+  return primaryActionOf(g, isDisabled) || g.name
+}
+function groupLabel(g) {
+  return isApprovalGroup(g) ? tt(primaryOf(g)) : tt(g.name)
+}
+function dropOf(g) {
+  const primary = primaryOf(g)
+  const rest = (g.actions || []).filter((a) => a !== primary)
+  if (!isApprovalGroup(g)) return rest
+  const secondary = approvalSecondaryOf(g, primary, isDisabled)
+  return rest.filter((a) => !isDisabled(a) && !secondary.includes(a))
+}
+function secondaryOf(g) {
+  return approvalSecondaryOf(g, primaryOf(g), isDisabled)
 }
 
 function isText(r) {
@@ -1138,7 +1169,14 @@ async function load() {
     const configuredGroups = payload.buttonGroups?.length
       ? payload.buttonGroups
       : panelMetadata.buttonGroups
-    groups.value = filterGroups(filterButtonGroups(ensureScanFillAction(configuredGroups, panelMetadata), panelCode.value, user))
+    const hasSelect = hasSelectConfig(panelConfig) || hasSelectConfig(panelMetadata) || hasSelectConfig(payload)
+    const configured = ensureSelectAction(ensureScanFillAction(configuredGroups, panelMetadata), hasSelect)
+    // 表单页同样只留真有实现的动作（与列表页同一张表，见 core/action-support.js）
+    groups.value = filterGroups(filterButtonGroups(
+      filterSupportedActions(configured, { hasSelect }),
+      panelCode.value,
+      user,
+    ))
     ensureFormDict()
     payloadCache.value = payload
     const firstTab = tabs.value.find((t) => t.type !== 'summary')
@@ -1220,7 +1258,7 @@ async function onButton(action) {
       }
       return
     }
-    ElMessage.info(tt('演示环境暂未实现「选单」，界面与 T+ 保持一致'))
+    ElMessage.warning(tt('该面板未配置选单来源'))
     return
   }
   if (action === '新增') {
@@ -1349,9 +1387,7 @@ async function onButton(action) {
       }
     }
   } catch (e) {
-    const msg = engine.errMsg(e) || '按钮执行失败'
-    if (msg.includes('演示环境暂未实现')) ElMessage.info(msg)  // 后端提示原文展示
-    else ElMessage.error(msg)
+    ElMessage.error(engine.errMsg(e) || '按钮执行失败')
   } finally {
     saving.value = false
   }
@@ -1539,6 +1575,13 @@ watch(() => [panelCode.value, code.value], () => {
   color: #999;
   cursor: not-allowed;
 }
+/* 审批驳回：与「审批通过」并列的第二个决策，用克制的危险色区分 */
+.tb-main.danger {
+  color: #c84d3f;
+}
+.tb-main.danger:hover {
+  color: #a93a2e;
+}
 .tb-main.back {
   margin-left: 0;
 }
@@ -1612,6 +1655,36 @@ watch(() => [panelCode.value, code.value], () => {
   padding: 12px;
   background: #fff;
   min-height: 0;
+}
+/* 表头栅格（2026-11-03）：等宽列铺满容器，字段标签/输入框按列对齐。
+   此前是 inline-block + 固定 160px 宽输入框，宽屏下字段挤在左边、宽度参差、右侧大片留白。 */
+.fields.udl-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px 20px;
+  align-items: start;
+}
+.fields.udl-fields .field {
+  display: block;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+}
+.fields.udl-fields .field .el-input,
+.fields.udl-fields .field .el-input-number,
+.fields.udl-fields .field .el-select,
+.fields.udl-fields .field .el-date-editor,
+.fields.udl-fields .field .ref-ctl {
+  width: 100% !important;
+}
+/* 控件统一 32px 高（对齐设计基线）：日期选择器默认比输入框矮一截，逐行看会参差 */
+.fields.udl-fields .field :deep(.el-input__wrapper),
+.fields.udl-fields .field :deep(.el-select__wrapper) {
+  min-height: 32px;
+}
+.fields.udl-fields .field :deep(.el-date-editor.el-input),
+.fields.udl-fields .field :deep(.el-date-editor .el-input__wrapper) {
+  height: 32px;
 }
 .field {
   display: inline-block;

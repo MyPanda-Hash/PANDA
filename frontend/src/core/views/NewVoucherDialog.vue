@@ -351,9 +351,7 @@ async function onSave() {
     emit('update:visible', false)
     emit('saved', res)
   } catch (e) {
-    const m = engine.errMsg(e) || tt('保存失败')
-    if (m.includes('演示环境暂未实现')) ElMessage.info(m)
-    else ElMessage.error(m)
+    ElMessage.error(engine.errMsg(e) || tt('保存失败'))
   } finally {
     saving.value = false
   }
