@@ -17,6 +17,7 @@
 | `verify-project.mjs` | 文档审计、前端生产构建和后端 Maven 打包 |
 | `docs-audit.mjs` | 当前文档的编码、结构、链接和导航检查 |
 | `architecture-audit.mjs` | 检查通用面板核心不反向依赖 MES/PLM 业务适配器 |
+| `action-support-audit.mjs` | 校验前端按钮动作支持表与后端 `PxService.callButton` 的 switch 分支一致（漂移即失败） |
 | `docs-format.mjs` | 统一当前文档元信息和换行格式 |
 | `detect-jdk.bat` | 查找本机可用的 JDK 17+ |
 | `apache-maven-3.9.9/`、`settings.xml` | 固定 Maven 版本和镜像配置 |
@@ -30,6 +31,7 @@
 ```powershell
 node tools/docs-audit.mjs
 node tools/architecture-audit.mjs
+node tools/action-support-audit.mjs
 node tools/verify-project.mjs
 ```
 

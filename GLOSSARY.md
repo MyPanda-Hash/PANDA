@@ -27,6 +27,35 @@ OCR 模块的业务定位:用户在面板表单里拍照/上传单据图片 → 
 (panel_code + owner + col_name),经 `ColumnPrefsDialog.vue` 调整,请求时
 `applyColumnPrefs` 注入(过滤+排序+追加新列);只影响本人显示,不改面板定义。
 
+### 自定义字段 / 字段管理(Custom Fields)
+
+面板自己的字段登记,存 `px_custom_field`(panel_code + scope + tab_key + data_name);
+`scope=header` 进 `dataSchema.fields`(并补 `formPages.fieldNames`),`scope=detail`
+进 `detail.tabs[].fields`(首个明细页签再补 `gridTabs[0].columns`)。由
+`FieldManagerDialog.vue` 维护,不写 `panel_config.config`(Registry 启动会覆盖),
+不动表结构 —— 面板数据本就在 `form_data` 的 JSON 里。停用=删元数据,业务数据保留。
+与「预留扩展列」分工:JSON 存储面板走本表,结构化物理表(manu_order 等)仍占 `ext_*`。
+
+### 参照带出列(`参照字段.属性`)
+
+列名带点的列(如 `存货名称.品牌`、`部门.负责人`)表示「按参照值去档案读一个属性」。
+显示期解析(`core/views/ref-carry.js`):行内有值用行内值,否则按 source 字段值去
+参照面板档案索引(`engine.archiveIndex`,缓存 60s)取属性;**只读**(改要去档案里改)。
+选单/导入/生单/历史数据带进来的行也能显示,不用回填存量数据。
+
+### 列头筛选(Column Filter)
+
+明细表格与主表预览的列头漏斗:内存过滤当前视图行,不改后端条件、不写库;
+语法 `包含` / `=值` / `!=值` / `> >= < <=`(数值),合计按筛选后行算。
+`core/views/column-filter.js` 纯函数 + 单测。
+
+### 左侧单据栏(Doc Rail)
+
+多单据面板左栏的单据切换器,镜像当前页列表(不额外请求),点行切 `curIdx`;
+行模型 `core/views/doc-rail-rows.js` 保留原始下标,过滤后不会切错单。打字只过滤本页,
+回车/「全库」走后端关键字重查。只在单据类面板且 >1 张单据时出现,<1024 隐藏,
+收起状态存 localStorage。外观取 Ant Design v6 token(控件 32/圆角 6/间距 8-16/无阴影)。
+
 ### 界面语言切换与词条词典(i18n)
 
 顶栏下拉 + Alt+L 循环;vue-i18n 热切换。词条三层:英文静态包

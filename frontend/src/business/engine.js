@@ -1,5 +1,6 @@
 import request from '@core/request'
 import { unwrap, errMsg } from '@core/panel-engine'
+import { buildRefIndex } from '@core/views/ref-carry'
 import { filterButtonGroups, priceFieldLocked } from './permissions'
 
 // 通用层函数继续对外导出（保持既有调用方兼容）
@@ -248,6 +249,30 @@ export function fieldOptions(field) {
   return field.options || []
 }
 
+/**
+ * 参照面板「档案索引」：按 keyField 建 Map，供「参照带出列」（存货名称.品牌 / 部门.负责人）
+ * 在显示期按行内参照值查档案属性。属于可选能力：core 渲染器用特性探测决定是否启用。
+ * 缓存 60s（与单位下拉同口径）：档案刚维护完不至于一直看到旧值，也不会每行都打接口。
+ */
+const ARCHIVE_TTL_MS = 60000
+const archiveCache = new Map()
+
+/** 清空档案索引缓存（保存/新增档案后调用，避免带出旧值） */
+export function clearArchiveCache() {
+  archiveCache.clear()
+}
+
+export async function archiveIndex(panelCode, keyField) {
+  if (!panelCode || !keyField) return null
+  const cacheKey = `${panelCode}|${keyField}`
+  const hit = archiveCache.get(cacheKey)
+  if (hit && Date.now() - hit.at < ARCHIVE_TTL_MS) return hit.index
+  const rows = await queryRefRows({ dataType: '参照', refPanel: panelCode }, { pageSize: 500 })
+  const index = buildRefIndex(rows, keyField)
+  archiveCache.set(cacheKey, { at: Date.now(), index })
+  return index
+}
+
 // ==================== SQL 后端接口 ====================
 
 export async function getPanelConfig(panelCode) {
@@ -260,6 +285,19 @@ export async function getPanelConfig(panelCode) {
  */
 export async function saveColumnPrefs({ panelCode, columns }) {
   return unwrap(await request.post('/px/saveColumnPrefs', { panelCode, columns }))
+}
+
+/**
+ * 面板自助加字段（可选引擎能力）：只在 px_custom_field 登记元数据，读取出口并进配置。
+ * 服务端校验字段名/类型/重名与「修改」权限。
+ */
+export async function addCustomField(payload) {
+  return unwrap(await request.post('/px/addCustomField', payload))
+}
+
+/** 停用自定义字段（只删元数据，业务数据保留） */
+export async function retireCustomField(payload) {
+  return unwrap(await request.post('/px/retireCustomField', payload))
 }
 
 /**
