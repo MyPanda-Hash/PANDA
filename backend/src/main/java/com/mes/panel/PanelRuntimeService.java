@@ -18,6 +18,19 @@ public interface PanelRuntimeService {
         throw new UnsupportedOperationException("saveColumnPrefs is not supported by this runtime");
     }
 
+    /**
+     * 面板自助加字段（登记元数据，读取出口合并；不动表结构）。默认不支持。
+     * body: { scope: header|detail, tabKey, dataName, dataType, options, fieldWidth, isRequired, inGrid }
+     */
+    default Map<String, Object> addCustomField(String panelCode, Map<String, Object> body) {
+        throw new UnsupportedOperationException("addCustomField is not supported by this runtime");
+    }
+
+    /** 停用面板自定义字段（只删元数据，业务数据保留）；默认不支持 */
+    default void retireCustomField(String panelCode, Map<String, Object> body) {
+        throw new UnsupportedOperationException("retireCustomField is not supported by this runtime");
+    }
+
     Map<String, Object> getPermMatrix(String panelCode);
 
     /** 按登录用户权限过滤的权限矩阵（userName 为空或 admin 时不过滤，保持全真） */

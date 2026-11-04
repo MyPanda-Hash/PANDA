@@ -108,4 +108,19 @@ public class PxController {
     public ApiResult<Map<String, Object>> trace(@RequestParam String docNo) {
         return ApiResult.ok(service.traceProcess(docNo));
     }
+
+    /** 面板自助加字段：登记一条元数据，读取出口合并进面板配置（服务端校验字段名/类型/重名 + 「修改」权限） */
+    @PostMapping("/addCustomField")
+    public ApiResult<Map<String, Object>> addCustomField(@RequestBody Map<String, Object> body) {
+        String panelCode = String.valueOf(body.getOrDefault("panelCode", ""));
+        return ApiResult.ok(service.addCustomField(panelCode, body));
+    }
+
+    /** 停用自定义字段：只删元数据，已录入数据保留（重新加同名字段即恢复显示） */
+    @PostMapping("/retireCustomField")
+    public ApiResult<Void> retireCustomField(@RequestBody Map<String, Object> body) {
+        String panelCode = String.valueOf(body.getOrDefault("panelCode", ""));
+        service.retireCustomField(panelCode, body);
+        return ApiResult.ok(null);
+    }
 }
