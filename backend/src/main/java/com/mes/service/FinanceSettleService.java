@@ -24,9 +24,13 @@ public class FinanceSettleService {
     private static final Set<String> PAYABLE_PANELS = Set.of(
             "PURCHASE_IN", "PU_INVOICE", "OUTSOURCE_IN", "OUTSOURCE_FEE");
 
-    /** 产生应收(AR)的面板：销售出库、销售发票、销货单。 */
-    private static final Set<String> RECEIVABLE_PANELS = Set.of(
-            "SALE_OUT", "SALE_INVOICE", "SALE_INV");
+    /**
+     * 产生应收(AR)的面板：只有销货单。
+     *
+     * <p>销售出库单只动库存、销售发票只登记开票，都不再产生应收——否则
+     * 「出库 → 销货 → 发票」同一条业务会把应收账款和主营业务收入各计三遍。
+     */
+    private static final Set<String> RECEIVABLE_PANELS = Set.of("SALE_INV");
 
     /** 冲减应付(AP_RETURN)：采购退货，应付减少。 */
     private static final Set<String> PAYABLE_RETURN_PANELS = Set.of("PURCHASE_RETURN");

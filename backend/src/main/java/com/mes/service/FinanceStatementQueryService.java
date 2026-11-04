@@ -62,15 +62,31 @@ public class FinanceStatementQueryService {
         return out;
     }
 
-    /** 单条转换：容忍空值，金额缺失按 0 处理，日期缺失按空串（逾期天数记 0）。 */
+    /**
+     * 单条转换：容忍空值，金额缺失按 0 处理，日期缺失按空串（逾期天数记 0）。
+     *
+     * <p>退货/红字（AR_RETURN / AP_RETURN）在库里和正向单据一样存正数金额，
+     * 出报表时按负数冲减 —— 否则一张 1000 的销售退货会让客户应收「多出」1000，
+     * 对账单和账龄一起虚增（2026-11-03 实测：应收 4000，实际 3000）。
+     * 放在投影层做而不是改落库符号，是因为历史数据里已经存了正数，这样新旧单据口径一致。
+     */
     FinanceStatementService.OpenItem toOpenItem(FinanceVoucher v) {
+        String type = v.getVoucherType() == null ? "" : v.getVoucherType();
         return new FinanceStatementService.OpenItem(
-                v.getVoucherType() == null ? "" : v.getVoucherType(),
+                type,
                 v.getPartner() == null ? "" : v.getPartner(),
-                v.getAmount() == null ? BigDecimal.ZERO : v.getAmount(),
-                v.getSettledAmount() == null ? BigDecimal.ZERO : v.getSettledAmount(),
+                signed(type, v.getAmount()),
+                signed(type, v.getSettledAmount()),
                 v.getBizDate() == null ? "" : v.getBizDate().toString(),
                 v.getSourcePanel() == null ? "" : v.getSourcePanel(),
                 v.getSourceNo() == null ? "" : v.getSourceNo());
+    }
+
+    /** 退货/红字单据按负数冲减；其它类型原样。 */
+    private static BigDecimal signed(String type, BigDecimal amount) {
+        BigDecimal value = amount == null ? BigDecimal.ZERO : amount;
+        if (value.signum() == 0) return value;
+        String t = type == null ? "" : type.trim().toUpperCase();
+        return t.endsWith("_RETURN") ? value.negate() : value;
     }
 }

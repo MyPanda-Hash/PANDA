@@ -45,10 +45,25 @@ public class StockTxnService {
 
     /** 面板对应的出入库方向；非库存面板返回 null。 */
     public String directionOf(String panelCode) {
+        return directionOfPanel(panelCode);
+    }
+
+    /**
+     * 面板对应的出入库方向（静态口径源）：报表/台账直接复用，避免另抄一份清单后与库存事务分叉。
+     * 销售退货 = IN（客户退货回来入库），采购退货 = OUT（退回供应商出库）。
+     */
+    public static String directionOfPanel(String panelCode) {
         if (panelCode == null) return null;
         if (INBOUND_PANELS.contains(panelCode)) return "IN";
         if (OUTBOUND_PANELS.contains(panelCode)) return "OUT";
         return null;
+    }
+
+    /** 全部库存面板（入库 + 出库），台账按此枚举来源单据。 */
+    public static Set<String> stockPanels() {
+        Set<String> all = new java.util.LinkedHashSet<>(INBOUND_PANELS);
+        all.addAll(OUTBOUND_PANELS);
+        return java.util.Collections.unmodifiableSet(all);
     }
 
     /** 把一张单据的表头与明细折算成事务行；非库存面板返回空列表。 */

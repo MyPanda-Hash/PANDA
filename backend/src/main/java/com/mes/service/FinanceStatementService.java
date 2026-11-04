@@ -66,7 +66,9 @@ public class FinanceStatementService {
         for (OpenItem item : items) {
             if (!sameSide(item.type(), type)) continue;
             BigDecimal open = item.open();
-            if (open.signum() <= 0) continue;
+            // 未核销为 0 才是「已结清」，不进来的；负数表示退货/红字信用，要留在对账单上冲减，
+            // 否则客户退了货，对账单上反而看不到可抵扣的那笔钱。
+            if (open.signum() == 0) continue;
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("业务日期", text(item.bizDate()));
             row.put("往来单位", nameOf(item.partner()));
@@ -98,7 +100,8 @@ public class FinanceStatementService {
         for (OpenItem item : items) {
             if (type != null && !sameSide(item.type(), type)) continue;
             BigDecimal open = item.open();
-            if (open.signum() <= 0) continue;
+            // 负数 = 退货/红字信用，要参与冲减；只跳过真正结清的（open = 0）
+            if (open.signum() == 0) continue;
             String side = sideOf(item.type());
             String partner = nameOf(item.partner());
             Bucket bucket = buckets.computeIfAbsent(side + "|" + partner, k -> new Bucket(side, partner));

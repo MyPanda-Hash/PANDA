@@ -84,29 +84,6 @@
         </div>
       </div>
 
-      <!-- 更新公告（new 角标） -->
-      <el-popover v-model:visible="noticePop" placement="bottom-end" :width="340" trigger="click" @show="loadNotices">
-        <template #reference>
-          <span class="gonggao">
-            {{ tt('更新公告') }}
-            <span v-if="hasUnread" class="new-icon">new</span>
-          </span>
-        </template>
-        <div class="nc-head">
-          <span class="nc-title">{{ tt('更新公告') }}</span>
-        </div>
-        <div class="nc-list">
-          <div v-for="n in notices" :key="n.id" class="nc-item" :class="{ unread: !n.read }" @click="openNotice(n)">
-            <div class="nc-item-top">
-              <span class="nc-item-title">{{ n.title }}</span>
-              <span v-if="!n.read" class="nc-dot"></span>
-            </div>
-            <div class="nc-item-time">{{ n.time }}</div>
-          </div>
-          <el-empty v-if="!notices.length" :description="tt('暂无公告')" :image-size="50" />
-        </div>
-      </el-popover>
-
       <!-- 移动端 -->
       <el-tooltip :content="tt('移动端扫码报工（建设中）')" placement="bottom">
         <span class="bar-icon"><el-icon><Iphone /></el-icon></span>
@@ -173,18 +150,6 @@
       </el-dropdown>
     </div>
 
-    <!-- 公告详情 -->
-    <el-dialog v-model="noticeDetailVisible" :title="tt('更新公告')" width="560px" append-to-body>
-      <div v-if="currentNotice" class="nc-detail">
-        <div class="nc-detail-head">
-          <span class="nc-detail-title">{{ currentNotice.title }}</span>
-          <el-tag v-if="!currentNotice.read" size="small" type="danger">new</el-tag>
-        </div>
-        <div class="nc-detail-time">{{ currentNotice.time }}</div>
-        <div class="nc-detail-content">{{ currentNotice.content }}</div>
-      </div>
-    </el-dialog>
-
     <!-- 账号管理 -->
     <el-dialog v-model="accountVisible" :title="tt('账号管理')" width="440px" append-to-body>
       <el-descriptions :column="1" border size="small">
@@ -240,7 +205,7 @@ import { useTabsStore } from '@/stores/tabs'
 import { useLocaleStore } from '@/stores/locale'
 import { tt } from '@/i18n'
 import { flatMenus, menuTree as rawMenuTree, filterMenuTree } from '@/business/menus'
-import { apiGetNotices, apiGetAiSsoTicket } from '@/business/api'
+import { apiGetAiSsoTicket } from '@/business/api'
 import { openAiAssistant } from '@/business/ai-assistant'
 import { ElMessage } from 'element-plus'
 import NoticeCenter from './NoticeCenter.vue'
@@ -296,27 +261,6 @@ onMounted(() => {
   locale.loadAvailable()
 })
 onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
-
-// ---------- 更新公告 ----------
-const noticePop = ref(false)
-const notices = ref([])
-const noticeDetailVisible = ref(false)
-const currentNotice = ref(null)
-
-const hasUnread = computed(() => notices.value.some((n) => !n.read))
-
-async function loadNotices() {
-  if (notices.value.length) return
-  try {
-    notices.value = await apiGetNotices('notice')
-  } catch (e) {}
-}
-
-function openNotice(n) {
-  currentNotice.value = n
-  noticePop.value = false
-  noticeDetailVisible.value = true
-}
 
 // ---------- 工厂 ----------
 async function refreshFactories() {
@@ -609,29 +553,6 @@ function changePwd() {
   color: var(--t-text-3);
 }
 
-.gonggao {
-  font-size: 13px;
-  color: var(--t-navbar-text);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-  outline: none;
-}
-.gonggao:hover {
-  color: var(--t-primary);
-}
-.new-icon {
-  font-size: 10px;
-  line-height: 1;
-  padding: 2px 4px;
-  border-radius: 2px;
-  background: var(--t-badge);
-  color: #fff;
-  font-style: italic;
-}
-
 .bar-icon {
   display: inline-flex;
   font-size: 17px;
@@ -671,82 +592,6 @@ function changePwd() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* ---------- 弹层 ---------- */
-.nc-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--t-border-light);
-  padding-bottom: 8px;
-  margin-bottom: 6px;
-}
-.nc-title {
-  font-weight: 600;
-  font-size: 14px;
-}
-.nc-list {
-  max-height: 320px;
-  overflow: auto;
-}
-.nc-item {
-  padding: 8px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.nc-item:hover {
-  background: var(--t-hover-bg);
-}
-.nc-item-top {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.nc-item-title {
-  font-size: 13px;
-  color: var(--t-text-1);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.nc-item.unread .nc-item-title {
-  font-weight: 600;
-}
-.nc-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--t-badge);
-  flex-shrink: 0;
-}
-.nc-item-time {
-  font-size: 12px;
-  color: var(--t-text-3);
-  margin-top: 2px;
-}
-.nc-detail-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.nc-detail-title {
-  font-size: 15px;
-  font-weight: 600;
-}
-.nc-detail-time {
-  font-size: 12px;
-  color: var(--t-text-3);
-  margin: 8px 0;
-}
-.nc-detail-content {
-  font-size: 13px;
-  line-height: 1.8;
-  color: var(--t-text-2);
-  background: var(--t-content-bg);
-  border-radius: 8px;
-  padding: 12px;
-  min-height: 80px;
 }
 
 .about {
@@ -841,7 +686,6 @@ function changePwd() {
   /* 次要图标与文字入口隐藏，保留通知/用户 */
   .refresh-icon,
   .ai-entry,
-  .gonggao,
   .bar-icon {
     display: none;
   }

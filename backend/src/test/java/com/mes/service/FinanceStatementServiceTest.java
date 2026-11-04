@@ -185,4 +185,34 @@ class FinanceStatementServiceTest {
     void agingReturnsEmptyWhenNothingOpen() {
         assertTrue(service.aging(List.of(), "AR", "2026-11-30").isEmpty());
     }
+
+    /**
+     * 退货是应收的负数冲减：对账单上要看得见（否则客户退了货却查不到可抵扣的钱），
+     * 账龄里要参与冲减（否则应收被退货单撑大）。
+     */
+    @Test
+    void statementListsReturnAsNegativeCreditRow() {
+        List<FinanceStatementService.OpenItem> items = List.of(
+                item("AR", "客户A", "250", "0", "2026-11-02"),
+                item("AR_RETURN", "客户A", "-150", "0", "2026-11-03"));
+
+        List<Map<String, Object>> rows = service.statement(items, "AR");
+
+        assertEquals(2, rows.size());
+        assertEquals(0, new BigDecimal("-150").compareTo((BigDecimal) rows.get(1).get("未核销金额")));
+        assertEquals(0, new BigDecimal("-150").compareTo((BigDecimal) rows.get(1).get("金额")));
+    }
+
+    @Test
+    void agingNetsReturnAgainstReceivable() {
+        List<FinanceStatementService.OpenItem> items = List.of(
+                item("AR", "客户A", "250", "0", "2026-11-02"),
+                item("AR_RETURN", "客户A", "-150", "0", "2026-11-03"));
+
+        List<Map<String, Object>> rows = service.aging(items, "AR", "2026-11-30");
+
+        assertEquals(1, rows.size());
+        assertEquals(0, new BigDecimal("100").compareTo((BigDecimal) rows.get(0).get("未结金额")),
+                "应收 250 减退货 150 = 100");
+    }
 }

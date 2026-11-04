@@ -105,4 +105,41 @@ class FinanceStatementQueryServiceTest {
         // 空串与 null 都应回退到今天，而不是抛异常
         assertEquals(service.aging(null), service.aging(""));
     }
+
+    /**
+     * 退货单在库里存正数，报表投影必须按负数冲减 ——
+     * 否则一张 1000 的销售退货会让客户应收「多出」1000（实测：应收 4000，实际 3000）。
+     */
+    @Test
+    void returnVoucherIsProjectedAsNegativeCredit() {
+        FinanceStatementQueryService service =
+                new FinanceStatementQueryService(null, new FinanceStatementService());
+
+        FinanceVoucher v = new FinanceVoucher();
+        v.setVoucherType("AR_RETURN");
+        v.setPartner("流程测试客户");
+        v.setAmount(new BigDecimal("1000"));
+        v.setSettledAmount(BigDecimal.ZERO);
+        v.setBizDate(LocalDate.parse("2026-11-03"));
+        v.setSourcePanel("SALE_RETURN");
+        v.setSourceNo("XT-2026-11-0301");
+
+        FinanceStatementService.OpenItem item = service.toOpenItem(v);
+
+        assertEquals(0, new BigDecimal("-1000").compareTo(item.amount()), "退货应作为负数信用");
+        assertEquals(0, BigDecimal.ZERO.compareTo(item.settled()));
+    }
+
+    @Test
+    void normalVoucherKeepsPositiveAmount() {
+        FinanceStatementQueryService service =
+                new FinanceStatementQueryService(null, new FinanceStatementService());
+
+        FinanceVoucher v = new FinanceVoucher();
+        v.setVoucherType("AR");
+        v.setAmount(new BigDecimal("1000"));
+        v.setSettledAmount(BigDecimal.ZERO);
+
+        assertEquals(0, new BigDecimal("1000").compareTo(service.toOpenItem(v).amount()));
+    }
 }

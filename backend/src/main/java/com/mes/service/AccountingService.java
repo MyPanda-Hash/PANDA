@@ -43,10 +43,9 @@ public class AccountingService {
         m.put("PURCHASE_IN", new Template("采购入库", "PURCHASE_IN", "1405", "库存商品", "2202", "应付账款"));
         // 采购发票：借 库存商品 / 贷 应付账款
         m.put("PU_INVOICE", new Template("采购发票", "PU_INVOICE", "1405", "库存商品", "2202", "应付账款"));
-        // 销售出库：借 应收账款 / 贷 主营业务收入
-        m.put("SALE_OUT", new Template("销售出库", "SALE_OUT", "1122", "应收账款", "6001", "主营业务收入"));
-        // 销售发票：借 应收账款 / 贷 主营业务收入
-        m.put("SALE_INVOICE", new Template("销售发票", "SALE_INVOICE", "1122", "应收账款", "6001", "主营业务收入"));
+        // 销货单：借 应收账款 / 贷 主营业务收入 —— 销售收入的唯一入账口径。
+        // 销售出库单只过库存、销售发票只登记开票，都不出凭证，避免同一笔业务重复确认收入。
+        m.put("SALE_INV", new Template("销货单", "SALE_INV", "1122", "应收账款", "6001", "主营业务收入"));
         // 收款：借 银行存款 / 贷 应收账款
         m.put("RECEIPT", new Template("收款", "RECEIPT", "1002", "银行存款", "1122", "应收账款"));
         // 付款：借 应付账款 / 贷 银行存款

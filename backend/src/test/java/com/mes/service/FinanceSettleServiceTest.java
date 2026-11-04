@@ -34,12 +34,13 @@ class FinanceSettleServiceTest {
     }
 
     @Test
-    void saleOutCreatesReceivable() {
-        Map<String, Object> head = Map.of("单据编号", "CK-001", "客户", "中天精工");
+    void saleInvCreatesReceivable() {
+        // 应收只由销货单产生
+        Map<String, Object> head = Map.of("单据编号", "XS-001", "客户", "中天精工");
         Map<String, Object> detail = Map.of("items", List.of(
-                Map.of("存货名称", "成品A", "数量", 30, "售价", 10, "销售金额", 300)));
+                Map.of("存货名称", "成品A", "数量", 30, "单价", 10, "金额", 300)));
 
-        FinanceSettleService.Settlement s = service.buildSettlement("SALE_OUT", "CK-001", head, detail);
+        FinanceSettleService.Settlement s = service.buildSettlement("SALE_INV", "XS-001", head, detail);
 
         assertEquals("AR", s.type());
         assertEquals("中天精工", s.partner());
@@ -47,15 +48,16 @@ class FinanceSettleServiceTest {
     }
 
     @Test
-    void saleInvoiceCreatesReceivable() {
-        Map<String, Object> head = Map.of("单据编号", "FP-001", "客户", "西部材料");
+    void saleOutAndSaleInvoiceCreatesNoReceivable() {
+        // 出库只动库存、发票只登记开票：都不再产生应收，避免同一笔业务重复计
+        Map<String, Object> head = Map.of("单据编号", "CK-001", "客户", "西部材料");
         Map<String, Object> detail = Map.of("items", List.of(
                 Map.of("存货名称", "成品B", "数量", 5, "含税金额", 500)));
 
-        FinanceSettleService.Settlement s = service.buildSettlement("SALE_INVOICE", "FP-001", head, detail);
-
-        assertEquals("AR", s.type());
-        assertEquals(0, new BigDecimal("500").compareTo(s.amount()));
+        assertNull(service.buildSettlement("SALE_OUT", "CK-001", head, detail));
+        assertNull(service.buildSettlement("SALE_INVOICE", "FP-001", head, detail));
+        assertNull(service.typeOf("SALE_OUT"));
+        assertNull(service.typeOf("SALE_INVOICE"));
     }
 
     @Test
@@ -104,9 +106,10 @@ class FinanceSettleServiceTest {
     void typeOfPanelsIsExposedForCallers() {
         assertEquals("AP", service.typeOf("PURCHASE_IN"));
         assertEquals("AP", service.typeOf("PU_INVOICE"));
-        assertEquals("AR", service.typeOf("SALE_OUT"));
-        assertEquals("AR", service.typeOf("SALE_INVOICE"));
+        assertEquals("AR", service.typeOf("SALE_INV"));
         assertNull(service.typeOf("SO_ORDER"));
+        assertNull(service.typeOf("SALE_OUT"));
+        assertNull(service.typeOf("SALE_INVOICE"));
     }
 
     @Test

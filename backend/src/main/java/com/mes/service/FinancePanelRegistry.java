@@ -104,7 +104,8 @@ public class FinancePanelRegistry {
                 "tablePages", List.of(tablePage),
                 "formPages", List.of(Map.of(
                         "formName", name,
-                        "fieldNames", "单据日期,单据编号," + partnerField + ",结算方式,金额,备注",
+                        "fieldNames", "单据日期,单据编号," + partnerField
+                                + ",结算方式,金额,已核销金额,未核销金额,核销日期,未结单据,备注",
                         "bottomOperationBarBtn", List.of(Map.of("buttonName", "保存"),
                                 Map.of("buttonName", "审核"), Map.of("buttonName", "放弃")),
                         "events", List.of()))));
@@ -118,12 +119,29 @@ public class FinancePanelRegistry {
                 amount("金额", true),
                 amount("已核销金额", false),
                 amount("未核销金额", false),
+                field("核销日期", "日期", false),
+                field("未结单据", "文本", false),
                 field("备注", "文本", false));
+
+        // 核销明细：填了「来源单号 + 本次核销金额」就按行核（可只核一部分、可指定到某张单）；
+        // 不填则按业务日期自动分配。未结单据字段在表单上列出可核的单号，照抄即可。
+        Map<String, Object> settleTab = new LinkedHashMap<>();
+        settleTab.put("key", "settle");
+        settleTab.put("label", "核销明细");
+        settleTab.put("isRequired", false);
+        // block:B = 单独成一个网格区块。收款单没有明细行，若按默认规则它会被当成主网格的字段
+        // schema 吃掉，页签在界面上不出现（通用运行时按 detail.tabs[1..n] 建第二区块）。
+        settleTab.put("block", "B");
+        settleTab.put("fields", List.of(
+                field("来源单号", "文本", true),
+                amount("未结金额", false),
+                amount("本次核销金额", true),
+                field("备注", "文本", false)));
 
         Map<String, Object> config = new LinkedHashMap<>();
         config.put("metadata", metadata);
         config.put("dataSchema", Map.of("type", "object", "fields", schema));
-        config.put("detail", Map.of("tabs", List.of()));
+        config.put("detail", Map.of("tabs", List.of(settleTab)));
         return config;
     }
 

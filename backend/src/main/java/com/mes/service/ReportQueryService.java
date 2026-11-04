@@ -328,12 +328,16 @@ public class ReportQueryService {
 
     private List<Map<String, Object>> movements() {
         List<Map<String, Object>> out = new ArrayList<>();
+        // 期初结存单独一种单据类型（台账起算行）
         for (Doc doc : docs("INIT_BALANCE")) addMovements(out, doc, "INITIAL", "期初结存");
-        for (String source : List.of("PURCHASE_IN", "FINISH_IN", "OTHER_IN")) {
-            for (Doc doc : docs(source)) if (effective(doc)) addMovements(out, doc, "IN", documentType(source));
-        }
-        for (String source : List.of("SALE_OUT", "MATERIAL_OUT", "OTHER_OUT")) {
-            for (Doc doc : docs(source)) if (effective(doc)) addMovements(out, doc, "OUT", documentType(source));
+        // 出入库来源统一取 StockTxnService 的方向表：销售退货（入库）/采购退货（出库）不再漏记，
+        // 也不会因为另抄一份清单而与库存事务口径分叉。
+        for (String source : StockTxnService.stockPanels()) {
+            String direction = StockTxnService.directionOfPanel(source);
+            if (direction == null || "INIT_BALANCE".equals(source)) continue;
+            for (Doc doc : docs(source)) {
+                if (effective(doc)) addMovements(out, doc, direction, documentType(source));
+            }
         }
         out.sort(Comparator.comparing(r -> text(r.get("单据日期"))));
         return out;
@@ -462,18 +466,41 @@ public class ReportQueryService {
     }
 
     private List<Map<String, Object>> stockLedger(Map<String, Object> condition) {
-        List<Map<String, Object>> selected = filter(movements(), null, condition);
-        selected.sort(Comparator.comparing(r -> text(r.get("单据日期"))));
-        BigDecimal balanceQty = BigDecimal.ZERO;
-        BigDecimal balanceAmount = BigDecimal.ZERO;
+        return ledgerRows(filter(movements(), null, condition));
+    }
+
+    /**
+     * 台账行序：存货 → 仓库 → 单据日期 → 单据编号。
+     * 只按日期整表混排时，同一天多张单据会让同一存货的结存上下跳，读不出流水；
+     * 按存货分块后，每个「存货+仓库」的结存是一条连续上升/下降的曲线。
+     */
+    private static final Comparator<Map<String, Object>> LEDGER_ORDER = Comparator
+            .comparing((Map<String, Object> row) -> text(row.get("存货编码")))
+            .thenComparing((row) -> text(row.get("存货")))
+            .thenComparing((row) -> text(row.get("仓库")))
+            .thenComparing((row) -> text(row.get("单据日期")))
+            .thenComparing((row) -> text(row.get("单据编号")));
+
+    /**
+     * 台账行：结存按「仓库 + 存货」各自滚动。
+     * 此前是全表累计，结存数量/金额把不同存货加在一起（出现结存 9341.8 而单品现存量 805 的对不上），
+     * 台账无法对账。
+     */
+    static List<Map<String, Object>> ledgerRows(List<Map<String, Object>> movements) {
+        List<Map<String, Object>> selected = new ArrayList<>(movements == null ? List.of() : movements);
+        selected.sort(LEDGER_ORDER);
+        Map<String, BigDecimal[]> balances = new LinkedHashMap<>();
         List<Map<String, Object>> out = new ArrayList<>();
         for (Map<String, Object> movement : selected) {
             String direction = text(movement.get("方向"));
             BigDecimal qty = number(movement.get("数量"));
             BigDecimal amount = number(movement.get("金额"));
             boolean outgoing = "OUT".equals(direction);
-            balanceQty = outgoing ? balanceQty.subtract(qty) : balanceQty.add(qty);
-            balanceAmount = outgoing ? balanceAmount.subtract(amount) : balanceAmount.add(amount);
+            String balanceKey = join(movement.get("仓库"), movement.get("存货编码"), movement.get("存货"));
+            BigDecimal[] balance = balances.computeIfAbsent(balanceKey,
+                    ignored -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+            balance[0] = outgoing ? balance[0].subtract(qty) : balance[0].add(qty);
+            balance[1] = outgoing ? balance[1].subtract(amount) : balance[1].add(amount);
             Map<String, Object> row = row(
                     "单据日期", movement.get("单据日期"), "单据类型", movement.get("单据类型"),
                     "单据编号", movement.get("单据编号"), "业务类型", movement.get("业务类型"),
@@ -481,8 +508,8 @@ public class ReportQueryService {
                     "收入数量", outgoing ? BigDecimal.ZERO : qty, "收入单价", outgoing ? BigDecimal.ZERO : movement.get("单价"),
                     "收入金额", outgoing ? BigDecimal.ZERO : amount, "发出数量", outgoing ? qty : BigDecimal.ZERO,
                     "发出单价", outgoing ? movement.get("单价") : BigDecimal.ZERO, "发出金额", outgoing ? amount : BigDecimal.ZERO,
-                    "结存数量", balanceQty, "结存平均单价", divide(balanceAmount, balanceQty), "结存金额", balanceAmount,
-                    "仓库", movement.get("仓库"), "存货", movement.get("存货"));
+                    "结存数量", balance[0], "结存平均单价", divide(balance[1], balance[0]), "结存金额", balance[1],
+                    "仓库", movement.get("仓库"), "存货编码", movement.get("存货编码"), "存货", movement.get("存货"));
             out.add(row);
         }
         return out;
@@ -1409,6 +1436,9 @@ public class ReportQueryService {
             case "SALE_OUT" -> "销售出库单";
             case "MATERIAL_OUT" -> "材料出库单";
             case "OTHER_OUT" -> "其他出库单";
+            case "SALE_RETURN" -> "销售退货单";
+            case "PURCHASE_RETURN" -> "采购退货单";
+            case "OUTSOURCE_IN" -> "委外入库单";
             default -> source;
         };
     }
@@ -1448,7 +1478,7 @@ public class ReportQueryService {
         return "";
     }
 
-    private String text(Object value) {
+    private static String text(Object value) {
         return value == null ? "" : String.valueOf(value).trim();
     }
 
@@ -1462,7 +1492,7 @@ public class ReportQueryService {
         return "";
     }
 
-    private BigDecimal number(Object value) {
+    private static BigDecimal number(Object value) {
         if (value instanceof BigDecimal decimal) return decimal;
         if (value instanceof Number number) return BigDecimal.valueOf(number.doubleValue());
         try {
@@ -1473,7 +1503,7 @@ public class ReportQueryService {
         }
     }
 
-    private BigDecimal divide(BigDecimal amount, BigDecimal quantity) {
+    private static BigDecimal divide(BigDecimal amount, BigDecimal quantity) {
         if (quantity == null || quantity.signum() == 0) return BigDecimal.ZERO;
         return amount.divide(quantity, 4, RoundingMode.HALF_UP).stripTrailingZeros();
     }
@@ -1497,13 +1527,13 @@ public class ReportQueryService {
         row.put(key, number(row.get(key)).add(number(value)));
     }
 
-    private String join(Object... values) {
+    private static String join(Object... values) {
         List<String> parts = new ArrayList<>();
         for (Object value : values) parts.add(text(value));
         return String.join("|", parts);
     }
 
-    private Map<String, Object> row(Object... values) {
+    private static Map<String, Object> row(Object... values) {
         Map<String, Object> out = new LinkedHashMap<>();
         for (int i = 0; i + 1 < values.length; i += 2) out.put(String.valueOf(values[i]), values[i + 1]);
         return out;

@@ -54,12 +54,16 @@ public class ReturnPanelRegistry {
                 Map.of("buttonName", "保存"),
                 Map.of("buttonName", "审核"),
                 Map.of("buttonName", "弃审"),
+                Map.of("buttonName", "冲抵"),
+                Map.of("buttonName", "反冲抵"),
                 Map.of("buttonName", "刷新")));
         metadata.put("buttonGroups", List.of(
                 Map.of("name", "新增", "actions", List.of("新增", "引入常用单据")),
                 Map.of("name", "保存", "actions", List.of("保存", "保存新增", "保存为草稿")),
                 Map.of("name", "删除", "actions", List.of("删除", "删除单据")),
                 Map.of("name", "审核", "actions", List.of("审核", "弃审")),
+                // 退货单审掉的是往来侧的负数信用，要能拿去冲同一往来单位的未结应收/应付
+                Map.of("name", "冲抵", "actions", List.of("冲抵", "反冲抵")),
                 Map.of("name", "查找", "actions", List.of("查找", "刷新")),
                 Map.of("name", "打印", "actions", List.of("打印", "预览", "导出")),
                 Map.of("name", "更多", "actions", List.of("复制", "放弃", "附件", "消息"))));
@@ -88,7 +92,7 @@ public class ReturnPanelRegistry {
                 "formPages", List.of(Map.of(
                         "formName", name,
                         "fieldNames", "单据日期,单据编号," + partnerField + "," + codeName
-                                + ",仓库,来源单号,退货原因,退货日期,经手人,备注",
+                                + ",仓库,来源单号,退货原因,退货日期,经手人,金额,已冲抵金额,未冲抵金额,冲抵日期,备注",
                         "bottomOperationBarBtn", List.of(Map.of("buttonName", "保存"),
                                 Map.of("buttonName", "审核"), Map.of("buttonName", "放弃")),
                         "events", List.of()))));
@@ -104,6 +108,9 @@ public class ReturnPanelRegistry {
                 field("退货日期", "日期", false),
                 field("经手人", "文本", false),
                 field("金额", "小数", false),
+                field("已冲抵金额", "小数", false),
+                field("未冲抵金额", "小数", false),
+                field("冲抵日期", "日期", false),
                 field("备注", "文本", false));
 
         List<Map<String, Object>> detailFields = List.of(

@@ -39,15 +39,25 @@ class AccountingServiceTest {
     }
 
     @Test
-    void saleOutDebitsReceivableCreditsRevenue() {
+    void saleInvDebitsReceivableCreditsRevenue() {
+        // 销货单是销售收入的唯一入账口径
         List<AccountingService.Entry> entries = service.buildEntries(
-                "SALE_OUT", "CK-001", bd("300"), "中天精工", "成品A");
+                "SALE_INV", "XS-001", bd("300"), "中天精工", "成品A");
 
         assertEquals(2, entries.size());
         assertEquals("1122", entries.get(0).accountCode());   // 应收账款 借
         assertEquals("借", entries.get(0).direction());
         assertEquals("6001", entries.get(1).accountCode());   // 主营业务收入 贷
         assertEquals("贷", entries.get(1).direction());
+    }
+
+    @Test
+    void saleOutAndSaleInvoiceProduceNoEntries() {
+        // 出库只过库存、发票只登记开票：都不再确认收入，避免同一笔业务重复入账
+        assertNull(service.templateOf("SALE_OUT"));
+        assertNull(service.templateOf("SALE_INVOICE"));
+        assertTrue(service.buildEntries("SALE_OUT", "CK-001", bd("300"), "中天精工", "成品A").isEmpty());
+        assertTrue(service.buildEntries("SALE_INVOICE", "FP-001", bd("300"), "中天精工", "成品A").isEmpty());
     }
 
     @Test
@@ -129,7 +139,7 @@ class AccountingServiceTest {
 
     @Test
     void templateCoversAllFinancialPanels() {
-        for (String panel : List.of("PURCHASE_IN", "PU_INVOICE", "SALE_OUT", "SALE_INVOICE",
+        for (String panel : List.of("PURCHASE_IN", "PU_INVOICE", "SALE_INV",
                 "RECEIPT", "RECEIPT_PAYABLE", "PURCHASE_RETURN", "SALE_RETURN")) {
             assertTrue(service.templateOf(panel) != null, panel + " 缺少凭证模板");
         }
@@ -138,7 +148,7 @@ class AccountingServiceTest {
     @Test
     void summaryIncludesSourceAndPartner() {
         List<AccountingService.Entry> entries = service.buildEntries(
-                "SALE_OUT", "CK-002", bd("500"), "西部材料", "铝板");
+                "SALE_INV", "XS-002", bd("500"), "西部材料", "铝板");
 
         for (AccountingService.Entry e : entries) {
             assertEquals("西部材料", e.partner());

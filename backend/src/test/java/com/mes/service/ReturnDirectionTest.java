@@ -103,7 +103,9 @@ class ReturnDirectionTest {
         assertEquals("OUT", stockTxn.directionOf("SALE_OUT"));
         assertNull(stockTxn.directionOf("SO_ORDER"));
         assertEquals("AP", finance.typeOf("PURCHASE_IN"));
-        assertEquals("AR", finance.typeOf("SALE_OUT"));
+        // 应收只由销货单产生：出库单只过库存，不再挂应收
+        assertEquals("AR", finance.typeOf("SALE_INV"));
+        assertNull(finance.typeOf("SALE_OUT"));
         assertNull(finance.typeOf("SO_ORDER"));
     }
 

@@ -180,7 +180,7 @@ public class ProcessTraceService {
         return switch (s) {
             case "已审核", "已完工", "已关闭", "已核销" -> "完成";
             case "审批中", "草稿", "生产中", "部分核销" -> "进行中";
-            case "已中止", "已驳回", "作废" -> "已中止";
+            case "已中止", "已驳回", "作废", "已作废" -> "已中止";
             default -> "进行中";
         };
     }

@@ -63,9 +63,9 @@ public class PxService implements PanelRuntimeService {
     /** 权限码 → 受控按钮名（矩阵过滤映射；未列出的按钮不受权限控制） */
     private static final Map<String, List<String>> ACTION_BUTTONS = Map.of(
             "query", List.of("查找", "查询", "刷新"),
-            "add", List.of("新增", "新增流程", "引入常用单据", "选单", "扫描填单"),
-            "edit", List.of("修改", "保存", "保存新增", "保存为草稿", "中止", "中止执行", "整单中止", "草稿", "取消中止", "关闭", "手工完工"),
-            "delete", List.of("删除", "删除单据"),
+            "add", List.of("新增", "新增流程", "引入常用单据", "选单", "扫描填单", "红冲"),
+            "edit", List.of("修改", "保存", "保存新增", "保存为草稿", "中止", "中止执行", "整单中止", "草稿", "取消中止", "关闭", "手工完工", "冲抵", "反冲抵"),
+            "delete", List.of("删除", "删除单据", "作废"),
             "export", List.of("导出", "明细标签打印", "下载导入模板", "导入"),
             "print", List.of("直接打印", "打印", "预览", "打印模板设置", "打印情况", "保存打印"),
             "audit", List.of("提交审批", "审批通过", "审批驳回", "驳回审批", "审批情况", "弃审", "审核"));
@@ -1304,6 +1304,12 @@ public class PxService implements PanelRuntimeService {
         Map<String, Object> out = new HashMap<>();
         out.put("data", data);
         out.put("meta", buildMeta(panelCode));
+        // 销售发票：带上来源销货单的应收状态（应收挂账在销货单，发票只做展示）
+        if ("SALE_INVOICE".equals(panelCode)) fillReceivable(data, arVoucherBySaleInvNo());
+        if (isReceiptPanel(panelCode)) {
+            fillReceiptPending(data);
+            fillReceiptOpenDocs(panelCode, data);
+        }
         Map<String, Object> privilege = new HashMap<>();
         privilege.put("actionPrivileges", actionPrivileges(panelCode, "formPages"));
         privilege.put("fieldPrivileges", new ArrayList<>());
@@ -1383,6 +1389,7 @@ public class PxService implements PanelRuntimeService {
         // 对齐 docs/frontend/前端面板设计.md 数据契约；前端渲染器和选单弹窗按此结构消费。
         List<Map<String, Object>> flat = new ArrayList<>();
         List<Map<String, Object>> currentStock = null;
+        Map<String, FinanceVoucher> arBySaleInv = "SALE_INVOICE".equals(panelCode) ? arVoucherBySaleInvNo() : null;
         for (FormData fd : all) {
             Map<String, Object> head = parseData(fd.getData());
             head.put("编号", fd.getFormNo());
@@ -1390,6 +1397,8 @@ public class PxService implements PanelRuntimeService {
             head.put("创建时间", fd.getCreateTime());
             head.put("更新时间", fd.getUpdateTime());
             head.put("发起人编号", fd.getCreateBy());
+            if (arBySaleInv != null) fillReceivable(head, arBySaleInv);
+            if (isReceiptPanel(panelCode)) fillReceiptPending(head);
             Map<String, Object> detail = parseData(fd.getDetailData());
             if (hasCurrentStockField(detail)) {
                 if (currentStock == null) currentStock = reportQueryService.currentStockRows();
@@ -1735,6 +1744,12 @@ public class PxService implements PanelRuntimeService {
             case "生成销售发票(普通销售)":
             case "生成销售发票(销售退货)":
                 return createSaleInvoiceFromSaleInv(panelCode, formData);
+            case "开票":              // 销售发票开票：写发票号码/开票日期，状态置「已开票」
+                return issueSaleInvoice(formData);
+            case "作废":              // 销售发票作废：仅未开票可作废，作废后释放销货单可开票额度
+                return voidSaleInvoice(formData);
+            case "红冲":              // 销售发票红冲：已开票发票生成负数红字发票，原票标记已红冲
+                return redFlushSaleInvoice(formData);
             case "生成销售费用分摊单": // 推式生单：费用单 → 销售费用分摊单
                 return createSaleCostAllocFromExpense(panelCode, formData);
             case "生成采购发票":       // 推式生单：进货单/采购订单 → 采购发票（对齐真实 T+ 进货单/采购订单「生单-生成采购发票」）
@@ -1746,6 +1761,8 @@ public class PxService implements PanelRuntimeService {
             case "生成销售出库单":     // 推式生单：销售订单 → 销售出库单
             case "生成销售出库单(普通销售)":
                 return createSaleOutFromSo(panelCode, formData);
+            case "生成销售退货单":     // 推式生单：销售订单 → 销售退货单（退货入库 + 冲减应收）
+                return createSaleReturnFromSo(panelCode, formData);
             case "生成销货单":         // 推式生单：产成品入库单 → 销货单（O2C 闭环）
             case "生成销货单(普通销售)":
                 return createSaleInvFromFinishIn(panelCode, formData);
@@ -1763,6 +1780,10 @@ public class PxService implements PanelRuntimeService {
                 return writeOff(panelCode, formData);
             case "反核销":
                 return reverseWriteOff(panelCode, formData);
+            case "冲抵":              // 退货冲抵：用退货信用冲减同一往来单位的未结应收/应付
+                return setOffReturn(panelCode, formData);
+            case "反冲抵":
+                return reverseSetOffReturn(panelCode, formData);
             default:
                 return panelActionRegistry.dispatch(new PanelActionContext(
                                 panelCode, buttonName, formData, buttonParam, currentUserName()))
@@ -2065,7 +2086,7 @@ public class PxService implements PanelRuntimeService {
 
     // ══════════ 推式生单（业务流程图流转，2026-08-24 全量补全） ══════════
 
-    private double num(Object v) {
+    private static double num(Object v) {
         if (v == null) return 0;
         try { return Double.parseDouble(String.valueOf(v)); } catch (Exception e) { return 0; }
     }
@@ -2077,6 +2098,8 @@ public class PxService implements PanelRuntimeService {
         // 生单同时要求目标面板新增权限，防止仅有来源面板权限的用户越权创建下游单据。
         requirePanelPermission(targetPanel, "add");
         validateSourceLinks(targetPanel, null, detail);
+        // 1:1 生单组合先查重：同一来源单不能再生成第二张同类单据
+        if (isSingleGeneratePair(targetPanel, sourcePanel)) ensureNotGenerated(targetPanel, sourcePanel, sourceNo);
         String newNo = generateFormNo(targetPanel);
         // 新建兜底：字段默认值 + 单据日期=当天 + 单据编号/锭号=form_no（修复：生单目标单必填字段缺失无法保存草稿）
         fillNewDefaults(targetPanel, head, newNo);
@@ -2846,6 +2869,72 @@ public class PxService implements PanelRuntimeService {
         return insertGenerated("SALE_OUT", "SO_ORDER", String.valueOf(no), soData, detail);
     }
 
+    /**
+     * 推式生单：销售订单（SO_ORDER）→ 销售退货单（SALE_RETURN）。
+     *
+     * <p>退货是入库方向：退货单审核后按 SALE_RETURN 增加库存，并按 AR_RETURN 冲减应收。
+     * 数量同时写「实收数量」（库存入库取该字段）与「数量」（对账取该字段）。
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createSaleReturnFromSo(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "SO_ORDER").eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("销售订单不存在：" + no);
+        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核销售订单可生成销售退货单");
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> items = dm.get("items") instanceof List
+                ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
+        if (items.isEmpty()) throw new IllegalStateException("销售订单无明细：" + no);
+
+        Map<String, Object> ret = new HashMap<>();
+        ret.put("单据日期", LocalDate.now().toString());
+        ret.put("退货日期", LocalDate.now().toString());
+        ret.put("客户", head.getOrDefault("客户", ""));
+        ret.put("客户编码", head.getOrDefault("客户编码", ""));
+        ret.put("结算客户", head.getOrDefault("结算客户", ""));
+        ret.put("仓库", "成品仓");
+        ret.put("来源单号", String.valueOf(no));
+        Object reason = formData.get("退货原因");
+        ret.put("退货原因", reason == null || String.valueOf(reason).isBlank() ? "客户退货" : String.valueOf(reason));
+        ret.put("备注", "由销售订单 " + no + " 生成");
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> it : items) {
+            double qty = num(it.getOrDefault("数量", 0));
+            double price = num(it.getOrDefault("单价", 0));
+            if (price == 0) {
+                // 订单只填了含税单价时反算无税单价
+                double taxPrice = num(it.getOrDefault("含税单价", 0));
+                double tax = num(it.getOrDefault("税率%", 0));
+                price = taxPrice > 0 ? taxPrice / (1 + tax / 100) : 0;
+            }
+            double amount = Math.round(qty * price * 100) / 100.0;
+            Map<String, Object> r = new HashMap<>();
+            r.put("仓库", "成品仓");
+            r.put("存货编码", it.getOrDefault("存货编码", ""));
+            r.put("存货名称", it.getOrDefault("存货名称", ""));
+            r.put("规格型号", it.getOrDefault("规格型号", ""));
+            r.put("计量单位", it.getOrDefault("销售单位", it.getOrDefault("计量单位", "件")));
+            r.put("数量", qty);
+            r.put("实收数量", qty);
+            r.put("单价", price);
+            r.put("售价", price);
+            r.put("金额", amount);
+            r.put("销售金额", amount);
+            // 行级来源：退货占用反查与来源超量校验都按这三个字段走
+            r.put("来源面板", "SO_ORDER");
+            r.put("来源单号", String.valueOf(no));
+            r.put("来源行号", rows.size() + 1);
+            rows.add(r);
+        }
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("SALE_RETURN", "SO_ORDER", String.valueOf(no), ret, detail);
+    }
+
     /** 推式生单：报价单（QUOTE_ORDER）→ 销售订单（SO_ORDER）；表头带客户/部门/业务员，明细带报价单价/含税单价 */
     @SuppressWarnings("unchecked")
     private Map<String, Object> createSaleOrderFromQuote(String panelCode, Map<String, Object> formData) {
@@ -2908,6 +2997,15 @@ public class PxService implements PanelRuntimeService {
                 .eq(FormData::getPanelCode, "SALE_INV").eq(FormData::getFormNo, String.valueOf(no)));
         if (src == null) throw new IllegalArgumentException("销货单不存在：" + no);
         if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核销货单可生成销售发票");
+        // 额度口径替代「只允许一张发票」：允许分批开票，但不允许累计超过销货单含税金额。
+        // 生单时只要还有剩余额度就放行（草稿会带满全额，用户按需删行/改数量），真正的上限在「开票」时校验。
+        double quota = saleInvInvoicableAmount(src);
+        double issued = issuedInvoiceAmount(String.valueOf(no), null);
+        double remaining = remainingInvoiceQuota(quota, issued);
+        if (remaining <= 0) {
+            throw new IllegalStateException("该销货单可开票额度已用完：可开票 " + money(quota)
+                    + "，已占用 " + money(issued) + "（作废或红冲后可重新开票）");
+        }
         Map<String, Object> head = parseData(src.getData());
         Map<String, Object> dm = parseData(src.getDetailData());
         List<Map<String, Object>> items = dm.get("items") instanceof List
@@ -2923,11 +3021,16 @@ public class PxService implements PanelRuntimeService {
         data.put("部门", head.getOrDefault("部门", ""));
         data.put("业务员", head.getOrDefault("经手人", ""));
         data.put("开票类型", "增值税专用发票");
+        data.put("发票号码", "");
+        data.put("开票日期", "");
+        data.put("开票状态", "未开票");
         data.put("销货单号", String.valueOf(no));
         data.put("来源单据", "SALE_INV");
         data.put("来源单号", String.valueOf(no));
         List<Map<String, Object>> rows = new ArrayList<>();
         double totalAmount = 0;
+        double totalNet = 0;
+        double totalTax = 0;
         for (Map<String, Object> it : items) {
             double qty = num(it.getOrDefault("数量", 0));
             double price = num(it.getOrDefault("含税单价", it.getOrDefault("单价", 0)));
@@ -2936,6 +3039,8 @@ public class PxService implements PanelRuntimeService {
             double tax = Math.round(gross * taxRate / (100 + taxRate) * 100) / 100.0;
             double net = Math.round((gross - tax) * 100) / 100.0;
             totalAmount += gross;
+            totalNet += net;
+            totalTax += tax;
             Map<String, Object> r = new HashMap<>();
             r.put("存货编码", it.getOrDefault("存货编码", ""));
             r.put("存货名称", it.getOrDefault("存货名称", ""));
@@ -2949,6 +3054,14 @@ public class PxService implements PanelRuntimeService {
             rows.add(r);
         }
         data.put("价税合计", Math.round(totalAmount * 100) / 100.0);
+        data.put("无税金额", Math.round(totalNet * 100) / 100.0);
+        data.put("税额", Math.round(totalTax * 100) / 100.0);
+        // 额度快照：让用户在单据上直接看到「这张能开多少、已经占了多少」，不用回销货单算
+        data.put("可开票金额", quota);
+        data.put("已开票金额", issued);
+        data.put("原发票号", "");
+        data.put("红冲状态", "未红冲");
+        data.put("红字发票号", "");
         Map<String, Object> detail = new HashMap<>();
         detail.put("items", rows);
         return insertGenerated("SALE_INVOICE", "SALE_INV", String.valueOf(no), data, detail);
@@ -2963,6 +3076,7 @@ public class PxService implements PanelRuntimeService {
                 .eq(FormData::getPanelCode, "EXPENSE").eq(FormData::getFormNo, String.valueOf(no)));
         if (src == null) throw new IllegalArgumentException("费用单不存在：" + no);
         if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核费用单可生成销售费用分摊单");
+        // 重复分摊由 insertGenerated 里的 1:1 生单校验统一拦截
         Map<String, Object> head = parseData(src.getData());
         Map<String, Object> dm = parseData(src.getDetailData());
         List<Map<String, Object>> items = dm.get("items") instanceof List
@@ -2980,12 +3094,16 @@ public class PxService implements PanelRuntimeService {
         data.put("来源单号", String.valueOf(no));
         List<Map<String, Object>> rows = new ArrayList<>();
         double total = 0;
+        String allocPartner = String.valueOf(head.getOrDefault("往来单位", "")).trim();
         for (Map<String, Object> it : items) {
             double amount = num(it.getOrDefault("金额", 0));
             total += amount;
             Map<String, Object> r = new HashMap<>();
             r.put("费用单号", String.valueOf(no));
             r.put("费用项目", it.getOrDefault("费用项目", ""));
+            // 分摊对象默认落到费用单往来单位（客户）；后续可在明细里改成按销售发票分摊
+            r.put("分摊对象", allocPartner.isEmpty() ? "" : "客户");
+            r.put("客户", allocPartner);
             r.put("分摊金额", amount);
             r.put("备注", it.getOrDefault("备注", ""));
             rows.add(r);
@@ -2994,6 +3112,41 @@ public class PxService implements PanelRuntimeService {
         Map<String, Object> detail = new HashMap<>();
         detail.put("items", rows);
         return insertGenerated("SALE_COST_ALLOC", "EXPENSE", String.valueOf(no), data, detail);
+    }
+
+    /**
+     * 只允许「一张来源单 → 一张目标单」的生单组合；其余生单（出库/入库/退货/委外发料等）
+     * 本来就允许多张（分批出库、分批入库），不做唯一性校验，否则会把正常业务挡死。
+     *
+     * <p>报价单→销售订单：整单转只该转一次（2026-11-03 实测同一张报价单被点了两次，
+     * 多出一张空转的「审批中」销售订单，还把流程卡点带偏）。要分批下单请走「选报价单」。
+     */
+    private static final Map<String, Set<String>> SINGLE_GENERATE_PAIRS = Map.of(
+            "SO_ORDER", Set.of("QUOTE_ORDER"),
+            "SALE_COST_ALLOC", Set.of("EXPENSE"),
+            "PU_COST_ALLOC", Set.of("EXPENSE"));
+
+    /** 该「来源 → 目标」是否只允许生一张（纯函数，便于单测）。 */
+    static boolean isSingleGeneratePair(String targetPanel, String sourcePanel) {
+        if (targetPanel == null || sourcePanel == null) return false;
+        return SINGLE_GENERATE_PAIRS.getOrDefault(targetPanel, Set.of()).contains(sourcePanel);
+    }
+
+    /**
+     * 生单唯一性校验：同一来源单已经生成过同类单据就拒绝，并把已有单号告诉用户。
+     * 已作废/已中止的下游单不算数（作废后应该允许重新生单）。
+     */
+    private void ensureNotGenerated(String targetPanel, String sourcePanel, String sourceNo) {
+        for (FormData other : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, targetPanel))) {
+            String status = other.getStatus() == null ? "" : other.getStatus();
+            if ("已作废".equals(status) || "已中止".equals(status)) continue;
+            String srcNo = text(parseData(other.getData()).get("来源单号"));
+            if (!srcNo.isEmpty() && srcNo.equals(sourceNo)) {
+                throw new IllegalStateException("该" + panelNameOf(sourcePanel) + "已生成"
+                        + panelNameOf(targetPanel) + "：" + other.getFormNo() + "，不能重复生成");
+            }
+        }
     }
 
     /** 推式生单：进货单（PU_IN）/采购订单（PU_ORDER）→ 采购发票（PU_INVOICE）；明细按含税单价拆分税额/价税合计 */
@@ -3173,9 +3326,305 @@ public class PxService implements PanelRuntimeService {
         return save(panelCode, formData, userName);
     }
 
+    /** 单据合计按明细重算（费用单费用合计、销售发票无税金额/税额/价税合计、分摊单分摊合计）。 */
     @SuppressWarnings("unchecked")
+    private void recalcVoucherTotals(String panelCode, Map<String, Object> formData, Object detail) {
+        if (!Set.of("EXPENSE", "SALE_INVOICE", "SALE_COST_ALLOC").contains(panelCode)) return;
+        Map<String, Object> dm = detail instanceof Map<?, ?> map ? (Map<String, Object>) map : null;
+        List<Map<String, Object>> items = dm != null && dm.get("items") instanceof List<?> list
+                ? (List<Map<String, Object>>) list : List.of();
+        if (items.isEmpty()) return;
+        switch (panelCode) {
+            case "EXPENSE" -> formData.put("费用合计", round2(sumAmount(items, "金额")));
+            case "SALE_INVOICE" -> {
+                double net = sumAmount(items, "数量", "无税单价");
+                double tax = sumAmount(items, "税额");
+                double gross = sumAmount(items, "价税合计");
+                if (gross == 0 && (net != 0 || tax != 0)) gross = net + tax;
+                formData.put("无税金额", round2(net));
+                formData.put("税额", round2(tax));
+                formData.put("价税合计", round2(gross));
+            }
+            case "SALE_COST_ALLOC" -> formData.put("分摊合计", round2(sumAmount(items, "分摊金额")));
+            default -> {
+            }
+        }
+    }
+
+    private double sumAmount(List<Map<String, Object>> items, String key) {
+        double total = 0;
+        for (Map<String, Object> item : items) total += num(item.get(key));
+        return total;
+    }
+
+    private double sumAmount(List<Map<String, Object>> items, String left, String right) {
+        double total = 0;
+        for (Map<String, Object> item : items) total += num(item.get(left)) * num(item.get(right));
+        return total;
+    }
+
+    private static double round2(double value) {
+        return Math.round(value * 100) / 100.0;
+    }
+
+    /** JSON 值转文本：null 统一成空串，避免 String.valueOf(null) 得到 "null" 参与比较。 */
+    private static String text(Object value) {
+        return value == null ? "" : String.valueOf(value).trim();
+    }
+
+    /** 金额展示：固定两位，错误提示里的数字要能直接拿去对账。 */
+    private static String money(double value) {
+        return String.format(java.util.Locale.ROOT, "%.2f", value);
+    }
+
+    /**
+     * 销货单可开票额度（价税合计口径）：明细「含税金额」优先，缺了按 数量×含税单价 兜底，
+     * 再缺按 金额+税额 兜底 —— 历史单据也能算出额度，不用改数据。
+     */
+    @SuppressWarnings("unchecked")
+    private double saleInvInvoicableAmount(FormData src) {
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> items = dm.get("items") instanceof List<?> list
+                ? (List<Map<String, Object>>) list : List.of();
+        double gross = 0;
+        for (Map<String, Object> it : items) gross += itemGrossAmount(it);
+        return round2(gross);
+    }
+
+    /**
+     * 明细行含税金额（口径优先级）：含税金额 → 数量×含税单价 → 数量×单价（无税单价）→ 金额+税额。
+     * 老单明细常常只有「单价」没有「含税金额/含税单价」，若只认含税字段，额度会被算成 0，
+     * 用户会看到「额度已用完 0.00」而被挡死 —— 2026-11-03 实测踩到过。
+     */
+    static double itemGrossAmount(Map<String, Object> it) {
+        double byGross = num(it.get("含税金额"));
+        if (byGross != 0) return byGross;
+        double qty = num(it.get("数量"));
+        double price = num(it.get("含税单价"));
+        if (price == 0) price = num(it.get("单价"));
+        if (qty != 0 && price != 0) return qty * price;
+        return num(it.get("金额")) + num(it.get("税额"));
+    }
+
+    /**
+     * 某销货单已占用的开票额度：非「已作废」发票的价税合计之和。
+     * 红字发票金额为负，自动把额度冲回来，不需要额外分支。
+     */
+    private double issuedInvoiceAmount(String saleInvNo, String excludeInvoiceNo) {
+        if (saleInvNo == null || saleInvNo.isBlank()) return 0;
+        double issued = 0;
+        for (FormData other : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "SALE_INVOICE"))) {
+            if ("已作废".equals(text(other.getStatus()))) continue;
+            if (excludeInvoiceNo != null && excludeInvoiceNo.equals(other.getFormNo())) continue;
+            Map<String, Object> data = parseData(other.getData());
+            if (!saleInvNo.equals(text(data.get("销货单号")))) continue;
+            issued += num(data.get("价税合计"));
+        }
+        return round2(issued);
+    }
+
+    /**
+     * 开票额度校验：本次开票价税合计不得超过销货单剩余可开票额度。
+     * 红字/零额发票（gross ≤ 0）用于冲回，不受上限约束。
+     */
+    private void ensureInvoiceQuota(FormData source, String invoiceNo, double gross) {
+        if (gross <= 0) return;
+        double quota = saleInvInvoicableAmount(source);
+        double issued = issuedInvoiceAmount(source.getFormNo(), invoiceNo);
+        double remaining = remainingInvoiceQuota(quota, issued);
+        if (!withinInvoiceQuota(remaining, gross)) {
+            throw new IllegalStateException("开票金额超出可开票额度：本次 " + money(gross)
+                    + "，销货单 " + source.getFormNo() + " 可开票 " + money(quota)
+                    + "，已占用 " + money(issued) + "，剩余 " + money(remaining));
+        }
+    }
+
+    /** 剩余可开票额度。允许为负：已作废/已红冲的票据口径走的是「已占用」，负值只用于提示。 */
+    static double remainingInvoiceQuota(double quota, double issued) {
+        return round2(quota - issued);
+    }
+
+    /** 本次金额是否在额度内：红字票（gross ≤ 0）用于冲回，恒放行。 */
+    static boolean withinInvoiceQuota(double remaining, double gross) {
+        return gross <= 0 || gross <= remaining + 0.005;
+    }
+
+    /**
+     * 销售发票开票：发票号码必填且唯一，开票状态置「已开票」并写开票日期。
+     * 开票时按销货单重新校验可开票额度 —— 草稿阶段的明细和金额是可以改的，
+     * 只在生单时校验会被「先生成、后改大金额」绕过。
+     */
+    private Map<String, Object> issueSaleInvoice(Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData fd = formOf("SALE_INVOICE", no);
+        if ("已作废".equals(text(fd.getStatus()))) {
+            throw new IllegalStateException("发票已作废，不能开票：" + fd.getFormNo());
+        }
+        Map<String, Object> data = parseData(fd.getData());
+        String invoiceNo = text(data.get("发票号码"));
+        if (invoiceNo.isEmpty()) throw new IllegalStateException("请先填写发票号码再开票");
+        if ("已开票".equals(text(data.get("开票状态")))) {
+            throw new IllegalStateException("该发票已开票：" + invoiceNo);
+        }
+        for (FormData other : formMapper.selectList(new LambdaQueryWrapper<FormData>().eq(FormData::getPanelCode, "SALE_INVOICE"))) {
+            if (other.getId().equals(fd.getId())) continue;
+            if ("已作废".equals(text(other.getStatus()))) continue;
+            String otherInvoiceNo = text(parseData(other.getData()).get("发票号码"));
+            if (!otherInvoiceNo.isEmpty() && otherInvoiceNo.equals(invoiceNo)) {
+                throw new IllegalStateException("发票号码已存在：" + invoiceNo);
+            }
+        }
+        double gross = num(data.get("价税合计"));
+        String saleInvNo = text(data.get("销货单号"));
+        if (!saleInvNo.isEmpty()) {
+            FormData source = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                    .eq(FormData::getPanelCode, "SALE_INV").eq(FormData::getFormNo, saleInvNo));
+            if (source != null) ensureInvoiceQuota(source, fd.getFormNo(), gross);
+        }
+        data.put("开票状态", "已开票");
+        data.put("开票日期", LocalDate.now().toString());
+        data.put("已开票金额", issuedInvoiceAmount(saleInvNo, null));
+        fd.setData(toJson(data));
+        fd.setUpdateTime(LocalDateTime.now());
+        formMapper.updateById(fd);
+        Map<String, Object> out = new HashMap<>();
+        out.put("编号", fd.getFormNo());
+        out.put("开票状态", "已开票");
+        out.put("开票日期", data.get("开票日期"));
+        out.put("发票号码", invoiceNo);
+        out.put("价税合计", round2(gross));
+        out.put("已开票金额", data.get("已开票金额"));
+        return out;
+    }
+
+    /**
+     * 销售发票作废：只有「未开票」的发票能作废（号码还没开出去，作废即失效）；
+     * 已经开出去的发票不能作废，只能红冲 —— 作废会凭空抹掉一张真发票，红冲保留痕迹。
+     * 作废后该销货单的占用额度自动释放（作废单不计入已开票金额）。
+     */
+    private Map<String, Object> voidSaleInvoice(Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData fd = formOf("SALE_INVOICE", no);
+        if ("已作废".equals(text(fd.getStatus()))) {
+            throw new IllegalStateException("发票已作废：" + fd.getFormNo());
+        }
+        Map<String, Object> data = parseData(fd.getData());
+        if ("已开票".equals(text(data.get("开票状态")))) {
+            throw new IllegalStateException("已开票的发票不能作废，请改用红冲：" + fd.getFormNo());
+        }
+        if ("已红冲".equals(text(data.get("红冲状态")))) {
+            throw new IllegalStateException("该发票已红冲，不能再作废：" + fd.getFormNo());
+        }
+        data.put("单据状态", "已作废");
+        data.put("作废日期", LocalDate.now().toString());
+        fd.setData(toJson(data));
+        fd.setStatus("已作废");
+        fd.setUpdateTime(LocalDateTime.now());
+        formMapper.updateById(fd);
+        Map<String, Object> out = new HashMap<>();
+        out.put("编号", fd.getFormNo());
+        out.put("单据状态", "已作废");
+        return out;
+    }
+
+    /**
+     * 销售发票红冲：已开票的发票生成一张负数红字发票把金额冲回来，原票标记「已红冲」并记下红字发票号。
+     * 红字发票意外地也走「未开票 → 开票」同一道门：号码要用户按实际红字票填，
+     * 所以这里只生成草稿，不在红冲动作里替用户编一个号码。
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> redFlushSaleInvoice(Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData fd = formOf("SALE_INVOICE", no);
+        if ("已作废".equals(text(fd.getStatus()))) {
+            throw new IllegalStateException("发票已作废，无需红冲：" + fd.getFormNo());
+        }
+        Map<String, Object> data = parseData(fd.getData());
+        if (!"已开票".equals(text(data.get("开票状态")))) {
+            throw new IllegalStateException("仅已开票的发票可红冲；未开票的请直接作废");
+        }
+        if ("已红冲".equals(text(data.get("红冲状态")))) {
+            throw new IllegalStateException("该发票已红冲：" + text(data.get("红字发票号")));
+        }
+        if (num(data.get("价税合计")) <= 0) {
+            throw new IllegalStateException("红字发票不能再红冲：" + fd.getFormNo());
+        }
+        Map<String, Object> dm = parseData(fd.getDetailData());
+        List<Map<String, Object>> items = dm.get("items") instanceof List<?> list
+                ? (List<Map<String, Object>>) list : List.of();
+        if (items.isEmpty()) throw new IllegalStateException("发票无明细，无法红冲：" + fd.getFormNo());
+
+        String invoiceNo = text(data.get("发票号码"));
+        String saleInvNo = text(data.get("销货单号"));
+        Map<String, Object> red = new HashMap<>();
+        red.put("单据日期", LocalDate.now().toString());
+        red.put("业务类型", "红字发票");
+        red.put("客户", data.get("客户"));
+        red.put("客户编码", data.get("客户编码"));
+        red.put("结算客户", data.get("结算客户"));
+        red.put("部门", data.get("部门"));
+        red.put("业务员", data.get("业务员"));
+        red.put("开票类型", data.getOrDefault("开票类型", "增值税专用发票"));
+        red.put("发票号码", "");
+        red.put("开票日期", "");
+        red.put("开票状态", "未开票");
+        red.put("销货单号", saleInvNo);
+        red.put("原发票号", fd.getFormNo());
+        red.put("红冲状态", "未红冲");
+        red.put("可开票金额", data.getOrDefault("可开票金额", 0));
+        red.put("已开票金额", issuedInvoiceAmount(saleInvNo, null));
+        red.put("备注", "红冲 " + (invoiceNo.isEmpty() ? fd.getFormNo() : invoiceNo));
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        double net = 0;
+        double tax = 0;
+        double gross = 0;
+        for (Map<String, Object> it : items) {
+            Map<String, Object> row = negateInvoiceRow(it);
+            net += num(row.get("数量")) * num(row.get("无税单价"));
+            tax += num(row.get("税额"));
+            gross += num(row.get("价税合计"));
+            rows.add(row);
+        }
+        red.put("无税金额", round2(net));
+        red.put("税额", round2(tax));
+        red.put("价税合计", round2(gross));
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        Map<String, Object> created = insertGenerated("SALE_INVOICE", "SALE_INVOICE", fd.getFormNo(), red, detail);
+        String redNo = String.valueOf(created.get("编号"));
+
+        data.put("红冲状态", "已红冲");
+        data.put("红字发票号", redNo);
+        fd.setData(toJson(data));
+        fd.setUpdateTime(LocalDateTime.now());
+        formMapper.updateById(fd);
+
+        created.put("原发票号", fd.getFormNo());
+        created.put("价税合计", round2(gross));
+        return created;
+    }
+
+    /**
+     * 红字行：数量/税额/价税合计取负，无税单价保持正数 ——
+     * 与「无税金额 = Σ 数量×无税单价」的合计口径一致，红蓝两单相加正好归零。
+     */
+    static Map<String, Object> negateInvoiceRow(Map<String, Object> row) {
+        Map<String, Object> red = new LinkedHashMap<>(row);
+        for (String key : List.of("数量", "税额", "价税合计")) {
+            if (red.containsKey(key)) red.put(key, -Math.abs(num(red.get(key))));
+        }
+        return red;
+    }
+
     private Map<String, Object> save(String panelCode, Map<String, Object> formData, String userName) {
         Object detail = formData.remove("detail");
+        // 合计按明细重算：费用单/发票/分摊单此前「合计」与明细脱节（费用合计恒为 0、发票无税额合计）
+        recalcVoucherTotals(panelCode, formData, detail);
         FormData fd;
         Object no = formData.get("编号");
         if (detail instanceof Map<?, ?> map) {
@@ -3196,7 +3645,11 @@ public class PxService implements PanelRuntimeService {
             if (!"草稿".equals(st0) && !"启用".equals(st0) && !"停用".equals(st0)) {
                 throw new IllegalStateException("仅草稿状态可保存");
             }
-            fd.setData(toJson(formData));
+            // 列表页/弹窗只改一个字段就保存时，用传入字段覆盖原表头、未传字段保留；
+            // 此前直接整表覆盖：只改「发票号码」保存后，客户/合计/来源单号全被清空。
+            Map<String, Object> merged = parseData(fd.getData());
+            merged.putAll(formData);
+            fd.setData(toJson(merged));
             // 明细兜底：未传 detail（如列表页仅保存表头）时保留原明细，禁止用 null 覆盖清空
             fd.setDetailData(detail == null || "null".equals(String.valueOf(detail)) ? fd.getDetailData() : toJson(detail));
             // 档案面板：保存即生效（草稿/停用保存后置「启用」）
@@ -3281,6 +3734,11 @@ public class PxService implements PanelRuntimeService {
             // 业财一体化：生成会计凭证分录
             postAccounting(panelCode, fd.getFormNo(), head, parseData(fd.getDetailData()));
         } else if ("弃审".equals(action)) {
+            // 收/付款单已核销时先反核销：否则弃审会把往来单的已核销额留在半空，应收再也对不上
+            if (Set.of("RECEIPT", "RECEIPT_PAYABLE").contains(panelCode)
+                    && ("已核销".equals(fd.getStatus()) || "部分核销".equals(fd.getStatus()))) {
+                throw new IllegalStateException("该单已核销，请先反核销再弃审");
+            }
             if (!"已审核".equals(fd.getStatus())) throw new IllegalStateException("仅已审核状态可弃审");
             ensureNoEffectiveChildren(panelCode, fd.getFormNo(), "弃审");
             // 弃审先冲销库存事务，避免余额表残留已撤销单据的出入库
@@ -3661,42 +4119,319 @@ public class PxService implements PanelRuntimeService {
 
     // ---------- 审批流：提交审批 → 审批中 → 审批通过/审批驳回（全留痕，可扩展多级） ----------
 
-    /** 核销：把收款/付款单金额按业务日期分配到来往单。 */
+    /**
+     * 核销：把收款/付款单金额按业务日期分配到来往单（应收挂账 → 收款核销）。
+     *
+     * <p>三道以前缺失的闸门：
+     * <ul>
+     *   <li>只核销同一往来单位：候选池按 客户/供应商 过滤，避免 A 客户的收款核掉 B 客户的应收；</li>
+     *   <li>核销结果回写单据：已核销金额 / 未核销金额 / 核销日期 / 单据状态（已核销 或 部分核销），
+     *       以前接口返回「已核销」但单据状态仍是「已审核」，列表看不出来；</li>
+     *   <li>可重复执行：服务层先回滚旧核销再重算，点两次不会把应收核两遍。</li>
+     * </ul>
+     */
     private Map<String, Object> writeOff(String panelCode, Map<String, Object> formData) {
         if (financePaymentService == null) throw new IllegalStateException("未启用财务核销服务");
+        if (!Set.of("RECEIPT", "RECEIPT_PAYABLE").contains(panelCode)) {
+            throw new IllegalStateException("仅收款单/付款单可核销");
+        }
         Object no = formData.get("编号");
         if (no == null) throw new IllegalArgumentException("缺少表单编号");
         FormData fd = formOf(panelCode, no);
-        if (!"已审核".equals(fd.getStatus())) {
-            throw new IllegalStateException("仅已审核的收款/付款单可核销");
+        if (!Set.of("已审核", "部分核销").contains(String.valueOf(fd.getStatus()))) {
+            throw new IllegalStateException("仅已审核的收款/付款单可核销，当前状态：" + fd.getStatus());
         }
         Map<String, Object> head = parseData(fd.getData());
+        String partnerField = "RECEIPT".equals(panelCode) ? "客户" : "供应商";
+        String partner = text(head.get(partnerField));
+        if (partner.isEmpty()) {
+            throw new IllegalStateException("核销前请先填写" + partnerField + "：没有往来单位就无从判断核销给谁");
+        }
+        double amount = num(head.get("金额"));
+        if (amount <= 0) throw new IllegalStateException("收款/付款金额必须大于 0，当前：" + amount);
+
         String voucherType = "RECEIPT".equals(panelCode) ? "AR" : "AP";
-        List<FinanceVoucher> candidates = financeVoucherMapper == null
+        // 不限状态：这张收款单上一轮已经核掉的单据也要留在候选里，否则按旧明细重核会被判「不在范围」。
+        // 是否可核由每行的未结额决定；自动分配本来就会跳过已结清的单据。
+        List<FinanceVoucher> all = financeVoucherMapper == null
                 ? List.of()
                 : financeVoucherMapper.selectList(new LambdaQueryWrapper<FinanceVoucher>()
-                        .eq(FinanceVoucher::getVoucherType, voucherType)
-                        .ne(FinanceVoucher::getStatus, "已结算"));
-        int count = financePaymentService.execute(fd.getFormNo(), voucherType, candidates,
-                java.math.BigDecimal.valueOf(num(head.get("金额"))), currentUserName());
+                        .eq(FinanceVoucher::getVoucherType, voucherType));
+        List<FinanceVoucher> scoped = FinancePaymentService.filterByPartner(all, partner);
+        boolean anyOpen = false;
+        for (FinanceVoucher v : scoped) {
+            if (num(v.getAmount()) - num(v.getSettledAmount()) > 0) {
+                anyOpen = true;
+                break;
+            }
+        }
+        if (!anyOpen) {
+            throw new IllegalStateException(partner + " 没有未结的"
+                    + ("AR".equals(voucherType) ? "应收" : "应付") + "，无法核销");
+        }
+
+        // 手工核销：明细里给了「来源单号 + 本次核销金额」就按行核（可只核一部分、可指定到某张单），
+        // 没给就沿用按业务日期自动分配。
+        List<FinancePaymentService.PlanItem> planItems = settlePlanOf(formData);
+        List<FinancePaymentService.Allocation> plan = planItems.isEmpty()
+                ? financePaymentService.execute(fd.getFormNo(), voucherType, scoped,
+                        java.math.BigDecimal.valueOf(amount), currentUserName())
+                : financePaymentService.executePlan(fd.getFormNo(), voucherType, scoped,
+                        planItems, java.math.BigDecimal.valueOf(amount), currentUserName());
+
+        java.math.BigDecimal settled = financePaymentService.settledAmount(fd.getFormNo());
+        double settledValue = settled == null ? 0 : settled.doubleValue();
+        boolean fully = settledValue >= amount - 0.005;
+        head.put("已核销金额", round2(settledValue));
+        head.put("未核销金额", round2(Math.max(0, amount - settledValue)));
+        head.put("核销日期", LocalDate.now().toString());
+        fd.setData(toJson(head));
+        // 把「这次核到哪几张单、各多少」写回核销明细：重新打开单据能看到分配结果，
+        // 再点一次核销也是按同一份明细重算，而不是悄悄改成自动分配。
+        Map<String, Object> detail = parseData(fd.getDetailData());
+        List<Map<String, Object>> settleRows = new ArrayList<>();
+        for (FinancePaymentService.Allocation allocation : plan) {
+            FinanceVoucher v = allocation.voucher();
+            double open = num(v.getAmount()) - num(v.getSettledAmount());
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("来源单号", v.getSourceNo());
+            row.put("未结金额", round2(Math.max(0, open)));
+            row.put("本次核销金额", round2(allocation.amount().doubleValue()));
+            settleRows.add(row);
+        }
+        detail.put("settle", settleRows);
+        fd.setDetailData(toJson(detail));
+        fd.setStatus(fully ? "已核销" : "部分核销");
+        fd.setUpdateTime(LocalDateTime.now());
+        formMapper.updateById(fd);
+
+        List<Map<String, Object>> details = new ArrayList<>();
+        for (FinancePaymentService.Allocation allocation : plan) {
+            FinanceVoucher v = allocation.voucher();
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("来源单号", v.getSourceNo());
+            row.put("核销金额", round2(allocation.amount().doubleValue()));
+            row.put("业务日期", v.getBizDate() == null ? "" : v.getBizDate().toString());
+            details.add(row);
+        }
         Map<String, Object> out = new HashMap<>();
         out.put("编号", fd.getFormNo());
-        out.put("核销笔数", count);
-        out.put("单据状态", "已核销");
+        out.put("核销笔数", details.size());
+        out.put("已核销金额", round2(settledValue));
+        out.put("未核销金额", round2(Math.max(0, amount - settledValue)));
+        out.put("单据状态", fd.getStatus());
+        out.put("核销明细", details);
         return out;
     }
 
-    /** 反核销：撤销该收款/付款单的全部核销记录。 */
+    /** 反核销：撤销该收款/付款单的全部核销记录，并把单据退回「已审核」。 */
     private Map<String, Object> reverseWriteOff(String panelCode, Map<String, Object> formData) {
         if (financePaymentService == null) throw new IllegalStateException("未启用财务核销服务");
         Object no = formData.get("编号");
         if (no == null) throw new IllegalArgumentException("缺少表单编号");
         FormData fd = formOf(panelCode, no);
         int removed = financePaymentService.reverse(fd.getFormNo());
+        if (removed == 0) {
+            throw new IllegalStateException("该单据没有核销记录，无需反核销");
+        }
+        Map<String, Object> head = parseData(fd.getData());
+        double amount = num(head.get("金额"));
+        head.put("已核销金额", 0);
+        head.put("未核销金额", round2(amount));
+        head.put("核销日期", "");
+        fd.setData(toJson(head));
+        Map<String, Object> detail = parseData(fd.getDetailData());
+        detail.remove("settle");
+        fd.setDetailData(toJson(detail));
+        fd.setStatus("已审核");
+        fd.setUpdateTime(LocalDateTime.now());
+        formMapper.updateById(fd);
         Map<String, Object> out = new HashMap<>();
         out.put("编号", fd.getFormNo());
         out.put("撤销笔数", removed);
         out.put("单据状态", fd.getStatus());
+        out.put("已核销金额", 0);
+        out.put("未核销金额", round2(amount));
+        return out;
+    }
+
+    /** 应收挂账（AR）按「销货单号」建索引：发票要显示自己来源单的应收状态。 */
+    private Map<String, FinanceVoucher> arVoucherBySaleInvNo() {
+        Map<String, FinanceVoucher> out = new HashMap<>();
+        if (financeVoucherMapper == null) return out;
+        for (FinanceVoucher v : financeVoucherMapper.selectList(new LambdaQueryWrapper<FinanceVoucher>()
+                .eq(FinanceVoucher::getVoucherType, "AR")
+                .eq(FinanceVoucher::getSourcePanel, "SALE_INV"))) {
+            out.put(text(v.getSourceNo()), v);
+        }
+        return out;
+    }
+
+    /**
+     * 把应收状态填进发票行（应收金额 / 已核销金额 / 未核销金额 / 结算状态）。
+     * 查不到应收（来源销货单还没审核）时不填，避免用 0 冒充「已核销」。
+     */
+    private void fillReceivable(Map<String, Object> row, Map<String, FinanceVoucher> arBySaleInv) {
+        if (row == null || arBySaleInv == null || arBySaleInv.isEmpty()) return;
+        String saleInvNo = text(row.get("销货单号"));
+        if (saleInvNo.isEmpty()) return;
+        FinanceVoucher v = arBySaleInv.get(saleInvNo);
+        if (v == null) return;
+        double amount = v.getAmount() == null ? 0 : v.getAmount().doubleValue();
+        double settled = v.getSettledAmount() == null ? 0 : v.getSettledAmount().doubleValue();
+        row.put("应收金额", round2(amount));
+        row.put("已核销金额", round2(settled));
+        row.put("未核销金额", round2(Math.max(0, amount - settled)));
+        row.put("结算状态", v.getStatus());
+    }
+
+    /** 收款单/付款单：未核销金额按读时算（金额 - 已核销），老单据存着 0 会看起来像已结清。 */
+    private void fillReceiptPending(Map<String, Object> row) {
+        if (row == null) return;
+        double amount = num(row.get("金额"));
+        double settled = num(row.get("已核销金额"));
+        row.put("未核销金额", round2(Math.max(0, amount - settled)));
+    }
+
+    /** 收款单/付款单：表单上列出这个客户当前未结的应收单号，人工核销时直接照抄。 */
+    private void fillReceiptOpenDocs(String panelCode, Map<String, Object> data) {
+        if (!isReceiptPanel(panelCode) || financeVoucherMapper == null) return;
+        String voucherType = "RECEIPT".equals(panelCode) ? "AR" : "AP";
+        String partner = text(data.get("客户") != null ? data.get("客户") : data.get("供应商"));
+        if (partner.isEmpty()) return;
+        List<FinanceVoucher> open = financeVoucherMapper.selectList(new LambdaQueryWrapper<FinanceVoucher>()
+                .eq(FinanceVoucher::getVoucherType, voucherType)
+                .ne(FinanceVoucher::getStatus, "已结算"));
+        StringBuilder hint = new StringBuilder();
+        for (FinanceVoucher v : FinancePaymentService.filterByPartner(open, partner)) {
+            double amount = v.getAmount() == null ? 0 : v.getAmount().doubleValue();
+            double settled = v.getSettledAmount() == null ? 0 : v.getSettledAmount().doubleValue();
+            double left = round2(amount - settled);
+            if (left <= 0) continue;
+            if (hint.length() > 0) hint.append("；");
+            hint.append(v.getSourceNo()).append(" ").append(money(left));
+        }
+        data.put("未结单据", hint.toString());
+    }
+
+    /** 读「核销明细」页签里的手工核销行；未传明细或空行返回空列表（走自动分配）。 */
+    @SuppressWarnings("unchecked")
+    private List<FinancePaymentService.PlanItem> settlePlanOf(Map<String, Object> formData) {
+        // 只认本次请求带的明细（表单上看到的那份）；请求里没有明细=自动分配，
+        // 不去读库里存的历史明细，否则「清空明细改自动分配」会永远做不到。
+        Map<String, Object> detail = formData.get("detail") instanceof Map<?, ?> map ? (Map<String, Object>) map : Map.of();
+        Object rows = detail.get("settle");
+        List<FinancePaymentService.PlanItem> out = new ArrayList<>();
+        if (!(rows instanceof List<?> list)) return out;
+        for (Object row : list) {
+            if (!(row instanceof Map<?, ?> map)) continue;
+            String sourceNo = text(((Map<String, Object>) map).get("来源单号"));
+            double amount = num(((Map<String, Object>) map).get("本次核销金额"));
+            if (sourceNo.isEmpty() && amount == 0) continue;
+            out.add(new FinancePaymentService.PlanItem(sourceNo, java.math.BigDecimal.valueOf(amount)));
+        }
+        return out;
+    }
+
+    private static boolean isReceiptPanel(String panelCode) {
+        return "RECEIPT".equals(panelCode) || "RECEIPT_PAYABLE".equals(panelCode);
+    }
+
+    /**
+     * 退货冲抵：销售退货单审掉的是应收侧的一份信用（AR_RETURN，报表上按负数冲减），
+     * 这份信用要能拿去冲同一客户的未结应收，否则客户退了货却只能在对账单上看着它。
+     * 采购退货单同理冲应付。
+     */
+    private Map<String, Object> setOffReturn(String panelCode, Map<String, Object> formData) {
+        if (financePaymentService == null) throw new IllegalStateException("未启用财务核销服务");
+        if (!Set.of("SALE_RETURN", "PURCHASE_RETURN").contains(panelCode)) {
+            throw new IllegalStateException("仅销售退货单/采购退货单可冲抵");
+        }
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData fd = formOf(panelCode, no);
+        if (!"已审核".equals(fd.getStatus())) throw new IllegalStateException("仅已审核的退货单可冲抵");
+        boolean sale = "SALE_RETURN".equals(panelCode);
+        String returnType = sale ? "AR_RETURN" : "AP_RETURN";
+        String targetType = sale ? "AR" : "AP";
+        String partnerField = sale ? "客户" : "供应商";
+        Map<String, Object> head = parseData(fd.getData());
+        String partner = text(head.get(partnerField));
+        if (partner.isEmpty()) {
+            throw new IllegalStateException("冲抵前请先填写" + partnerField + "：没有往来单位就不知道该冲谁的账");
+        }
+        FinanceVoucher credit = financeVoucherMapper == null ? null
+                : financeVoucherMapper.selectOne(new LambdaQueryWrapper<FinanceVoucher>()
+                        .eq(FinanceVoucher::getVoucherType, returnType)
+                        .eq(FinanceVoucher::getSourcePanel, panelCode)
+                        .eq(FinanceVoucher::getSourceNo, fd.getFormNo()));
+        if (credit == null) {
+            throw new IllegalStateException("该退货单没有产生" + (sale ? "应收" : "应付") + "冲减记录，无法冲抵");
+        }
+        if (financePaymentService.creditRemaining(credit).signum() <= 0) {
+            throw new IllegalStateException("该退货单的信用已冲完：" + fd.getFormNo());
+        }
+        List<FinanceVoucher> targets = financeVoucherMapper == null ? List.of()
+                : financeVoucherMapper.selectList(new LambdaQueryWrapper<FinanceVoucher>()
+                        .eq(FinanceVoucher::getVoucherType, targetType));
+        List<FinanceVoucher> scoped = FinancePaymentService.filterByPartner(targets, partner);
+        List<FinancePaymentService.Allocation> plan =
+                financePaymentService.setOff(fd.getFormNo(), credit, scoped, currentUserName());
+        if (plan.isEmpty()) {
+            throw new IllegalStateException(partner + " 没有未结的" + (sale ? "应收" : "应付") + "可冲抵");
+        }
+        double applied = 0;
+        List<Map<String, Object>> details = new ArrayList<>();
+        for (FinancePaymentService.Allocation allocation : plan) {
+            double amount = allocation.amount().doubleValue();
+            applied += amount;
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("来源单号", allocation.voucher().getSourceNo());
+            row.put("冲抵金额", round2(amount));
+            details.add(row);
+        }
+        double creditAmount = credit.getAmount() == null ? 0 : credit.getAmount().doubleValue();
+        // 冲抵按当前余额重算，已冲抵额就是本次分配合计（不是历史累加）
+        head.put("已冲抵金额", round2(applied));
+        head.put("未冲抵金额", round2(Math.max(0, creditAmount - applied)));
+        head.put("冲抵日期", LocalDate.now().toString());
+        fd.setData(toJson(head));
+        fd.setUpdateTime(LocalDateTime.now());
+        formMapper.updateById(fd);
+
+        Map<String, Object> out = new HashMap<>();
+        out.put("编号", fd.getFormNo());
+        out.put("冲抵笔数", details.size());
+        out.put("冲抵金额", round2(applied));
+        out.put("冲抵明细", details);
+        return out;
+    }
+
+    /** 反冲抵：撤销该退货单的全部冲抵记录，信用回到未冲抵。 */
+    private Map<String, Object> reverseSetOffReturn(String panelCode, Map<String, Object> formData) {
+        if (financePaymentService == null) throw new IllegalStateException("未启用财务核销服务");
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData fd = formOf(panelCode, no);
+        boolean sale = "SALE_RETURN".equals(panelCode);
+        FinanceVoucher credit = financeVoucherMapper == null ? null
+                : financeVoucherMapper.selectOne(new LambdaQueryWrapper<FinanceVoucher>()
+                        .eq(FinanceVoucher::getVoucherType, sale ? "AR_RETURN" : "AP_RETURN")
+                        .eq(FinanceVoucher::getSourcePanel, panelCode)
+                        .eq(FinanceVoucher::getSourceNo, fd.getFormNo()));
+        int removed = financePaymentService.reverseSetOff(fd.getFormNo(), credit);
+        if (removed == 0) throw new IllegalStateException("该退货单没有冲抵记录，无需反冲抵");
+        Map<String, Object> head = parseData(fd.getData());
+        head.put("已冲抵金额", 0);
+        head.put("未冲抵金额", round2(credit != null && credit.getAmount() != null ? credit.getAmount().doubleValue() : 0));
+        head.put("冲抵日期", "");
+        fd.setData(toJson(head));
+        fd.setUpdateTime(LocalDateTime.now());
+        formMapper.updateById(fd);
+        Map<String, Object> out = new HashMap<>();
+        out.put("编号", fd.getFormNo());
+        out.put("撤销笔数", removed);
+        out.put("已冲抵金额", 0);
         return out;
     }
 
@@ -4207,7 +4942,9 @@ public class PxService implements PanelRuntimeService {
 
     /** 启用审批流的面板（与前端 APPROVAL_PANELS 一致）：单据日期/单据编号不在新建时预填，提交审核时自动填写 */
     private static final Set<String> APPROVAL_PANELS = Set.of(
-            "SO_ORDER", "PURCHASE_IN", "FINISH_IN", "OTHER_IN", "SALE_OUT", "MATERIAL_OUT", "OTHER_OUT",
+            // 销售出库单（SALE_OUT）刻意不在其中：库存单据「审核即过账」，不走审批流。
+            // 它曾在这个集合里，导致配置里的「审核」被改写成提交审批，出库单永远过不了账。
+            "SO_ORDER", "PURCHASE_IN", "FINISH_IN", "OTHER_IN", "MATERIAL_OUT", "OTHER_OUT",
             "MANU_ORDER", "PROCESS_REPORT", "INIT_AP", "INIT_AR", "INIT_BALANCE", "BOM", "ROUTE", "PU_REQ",
             "ARRIVAL_IN", "DISPATCH", "FINISH_INSPECT", "INSPECTION", "MATERIAL_REQ", "PICK_ORDER",
             "PU_IN", "PU_ORDER", "SALE_INV",

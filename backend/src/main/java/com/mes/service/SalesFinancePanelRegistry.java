@@ -40,14 +40,26 @@ public class SalesFinancePanelRegistry {
     private Map<String, Object> saleInvoiceConfig() {
         List<Map<String, Object>> head = fields(
                 date("单据日期"), autoCode(),
-                select("业务类型", "销售发票", "销售发票(退货)"),
+                select("业务类型", "销售发票", "销售发票(退货)", "红字发票"),
                 partner("客户", true, List.of("客户", "两者"), "客户编码"),
                 field("客户编码", "文本", false),
                 partner("结算客户", false, List.of("客户", "两者"), null),
                 reference("部门", "DEPT", "部门名称", false),
                 reference("业务员", "EMP", "员工名称", false),
                 select("开票类型", "增值税专用发票", "增值税普通发票"),
+                field("发票号码", "文本", false), date("开票日期"),
+                select("开票状态", "未开票", "已开票"),
+                decimal("无税金额", false), decimal("税额", false),
                 field("销货单号", "文本", false),
+                // 可开票额度：销货单含税金额 - 已占用（作废/红冲后自动释放或冲回）
+                decimal("可开票金额", false), decimal("已开票金额", false),
+                // 应收状态：挂账在来源销货单上，发票这里只读展示（核销后自动变已结算）
+                decimal("应收金额", false), decimal("已核销金额", false),
+                decimal("未核销金额", false), select("结算状态", "未结算", "部分结算", "已结算"),
+                // 红冲留痕：红字发票记原发票号，原发票记红字发票号，双向都能查
+                field("原发票号", "文本", false),
+                select("红冲状态", "未红冲", "已红冲"),
+                field("红字发票号", "文本", false),
                 field("来源单据", "文本", false),
                 field("来源单号", "文本", false),
                 decimal("价税合计", false), field("备注", "文本", false));
@@ -80,9 +92,12 @@ public class SalesFinancePanelRegistry {
                         mapping("税率%", "税率%")),
                 "数量", "数量", Map.of());
 
-        List<Map<String, Object>> groups = voucherGroups(List.of("选销货单"), List.of());
+        List<Map<String, Object>> groups = voucherGroups(List.of("选销货单"), List.of(), "作废", "红冲", "刷新");
+        // 开票是发票特有动作（写发票号码/开票日期），排在「更多」之前
+        groups.add(groups.size() - 1, group("开票", "开票"));
         return voucherConfig("SALE_INVOICE", "销售发票", head, List.of(tab), groups,
-                selects("选销货单", select));
+                selects("选销货单", select),
+                List.of("草稿", "审批中", "已审核", "已中止", "已作废"));
     }
 
     private Map<String, Object> expenseConfig() {
@@ -155,6 +170,13 @@ public class SalesFinancePanelRegistry {
     private Map<String, Object> voucherConfig(String code, String name, List<Map<String, Object>> head,
                                                List<Map<String, Object>> tabs, List<Map<String, Object>> groups,
                                                Map<String, Object> selectConfigs) {
+        return voucherConfig(code, name, head, tabs, groups, selectConfigs,
+                List.of("草稿", "审批中", "已审核", "已中止"));
+    }
+
+    private Map<String, Object> voucherConfig(String code, String name, List<Map<String, Object>> head,
+                                               List<Map<String, Object>> tabs, List<Map<String, Object>> groups,
+                                               Map<String, Object> selectConfigs, List<String> states) {
         List<Map<String, Object>> buttons = new ArrayList<>();
         for (Map<String, Object> group : groups) {
             Object actions = group.get("actions");
@@ -185,7 +207,7 @@ public class SalesFinancePanelRegistry {
         metadata.put("panelCategory", "单据");
         metadata.put("autoCodeField", "单据编号");
         metadata.put("panelState", Map.of("dataName", "单据状态", "dataType", "STRING",
-                "defaultOptions", List.of("草稿", "审批中", "已审核", "已中止")));
+                "defaultOptions", states));
         metadata.put("panelPageDto", Map.of(
                 "tablePages", List.of(table),
                 "formPages", List.of(Map.of(
@@ -209,7 +231,8 @@ public class SalesFinancePanelRegistry {
         return config;
     }
 
-    private List<Map<String, Object>> voucherGroups(List<String> selectActions, List<String> generateActions) {
+    private List<Map<String, Object>> voucherGroups(List<String> selectActions, List<String> generateActions,
+                                                    String... moreActions) {
         List<Map<String, Object>> groups = new ArrayList<>();
         groups.add(group("新增", "新增"));
         if (!selectActions.isEmpty()) groups.add(group("选单", selectActions.toArray(String[]::new)));
@@ -217,7 +240,7 @@ public class SalesFinancePanelRegistry {
         groups.add(group("删除", "删除", "删除单据"));
         groups.add(group("审批", "提交审批", "审批通过", "审批驳回", "审批情况", "弃审"));
         if (!generateActions.isEmpty()) groups.add(group("生单", generateActions.toArray(String[]::new)));
-        groups.add(group("更多", "刷新"));
+        groups.add(moreActions.length == 0 ? group("更多", "刷新") : group("更多", moreActions));
         return groups;
     }
 
