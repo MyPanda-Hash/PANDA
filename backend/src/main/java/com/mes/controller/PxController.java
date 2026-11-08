@@ -116,6 +116,19 @@ public class PxController {
         return ApiResult.ok(service.getApprovalHistory(panelCode, code));
     }
 
+    /**
+     * 采购发票行级选单：未开票的来源入库单/退货单明细行。
+     * mode=purchase（采购入库单）| return（采购退货单）；supplier/keyword 为包含过滤。
+     */
+    @GetMapping("/invoiceSourceLines")
+    public ApiResult<Map<String, Object>> invoiceSourceLines(Authentication auth,
+                                                             @RequestParam(defaultValue = "purchase") String mode,
+                                                             @RequestParam(required = false) String supplier,
+                                                             @RequestParam(required = false) String keyword) {
+        requireVisible(auth, "PU_INVOICE");
+        return ApiResult.ok(service.invoiceSourceLines(mode, supplier, keyword));
+    }
+
     @PostMapping("/callButton")
     public ApiResult<Map<String, Object>> callButton(Authentication auth, @RequestBody Map<String, Object> body) {
         String panelCode = String.valueOf(body.getOrDefault("panelCode", ""));

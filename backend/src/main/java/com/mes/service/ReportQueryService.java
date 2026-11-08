@@ -98,6 +98,7 @@ public class ReportQueryService {
             case "MATERIAL_OUT_DETAIL" -> inventoryDetail("MATERIAL_OUT", "MATERIAL");
             case "OTHER_OUT_DETAIL" -> inventoryDetail("OTHER_OUT", "OTHER_OUT");
             case "PURCHASE_IN_STATS" -> inventoryStats("PURCHASE");
+            case "PURCHASE_INVOICE_MATCH" -> purchaseInvoiceMatchRows();
             case "FINISH_IN_STATS" -> inventoryStats("FINISH");
             case "OTHER_IN_STATS" -> inventoryStats("OTHER_IN");
             case "SALE_OUT_STATS" -> inventoryStats("SALE");
@@ -322,6 +323,127 @@ public class ReportQueryService {
         }
         out.sort(dateDesc());
         return out;
+    }
+
+    // ---------- 采购发票勾稽（票到确认，2026-11-06） ----------
+
+    /**
+     * 采购发票勾稽表：按有效采购发票的明细行列出开票数量、来源入库/退货数量与已开票/未开票数量。
+     * 已开票数量按「来源面板|来源单号|来源行号」汇总有效发票 abs(数量)，红字发票行（负数）同样占用来源行额度；
+     * 未开票数量 = max(0, 入库数量 - 已开票数量)。无来源字段的发票行照常输出（来源列为空），
+     * 勾稽状态取发票表头，表头缺失时按未开票数量派生：有剩余=部分勾稽，开完=已勾稽。
+     */
+    private List<Map<String, Object>> purchaseInvoiceMatchRows() {
+        List<FormData> documents = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .in(FormData::getPanelCode, List.of("PU_INVOICE", "PURCHASE_IN", "PURCHASE_RETURN"))
+                .orderByAsc(FormData::getCreateTime)
+                .orderByAsc(FormData::getId));
+        List<Doc> invoices = new ArrayList<>();
+        Map<String, Doc> sources = new HashMap<>();
+        for (FormData entity : documents) {
+            Doc doc = new Doc(entity, parse(entity.getData()), parse(entity.getDetailData()));
+            if ("PU_INVOICE".equals(entity.getPanelCode())) invoices.add(doc);
+            else sources.put(join(entity.getPanelCode(), entity.getFormNo()), doc);
+        }
+
+        Map<String, BigDecimal> invoiced = new HashMap<>();
+        for (Doc invoice : invoices) {
+            if (!effective(invoice)) continue;
+            for (Map<String, Object> item : firstDetailRows(invoice.detail())) {
+                String sourcePanel = invoiceSourcePanel(item);
+                String sourceNo = invoiceSourceNo(item);
+                int sourceLine = invoiceSourceLine(item);
+                if (sourcePanel.isEmpty() || sourceNo.isEmpty() || sourceLine <= 0) continue;
+                BigDecimal quantity = number(item.get("数量")).abs();
+                if (quantity.signum() == 0) continue;
+                invoiced.merge(join(sourcePanel, sourceNo, sourceLine), quantity, BigDecimal::add);
+            }
+        }
+
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc invoice : invoices) {
+            if (!effective(invoice)) continue;
+            String invoiceNo = documentNo(invoice);
+            String invoiceDate = firstText(invoice.head(), "开票日期", "单据日期");
+            String headStatus = text(invoice.head().get("勾稽状态"));
+            for (Map<String, Object> item : firstDetailRows(invoice.detail())) {
+                String sourcePanel = invoiceSourcePanel(item);
+                String sourceNo = invoiceSourceNo(item);
+                int sourceLine = invoiceSourceLine(item);
+                boolean linked = !sourcePanel.isEmpty() && !sourceNo.isEmpty() && sourceLine > 0;
+                BigDecimal received = linked
+                        ? sourceQuantity(sources.get(join(sourcePanel, sourceNo)), sourcePanel, sourceLine)
+                        : BigDecimal.ZERO;
+                BigDecimal invoicedQty = linked
+                        ? invoiced.getOrDefault(join(sourcePanel, sourceNo, sourceLine), BigDecimal.ZERO)
+                        : BigDecimal.ZERO;
+                BigDecimal remaining = received.subtract(invoicedQty).max(BigDecimal.ZERO);
+                String status = headStatus;
+                if (status.isEmpty() && linked) status = remaining.signum() > 0 ? "部分勾稽" : "已勾稽";
+                out.add(row(
+                        "发票编号", invoiceNo, "开票日期", invoiceDate, "单据日期", invoiceDate,
+                        "供应商", firstText(invoice.head(), "供应商", "供应商简称"),
+                        "发票号码", text(invoice.head().get("发票号码")),
+                        "业务类型", text(invoice.head().get("业务类型")),
+                        "来源面板", sourcePanel, "来源单号", sourceNo,
+                        "来源行号", linked ? Integer.valueOf(sourceLine) : "",
+                        "存货编码", firstText(item, "存货编码", "物料编码"),
+                        "存货名称", firstText(item, "存货名称", "物料名称"),
+                        "开票数量", number(item.get("数量")),
+                        "来源数量", received, "入库数量", received,
+                        "已开票数量", invoicedQty, "未开票数量", remaining,
+                        "勾稽状态", status));
+            }
+        }
+        out.sort(Comparator.comparing((Map<String, Object> entry) -> text(entry.get("发票编号")))
+                .thenComparingInt(entry -> (int) Math.round(number(entry.get("来源行号")).doubleValue())));
+        return out;
+    }
+
+    /** 来源行数量：采购入库按实收数量、采购退货按数量；红字/负数来源行一律取绝对值。 */
+    private BigDecimal sourceQuantity(Doc source, String sourcePanel, int sourceLine) {
+        if (source == null || sourceLine <= 0) return BigDecimal.ZERO;
+        List<Map<String, Object>> rows = firstDetailRows(source.detail());
+        if (sourceLine > rows.size()) return BigDecimal.ZERO;
+        Map<String, Object> item = rows.get(sourceLine - 1);
+        Object quantity = "PURCHASE_RETURN".equals(sourcePanel)
+                ? first(item, Map.of(), "数量", "实收数量")
+                : first(item, Map.of(), "实收数量", "数量");
+        return number(quantity).abs();
+    }
+
+    /** 发票行来源面板：行级选单写「来源面板」，明细展示列「源单类型」兜底。 */
+    private String invoiceSourcePanel(Map<String, Object> item) {
+        return firstText(item, "来源面板", "源单类型");
+    }
+
+    /** 发票行来源单号：行级选单写「来源单号」，明细展示列「源单编号」兜底。 */
+    private String invoiceSourceNo(Map<String, Object> item) {
+        return firstText(item, "来源单号", "源单编号");
+    }
+
+    /** 发票行来源行号：行级选单写「来源行号」，明细展示列「源单行号」兜底。 */
+    private int invoiceSourceLine(Map<String, Object> item) {
+        return (int) Math.round(number(first(item, Map.of(), "来源行号", "源单行号")).doubleValue());
+    }
+
+    /** 明细页签：与 PxService.firstDetailRows 同口径，优先 items，再取第一个非空列表。 */
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> firstDetailRows(Map<String, Object> detail) {
+        for (String key : List.of("items", "products", "materials", "detail", "rows", "processes")) {
+            Object value = detail.get(key);
+            if (!(value instanceof List<?> list)) continue;
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (Object item : list) if (item instanceof Map<?, ?>) rows.add((Map<String, Object>) item);
+            return rows;
+        }
+        for (Object value : detail.values()) {
+            if (!(value instanceof List<?> list)) continue;
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (Object item : list) if (item instanceof Map<?, ?>) rows.add((Map<String, Object>) item);
+            if (!rows.isEmpty()) return rows;
+        }
+        return new ArrayList<>();
     }
 
     // ---------- stock status, summary and ledger ----------

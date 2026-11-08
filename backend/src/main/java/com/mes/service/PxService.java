@@ -30,6 +30,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -43,7 +45,22 @@ public class PxService implements PanelRuntimeService {
     private static final Set<String> QUALITY_INSPECTION_PANELS = Set.of("INSPECTION", "PROCESS_INSPECTION");
     /** 质量三态判定集合：对齐金蝶「合格/让步接收/报废」语义。 */
     private static final Set<String> QUALITY_VERDICTS =
-            Set.of("合格", "让步接收", "部分报废", "全批报废");
+            Set.of("合格", "让步接收", "部分报废", "全批报废", "全批退回");
+    /** 生产过程检验判定：合格/返工/让步接收/报废（不含采购退回类状态）。 */
+    private static final Set<String> PROCESS_VERDICTS = Set.of("合格", "返工", "让步接收", "报废");
+    /**
+     * 财务类下游单据：只按自身口径统计已开票量，不参与履约单据的来源占用互斥。
+     * 采购订单直开预开票后仍可到货/入库；同一订单行是否重复开票由采购发票自己的数量校验控制。
+     */
+    private static final Set<String> FINANCIAL_DOWNSTREAM_PANELS = Set.of("PU_INVOICE");
+
+    /** 来料批次处置：质量处置方式 / 商务结算方式 / 责任归属（2026-11-05） */
+    private static final Set<String> INSPECTION_DISPOSITIONS =
+            Set.of("合格接收", "让步接收", "降价接收", "部分退回", "全批退回", "返工", "返修", "挑选接收", "报废");
+    private static final Set<String> INSPECTION_SETTLEMENTS =
+            Set.of("原价", "折价", "索赔", "免费补货", "退款");
+    private static final Set<String> INSPECTION_LIABILITIES =
+            Set.of("供应商", "运输", "我方", "待定");
 
     private final PanelConfigMapper panelMapper;
     private final FormDataMapper formMapper;
@@ -64,7 +81,7 @@ public class PxService implements PanelRuntimeService {
     private static final Map<String, List<String>> ACTION_BUTTONS = Map.of(
             "query", List.of("查找", "查询", "刷新"),
             "add", List.of("新增", "新增流程", "引入常用单据", "选单", "扫描填单"),
-            "edit", List.of("修改", "保存", "保存新增", "保存为草稿", "中止", "中止执行", "整单中止", "草稿", "取消中止", "关闭", "手工完工"),
+            "edit", List.of("修改", "保存", "保存新增", "保存为草稿", "中止", "中止执行", "整单中止", "草稿", "取消中止", "关闭", "手工完工", "确认处置"),
             "delete", List.of("删除", "删除单据"),
             "export", List.of("导出", "明细标签打印", "下载导入模板", "导入"),
             "print", List.of("直接打印", "打印", "预览", "打印模板设置", "打印情况", "保存打印"),
@@ -193,6 +210,7 @@ public class PxService implements PanelRuntimeService {
         upgradeInvPairRef(config, "products", "产品编码", "产品名称", "规格型号", "计量单位");
         upgradeInvPairRef(config, "materials", "材料编码", "材料名称", "规格型号", "计量单位");
         upgradeInvPairRef(config, "items", "存货编码", "存货名称", "规格型号", "计量单位");
+        upgradeInvPairRef(config, "items", "物料编码", "物料名称", "规格型号", "单位");
         upgradeInvPairRef(config, "items", "材料编码", "材料名称", "规格型号", "计量单位");
         upgradeInvPairRef(config, "items", "产品编码", "产品名称", "规格型号", "计量单位");
         upgradeInvPairRef(config, null, "存货编码", "存货", "规格型号", "计量单位");
@@ -1631,7 +1649,8 @@ public class PxService implements PanelRuntimeService {
     private void sumDetailQty(String panelCode, String tabKey, String targetKey,
                               Map<String, Map<String, Object>> agg, String nameField, String codeField, String qtyField) {
         List<FormData> docs = formMapper.selectList(new LambdaQueryWrapper<FormData>()
-                .eq(FormData::getPanelCode, panelCode));
+                .eq(FormData::getPanelCode, panelCode)
+                .in(FormData::getStatus, EFFECTIVE_STATUSES));
         for (FormData fd : docs) {
             Map<String, Object> dm = parseData(fd.getDetailData());
             Object items = dm.get(tabKey);
@@ -1701,13 +1720,36 @@ public class PxService implements PanelRuntimeService {
             case "生成工序汇报单（自制汇报）":   // 推式生单：生产加工单 → 工序汇报单（拉取加工单工序明细）
                 return createProcReportFromMo(panelCode, formData);
             case "生成采购订单":       // 推式生单：请购单 → 采购订单
+                if (!"PU_REQ".equals(panelCode)) {
+                    throw new IllegalStateException("仅请购单可生成采购订单，当前单据：" + panelCode);
+                }
                 return createPuOrderFromReq(panelCode, formData);
-            case "生成采购入库单":     // 推式生单：采购订单 → 采购入库单
+            case "生成请购单":       // 推式生单：采购需求分析 → 请购单
+                if (!"PU_REQ_ANALYSIS".equals(panelCode)) {
+                    throw new IllegalStateException("仅采购需求分析可生成请购单，当前单据：" + panelCode);
+                }
+                return createPuReqFromAnalysis(panelCode, formData);
+            case "生成采购入库单":     // 推式生单：采购订单/到货单/检验单 → 采购入库单
+                return switch (panelCode) {
+                    case "INSPECTION" -> createInventoryInFromInspection(panelCode, formData, "PURCHASE_IN");
+                    case "ARRIVAL_IN" -> createPurchaseInFromArrival(panelCode, formData);
+                    case "PU_ORDER" -> createPurchaseInFromPo(panelCode, formData);
+                    default -> throw new IllegalStateException(
+                            "仅采购订单/到货单/检验单可生成采购入库单，当前单据：" + panelCode);
+                };
+            case "生成采购退货单":     // 检验不合格退回 / 采购入库后的库存退料
+                if (!"INSPECTION".equals(panelCode) && !"PURCHASE_IN".equals(panelCode)) {
+                    throw new IllegalStateException(
+                            "仅检验单或采购入库单可生成采购退货单，当前单据：" + panelCode);
+                }
                 return "INSPECTION".equals(panelCode)
-                        ? createInventoryInFromInspection(panelCode, formData, "PURCHASE_IN")
-                        : createPurchaseInFromPo(panelCode, formData);
-            case "生成进货单":         // 推式生单：采购订单 → 进货单（对齐真实 T+ 采购订单「生单-生成进货单」）
-                return createPuInFromPo(panelCode, formData);
+                        ? createPurchaseReturnFromInspection(panelCode, formData)
+                        : createPurchaseReturnFromPurchaseIn(panelCode, formData);
+            case "生成到货单":         // 推式生单：采购订单 → 到货单（收料通知）
+                if (!"PU_ORDER".equals(panelCode)) {
+                    throw new IllegalStateException("仅采购订单可生成到货单，当前单据：" + panelCode);
+                }
+                return createArrivalFromPo(panelCode, formData);
             case "生成产成品入库单":   // 推式生单：生产加工单 → 产成品入库单
                 return "INSPECTION".equals(panelCode) || "PROCESS_INSPECTION".equals(panelCode)
                         ? createInventoryInFromInspection(panelCode, formData, "FINISH_IN")
@@ -1737,7 +1779,7 @@ public class PxService implements PanelRuntimeService {
                 return createSaleInvoiceFromSaleInv(panelCode, formData);
             case "生成销售费用分摊单": // 推式生单：费用单 → 销售费用分摊单
                 return createSaleCostAllocFromExpense(panelCode, formData);
-            case "生成采购发票":       // 推式生单：进货单/采购订单 → 采购发票（对齐真实 T+ 进货单/采购订单「生单-生成采购发票」）
+            case "生成采购发票":       // 推式生单：采购入库单/采购退货单/采购订单 → 采购发票
             case "生成采购发票（普通采购）":
             case "生成采购发票（采购退货）":
                 return createPuInvoice(panelCode, formData);
@@ -1749,6 +1791,25 @@ public class PxService implements PanelRuntimeService {
             case "生成销货单":         // 推式生单：产成品入库单 → 销货单（O2C 闭环）
             case "生成销货单(普通销售)":
                 return createSaleInvFromFinishIn(panelCode, formData);
+            case "确认处置": {         // 来料/成品检验：批次处置标记确认（确认后才允许入库/退货/开票）
+                if (!"INSPECTION".equals(panelCode)) {
+                    throw new IllegalStateException("仅来料/成品检验单支持确认处置，当前单据：" + panelCode);
+                }
+                Object no = formData.get("编号");
+                if (no == null) throw new IllegalArgumentException("缺少表单编号");
+                FormData fd = formOf(panelCode, no);
+                if (!"草稿".equals(fd.getStatus()) && !"审批中".equals(fd.getStatus())) {
+                    throw new IllegalStateException("仅草稿/审批中检验单可确认处置");
+                }
+                validateQualityForApproval(panelCode, fd);
+                confirmInspectionDetail(fd);
+                fd.setUpdateTime(LocalDateTime.now());
+                formMapper.updateById(fd);
+                Map<String, Object> confirmed = new HashMap<>();
+                confirmed.put("编号", fd.getFormNo());
+                confirmed.put("处置状态", "已确认");
+                return confirmed;
+            }
             // 审批流
             case "提交审批":
                 return submitApproval(panelCode, formData);
@@ -2065,9 +2126,27 @@ public class PxService implements PanelRuntimeService {
 
     // ══════════ 推式生单（业务流程图流转，2026-08-24 全量补全） ══════════
 
-    private double num(Object v) {
+    private static double num(Object v) {
         if (v == null) return 0;
         try { return Double.parseDouble(String.valueOf(v)); } catch (Exception e) { return 0; }
+    }
+
+    private static double round2(double value) {
+        return Math.round(value * 100) / 100.0;
+    }
+
+    /** 退货行金额：按本次退货数量折算，不能整行复制来源金额（部分退货会把金额/税额放大）。 */
+    record ReturnAmounts(double price, double taxPrice, double amount, double tax, double gross) {}
+
+    static ReturnAmounts returnAmounts(double quantity, double price, double taxPrice, double taxRate) {
+        double rate = taxRate < 0 ? 0 : taxRate;
+        double amount = round2(quantity * price);
+        double gross = round2(quantity * taxPrice);
+        if (gross <= 0 && amount > 0) gross = round2(amount * (1 + rate / 100));
+        double tax = round2(gross * rate / (100 + rate));
+        if (amount <= 0 && gross > 0) amount = round2(gross - tax);
+        if (taxPrice <= 0 && quantity > 0 && gross > 0) taxPrice = round2(gross / quantity);
+        return new ReturnAmounts(price, taxPrice, amount, tax, gross);
     }
 
     /** 通用：读取源单据（必须已审核），插入目标草稿单，返回 {编号, gotoPanel} */
@@ -2175,31 +2254,66 @@ public class PxService implements PanelRuntimeService {
         head.put("检验类别", head.get("业务类型"));
         copyFirst(sourceHead, head, "供应商编码", "供应商", "仓库", "生产车间", "加工单号", "部门", "项目", "经手人");
         head.put("来源单号", source.getFormNo());
+        // T+ QM15：来料带采购订单号，成品/委外带加工单号；检验部门默认取来源部门
+        if ("ARRIVAL_IN".equals(panelCode)) {
+            head.put("采购订单号", sourceHead.getOrDefault("采购订单号", ""));
+        } else {
+            head.put("加工单号", firstValue(sourceHead, "加工单号", "生产加工单号"));
+        }
+        head.put("检验部门", firstValue(sourceHead, "检验部门", "部门"));
 
         List<Map<String, Object>> items = new ArrayList<>();
+        int exemptSkipped = 0;
         for (int index = 0; index < sourceRows.size(); index++) {
             Map<String, Object> sourceRow = sourceRows.get(index);
-            double quantity = sourceQuantity(sourceRow);
+            String inspectMethod = textOf(sourceRow.get("检验方式")).trim();
+            // 到货单混装时，免检行不送检，直接走到货单→采购入库；只把需要检验的行生成检验单
+            if ("ARRIVAL_IN".equals(panelCode) && "免检".equals(inspectMethod)) {
+                exemptSkipped++;
+                continue;
+            }
+            // 到货单按下限口径取「实收数量」：拒收数量不应再送检，也不应进入入库。
+            double quantity = "ARRIVAL_IN".equals(panelCode) ? arrivalReceivable(sourceRow) : sourceQuantity(sourceRow);
             if (quantity <= 0) continue;
+            double ratio = "抽检".equals(inspectMethod) ? num(sourceRow.get("抽检比例%")) : 100;
+            if (ratio <= 0 || ratio > 100) ratio = 100;
+            double taxPrice = num(sourceRow.get("含税单价"));
+            if (taxPrice <= 0 && num(sourceRow.get("单价")) > 0) {
+                taxPrice = round2(num(sourceRow.get("单价")) * (1 + num(sourceRow.get("税率%")) / 100));
+            }
             Map<String, Object> row = new HashMap<>();
             row.put("存货编码", firstValue(sourceRow, "存货编码", "产品编码", "物料编码"));
             row.put("存货名称", firstValue(sourceRow, "存货名称", "产品名称", "物料名称"));
             row.put("规格型号", sourceRow.getOrDefault("规格型号", ""));
+            row.put("检验批号", firstValue(sourceRow, "批号", "检验批号", "批次号"));
             row.put("工序编码", sourceRow.getOrDefault("工序编码", ""));
             row.put("工序名称", sourceRow.getOrDefault("工序名称", ""));
             row.put("仓库", firstValue(sourceRow, "仓库", "预入仓库"));
             row.put("计量单位", firstValue(sourceRow, "计量单位", "采购单位", "生产单位", "单位", "工序单位"));
             row.put("报检数量", quantity);
+            row.put("应检数量", quantity);
             row.put("检验数量", quantity);
             row.put("合格数量", 0);
             row.put("不合格数量", 0);
+            row.put("不合格原因", sourceRow.getOrDefault("不合格原因", ""));
+            row.put("单价", num(sourceRow.get("单价")));
+            row.put("含税单价", taxPrice);
+            row.put("让步接收含税单价", taxPrice);
+            row.put("记录样本明细", false);
+            row.put("样本明细个数", 0);
             row.put("合格率", 0);
-            row.put("检验方式", "全检");
+            row.put("检验方式", inspectMethod.isEmpty() ? "全检" : inspectMethod);
+            row.put("抽检比例%", ratio);
             row.put("检验结果判定", "");
             stampSource(row, panelCode, source.getFormNo(), index + 1, quantity);
             items.add(row);
         }
-        if (items.isEmpty()) throw new IllegalStateException("报检单没有大于零的报检数量");
+        if (items.isEmpty()) {
+            if (exemptSkipped > 0) {
+                throw new IllegalStateException("到货单明细均为免检物料，请直接执行「生成采购入库单」");
+            }
+            throw new IllegalStateException("报检单没有大于零的报检数量");
+        }
         return insertGenerated(targetPanel, panelCode, source.getFormNo(), head, Map.of("items", items));
     }
 
@@ -2208,9 +2322,12 @@ public class PxService implements PanelRuntimeService {
     private Map<String, Object> createInventoryInFromInspection(String panelCode, Map<String, Object> formData,
                                                                  String targetPanel) {
         FormData source = formOf(panelCode, formData.get("编号"));
-        if (!"已审核".equals(source.getStatus())) throw new IllegalStateException("仅已审核检验单可生成入库单");
+        requireApprovedPurchaseSource(source, "生成入库单");
         Map<String, Object> sourceHead = parseData(source.getData());
-        List<Map<String, Object>> sourceRows = firstDetailRows(parseData(source.getDetailData()));
+        Map<String, Object> sourceDetail = parseData(source.getDetailData());
+        List<Map<String, Object>> sourceRows = firstDetailRows(sourceDetail);
+        requireInspectionDispositionConfirmed(panelCode, sourceRows);
+        requireInspectionInboundTarget(panelCode, targetPanel, sourceHead, sourceRows);
         Map<String, Object> head = new HashMap<>();
         copyFirst(sourceHead, head, "供应商编码", "供应商", "仓库", "生产车间", "加工单号", "部门", "项目", "经手人", "委外供应商");
         head.put("业务类型", switch (targetPanel) {
@@ -2221,14 +2338,46 @@ public class PxService implements PanelRuntimeService {
         head.put("入库类别", targetPanel.equals("PURCHASE_IN") ? "采购入库" : "检验合格入库");
         head.put("检验单号", source.getFormNo());
 
+        // 采购入库价格来自到货单（检验单只带质检结果）；降价接收按折价率取调整后单价
+        List<Map<String, Object>> arrivalRows = List.of();
+        if ("PURCHASE_IN".equals(targetPanel)) {
+            String arrivalNo = textOf(sourceHead.get("来源单号")).trim();
+            if (arrivalNo.isEmpty()) {
+                for (Map<String, Object> sourceRow : sourceRows) {
+                    if ("ARRIVAL_IN".equals(textOf(sourceRow.get("来源面板")).trim())) {
+                        arrivalNo = textOf(sourceRow.get("来源单号")).trim();
+                        if (!arrivalNo.isEmpty()) break;
+                    }
+                }
+            }
+            if (!arrivalNo.isEmpty()) {
+                FormData arrival = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                        .eq(FormData::getPanelCode, "ARRIVAL_IN").eq(FormData::getFormNo, arrivalNo));
+                if (arrival != null) {
+                    arrivalRows = firstDetailRows(parseData(arrival.getDetailData()));
+                    Map<String, Object> arrivalHead = parseData(arrival.getData());
+                    head.put("到货单号", arrivalNo);
+                    head.put("采购订单号", arrivalHead.getOrDefault("采购订单号",
+                            head.getOrDefault("采购订单号", "")));
+                }
+            }
+        }
+
         List<Map<String, Object>> items = new ArrayList<>();
         for (int index = 0; index < sourceRows.size(); index++) {
             Map<String, Object> sourceRow = sourceRows.get(index);
-            double inspected = num(sourceRow.get("检验数量"));
-            double qualified = num(sourceRow.get("合格数量"));
-            String result = String.valueOf(sourceRow.getOrDefault("检验结果判定", ""));
-            double accepted = "让步接收".equals(result) ? inspected : qualified;
-            if (accepted <= 0 || "报废".equals(result)) continue;
+            String disposition = textOf(sourceRow.get("处置方式"));
+            // 全批退回 = 整批拒收（含合格品），不再生成入库
+            if ("全批退回".equals(disposition)) continue;
+            // 返工/返修：复检合格前不得入库（闭环门禁）
+            if (("返工".equals(disposition) || "返修".equals(disposition))
+                    && !"合格".equals(textOf(sourceRow.get("复检结果")))) {
+                throw new IllegalStateException("检验单第 " + (index + 1)
+                        + " 行处置为返工/返修，复检合格后才能入库");
+            }
+            // 可入库量 = 合格数量 + 让步接收处理量；报废/退回数量不入库。
+            double accepted = inspectionAcceptable(sourceDetail, sourceRow, index + 1);
+            if (accepted <= 0) continue;
             Map<String, Object> row = new HashMap<>();
             Object code = firstValue(sourceRow, "存货编码", "产品编码");
             Object name = firstValue(sourceRow, "存货名称", "产品名称");
@@ -2244,13 +2393,178 @@ public class PxService implements PanelRuntimeService {
             row.put("计量单位", unit == null || String.valueOf(unit).isBlank() ? "件" : unit);
             row.put("实收数量", accepted);
             row.put("数量", accepted);
-            row.put("单价", 0);
-            row.put("金额", 0);
+            Map<String, Object> priceRow = matchArrivalRow(arrivalRows, sourceRow);
+            double price = num(priceRow.getOrDefault("单价", sourceRow.getOrDefault("单价", 0)));
+            double taxPrice = num(priceRow.getOrDefault("含税单价", sourceRow.getOrDefault("含税单价", 0)));
+            double taxRate = num(priceRow.getOrDefault("税率%", sourceRow.getOrDefault("税率%", 13)));
+            // 纯让步接收行（没有合格品）按检验单上维护的让步接收含税单价结算；
+            // 合格+让步混行仍按原价，避免把合格部分也按让步价入库。
+            if ("让步接收".equals(textOf(sourceRow.get("处置方式")))
+                    && num(sourceRow.get("合格数量")) <= 0.000001) {
+                double concessionTax = num(sourceRow.get("让步接收含税单价"));
+                if (concessionTax > 0) {
+                    if (taxPrice > 0) price = Math.round(price * concessionTax / taxPrice * 100) / 100.0;
+                    taxPrice = concessionTax;
+                }
+            }
+            if ("降价接收".equals(textOf(sourceRow.get("处置方式")))) {
+                double discount = num(sourceRow.get("折价率%"));
+                double adjusted = num(sourceRow.get("调整后单价"));
+                if (adjusted <= 0 && price > 0) {
+                    adjusted = Math.round(price * (1 - discount / 100) * 100) / 100.0;
+                }
+                double adjustedTax = num(sourceRow.get("调整后含税单价"));
+                if (adjustedTax <= 0 && taxPrice > 0) {
+                    adjustedTax = Math.round(taxPrice * (1 - discount / 100) * 100) / 100.0;
+                }
+                if (adjusted > 0) price = adjusted;
+                if (adjustedTax > 0) taxPrice = adjustedTax;
+            }
+            double amount = Math.round(accepted * price * 100) / 100.0;
+            double gross = Math.round(accepted * taxPrice * 100) / 100.0;
+            if (gross <= 0) gross = Math.round(amount * (1 + taxRate / 100) * 100) / 100.0;
+            if (taxPrice <= 0 && accepted > 0 && gross > 0) taxPrice = Math.round(gross / accepted * 100) / 100.0;
+            double tax = Math.round(gross * taxRate / (100 + taxRate) * 100) / 100.0;
+            row.put("单价", price);
+            row.put("税率%", taxRate);
+            row.put("含税单价", taxPrice);
+            row.put("金额", amount);
+            row.put("税额", tax);
+            row.put("含税金额", gross);
+            row.put("批号", firstValue(sourceRow, "批号", "检验批号", "批次号"));
             stampSource(row, panelCode, source.getFormNo(), index + 1, accepted);
             items.add(row);
         }
         if (items.isEmpty()) throw new IllegalStateException("检验单没有可入库的合格或让步接收数量");
         return insertGenerated(targetPanel, panelCode, source.getFormNo(), head, Map.of("items", items));
+    }
+
+    /** 推式生单：已审核检验单的不合格退回数量 → 采购退货单。 */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createPurchaseReturnFromInspection(String panelCode, Map<String, Object> formData) {
+        if (!"INSPECTION".equals(panelCode)) {
+            throw new IllegalStateException("仅来料/成品检验单可生成采购退货单");
+        }
+        FormData source = formOf(panelCode, formData.get("编号"));
+        requireApprovedPurchaseSource(source, "生成采购退货单");
+        Map<String, Object> sourceHead = parseData(source.getData());
+        Map<String, Object> sourceDetail = parseData(source.getDetailData());
+        List<Map<String, Object>> sourceRows = firstDetailRows(sourceDetail);
+        if (sourceRows.isEmpty()) throw new IllegalStateException("检验单没有可退货明细");
+        requireInspectionDispositionConfirmed(panelCode, sourceRows);
+        // 空数组也算「处置已维护」，此时 0 是权威值，不能回退到不合格数量。
+        List<Map<String, Object>> unqualifiedRows = sourceDetail.get("unqualified") instanceof List
+                ? (List<Map<String, Object>>) sourceDetail.get("unqualified") : null;
+
+        Map<String, Object> head = new HashMap<>();
+        head.put("单据日期", LocalDate.now().toString());
+        head.put("退货日期", LocalDate.now().toString());
+        copyFirst(sourceHead, head, "供应商编码", "供应商", "仓库", "部门", "项目", "经手人");
+        head.put("退货原因", "检验不合格退回");
+        head.put("检验单号", source.getFormNo());
+
+        // 价格从到货单取：检验单表头的来源单号就是到货单号，来源行号对应到货明细行。
+        // 成品报检（来源为成品报检单）没有到货单，必须给出明确提示而不是「表单数据不存在」。
+        Map<String, Object> arrivalDetail = new HashMap<>();
+        String arrivalNo = textOf(sourceHead.get("来源单号")).trim();
+        if (arrivalNo.isEmpty()) {
+            for (Map<String, Object> sourceRow : sourceRows) {
+                if ("ARRIVAL_IN".equals(textOf(sourceRow.get("来源面板")).trim())) {
+                    arrivalNo = textOf(sourceRow.get("来源单号")).trim();
+                    if (!arrivalNo.isEmpty()) break;
+                }
+            }
+        }
+        FormData arrival = arrivalNo.isEmpty() ? null : formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "ARRIVAL_IN").eq(FormData::getFormNo, arrivalNo));
+        if (arrival == null) {
+            throw new IllegalStateException("仅来料检验单（来源为到货单）可生成采购退货单，当前检验单不是由到货单生成");
+        }
+        arrivalDetail = parseData(arrival.getDetailData());
+        List<Map<String, Object>> arrivalRows = firstDetailRows(arrivalDetail);
+        Map<String, Object> arrivalHead = parseData(arrival.getData());
+        head.put("采购订单号", arrivalHead.getOrDefault("采购订单号", ""));
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (int index = 0; index < sourceRows.size(); index++) {
+            Map<String, Object> sourceRow = sourceRows.get(index);
+            int lineNo = index + 1;
+            // 全批退回：整批（含合格品）退回；其余只退不合格数量
+            double returnQuantity = "全批退回".equals(textOf(sourceRow.get("处置方式")))
+                    ? num(sourceRow.get("检验数量"))
+                    : purchaseReturnQuantity(sourceRow, unqualifiedRows, lineNo);
+            if (returnQuantity <= 0) continue;
+
+            Map<String, Object> row = new HashMap<>();
+            row.put("存货编码", firstValue(sourceRow, "存货编码", "产品编码"));
+            row.put("存货名称", firstValue(sourceRow, "存货名称", "产品名称"));
+            row.put("规格型号", sourceRow.getOrDefault("规格型号", ""));
+            Object warehouse = sourceRow.get("仓库");
+            row.put("仓库", warehouse == null || String.valueOf(warehouse).isBlank()
+                    ? head.getOrDefault("仓库", "原料仓") : warehouse);
+            Object unit = sourceRow.get("计量单位");
+            row.put("计量单位", unit == null || String.valueOf(unit).isBlank() ? "件" : unit);
+            row.put("数量", returnQuantity);
+            row.put("实收数量", returnQuantity);
+
+            Map<String, Object> arrivalRow = matchArrivalRow(arrivalRows, sourceRow);
+            double returnRate = num(arrivalRow.getOrDefault("税率%", sourceRow.getOrDefault("税率%", 13)));
+            ReturnAmounts amounts = returnAmounts(returnQuantity,
+                    num(arrivalRow.getOrDefault("单价", sourceRow.getOrDefault("单价", 0))),
+                    num(arrivalRow.getOrDefault("含税单价", sourceRow.getOrDefault("含税单价", 0))),
+                    returnRate);
+            row.put("单价", amounts.price());
+            row.put("金额", amounts.amount());
+            row.put("税率%", returnRate);
+            row.put("含税单价", amounts.taxPrice());
+            row.put("税额", amounts.tax());
+            row.put("含税金额", amounts.gross());
+            row.put("批号", firstValue(sourceRow, "批号", "检验批号", "批次号"));
+            stampSource(row, panelCode, source.getFormNo(), lineNo, returnQuantity);
+            items.add(row);
+        }
+        if (items.isEmpty()) throw new IllegalStateException("检验单没有不合格退回数量");
+
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", items);
+        return insertGenerated("PURCHASE_RETURN", panelCode, source.getFormNo(), head, detail);
+    }
+
+    /**
+     * 检验单一行可退回数量：不合格处理页签存在（含空数组）时只取处理方式=退回的处理数量，
+     * 0 是权威值；只有页签不存在（旧单据，unqualifiedRows == null）才回退到
+     * 验收退回数量 → 不合格数量。
+     */
+    static double purchaseReturnQuantity(Map<String, Object> sourceRow,
+                                         List<Map<String, Object>> unqualifiedRows, int lineNo) {
+        double rejected;
+        if (sourceRow.containsKey("验收退回数量")) {
+            rejected = num(sourceRow.get("验收退回数量"));
+        } else if (sourceRow.containsKey("判定退货数量")) {
+            rejected = num(sourceRow.get("判定退货数量"));
+        } else {
+            rejected = num(sourceRow.get("不合格数量"));
+        }
+        if (unqualifiedRows == null) return Math.max(0, rejected);
+        double returned = 0;
+        for (Map<String, Object> row : unqualifiedRows) {
+            int related = (int) Math.round(num(row.get("关联明细行号")));
+            if (related == lineNo && "退回".equals(String.valueOf(row.getOrDefault("处理方式", "")))) {
+                returned += num(row.get("处理数量"));
+            }
+        }
+        if (rejected > 0) returned = Math.min(returned, rejected);
+        return Math.max(0, returned);
+    }
+
+    private Map<String, Object> matchArrivalRow(List<Map<String, Object>> arrivalRows, Map<String, Object> sourceRow) {
+        int sourceLine = (int) Math.round(num(sourceRow.get("来源行号")));
+        if (sourceLine > 0 && sourceLine <= arrivalRows.size()) return arrivalRows.get(sourceLine - 1);
+        Object code = firstValue(sourceRow, "存货编码", "产品编码");
+        for (Map<String, Object> row : arrivalRows) {
+            if (String.valueOf(code).equals(String.valueOf(firstValue(row, "存货编码", "产品编码")))) return row;
+        }
+        return Map.of();
     }
 
     private void stampSource(Map<String, Object> row, String panel, String no, int rowNo, double quantity) {
@@ -2281,7 +2595,7 @@ public class PxService implements PanelRuntimeService {
         FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, "PU_REQ").eq(FormData::getFormNo, String.valueOf(no)));
         if (src == null) throw new IllegalArgumentException("请购单不存在：" + no);
-        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核请购单可生成采购订单");
+        requireApprovedPurchaseSource(src, "生成采购订单");
         Map<String, Object> head = parseData(src.getData());
         Map<String, Object> dm = parseData(src.getDetailData());
         List<Map<String, Object>> items = dm.get("items") instanceof List
@@ -2296,7 +2610,16 @@ public class PxService implements PanelRuntimeService {
         poData.put("币种", "人民币");
         poData.put("汇率", 1);
         poData.put("到货地址", head.getOrDefault("到货地址", ""));
-        poData.put("交货日期", head.getOrDefault("需求日期", ""));
+        String deliveryDate = String.valueOf(firstValue(head, "需求日期"));
+        if (deliveryDate.isBlank()) {
+            for (Map<String, Object> it : items) {
+                String candidate = String.valueOf(firstValue(it, "需求日期"));
+                if (!candidate.isBlank() && (deliveryDate.isBlank() || candidate.compareTo(deliveryDate) < 0)) {
+                    deliveryDate = candidate;
+                }
+            }
+        }
+        poData.put("交货日期", deliveryDate);
         poData.put("发货状态", "未发货");
         poData.put("合同号", String.valueOf(no));
         poData.put("订金金额", 0);
@@ -2305,25 +2628,73 @@ public class PxService implements PanelRuntimeService {
         List<Map<String, Object>> rows = new ArrayList<>();
         for (int index = 0; index < items.size(); index++) {
             Map<String, Object> it = items.get(index);
+            double ordered = num(it.getOrDefault("数量", 0));
+            if (ordered <= 0) continue;
+            // 部分下单：本次只生成请购行的剩余未下单数量
+            double alreadyOrdered = reservedQuantityForPanel("PU_ORDER", null,
+                    "PU_REQ", String.valueOf(no), index + 1);
+            double quantity = Math.max(0, ordered - alreadyOrdered);
+            if (quantity <= 0) continue;
+            double ratio = quantity / ordered;
             Map<String, Object> r = new HashMap<>();
+            Object unit = firstValue(it, "采购单位", "计量单位", "单位");
             r.put("物料编码", it.getOrDefault("存货编码", ""));
             r.put("物料名称", it.getOrDefault("存货名称", ""));
             r.put("规格型号", it.getOrDefault("规格型号", ""));
-            r.put("单位", it.getOrDefault("采购单位", "件"));
-            r.put("数量", it.getOrDefault("数量", 0));
+            r.put("单位", String.valueOf(unit).isBlank() ? "件" : unit);
+            r.put("数量", quantity);
+            r.put("数量2", Math.round(num(it.getOrDefault("数量2", 0)) * ratio * 100) / 100.0);
             r.put("单价", it.getOrDefault("单价", 0));
-            r.put("金额", it.getOrDefault("金额", 0));
+            r.put("金额", Math.round(num(it.getOrDefault("金额", 0)) * ratio * 100) / 100.0);
             r.put("税率%", it.getOrDefault("税率%", 13));
             r.put("含税单价", it.getOrDefault("含税单价", 0));
-            r.put("含税金额", it.getOrDefault("含税金额", 0));
-            r.put("预计到货日期", it.getOrDefault("需求日期", ""));
+            r.put("含税金额", Math.round(num(it.getOrDefault("含税金额", 0)) * ratio * 100) / 100.0);
+            Object itemDelivery = firstValue(it, "需求日期");
+            r.put("预计到货日期", itemDelivery == null || String.valueOf(itemDelivery).isBlank()
+                    ? deliveryDate : itemDelivery);
             r.put("现存量", it.getOrDefault("现存量", 0));
             r.put("现存量说明", it.getOrDefault("现存量说明", ""));
+            stampSource(r, "PU_REQ", String.valueOf(no), index + 1, quantity);
             rows.add(r);
         }
+        if (rows.isEmpty()) throw new IllegalStateException("请购单没有可下单数量");
         Map<String, Object> detail = new HashMap<>();
         detail.put("items", rows);
         return insertGenerated("PU_ORDER", "PU_REQ", String.valueOf(no), poData, detail);
+    }
+
+    /** 推式生单：采购需求分析（PU_REQ_ANALYSIS）→ 请购单（PU_REQ）；分析结果按现存量/在途实时重算。 */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createPuReqFromAnalysis(String panelCode, Map<String, Object> formData) {
+        Map<String, Object> analysis = queryPurchaseReqAnalysis(null, null);
+        List<Map<String, Object>> suggestions = analysis.get("list") instanceof List
+                ? (List<Map<String, Object>>) analysis.get("list") : new ArrayList<>();
+        Map<String, Object> head = new HashMap<>();
+        head.put("单据日期", LocalDate.now().toString());
+        head.put("需求日期", LocalDate.now().toString());
+        head.put("请购人", currentUserName());
+        head.put("备注", "由采购需求分析生成");
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> item : suggestions) {
+            double qty = num(item.get("建议请购数量"));
+            if (qty <= 0) continue;
+            Map<String, Object> row = new HashMap<>();
+            row.put("存货编码", item.getOrDefault("材料编码", ""));
+            row.put("存货名称", item.getOrDefault("材料名称", ""));
+            row.put("规格型号", item.getOrDefault("规格型号", ""));
+            row.put("采购单位", item.getOrDefault("计量单位", "件"));
+            row.put("数量", qty);
+            row.put("需求日期", LocalDate.now().toString());
+            row.put("现存量", item.getOrDefault("现存量", 0));
+            row.put("备注", "需求来源：" + item.getOrDefault("需求来源", ""));
+            rows.add(row);
+        }
+        if (rows.isEmpty()) {
+            throw new IllegalStateException("采购需求分析没有需要请购的物料（建议请购数量均为 0）");
+        }
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("PU_REQ", "PU_REQ_ANALYSIS", "分析-" + LocalDate.now(), head, detail);
     }
 
     /** 推式生单：采购订单（PU_ORDER）→ 采购入库单（PURCHASE_IN） */
@@ -2334,7 +2705,7 @@ public class PxService implements PanelRuntimeService {
         FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, "PU_ORDER").eq(FormData::getFormNo, String.valueOf(no)));
         if (src == null) throw new IllegalArgumentException("采购订单不存在：" + no);
-        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核采购订单可生成采购入库单");
+        requireApprovedPurchaseSource(src, "生成采购入库单");
         Map<String, Object> head = parseData(src.getData());
         Map<String, Object> dm = parseData(src.getDetailData());
         List<Map<String, Object>> items = dm.get("items") instanceof List
@@ -2350,78 +2721,248 @@ public class PxService implements PanelRuntimeService {
         List<Map<String, Object>> rows = new ArrayList<>();
         for (int index = 0; index < items.size(); index++) {
             Map<String, Object> it = items.get(index);
-            Map<String, Object> r = new HashMap<>();
-            r.put("仓库", "原料仓");
-            r.put("存货名称", it.getOrDefault("物料名称", ""));
-            r.put("规格型号", it.getOrDefault("规格型号", ""));
-            r.put("实收数量", it.getOrDefault("数量", 0));
-            r.put("计量单位", it.getOrDefault("单位", "件"));
-            r.put("单价", it.getOrDefault("单价", 0));
-            r.put("税率%", it.getOrDefault("税率%", 13));
-            r.put("含税单价", it.getOrDefault("含税单价", 0));
-            r.put("金额", it.getOrDefault("金额", 0));
-            r.put("含税金额", it.getOrDefault("含税金额", 0));
-            r.put("现存量", it.getOrDefault("现存量", 0));
-            stampSource(r, "PU_ORDER", String.valueOf(no), index + 1, num(it.getOrDefault("数量", 0)));
-            rows.add(r);
-        }
-        Map<String, Object> detail = new HashMap<>();
-        detail.put("items", rows);
-        return insertGenerated("PURCHASE_IN", "PU_ORDER", String.valueOf(no), piData, detail);
-    }
-
-    /** 推式生单：采购订单（PU_ORDER）→ 进货单（PU_IN）：明细按采购订单物料带入，含税金额拆分税额 */
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> createPuInFromPo(String panelCode, Map<String, Object> formData) {
-        Object no = formData.get("编号");
-        if (no == null) throw new IllegalArgumentException("缺少表单编号");
-        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
-                .eq(FormData::getPanelCode, "PU_ORDER").eq(FormData::getFormNo, String.valueOf(no)));
-        if (src == null) throw new IllegalArgumentException("采购订单不存在：" + no);
-        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核采购订单可生成进货单");
-        Map<String, Object> head = parseData(src.getData());
-        Map<String, Object> dm = parseData(src.getDetailData());
-        List<Map<String, Object>> items = dm.get("items") instanceof List
-                ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
-        if (items.isEmpty()) throw new IllegalStateException("采购订单无明细：" + no);
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("单据日期", LocalDate.now().toString());
-        data.put("业务类型", "进货");
-        data.put("供应商编码", head.getOrDefault("供应商编码", ""));
-        data.put("供应商", head.getOrDefault("供应商", ""));
-        data.put("供应商简称", head.getOrDefault("供应商", ""));
-        data.put("经手人", head.getOrDefault("经手人", ""));
-        data.put("部门", head.getOrDefault("部门", ""));
-        data.put("仓库", "原料仓");
-        data.put("来源单据", "PU_ORDER");
-        data.put("来源单号", String.valueOf(no));
-        List<Map<String, Object>> rows = new ArrayList<>();
-        for (Map<String, Object> it : items) {
-            double qty = num(it.getOrDefault("数量", 0));
-            double price = num(it.getOrDefault("含税单价", it.getOrDefault("单价", 0)));
+            double quantity = num(it.getOrDefault("数量", 0));
+            if (quantity <= 0) continue;
+            double price = num(it.getOrDefault("单价", 0));
             double taxRate = num(it.getOrDefault("税率%", 13));
-            double gross = Math.round(qty * price * 100) / 100.0;
+            double gross = num(it.getOrDefault("含税金额", 0));
+            if (gross <= 0) gross = Math.round(quantity * num(it.getOrDefault("含税单价", 0)) * 100) / 100.0;
+            double amount = num(it.getOrDefault("金额", 0));
+            if (amount <= 0) amount = Math.round(quantity * price * 100) / 100.0;
             double tax = Math.round(gross * taxRate / (100 + taxRate) * 100) / 100.0;
             Map<String, Object> r = new HashMap<>();
             r.put("仓库", "原料仓");
             r.put("存货编码", it.getOrDefault("物料编码", ""));
             r.put("存货名称", it.getOrDefault("物料名称", ""));
             r.put("规格型号", it.getOrDefault("规格型号", ""));
-            r.put("数量", qty);
-            r.put("采购单位", it.getOrDefault("单位", "件"));
-            r.put("单价", it.getOrDefault("单价", 0));
+            r.put("实收数量", quantity);
+            r.put("计量单位", it.getOrDefault("单位", "件"));
+            r.put("单价", price);
             r.put("税率%", taxRate);
-            r.put("含税单价", price);
-            r.put("金额", Math.round(qty * num(it.getOrDefault("单价", 0)) * 100) / 100.0);
+            r.put("含税单价", it.getOrDefault("含税单价", 0));
+            r.put("金额", amount);
             r.put("税额", tax);
             r.put("含税金额", gross);
             r.put("现存量", it.getOrDefault("现存量", 0));
+            stampSource(r, "PU_ORDER", String.valueOf(no), index + 1, quantity);
             rows.add(r);
+        }
+        if (rows.isEmpty()) throw new IllegalStateException("采购订单没有可入库数量");
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("PURCHASE_IN", "PU_ORDER", String.valueOf(no), piData, detail);
+    }
+
+    /** 推式生单：采购订单（PU_ORDER）→ 到货单（ARRIVAL_IN，收料通知）。 */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createArrivalFromPo(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "PU_ORDER").eq(FormData::getFormNo, String.valueOf(no)));
+        if (src == null) throw new IllegalArgumentException("采购订单不存在：" + no);
+        requireApprovedPurchaseSource(src, "生成到货单");
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> items = firstDetailRows(dm);
+        if (items.isEmpty()) throw new IllegalStateException("采购订单无明细：" + no);
+
+        Map<String, Object> arrivalHead = new HashMap<>();
+        arrivalHead.put("单据日期", LocalDate.now().toString());
+        arrivalHead.put("业务类型", "普通采购");
+        arrivalHead.put("供应商编码", head.getOrDefault("供应商编码", ""));
+        arrivalHead.put("供应商", head.getOrDefault("供应商", ""));
+        arrivalHead.put("项目", head.getOrDefault("项目", ""));
+        arrivalHead.put("仓库", "原料仓");
+        arrivalHead.put("采购订单号", String.valueOf(no));
+        arrivalHead.put("到货日期", LocalDate.now().toString());
+        arrivalHead.put("检验状态", "未检");
+        arrivalHead.put("数据来源", "采购订单");
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (int index = 0; index < items.size(); index++) {
+            Map<String, Object> it = items.get(index);
+            double ordered = num(it.getOrDefault("数量", 0));
+            if (ordered <= 0) continue;
+            // 部分到货：本次只生成订单行的剩余未到货数量（已有到货单按同面板占用扣除）
+            double alreadyArrived = reservedQuantityForPanel("ARRIVAL_IN", null,
+                    "PU_ORDER", String.valueOf(no), index + 1);
+            double qty = Math.max(0, ordered - alreadyArrived);
+            if (qty <= 0) continue;
+            double ratio = qty / ordered;
+            Map<String, Object> r = new HashMap<>();
+            r.put("项目", head.getOrDefault("项目", ""));
+            r.put("存货编码", it.getOrDefault("物料编码", ""));
+            r.put("存货名称", it.getOrDefault("物料名称", ""));
+            r.put("规格型号", it.getOrDefault("规格型号", ""));
+            Object warehouse = it.get("仓库");
+            r.put("仓库", warehouse == null || String.valueOf(warehouse).isBlank() ? "原料仓" : warehouse);
+            r.put("采购单位", it.getOrDefault("单位", "件"));
+            r.put("到货数量", qty);
+            r.put("到货拒收数量", 0);
+            r.put("实收数量", qty);
+            // 质检与累计执行量为结果字段：生单时显式置 0，避免明细 JSON 缺键导致列表/表单空白
+            r.put("检验数量", 0);
+            r.put("合格数量", 0);
+            r.put("不合格数量", 0);
+            r.put("让步接收数量", 0);
+            r.put("报废数量", 0);
+            r.put("累计入库数量", 0);
+            r.put("累计退货数量", 0);
+            r.put("检验方式", "全检");
+            r.put("抽检比例%", 100);
+            r.put("预计到货日期", it.getOrDefault("预计到货日期", head.getOrDefault("交货日期", "")));
+            r.put("采购订单号", String.valueOf(no));
+            double price = num(it.getOrDefault("单价", 0));
+            double taxRate = num(it.getOrDefault("税率%", 13));
+            double gross = Math.round(num(it.getOrDefault("含税金额", 0)) * ratio * 100) / 100.0;
+            if (gross <= 0) gross = Math.round(qty * num(it.getOrDefault("含税单价", 0)) * 100) / 100.0;
+            double amount = Math.round(num(it.getOrDefault("金额", 0)) * ratio * 100) / 100.0;
+            if (amount <= 0) amount = Math.round(qty * price * 100) / 100.0;
+            double tax = Math.round(gross * taxRate / (100 + taxRate) * 100) / 100.0;
+            r.put("单价", price);
+            r.put("税率%", taxRate);
+            r.put("含税单价", it.getOrDefault("含税单价", 0));
+            r.put("金额", amount);
+            r.put("税额", tax);
+            r.put("含税金额", gross);
+            stampSource(r, "PU_ORDER", String.valueOf(no), index + 1, qty);
+            rows.add(r);
+        }
+        if (rows.isEmpty()) throw new IllegalStateException("采购订单没有大于零的可到货数量");
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("ARRIVAL_IN", "PU_ORDER", String.valueOf(no), arrivalHead, detail);
+    }
+
+    /** 推式生单：到货单（ARRIVAL_IN）→ 采购入库单（PURCHASE_IN）；无质检路径。 */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createPurchaseInFromArrival(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formOf(panelCode, no);
+        requireApprovedPurchaseSource(src, "生成采购入库单");
+        Map<String, Object> head = parseData(src.getData());
+        List<Map<String, Object>> items = firstDetailRows(parseData(src.getDetailData()));
+        if (items.isEmpty()) throw new IllegalStateException("到货单无明细：" + no);
+        Set<Integer> inspectedLines = effectiveInspectionLines(panelCode, String.valueOf(no));
+
+        Map<String, Object> inHead = new HashMap<>();
+        inHead.put("单据日期", LocalDate.now().toString());
+        inHead.put("供应商编码", head.getOrDefault("供应商编码", ""));
+        inHead.put("供应商", head.getOrDefault("供应商", ""));
+        inHead.put("仓库", head.getOrDefault("仓库", "原料仓"));
+        inHead.put("采购订单号", head.getOrDefault("采购订单号", ""));
+        inHead.put("到货单号", String.valueOf(no));
+        inHead.put("入库类别", "采购入库");
+        inHead.put("数据来源", "到货单");
+        List<Map<String, Object>> rows = new ArrayList<>();
+        int inspectedSkipped = 0;
+        for (int index = 0; index < items.size(); index++) {
+            Map<String, Object> it = items.get(index);
+            // 已由检验单接手（检验单审批后）的行不再从到货单直接入库；
+            // 混装到货单仍可为剩下的免检行生成采购入库单。
+            if (inspectedLines.contains(index + 1)) {
+                inspectedSkipped++;
+                continue;
+            }
+            // 质量门禁：非免检物料必须先完成检验，不能从到货单直接入库
+            String inspectMethod = textOf(it.getOrDefault("检验方式", head.getOrDefault("检验方式", "")));
+            if (!"免检".equals(inspectMethod)) {
+                throw new IllegalStateException("到货单第 " + (index + 1) + " 行检验方式为"
+                        + (inspectMethod.isEmpty() ? "未设置" : inspectMethod)
+                        + "，请先生成检验单并完成检验；免检物料请把检验方式改为「免检」");
+            }
+            double received = arrivalReceivable(it);
+            if (received <= 0) continue;
+            Map<String, Object> r = new HashMap<>();
+            r.put("存货编码", it.getOrDefault("存货编码", ""));
+            r.put("存货名称", it.getOrDefault("存货名称", ""));
+            r.put("规格型号", it.getOrDefault("规格型号", ""));
+            Object warehouse = it.get("仓库");
+            r.put("仓库", warehouse == null || String.valueOf(warehouse).isBlank()
+                    ? inHead.get("仓库") : warehouse);
+            r.put("计量单位", it.getOrDefault("采购单位", it.getOrDefault("计量单位", "件")));
+            r.put("实收数量", received);
+            r.put("数量", received);
+            double price = num(it.getOrDefault("单价", 0));
+            double taxRate = num(it.getOrDefault("税率%", 13));
+            double gross = num(it.getOrDefault("含税金额", 0));
+            if (gross <= 0) gross = Math.round(received * num(it.getOrDefault("含税单价", 0)) * 100) / 100.0;
+            double amount = num(it.getOrDefault("金额", 0));
+            if (amount <= 0) amount = Math.round(received * price * 100) / 100.0;
+            double tax = Math.round(gross * taxRate / (100 + taxRate) * 100) / 100.0;
+            r.put("单价", price);
+            r.put("税率%", taxRate);
+            r.put("含税单价", it.getOrDefault("含税单价", 0));
+            r.put("金额", amount);
+            r.put("税额", tax);
+            r.put("含税金额", gross);
+            r.put("批号", it.getOrDefault("批号", ""));
+            stampSource(r, panelCode, String.valueOf(no), index + 1, received);
+            rows.add(r);
+        }
+        if (rows.isEmpty()) {
+            if (inspectedSkipped > 0) {
+                throw new IllegalStateException("到货单明细已由检验单接手，请从检验单生成采购入库单");
+            }
+            throw new IllegalStateException("到货单没有可入库的实收数量");
         }
         Map<String, Object> detail = new HashMap<>();
         detail.put("items", rows);
-        return insertGenerated("PU_IN", "PU_ORDER", String.valueOf(no), data, detail);
+        return insertGenerated("PURCHASE_IN", panelCode, String.valueOf(no), inHead, detail);
+    }
+
+    /** 推式生单：采购入库单（PURCHASE_IN）→ 采购退货单（PURCHASE_RETURN）；库存退料。 */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createPurchaseReturnFromPurchaseIn(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formOf("PURCHASE_IN", no);
+        requireApprovedPurchaseSource(src, "生成采购退货单");
+        Map<String, Object> head = parseData(src.getData());
+        List<Map<String, Object>> items = firstDetailRows(parseData(src.getDetailData()));
+        if (items.isEmpty()) throw new IllegalStateException("采购入库单无明细：" + no);
+
+        Map<String, Object> retHead = new HashMap<>();
+        retHead.put("单据日期", LocalDate.now().toString());
+        retHead.put("退货日期", LocalDate.now().toString());
+        copyFirst(head, retHead, "供应商编码", "供应商", "仓库", "检验单号", "到货单号", "采购订单号");
+        retHead.put("退货原因", "库存退料");
+        retHead.put("入库单号", String.valueOf(no));
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (int index = 0; index < items.size(); index++) {
+            Map<String, Object> it = items.get(index);
+            double qty = num(it.get("实收数量"));
+            if (qty <= 0) qty = num(it.get("数量"));
+            if (qty <= 0) continue;
+            Map<String, Object> r = new HashMap<>();
+            r.put("存货编码", it.getOrDefault("存货编码", it.getOrDefault("物料编码", "")));
+            r.put("存货名称", it.getOrDefault("存货名称", it.getOrDefault("物料名称", "")));
+            r.put("规格型号", it.getOrDefault("规格型号", ""));
+            Object warehouse = it.get("仓库");
+            r.put("仓库", warehouse == null || String.valueOf(warehouse).isBlank() ? retHead.get("仓库") : warehouse);
+            r.put("计量单位", it.getOrDefault("计量单位", it.getOrDefault("单位", "件")));
+            r.put("数量", qty);
+            r.put("实收数量", qty);
+            double returnRate = num(it.getOrDefault("税率%", 13));
+            ReturnAmounts amounts = returnAmounts(qty,
+                    num(it.getOrDefault("单价", 0)),
+                    num(it.getOrDefault("含税单价", 0)),
+                    returnRate);
+            r.put("单价", amounts.price());
+            r.put("金额", amounts.amount());
+            r.put("税率%", returnRate);
+            r.put("含税单价", amounts.taxPrice());
+            r.put("税额", amounts.tax());
+            r.put("含税金额", amounts.gross());
+            r.put("批号", it.getOrDefault("批号", ""));
+            stampSource(r, "PURCHASE_IN", String.valueOf(no), index + 1, qty);
+            rows.add(r);
+        }
+        if (rows.isEmpty()) throw new IllegalStateException("采购入库单没有可退货数量");
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("PURCHASE_RETURN", "PURCHASE_IN", String.valueOf(no), retHead, detail);
     }
 
     /** 推式生单：生产加工单（MANU_ORDER）→ 产成品入库单（FINISH_IN） */
@@ -2996,64 +3537,301 @@ public class PxService implements PanelRuntimeService {
         return insertGenerated("SALE_COST_ALLOC", "EXPENSE", String.valueOf(no), data, detail);
     }
 
-    /** 推式生单：进货单（PU_IN）/采购订单（PU_ORDER）→ 采购发票（PU_INVOICE）；明细按含税单价拆分税额/价税合计 */
+    /** 推式生单：采购入库单/采购退货单/采购订单 → 采购发票（PU_INVOICE）；明细按含税单价拆分税额/价税合计 */
     @SuppressWarnings("unchecked")
     private Map<String, Object> createPuInvoice(String panelCode, Map<String, Object> formData) {
+        if (!Set.of("PURCHASE_IN", "PURCHASE_RETURN", "PU_ORDER").contains(panelCode)) {
+            throw new IllegalStateException("仅采购入库单/采购退货单/采购订单可生成采购发票，当前单据：" + panelCode);
+        }
         Object no = formData.get("编号");
         if (no == null) throw new IllegalArgumentException("缺少表单编号");
-        String source = "PU_IN".equals(panelCode) ? "PU_IN" : "PU_ORDER";
-        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
-                .eq(FormData::getPanelCode, source).eq(FormData::getFormNo, String.valueOf(no)));
-        if (src == null) throw new IllegalArgumentException("来源单据不存在：" + no);
-        if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核单据可生成采购发票");
+        FormData src = formOf(panelCode, no);
+        requireApprovedPurchaseSource(src, "生成采购发票");
         Map<String, Object> head = parseData(src.getData());
-        Map<String, Object> dm = parseData(src.getDetailData());
-        List<Map<String, Object>> items = dm.get("items") instanceof List
-                ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
+        List<Map<String, Object>> items = firstDetailRows(parseData(src.getDetailData()));
         if (items.isEmpty()) throw new IllegalStateException("来源单据无明细：" + no);
+
+        boolean returnInvoice = "PURCHASE_RETURN".equals(panelCode)
+                || textOf(head.get("业务类型")).contains("退货");
+        // 红字发票口径（对齐金蝶/税务）：数量、金额、税额、价税合计为负；单价为正；
+        // 必须关联原蓝字发票，未入库/未开蓝票的退货不允许直接开红字。
+        String purchaseInNo = "";
+        FormData blueInvoice = null;
+        double redRemaining = 0;
+        if (returnInvoice) {
+            purchaseInNo = textOf(head.get("入库单号")).trim();
+            if (purchaseInNo.isEmpty()) {
+                throw new IllegalStateException("退货单未关联采购入库单（检验退回尚未入库），不能开红字采购发票；"
+                        + "请按负数应付或退货不开发票处理");
+            }
+            blueInvoice = findBluePurchaseInvoice(purchaseInNo);
+            if (blueInvoice == null) {
+                throw new IllegalStateException("入库单 " + purchaseInNo
+                        + " 尚未开具已审核蓝字采购发票，不能开红字发票；请先开蓝字发票或按负数应付处理");
+            }
+            redRemaining = blueInvoiceRemaining(purchaseInNo);
+        }
+        Map<String, Object> blueHead = blueInvoice == null ? Map.of() : parseData(blueInvoice.getData());
 
         Map<String, Object> data = new HashMap<>();
         data.put("单据日期", LocalDate.now().toString());
-        data.put("业务类型", "采购发票");
+        data.put("业务类型", returnInvoice ? "采购发票(退货)" : "采购发票");
         data.put("供应商", String.valueOf(head.getOrDefault("供应商", head.getOrDefault("供应商简称", ""))));
         data.put("供应商编码", head.getOrDefault("供应商编码", ""));
         data.put("部门", head.getOrDefault("部门", ""));
         data.put("业务员", String.valueOf(head.getOrDefault("业务员", head.getOrDefault("经手人", ""))));
-        data.put("开票类型", "增值税专用发票");
-        data.put("进货单号", "PU_IN".equals(source) ? String.valueOf(no) : "");
-        data.put("采购订单号", "PU_ORDER".equals(source) ? String.valueOf(no) : "");
-        data.put("来源单据", source);
-        data.put("来源单号", String.valueOf(no));
+        data.put("开票类型", returnInvoice
+                ? String.valueOf(blueHead.getOrDefault("开票类型", "增值税专用发票"))
+                : "增值税专用发票");
+        data.put("入库单号", returnInvoice ? purchaseInNo : ("PURCHASE_IN".equals(panelCode) ? String.valueOf(no) : ""));
+        data.put("原发票号", returnInvoice ? blueInvoice.getFormNo() : "");
+        data.put("采购订单号", "PU_ORDER".equals(panelCode)
+                ? String.valueOf(no) : head.getOrDefault("采购订单号", ""));
+
         List<Map<String, Object>> rows = new ArrayList<>();
         double total = 0;
-        for (Map<String, Object> it : items) {
-            double qty = num(it.getOrDefault("数量", 0));
-            Object priceVal = it.getOrDefault("含税单价", it.getOrDefault("单价", 0));
-            double price = num(priceVal);
+        double totalQty = 0;
+        for (int index = 0; index < items.size(); index++) {
+            Map<String, Object> it = items.get(index);
+            // 入库/退货按实收数量开票；采购订单直开票按订单数量
+            double qtyAbs = "PU_ORDER".equals(panelCode) ? num(it.getOrDefault("数量", 0)) : purchaseInQuantity(it);
+            if (qtyAbs <= 0) continue;
+            totalQty += qtyAbs;
+            double price = num(it.getOrDefault("含税单价", 0));
+            if (price <= 0) price = num(it.getOrDefault("单价", 0));
             double taxRate = num(it.getOrDefault("税率%", 13));
-            double gross = Math.round(qty * price * 100) / 100.0;
-            double tax = Math.round(gross * taxRate / (100 + taxRate) * 100) / 100.0;
-            double net = Math.round((gross - tax) * 100) / 100.0;
-            total += gross;
-            Object invCode = it.getOrDefault("存货编码", it.getOrDefault("物料编码", ""));
-            Object invName = it.getOrDefault("存货名称", it.getOrDefault("物料名称", ""));
-            Object unit = it.getOrDefault("采购单位", it.getOrDefault("单位", it.getOrDefault("计量单位", "件")));
+            double grossAbs = num(it.getOrDefault("含税金额", 0));
+            if (grossAbs <= 0) grossAbs = Math.round(qtyAbs * price * 100) / 100.0;
+            if (returnInvoice && (price <= 0 || grossAbs <= 0)) {
+                throw new IllegalStateException("退货行缺少单价/金额，不能开具红字发票；请先补充退货价格或从原蓝字发票带入");
+            }
+            double taxAbs = Math.round(grossAbs * taxRate / (100 + taxRate) * 100) / 100.0;
+            double netAbs = Math.round((grossAbs - taxAbs) * 100) / 100.0;
+            double qty = returnInvoice ? -qtyAbs : qtyAbs;
+            total += returnInvoice ? -grossAbs : grossAbs;
             Map<String, Object> r = new HashMap<>();
-            r.put("存货编码", invCode);
-            r.put("存货名称", invName);
+            r.put("存货编码", it.getOrDefault("存货编码", it.getOrDefault("物料编码", "")));
+            r.put("存货名称", it.getOrDefault("存货名称", it.getOrDefault("物料名称", "")));
             r.put("规格型号", it.getOrDefault("规格型号", ""));
-            r.put("计量单位", unit);
+            r.put("计量单位", it.getOrDefault("计量单位",
+                    it.getOrDefault("采购单位", it.getOrDefault("单位", "件"))));
             r.put("数量", qty);
-            r.put("无税单价", Math.round(net / Math.max(qty, 1) * 100) / 100.0);
+            r.put("无税单价", Math.round(netAbs / Math.max(qtyAbs, 1) * 100) / 100.0);
             r.put("税率%", taxRate);
-            r.put("税额", tax);
-            r.put("价税合计", gross);
+            r.put("税额", returnInvoice ? -taxAbs : taxAbs);
+            r.put("价税合计", returnInvoice ? -grossAbs : grossAbs);
+            stampSource(r, panelCode, String.valueOf(no), index + 1, qtyAbs);
             rows.add(r);
+        }
+        if (rows.isEmpty()) throw new IllegalStateException("来源单据没有可开票数量");
+        if (returnInvoice && totalQty > redRemaining + 0.000001) {
+            throw new IllegalStateException("红字发票数量超过原蓝字发票可冲数量：可冲 " + redRemaining
+                    + "，本次 " + totalQty);
         }
         data.put("价税合计", Math.round(total * 100) / 100.0);
         Map<String, Object> detail = new HashMap<>();
         detail.put("items", rows);
-        return insertGenerated("PU_INVOICE", source, String.valueOf(no), data, detail);
+        return insertGenerated("PU_INVOICE", panelCode, String.valueOf(no), data, detail);
+    }
+
+    /** 原蓝字采购发票：同一入库单、已审核、业务类型非退货。 */
+    private FormData findBluePurchaseInvoice(String purchaseInNo) {
+        for (FormData document : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "PU_INVOICE"))) {
+            if (!EFFECTIVE_STATUSES.contains(document.getStatus())) continue;
+            Map<String, Object> head = parseData(document.getData());
+            if (textOf(head.get("业务类型")).contains("退货")) continue;
+            if (purchaseInNo.equals(textOf(head.get("入库单号")))) return document;
+        }
+        return null;
+    }
+
+    /** 原蓝字发票可冲数量 = 蓝票数量 − 已开红票数量（都按同一入库单汇总）。 */
+    private double blueInvoiceRemaining(String purchaseInNo) {
+        double blue = 0;
+        double red = 0;
+        for (FormData document : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "PU_INVOICE"))) {
+            if (!EFFECTIVE_STATUSES.contains(document.getStatus())) continue;
+            Map<String, Object> head = parseData(document.getData());
+            if (!purchaseInNo.equals(textOf(head.get("入库单号")))) continue;
+            double quantity = 0;
+            for (Map<String, Object> row : firstDetailRows(parseData(document.getDetailData()))) {
+                quantity += Math.abs(num(row.get("数量")));
+            }
+            if (textOf(head.get("业务类型")).contains("退货")) red += quantity;
+            else blue += quantity;
+        }
+        return Math.max(0, blue - red);
+    }
+
+    /**
+     * 采购发票行级选单（2026-11-06）：返回来源入库单/退货单中尚未开票的明细行。
+     * mode=purchase 扫描已审核采购入库单，mode=return 扫描已审核采购退货单；
+     * 已开票数量按有效采购发票明细的 abs(数量) 汇总，未开票数量 <= 0 的行不再返回。
+     */
+    public Map<String, Object> invoiceSourceLines(String mode, String supplier, String keyword) {
+        requirePanelPermission("PU_INVOICE", "query");
+        String normalized = mode == null || mode.isBlank() ? "purchase" : mode.trim().toLowerCase(Locale.ROOT);
+        String sourcePanel = switch (normalized) {
+            case "purchase" -> "PURCHASE_IN";
+            case "return" -> "PURCHASE_RETURN";
+            default -> throw new IllegalArgumentException("不支持的发票选单模式：" + mode + "（仅 purchase/return）");
+        };
+        String supplierFilter = supplier == null ? "" : supplier.trim();
+        String keywordFilter = keyword == null ? "" : keyword.trim();
+        // 一次取回来源单据与发票后在内存分流：来源单据 + 已开票汇总，避免逐行查库
+        List<FormData> documents = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .in(FormData::getPanelCode, List.of("PURCHASE_IN", "PURCHASE_RETURN", "PU_INVOICE")));
+        Map<String, Double> invoiced = invoicedQuantities(documents, null);
+        boolean returnMode = "PURCHASE_RETURN".equals(sourcePanel);
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (FormData document : documents) {
+            if (!sourcePanel.equals(document.getPanelCode())) continue;
+            if (!EFFECTIVE_STATUSES.contains(document.getStatus())) continue;
+            Map<String, Object> head = parseData(document.getData());
+            String docSupplier = textOf(firstValue(head, "供应商", "供应商简称")).trim();
+            String supplierCode = textOf(head.get("供应商编码")).trim();
+            if (!supplierFilter.isEmpty()
+                    && !containsText(docSupplier, supplierFilter)
+                    && !containsText(supplierCode, supplierFilter)) {
+                continue;
+            }
+            List<Map<String, Object>> rows = firstDetailRows(parseData(document.getDetailData()));
+            for (int index = 0; index < rows.size(); index++) {
+                Map<String, Object> sourceRow = rows.get(index);
+                int lineNo = index + 1;
+                // 入库按实收数量、退货按数量取可开票基数；红字/手工负数行一律按绝对值判断额度
+                double quantity = returnMode
+                        ? Math.abs(executedQuantity("PURCHASE_RETURN", sourceRow))
+                        : Math.abs(purchaseInQuantity(sourceRow));
+                if (quantity <= 0) continue;
+                double invoicedQty = invoiced.getOrDefault(
+                        sourceKey(sourcePanel, document.getFormNo(), lineNo), 0d);
+                double remaining = round4(quantity - invoicedQty);
+                if (remaining <= 0.000001) continue;
+                String itemCode = textOf(firstValue(sourceRow, "存货编码", "物料编码")).trim();
+                String itemName = textOf(firstValue(sourceRow, "存货名称", "物料名称")).trim();
+                if (!keywordFilter.isEmpty()
+                        && !containsText(document.getFormNo(), keywordFilter)
+                        && !containsText(itemCode, keywordFilter)
+                        && !containsText(itemName, keywordFilter)
+                        && !containsText(docSupplier, keywordFilter)) {
+                    continue;
+                }
+                list.add(invoiceSourceLine(document, head, sourceRow, sourcePanel, lineNo,
+                        quantity, invoicedQty, remaining, returnMode));
+            }
+        }
+        Map<String, Object> out = new HashMap<>();
+        out.put("list", list);
+        out.put("total", list.size());
+        return out;
+    }
+
+    /**
+     * 有效采购发票的已开票数量：按「来源面板|来源单号|来源行号」汇总明细 abs(数量)。
+     * 红字发票只冲减退货来源行，不计入入库行的已开票量；excludeNo 用于编辑草稿时排除自身。
+     */
+    private Map<String, Double> invoicedQuantities(List<FormData> documents, String excludeNo) {
+        Map<String, Double> totals = new HashMap<>();
+        for (FormData invoice : documents) {
+            if (!"PU_INVOICE".equals(invoice.getPanelCode())) continue;
+            if (!EFFECTIVE_STATUSES.contains(invoice.getStatus())) continue;
+            if (excludeNo != null && excludeNo.equals(invoice.getFormNo())) continue;
+            Map<String, Object> head = parseData(invoice.getData());
+            boolean red = textOf(head.get("业务类型")).contains("退货");
+            for (Map<String, Object> row : firstDetailRows(parseData(invoice.getDetailData()))) {
+                String sourcePanel = sourcePanelOf(row);
+                if (!"PURCHASE_IN".equals(sourcePanel) && !"PURCHASE_RETURN".equals(sourcePanel)) continue;
+                if (red && !"PURCHASE_RETURN".equals(sourcePanel)) continue;
+                String sourceNo = sourceNoOf(row);
+                int lineNo = sourceLineNoOf(row);
+                if (sourceNo.isEmpty() || lineNo <= 0) continue;
+                double quantity = Math.abs(num(row.get("数量")));
+                if (quantity <= 0) continue;
+                totals.merge(sourceKey(sourcePanel, sourceNo, lineNo), quantity, Double::sum);
+            }
+        }
+        return totals;
+    }
+
+    /** 选单行：对齐真实 ERP「来源单号 + 来源行号 + 入库/已开票/未开票数量 + 金额税额」。 */
+    private Map<String, Object> invoiceSourceLine(FormData document, Map<String, Object> head,
+                                                  Map<String, Object> sourceRow, String sourcePanel, int lineNo,
+                                                  double quantity, double invoicedQty, double remaining,
+                                                  boolean returnMode) {
+        double price = num(firstValue(sourceRow, "单价", "无税单价"));
+        double taxRate = num(firstValue(sourceRow, "税率%"));
+        double rate = taxRate < 0 ? 0 : taxRate;
+        double taxPrice = num(firstValue(sourceRow, "含税单价"));
+        double net = num(firstValue(sourceRow, "金额"));
+        double tax = num(firstValue(sourceRow, "税额"));
+        double gross = num(firstValue(sourceRow, "含税金额"));
+        // 来源行金额缺失时按数量/单价/税率补算，保证发票行金额口径完整
+        if (taxPrice <= 0 && price > 0) taxPrice = round2(price * (1 + rate / 100));
+        if (gross <= 0 && taxPrice > 0) gross = round2(quantity * taxPrice);
+        if (gross <= 0 && net > 0) gross = round2(net * (1 + rate / 100));
+        if (tax <= 0 && gross > 0) tax = round2(gross * rate / (100 + rate));
+        if (net <= 0 && gross > 0) net = round2(gross - tax);
+        if (net <= 0 && price > 0) net = round2(quantity * price);
+        String unit = textOf(firstValue(sourceRow, "计量单位", "采购单位", "单位")).trim();
+        Map<String, Object> line = new LinkedHashMap<>();
+        line.put("供应商", textOf(firstValue(head, "供应商", "供应商简称")));
+        line.put("供应商编码", textOf(head.get("供应商编码")));
+        line.put("来源面板", sourcePanel);
+        line.put("来源单号", document.getFormNo());
+        line.put("来源行号", lineNo);
+        line.put("存货编码", textOf(firstValue(sourceRow, "存货编码", "物料编码")));
+        line.put("存货名称", textOf(firstValue(sourceRow, "存货名称", "物料名称")));
+        line.put("规格型号", textOf(sourceRow.get("规格型号")));
+        line.put("计量单位", unit.isEmpty() ? "件" : unit);
+        line.put("入库数量", round4(quantity));
+        line.put("已开票数量", round4(invoicedQty));
+        line.put("未开票数量", round4(remaining));
+        line.put("单价", price);
+        line.put("税率%", taxRate);
+        line.put("含税单价", taxPrice);
+        line.put("金额", net);
+        line.put("税额", tax);
+        line.put("含税金额", gross);
+        line.put("采购订单号", textOf(head.get("采购订单号")));
+        // 退货行带出原入库单号：前端据此校验红票；空值仍返回，由保存/审核规则拒绝
+        if (returnMode) line.put("入库单号", textOf(head.get("入库单号")));
+        return line;
+    }
+
+    private static String sourceKey(String panel, String no, int lineNo) {
+        return panel + "|" + no + "|" + lineNo;
+    }
+
+    private static boolean containsText(String value, String filter) {
+        return value != null && filter != null && !filter.isEmpty()
+                && value.toLowerCase(Locale.ROOT).contains(filter.toLowerCase(Locale.ROOT));
+    }
+
+    /** 来源面板：行级选单写「来源面板」，展示列「源单类型」作为兜底。 */
+    private String sourcePanelOf(Map<String, Object> row) {
+        return textOf(firstValue(row, "来源面板", "源单类型")).trim();
+    }
+
+    /** 来源单号：行级选单写「来源单号」，展示列「源单编号」作为兜底。 */
+    private String sourceNoOf(Map<String, Object> row) {
+        return textOf(firstValue(row, "来源单号", "源单编号")).trim();
+    }
+
+    /** 来源行号：行级选单写「来源行号」，展示列「源单行号」作为兜底。 */
+    private int sourceLineNoOf(Map<String, Object> row) {
+        return (int) Math.round(num(firstValue(row, "来源行号", "源单行号")));
+    }
+
+    private static double round4(double value) {
+        return Math.round(value * 10000) / 10000.0;
+    }
+
+    /** 明细值为空（未填写）才允许补算，显式填写的 0 视为权威值。 */
+    private static boolean isBlankValue(Object value) {
+        return value == null || String.valueOf(value).isBlank();
     }
 
     /** 推式生单：费用单（EXPENSE，费用类型=采购费用）→ 采购费用分摊单（PU_COST_ALLOC） */
@@ -3179,7 +3957,16 @@ public class PxService implements PanelRuntimeService {
         FormData fd;
         Object no = formData.get("编号");
         if (detail instanceof Map<?, ?> map) {
-            validateSourceLinks(panelCode, no == null ? null : String.valueOf(no), (Map<String, Object>) map);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> detailMap = (Map<String, Object>) map;
+            deriveInspectionDetail(panelCode, detailMap);
+            // 采购发票行级来源：先归一来源键，再走通用来源校验（存在/已审核/防重复/防超量）
+            if ("PU_INVOICE".equals(panelCode)) normalizeInvoiceRowSources(detailMap);
+            validateSourceLinks(panelCode, no == null ? null : String.valueOf(no), detailMap);
+            // 发票表头金额、供应商一致性与勾稽状态由明细派生（保存时覆盖，明细为空时保留手工值）
+            if ("PU_INVOICE".equals(panelCode)) {
+                deriveInvoiceHeader(detailMap, formData, no == null ? null : String.valueOf(no));
+            }
         }
         String stateField = (String) fieldsOf(panelCode).get("stateFieldName");
         formData.remove("编号");
@@ -3195,6 +3982,17 @@ public class PxService implements PanelRuntimeService {
             String st0 = fd.getStatus() == null ? "" : fd.getStatus();
             if (!"草稿".equals(st0) && !"启用".equals(st0) && !"停用".equals(st0)) {
                 throw new IllegalStateException("仅草稿状态可保存");
+            }
+            // 质检数据改动后原「确认处置」失效：否则改完数量/判定仍带着旧确认直接入库。
+            if ("INSPECTION".equals(panelCode) && "草稿".equals(st0) && detail instanceof Map<?, ?> nextRaw) {
+                Map<String, Object> previous = parseData(fd.getDetailData());
+                @SuppressWarnings("unchecked")
+                Map<String, Object> next = (Map<String, Object>) nextRaw;
+                if (hasConfirmedDisposition(previous)
+                        && !inspectionDispositionSignature(previous)
+                        .equals(inspectionDispositionSignature(next))) {
+                    resetDispositionToPending(next);
+                }
             }
             fd.setData(toJson(formData));
             // 明细兜底：未传 detail（如列表页仅保存表头）时保留原明细，禁止用 null 覆盖清空
@@ -3237,6 +4035,164 @@ public class PxService implements PanelRuntimeService {
         return out;
     }
 
+    /**
+     * 采购发票行级来源键归一（2026-11-06）：
+     * 前端选单行可能只带展示列「源单类型/源单编号/源单行号」，这里与
+     * 「来源面板/来源单号/来源行号」互为兜底，保证 validateSourceLinks 的
+     * 来源存在/已审核/防重复/防超量校验始终生效；同时补「来源数量」，
+     * 让红字负数量行按绝对值占用来源额度。
+     */
+    private void normalizeInvoiceRowSources(Map<String, Object> detail) {
+        for (Map<String, Object> row : firstDetailRows(detail)) {
+            String sourcePanel = textOf(row.get("来源面板")).trim();
+            if (sourcePanel.isEmpty()) {
+                sourcePanel = textOf(row.get("源单类型")).trim();
+                if (!sourcePanel.isEmpty()) row.put("来源面板", sourcePanel);
+            } else if (textOf(row.get("源单类型")).isBlank()) {
+                row.put("源单类型", sourcePanel);
+            }
+            String sourceNo = textOf(row.get("来源单号")).trim();
+            if (sourceNo.isEmpty()) {
+                sourceNo = textOf(row.get("源单编号")).trim();
+                if (!sourceNo.isEmpty()) row.put("来源单号", sourceNo);
+            } else if (textOf(row.get("源单编号")).isBlank()) {
+                row.put("源单编号", sourceNo);
+            }
+            int sourceLine = (int) Math.round(num(row.get("来源行号")));
+            if (sourceLine <= 0) {
+                sourceLine = (int) Math.round(num(row.get("源单行号")));
+                if (sourceLine > 0) row.put("来源行号", sourceLine);
+            } else if (Math.round(num(row.get("源单行号"))) <= 0) {
+                row.put("源单行号", sourceLine);
+            }
+            // 来源数量用于通用来源额度校验：红字行数量为负，额度仍按绝对值占用
+            if (sourceLine > 0 && !sourceNo.isEmpty()) {
+                row.put("来源数量", Math.abs(num(row.get("数量"))));
+            }
+        }
+    }
+
+    /**
+     * 采购发票保存派生（2026-11-06）：
+     * 1) 表头不含税金额/税额/价税合计由明细汇总（保留 2 位；明细为空不覆盖手工值）；
+     * 2) 红字发票行数量/税额/价税合计必须为负，拒绝正数红票行；
+     * 3) 发票供应商必须与来源入库单/退货单表头一致，为空时回填首个来源供应商；
+     * 4) 勾稽状态由来源行未开票数量派生：全部开完=已勾稽，有剩余=部分勾稽，无来源=未勾稽。
+     */
+    private void deriveInvoiceHeader(Map<String, Object> detail, Map<String, Object> head, String currentNo) {
+        List<Map<String, Object>> rows = firstDetailRows(detail);
+        // 仅保存表头（明细未加载）时不覆盖用户手工填写的金额
+        if (rows.isEmpty()) return;
+        boolean red = textOf(head.get("业务类型")).contains("退货");
+        double netTotal = 0;
+        double taxTotal = 0;
+        double grossTotal = 0;
+        List<Map<String, Object>> sourceRows = new ArrayList<>();
+        for (int index = 0; index < rows.size(); index++) {
+            Map<String, Object> row = rows.get(index);
+            double quantity = num(row.get("数量"));
+            double rate = Math.max(0, num(row.get("税率%")));
+            Object taxValue = row.get("税额");
+            Object grossValue = row.get("价税合计");
+            double tax = num(taxValue);
+            double gross = num(grossValue);
+            // 明细只填数量/单价时补算金额，避免表头汇总成 0；已填写（含手工 0）则按填写值汇总
+            if (isBlankValue(grossValue) && quantity != 0) {
+                double taxPrice = num(row.get("含税单价"));
+                if (taxPrice == 0) taxPrice = num(row.get("无税单价")) * (1 + rate / 100);
+                gross = round2(quantity * taxPrice);
+            }
+            if (isBlankValue(taxValue) && gross != 0) tax = round2(gross * rate / (100 + rate));
+            if (red && (quantity > 0 || tax > 0 || gross > 0)) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行红字发票数量/税额/价税合计必须为负数");
+            }
+            netTotal += gross - tax;
+            taxTotal += tax;
+            grossTotal += gross;
+            if (!sourcePanelOf(row).isEmpty() && !sourceNoOf(row).isEmpty()) sourceRows.add(row);
+        }
+        head.put("不含税金额", round2(netTotal));
+        head.put("税额", round2(taxTotal));
+        head.put("价税合计", round2(grossTotal));
+
+        if (sourceRows.isEmpty()) {
+            head.put("勾稽状态", "未勾稽");
+            return;
+        }
+        // 供应商一致性：同一张发票只能对应一个供应商，空值回填首个来源供应商
+        String invoiceSupplier = textOf(firstValue(head, "供应商", "供应商简称")).trim();
+        String invoiceCode = textOf(head.get("供应商编码")).trim();
+        String firstSupplier = "";
+        String firstCode = "";
+        Map<String, FormData> sources = new LinkedHashMap<>();
+        for (Map<String, Object> row : sourceRows) {
+            String sourcePanel = sourcePanelOf(row);
+            String sourceNo = sourceNoOf(row);
+            if (sourcePanel.isEmpty() || sourceNo.isEmpty()) continue;
+            FormData source = sources.computeIfAbsent(sourcePanel + "|" + sourceNo, key ->
+                    formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                            .eq(FormData::getPanelCode, sourcePanel)
+                            .eq(FormData::getFormNo, sourceNo)));
+            if (source == null) continue; // 来源存在性已由 validateSourceLinks 拦截
+            Map<String, Object> sourceHead = parseData(source.getData());
+            String sourceSupplier = textOf(firstValue(sourceHead, "供应商", "供应商简称")).trim();
+            if (sourceSupplier.isEmpty()) continue;
+            if (firstSupplier.isEmpty()) {
+                firstSupplier = sourceSupplier;
+                firstCode = textOf(sourceHead.get("供应商编码")).trim();
+            }
+            if (!invoiceSupplier.isEmpty() && !invoiceSupplier.equals(sourceSupplier)) {
+                throw new IllegalStateException("发票供应商与来源单据不一致：发票 " + invoiceSupplier
+                        + "，来源 " + sourceNo + " 为 " + sourceSupplier);
+            }
+        }
+        if (invoiceSupplier.isEmpty() && !firstSupplier.isEmpty()) {
+            head.put("供应商", firstSupplier);
+            if (invoiceCode.isEmpty() && !firstCode.isEmpty()) head.put("供应商编码", firstCode);
+        }
+
+        // 勾稽状态：回写来源行已开票/未开票数量，全部来源行开完即「已勾稽」
+        List<FormData> documents = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "PU_INVOICE"));
+        Map<String, Double> invoicedOthers = invoicedQuantities(documents, currentNo);
+        boolean allInvoiced = true;
+        for (Map<String, Object> row : sourceRows) {
+            double remaining = refreshInvoiceSourceRow(row, invoicedOthers);
+            if (remaining > 0.000001) allInvoiced = false;
+        }
+        head.put("勾稽状态", allInvoiced ? "已勾稽" : "部分勾稽");
+    }
+
+    /**
+     * 回写来源行数量：来源数量 − 其他有效发票已开票数量 − 本行本次开票数量。
+     * 来源单据缺失或不可计算时保留行上原值，避免把「未开票数量」误写成 0。
+     */
+    private double refreshInvoiceSourceRow(Map<String, Object> row, Map<String, Double> invoicedOthers) {
+        String sourcePanel = sourcePanelOf(row);
+        String sourceNo = sourceNoOf(row);
+        int lineNo = sourceLineNoOf(row);
+        double fallback = num(row.get("未开票数量"));
+        if (sourcePanel.isEmpty() || sourceNo.isEmpty() || lineNo <= 0) return fallback;
+        FormData source = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, sourcePanel)
+                .eq(FormData::getFormNo, sourceNo));
+        if (source == null) return fallback;
+        List<Map<String, Object>> sourceRows = firstDetailRows(parseData(source.getDetailData()));
+        if (lineNo > sourceRows.size()) return fallback;
+        Map<String, Object> sourceRow = sourceRows.get(lineNo - 1);
+        double sourceQty = "PURCHASE_RETURN".equals(sourcePanel)
+                ? Math.abs(executedQuantity("PURCHASE_RETURN", sourceRow))
+                : Math.abs(purchaseInQuantity(sourceRow));
+        if (sourceQty <= 0) return fallback;
+        double others = invoicedOthers.getOrDefault(sourceKey(sourcePanel, sourceNo, lineNo), 0d);
+        double current = Math.abs(num(row.get("数量")));
+        row.put("入库数量", round4(sourceQty));
+        row.put("已开票数量", round4(others + current));
+        double remaining = round4(sourceQty - others - current);
+        row.put("未开票数量", Math.max(0, remaining));
+        return remaining;
+    }
+
     @SuppressWarnings("unchecked")
     /** 当前登录用户（JwtAuthFilter 写入 SecurityContext；未认证时兜底 system） */
     private String currentUserName() {
@@ -3260,6 +4216,7 @@ public class PxService implements PanelRuntimeService {
             validateBomForApproval(panelCode, fd);
             validateQualityForApproval(panelCode, fd);
             validateSourceLinks(panelCode, fd.getFormNo(), parseData(fd.getDetailData()));
+            if ("INSPECTION".equals(panelCode)) confirmInspectionDetail(fd);
             // 人工审核：审核人 = 当前登录人（不再硬编码 admin）
             String operator = currentUserName();
             fd.setStatus("已审核");
@@ -3293,6 +4250,9 @@ public class PxService implements PanelRuntimeService {
             head.remove("审核人");
             head.remove("审核时间");
             head.remove("审核意见");
+            // 弃审回草稿后必须清掉表头审批状态：否则前端「已审批」印章会凭残留的
+            // 审批状态=已通过/已审批 继续显示，出现「状态草稿 + 已审批章」并存。
+            head.remove("审批状态");
             // 显式 set(null)：MyBatis-Plus 默认 NOT_NULL 策略不会把 null 字段写进 UPDATE，
             // 必须用 LambdaUpdateWrapper.set 强制清空 audit_by/audit_time
             formMapper.update(null, new LambdaUpdateWrapper<FormData>()
@@ -3359,10 +4319,27 @@ public class PxService implements PanelRuntimeService {
         return new ArrayList<>();
     }
 
-    /** 审核通过时落库存事务；未注入服务或非库存面板时静默跳过，不影响既有流程。 */
+    /**
+     * 检验退料（来源检验单、尚未入库）不落库存事务：货没有进过仓库，退回时也不能出库，
+     * 否则会把库存扣成负数。库存退料（来源采购入库单/带入库单号）仍按 PURCHASE_RETURN 出库。
+     */
+    private boolean isInspectionReturn(String panelCode, Map<String, Object> head,
+                                       Map<String, Object> detail) {
+        if (!"PURCHASE_RETURN".equals(panelCode)) return false;
+        if (!textOf(head.get("入库单号")).trim().isEmpty()) return false;
+        if (!textOf(head.get("检验单号")).trim().isEmpty()) return true;
+        if ("检验不合格退回".equals(textOf(head.get("退货原因")).trim())) return true;
+        for (Map<String, Object> row : firstDetailRows(detail)) {
+            if ("INSPECTION".equals(textOf(row.get("来源面板")).trim())) return true;
+        }
+        return false;
+    }
+
+    /** 审核通过时落库存事务；未注入服务、非库存面板或检验退料时静默跳过。 */
     private void postStockTxn(String panelCode, String formNo, Map<String, Object> head,
                               Map<String, Object> detail) {
         if (stockTxnService == null) return;
+        if (isInspectionReturn(panelCode, head, detail)) return;
         stockTxnService.post(panelCode, formNo, head, detail);
     }
 
@@ -3376,7 +4353,14 @@ public class PxService implements PanelRuntimeService {
     private void postFinance(String panelCode, String formNo, Map<String, Object> head,
                              Map<String, Object> detail) {
         if (financeSettleService == null) return;
+        // 红字发票只做税务/勾稽：应付冲减由采购退货单的 AP_RETURN 负责，避免重复冲减
+        if (isReturnInvoice(panelCode, head)) return;
         financeSettleService.post(panelCode, formNo, head, detail);
+    }
+
+    /** 采购发票(退货) = 红字发票：不重复产生应付/凭证。 */
+    private static boolean isReturnInvoice(String panelCode, Map<String, Object> head) {
+        return "PU_INVOICE".equals(panelCode) && textOf(head.get("业务类型")).contains("退货");
     }
 
     /** 弃审时冲销往来单。 */
@@ -3389,6 +4373,8 @@ public class PxService implements PanelRuntimeService {
     private void postAccounting(String panelCode, String formNo, Map<String, Object> head,
                                 Map<String, Object> detail) {
         if (accountingService == null) return;
+        // 红字发票不重复生成会计凭证（退货单已按 借应付/贷库存 冲销）
+        if (isReturnInvoice(panelCode, head)) return;
         java.math.BigDecimal amount = java.math.BigDecimal.valueOf(settlementAmount(detail));
         if (amount.signum() == 0) return;
         String partner = textOf(firstValue(head, "客户", "供应商", "往来单位"));
@@ -3412,7 +4398,7 @@ public class PxService implements PanelRuntimeService {
                 if (!(rowObject instanceof Map<?, ?> raw)) continue;
                 @SuppressWarnings("unchecked")
                 Map<String, Object> row = (Map<String, Object>) raw;
-                double amount = num(firstValue(row, "含税金额", "销售金额", "金额", "成本金额", "实收金额"));
+                double amount = num(firstValue(row, "含税金额", "价税合计", "销售金额", "金额", "成本金额", "实收金额"));
                 if (amount == 0) {
                     amount = num(firstValue(row, "实收数量", "数量")) * num(firstValue(row, "含税单价", "售价", "单价", "成本价"));
                 }
@@ -3433,11 +4419,319 @@ public class PxService implements PanelRuntimeService {
         return 0;
     }
 
-    private double executedQuantity(Map<String, Object> row) {
+    /**
+     * 下游单据一行的执行数量。按「单据自身面板」取口径，而不是按字段出现顺序猜：
+     * 到货单看实收、入库单看实收、退货单看数量、检验单看检验数量。
+     * 其它面板保持旧顺序兜底。
+     */
+    private double executedQuantity(String documentPanel, Map<String, Object> row) {
+        List<String> preferred = switch (documentPanel == null ? "" : documentPanel) {
+            case "ARRIVAL_IN" -> List.of("实收数量", "到货数量");
+            case "PURCHASE_IN", "FINISH_IN", "OUTSOURCE_IN" -> List.of("实收数量", "数量");
+            case "PURCHASE_RETURN" -> List.of("数量", "实收数量");
+            case "PU_INVOICE" -> List.of("来源数量", "数量");
+            case "INSPECTION", "PROCESS_INSPECTION" -> List.of("检验数量");
+            default -> List.of();
+        };
+        for (String field : preferred) {
+            if (row.containsKey(field)) return num(row.get(field));
+        }
         for (String field : List.of("检验数量", "实收数量", "入库数量", "处理数量", "报检数量", "到货数量", "数量", "分摊金额", "金额")) {
             if (row.containsKey(field)) return num(row.get(field));
         }
         return num(row.get("来源数量"));
+    }
+
+    /** 到货行可执行量：实收数量 → 到货数量-到货拒收数量 → 到货数量。 */
+    static double arrivalReceivable(Map<String, Object> row) {
+        if (row.containsKey("实收数量")) return num(row.get("实收数量"));
+        double arrived = num(row.get("到货数量"));
+        if (arrived > 0) {
+            double rejected = num(row.get("到货拒收数量"));
+            double net = arrived - rejected;
+            return net > 0 ? net : arrived;
+        }
+        return 0;
+    }
+
+    /** 采购入库行可退量：实收数量 → 数量。 */
+    static double purchaseInQuantity(Map<String, Object> row) {
+        for (String field : List.of("实收数量", "数量")) {
+            if (row.containsKey(field)) return num(row.get(field));
+        }
+        return 0;
+    }
+
+    /**
+     * 检验单可入库量 = 合格数量 + 让步接收处理量。
+     * 处置页签（unqualified）存在时以行上的让步接收数量为准（0 也是权威值）；
+     * 旧单据没有该页签时才按「判定=让步接收 → 不合格数量」回退。
+     */
+    static double inspectionAcceptable(Map<String, Object> detail, Map<String, Object> row, int lineNo) {
+        double qualified = num(row.get("合格数量"));
+        return qualified + inspectionConcessionQuantity(detail, row, lineNo);
+    }
+
+    static double inspectionConcessionQuantity(Map<String, Object> detail, Map<String, Object> row, int lineNo) {
+        if (detail != null && detail.containsKey("unqualified")) {
+            return num(row.get("让步接收数量"));
+        }
+        String verdict = textOf(row.get("检验结果判定")).trim();
+        if ("让步接收".equals(verdict)) return num(row.get("不合格数量"));
+        return 0;
+    }
+
+    /**
+     * 检验单可退量。处置页签存在时以行上的验收退回数量为准（空数组/0 都是权威值）；
+     * 旧单据没有验收退回数量时退回判定退货数量，再没有才回退 不合格数量。
+     */
+    @SuppressWarnings("unchecked")
+    static double inspectionReturnQuantity(Map<String, Object> detail, Map<String, Object> row, int lineNo) {
+        if ("全批退回".equals(textOf(row.get("处置方式")))) return num(row.get("检验数量"));
+        if (detail != null && detail.containsKey("unqualified")) {
+            if (row.containsKey("验收退回数量")) return Math.max(0, num(row.get("验收退回数量")));
+            if (row.containsKey("判定退货数量")) return Math.max(0, num(row.get("判定退货数量")));
+            return Math.max(0, num(row.get("不合格数量")));
+        }
+        return purchaseReturnQuantity(row, null, lineNo);
+    }
+
+    /**
+     * 检验单保存时由「不合格处理」页签回写行级处置数量：
+     * 让步接收数量、报废数量、判定退货数量。
+     * 页签存在（含空数组）时以页签为权威值，空数组即全部清零；
+     * 旧单据没有该页签时保留行上原值。未填完整的页签行跳过，
+     * 数量勾稽由提交/审批校验兜底，避免编辑草稿时被半成品行卡住。
+     */
+    @SuppressWarnings("unchecked")
+    static void deriveInspectionDetail(String panelCode, Map<String, Object> detail) {
+        if (detail == null || !QUALITY_INSPECTION_PANELS.contains(panelCode)) return;
+        if (!(detail.get("unqualified") instanceof List<?> treatments)) return;
+        if (!(detail.get("items") instanceof List<?> items)) return;
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Object item : items) if (item instanceof Map<?, ?>) rows.add((Map<String, Object>) item);
+        if (rows.isEmpty()) return;
+
+        // 每行累计 [让步接收, 报废, 退回, 返工/返修]
+        Map<Integer, double[]> totalsByLine = new HashMap<>();
+        for (Object value : treatments) {
+            if (!(value instanceof Map<?, ?> raw)) continue;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> treatment = (Map<String, Object>) raw;
+            int lineNo = (int) Math.round(num(treatment.get("关联明细行号")));
+            if (lineNo <= 0 || lineNo > rows.size()) continue;
+            // 行级不合格原因是主表字段，不合格处理页签没填时自动带下来
+            if (textOf(treatment.get("不合格原因")).isBlank()) {
+                String reason = textOf(rows.get(lineNo - 1).get("不合格原因"));
+                if (!reason.isBlank()) treatment.put("不合格原因", reason);
+            }
+            double quantity = num(treatment.get("处理数量"));
+            if (quantity <= 0) continue;
+            double[] totals = totalsByLine.computeIfAbsent(lineNo, ignored -> new double[4]);
+            switch (textOf(treatment.get("处理方式")).trim()) {
+                case "让步接收" -> totals[0] += quantity;
+                case "报废" -> totals[1] += quantity;
+                case "退回" -> totals[2] += quantity;
+                case "返工", "返修" -> totals[3] += quantity;
+                default -> { }
+            }
+        }
+        for (int index = 0; index < rows.size(); index++) {
+            double[] totals = totalsByLine.getOrDefault(index + 1, new double[4]);
+            Map<String, Object> row = rows.get(index);
+            row.put("让步接收数量", totals[0]);
+            row.put("报废数量", totals[1]);
+            // 验收退回数量是对外口径；判定退货数量保留给老单据/老报表兼容
+            row.put("验收退回数量", totals[2]);
+            row.put("判定退货数量", totals[2]);
+            row.put("返工数量", totals[3]);
+            if ("PROCESS_INSPECTION".equals(panelCode)) row.put("检验返工数量", totals[3]);
+            // 处置数量以不合格处理页签汇总为准；降价接收按折价率回写调整后单价/折价金额
+            row.put("处置数量", totals[0] + totals[1] + totals[2] + totals[3]);
+            double rate = num(row.get("折价率%"));
+            String disposition = textOf(row.get("处置方式")).trim();
+            double price = num(row.get("单价"));
+            double taxPrice = num(row.get("含税单价"));
+            if ("降价接收".equals(disposition) && rate > 0) {
+                row.put("调整后单价", Math.round(price * (1 - rate / 100) * 100) / 100.0);
+                row.put("调整后含税单价", Math.round(taxPrice * (1 - rate / 100) * 100) / 100.0);
+                double amount = num(row.get("金额"));
+                if (amount <= 0) amount = Math.round(price * num(row.get("检验数量")) * 100) / 100.0;
+                row.put("折价金额", Math.round(amount * rate / 100 * 100) / 100.0);
+            } else {
+                row.put("调整后单价", 0);
+                row.put("调整后含税单价", 0);
+                row.put("折价金额", 0);
+            }
+            // 让步接收含税单价：折价时按原含税单价折减；无折价且未手工填写时取原价
+            if (("让步接收".equals(disposition) || "降价接收".equals(disposition)) && taxPrice > 0) {
+                if (rate > 0) {
+                    row.put("让步接收含税单价", Math.round(taxPrice * (1 - rate / 100) * 100) / 100.0);
+                } else if (num(row.get("让步接收含税单价")) <= 0) {
+                    row.put("让步接收含税单价", taxPrice);
+                }
+            }
+        }
+    }
+
+    /**
+     * 处置确认签名：只覆盖会影响入库/退货/结算的字段，备注等展示字段变化不触发重新确认。
+     */
+    private static final List<String> DISPOSITION_ITEM_FIELDS = List.of(
+            "存货编码", "仓库", "检验数量", "合格数量", "不合格数量", "检验结果判定",
+            "单价", "税率%", "含税单价", "处置方式", "处置数量", "让步接收数量", "报废数量",
+            "判定退货数量", "结算方式", "折价率%", "折价金额", "调整后单价", "调整后含税单价",
+            "责任归属", "复检要求", "复检结果");
+    private static final List<String> DISPOSITION_TREATMENT_FIELDS = List.of(
+            "关联明细行号", "不合格原因", "处理方式", "处理数量", "报废类型");
+    private static final List<String> DISPOSITION_PROJECT_FIELDS = List.of(
+            "关联明细行号", "检验项目", "检验项目编码", "检验结果", "单项判定");
+
+    static String inspectionDispositionSignature(Map<String, Object> detail) {
+        if (detail == null) return "";
+        StringBuilder out = new StringBuilder();
+        if (detail.get("items") instanceof List<?> rows) {
+            for (Object value : rows) {
+                if (!(value instanceof Map<?, ?> row)) continue;
+                out.append('I');
+                for (String name : DISPOSITION_ITEM_FIELDS) out.append('|').append(signatureValue(row.get(name)));
+                out.append('\n');
+            }
+        }
+        if (detail.get("unqualified") instanceof List<?> treatments) {
+            for (Object value : treatments) {
+                if (!(value instanceof Map<?, ?> row)) continue;
+                out.append('U');
+                for (String name : DISPOSITION_TREATMENT_FIELDS) out.append('|').append(signatureValue(row.get(name)));
+                out.append('\n');
+            }
+        }
+        if (detail.get("projects") instanceof List<?> projects) {
+            for (Object value : projects) {
+                if (!(value instanceof Map<?, ?> row)) continue;
+                out.append('P');
+                for (String name : DISPOSITION_PROJECT_FIELDS) out.append('|').append(signatureValue(row.get(name)));
+                out.append('\n');
+            }
+        }
+        return out.toString();
+    }
+
+    /** 数值签名统一去掉尾随 0：历史单据存 2、新手填 2.0 不应被当成改动。 */
+    private static String signatureValue(Object value) {
+        String text = textOf(value).trim();
+        if (text.isEmpty()) return "";
+        try {
+            return new java.math.BigDecimal(text).stripTrailingZeros().toPlainString();
+        } catch (NumberFormatException ignored) {
+            return text;
+        }
+    }
+
+    static boolean hasConfirmedDisposition(Map<String, Object> detail) {
+        if (detail == null || !(detail.get("items") instanceof List<?> rows)) return false;
+        for (Object value : rows) {
+            if (value instanceof Map<?, ?> row && "已确认".equals(textOf(row.get("处置状态")))) return true;
+        }
+        return false;
+    }
+
+    /** 检验数据被改动后，原「确认处置」失效，必须重新确认后才能生单。 */
+    @SuppressWarnings("unchecked")
+    static void resetDispositionToPending(Map<String, Object> detail) {
+        if (detail == null || !(detail.get("items") instanceof List<?> rows)) return;
+        for (Object value : rows) {
+            if (!(value instanceof Map<?, ?> raw)) continue;
+            Map<String, Object> row = (Map<String, Object>) raw;
+            String status = textOf(row.get("处置状态"));
+            if (!status.isEmpty() && !"待确认".equals(status)) row.put("处置状态", "待确认");
+        }
+    }
+
+    /**
+     * 来源上限（只对采购配对生效）。其它来源/目标组合沿用 sourceQuantity 旧顺序。
+     */
+    private double sourceLimit(String targetPanel, String sourcePanel, Map<String, Object> sourceDetail,
+                               Map<String, Object> sourceRow, int sourceRowNo) {
+        String target = targetPanel == null ? "" : targetPanel;
+        String source = sourcePanel == null ? "" : sourcePanel;
+        if ("ARRIVAL_IN".equals(source) && ("INSPECTION".equals(target) || "PURCHASE_IN".equals(target))) {
+            return arrivalReceivable(sourceRow);
+        }
+        if (QUALITY_INSPECTION_PANELS.contains(source)) {
+            if ("PURCHASE_RETURN".equals(target)) {
+                return inspectionReturnQuantity(sourceDetail, sourceRow, sourceRowNo);
+            }
+            if (Set.of("PURCHASE_IN", "FINISH_IN", "OUTSOURCE_IN").contains(target)) {
+                return inspectionAcceptable(sourceDetail, sourceRow, sourceRowNo);
+            }
+            return num(sourceRow.get("检验数量"));
+        }
+        if ("PURCHASE_IN".equals(source) && Set.of("PURCHASE_RETURN", "PU_INVOICE").contains(target)) {
+            return purchaseInQuantity(sourceRow);
+        }
+        if ("PURCHASE_RETURN".equals(source) && "PU_INVOICE".equals(target)) {
+            // 退货可开票量以「数量」为准（实收数量可能未填写而为 0，不能作为额度）
+            double returnQty = Math.abs(num(sourceRow.get("数量")));
+            return returnQty > 0 ? returnQty : purchaseInQuantity(sourceRow);
+        }
+        if ("PU_REQ".equals(source) && "PU_ORDER".equals(target)) {
+            return num(sourceRow.get("数量"));
+        }
+        return sourceQuantity(sourceRow);
+    }
+
+    /** 已生效检验单引用的到货明细行号，用于阻止绕过检验单直接入库。 */
+    private Set<Integer> effectiveInspectionLines(String sourcePanel, String sourceNo) {
+        Set<Integer> lines = new HashSet<>();
+        for (FormData document : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "INSPECTION"))) {
+            if (!EFFECTIVE_STATUSES.contains(document.getStatus())) continue;
+            for (Map<String, Object> row : firstDetailRows(parseData(document.getDetailData()))) {
+                if (!sourcePanel.equals(textOf(row.get("来源面板")).trim())
+                        || !sourceNo.equals(textOf(row.get("来源单号")).trim())) continue;
+                int line = (int) Math.round(num(row.get("来源行号")));
+                if (line > 0) lines.add(line);
+            }
+        }
+        return lines;
+    }
+
+    /** 采购生单来源状态守卫：已中止/已关闭/审批中给明确原因，其余按已审核要求。 */
+    private void requireApprovedPurchaseSource(FormData source, String action) {
+        if (source == null) throw new IllegalArgumentException("来源单据不存在");
+        String status = source.getStatus() == null ? "" : source.getStatus();
+        switch (status) {
+            case "已审核" -> { }
+            case "已中止" -> throw new IllegalStateException(
+                    "来源单据 " + source.getFormNo() + " 已中止，不能" + action);
+            case "已关闭" -> throw new IllegalStateException(
+                    "来源单据 " + source.getFormNo() + " 已关闭，不能" + action);
+            case "审批中" -> throw new IllegalStateException(
+                    "来源单据 " + source.getFormNo() + " 审批中，不能" + action);
+            default -> throw new IllegalStateException("仅已审核单据可" + action + "：" + source.getFormNo());
+        }
+    }
+
+    /** 到货单提交/审核：实收数量必须等于到货数量减到货拒收数量。 */
+    private void validateArrivalReceiptQuantities(List<Map<String, Object>> rows) {
+        for (int index = 0; index < rows.size(); index++) {
+            Map<String, Object> row = rows.get(index);
+            double arrived = num(row.get("到货数量"));
+            double rejected = num(row.get("到货拒收数量"));
+            double received = num(row.get("实收数量"));
+            if (arrived <= 0) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行到货数量必须大于 0");
+            }
+            if (rejected < -0.000001 || rejected > arrived + 0.000001) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行到货拒收数量必须在 0 与到货数量之间");
+            }
+            double expected = arrived - rejected;
+            if (Math.abs(received - expected) > 0.000001) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行实收数量必须等于到货数量减到货拒收数量（"
+                        + trimNumber(expected) + "），当前为 " + trimNumber(received));
+            }
+        }
     }
 
     /**
@@ -3462,19 +4756,51 @@ public class PxService implements PanelRuntimeService {
             if (!EFFECTIVE_STATUSES.contains(source.getStatus())) {
                 throw new IllegalStateException("来源单据必须已审核且有效：" + sourceNo);
             }
-            List<Map<String, Object>> sourceRows = firstDetailRows(parseData(source.getDetailData()));
+            Map<String, Object> sourceDetail = parseData(source.getDetailData());
+            List<Map<String, Object>> sourceRows = firstDetailRows(sourceDetail);
             if (sourceRowNo > sourceRows.size()) throw new IllegalStateException("来源明细行不存在：" + sourceNo + " 第 " + sourceRowNo + " 行");
             String key = sourcePanel + "|" + sourceNo + "|" + sourceRowNo;
             if (!localKeys.add(key)) throw new IllegalStateException("同一来源明细不能重复选入：" + sourceNo + " 第 " + sourceRowNo + " 行");
 
-            double limit = QUALITY_INSPECTION_PANELS.contains(sourcePanel)
-                    ? num(sourceRows.get(sourceRowNo - 1).get("检验数量"))
-                    : sourceQuantity(sourceRows.get(sourceRowNo - 1));
-            double current = executedQuantity(row);
-            double reserved = reservedQuantity(targetPanel, targetNo, sourcePanel, sourceNo, sourceRowNo);
+            Map<String, Object> sourceRow = sourceRows.get(sourceRowNo - 1);
+            boolean returnTarget = "PURCHASE_RETURN".equals(targetPanel);
+            double limit = sourceLimit(targetPanel, sourcePanel, sourceDetail, sourceRow, sourceRowNo);
+            if (returnTarget && limit <= 0) {
+                throw new IllegalStateException(QUALITY_INSPECTION_PANELS.contains(sourcePanel)
+                        ? "检验单第 " + sourceRowNo + " 行没有不合格退回数量"
+                        : "来源单据第 " + sourceRowNo + " 行没有可退货数量");
+            }
+            double current = reservationQuantity(targetPanel, row);
+            boolean partial = partialPair(sourcePanel, targetPanel);
+            double reserved;
+            if (partial) {
+                // 部分下单/部分到货：同面板可多次下推，但不得与其他下游面板混用
+                double otherPanels = reservedByOtherPanels(targetPanel, sourcePanel, sourceNo, sourceRowNo);
+                if (otherPanels > 0.000001) {
+                    throw new IllegalStateException("来源明细已被其他下游单据使用：" + sourceNo + " 第 " + sourceRowNo + " 行");
+                }
+                reserved = reservedQuantityForPanel(targetPanel, targetNo, sourcePanel, sourceNo, sourceRowNo);
+            } else if (returnTarget) {
+                // 退货只统计已退量：入库单已开票/已入库不应阻塞退货
+                reserved = reservedQuantityForPanel(targetPanel, targetNo, sourcePanel, sourceNo, sourceRowNo);
+            } else if (QUALITY_INSPECTION_PANELS.contains(sourcePanel)) {
+                // 检验单的合格入库与不合格退回是互不重叠的两个分支，退货不占用入库额度。
+                reserved = reservedQuantityExcept(targetPanel, targetNo, sourcePanel, sourceNo, sourceRowNo,
+                        Set.of("PURCHASE_RETURN"));
+            } else if ("PU_INVOICE".equals(targetPanel)) {
+                // 发票只统计已开票量：入库单/退货单互不阻塞（退货开红字发票由退货单自己触发）
+                reserved = reservedQuantityForPanel(targetPanel, targetNo, sourcePanel, sourceNo, sourceRowNo);
+            } else {
+                // 发票是财务口径，不占用订单的履约额度：预开票后仍可到货/入库
+                reserved = reservedQuantityExcept(targetPanel, targetNo, sourcePanel, sourceNo, sourceRowNo,
+                        FINANCIAL_DOWNSTREAM_PANELS);
+            }
             if (current <= 0) throw new IllegalStateException("第 " + (index + 1) + " 行执行数量必须大于 0");
-            if (reserved > 0.000001) {
+            if (!partial && reserved > 0.000001) {
                 throw new IllegalStateException("来源明细已被其他下游单据选入：" + sourceNo + " 第 " + sourceRowNo + " 行");
+            }
+            if (limit <= 0) {
+                throw new IllegalStateException("来源明细第 " + sourceRowNo + " 行没有可执行数量：" + sourceNo);
             }
             if (current + reserved > limit + 0.000001) {
                 // 工序汇报单的来源行报工量为 0 时，「可执行 0.0」看不出原因，单独说清是还没报工
@@ -3517,16 +4843,80 @@ public class PxService implements PanelRuntimeService {
                 + " 行报工数量为 0），请先报工再报检";
     }
 
-    private double reservedQuantity(String targetPanel, String targetNo, String sourcePanel, String sourceNo, int sourceRowNo) {
+    /**
+     * 来源占用口径：检验单按报检数量占用整条来源——抽检只检一部分时，
+     * 同一批到货也不能再生成第二张检验单；其它面板仍按自身执行量占用。
+     */
+    private double reservationQuantity(String documentPanel, Map<String, Object> row) {
+        if ("INSPECTION".equals(documentPanel)) {
+            double reported = num(row.get("报检数量"));
+            if (reported > 0) return reported;
+        }
+        return executedQuantity(documentPanel, row);
+    }
+
+    private double reservedQuantityExcept(String targetPanel, String targetNo, String sourcePanel, String sourceNo,
+                                          int sourceRowNo, Set<String> excludedPanels) {
         double total = 0;
         for (FormData document : formMapper.selectList(new LambdaQueryWrapper<FormData>())) {
+            if (excludedPanels.contains(document.getPanelCode())) continue;
             if (targetNo != null && targetPanel.equals(document.getPanelCode()) && targetNo.equals(document.getFormNo())) continue;
             if ("已中止".equals(document.getStatus())) continue;
             for (Map<String, Object> row : firstDetailRows(parseData(document.getDetailData()))) {
                 if (sourcePanel.equals(String.valueOf(row.getOrDefault("来源面板", "")))
                         && sourceNo.equals(String.valueOf(row.getOrDefault("来源单号", "")))
                         && sourceRowNo == (int) Math.round(num(row.get("来源行号")))) {
-                    total += executedQuantity(row);
+                    total += reservationQuantity(document.getPanelCode(), row);
+                }
+            }
+        }
+        return total;
+    }
+
+    /**
+     * 只统计同一目标面板已有单据对来源行的占用。
+     * 检验单的合格入库与不合格退回是两个并行分支：入库占用合格数量，退货占用不合格数量，
+     * 不能互相把对方算成“来源已被选入”。
+     */
+    private double reservedQuantityForPanel(String targetPanel, String targetNo, String sourcePanel,
+                                            String sourceNo, int sourceRowNo) {
+        double total = 0;
+        for (FormData document : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, targetPanel))) {
+            if (targetNo != null && targetNo.equals(document.getFormNo())) continue;
+            if ("已中止".equals(document.getStatus())) continue;
+            for (Map<String, Object> row : firstDetailRows(parseData(document.getDetailData()))) {
+                if (sourcePanel.equals(String.valueOf(row.getOrDefault("来源面板", "")))
+                        && sourceNo.equals(String.valueOf(row.getOrDefault("来源单号", "")))
+                        && sourceRowNo == (int) Math.round(num(row.get("来源行号")))) {
+                    total += reservationQuantity(document.getPanelCode(), row);
+                }
+            }
+        }
+        return total;
+    }
+
+    /**
+     * 支持按剩余量多次下推的采购配对：请购→订单、订单→到货。
+     * 同一来源行允许多张同面板单据（部分下单/部分到货），但不能与其他下游面板混用。
+     */
+    private static boolean partialPair(String sourcePanel, String targetPanel) {
+        return ("PU_REQ".equals(sourcePanel) && "PU_ORDER".equals(targetPanel))
+                || ("PU_ORDER".equals(sourcePanel) && "ARRIVAL_IN".equals(targetPanel));
+    }
+
+    /** 同一来源行被其他下游面板占用的数量（财务类单据不计入，不阻塞到货/入库）。 */
+    private double reservedByOtherPanels(String targetPanel, String sourcePanel, String sourceNo, int sourceRowNo) {
+        double total = 0;
+        for (FormData document : formMapper.selectList(new LambdaQueryWrapper<FormData>())) {
+            if (targetPanel.equals(document.getPanelCode())) continue;
+            if (FINANCIAL_DOWNSTREAM_PANELS.contains(document.getPanelCode())) continue;
+            if ("已中止".equals(document.getStatus())) continue;
+            for (Map<String, Object> row : firstDetailRows(parseData(document.getDetailData()))) {
+                if (sourcePanel.equals(String.valueOf(row.getOrDefault("来源面板", "")))
+                        && sourceNo.equals(String.valueOf(row.getOrDefault("来源单号", "")))
+                        && sourceRowNo == (int) Math.round(num(row.get("来源行号")))) {
+                    total += reservationQuantity(document.getPanelCode(), row);
                 }
             }
         }
@@ -3539,19 +4929,24 @@ public class PxService implements PanelRuntimeService {
         List<Map<String, Object>> rows = firstDetailRows(detail);
         if (rows.isEmpty()) throw new IllegalStateException("质量单据至少需要一条明细");
         if (QUALITY_REPORT_PANELS.contains(panelCode)) {
+            if ("ARRIVAL_IN".equals(panelCode)) validateArrivalReceiptQuantities(rows);
             for (int index = 0; index < rows.size(); index++) {
                 if (num(rows.get(index).get("报检数量")) <= 0 && sourceQuantity(rows.get(index)) <= 0) {
                     throw new IllegalStateException("第 " + (index + 1) + " 行报检数量必须大于 0");
                 }
             }
+            if ("FINISH_INSPECT".equals(panelCode)) validateFinishInspectQuantities(rows);
+            validateReportSampling(rows);
             // 完工报检必须与上游加工单对得上，否则会出现"还在生产中就已报检完成"
             validateReportAgainstUpstream(panelCode, document, rows);
             // 工序报检的上游是工序汇报单：按工序逐项比对报工量
             validateProcessInspectAgainstReport(panelCode, document, rows);
             return;
         }
+        validateInspectionProjects(detail, rows);
 
         Map<Integer, Double> treatmentByLine = new HashMap<>();
+        boolean processInspection = "PROCESS_INSPECTION".equals(panelCode);
         Object treatmentsObject = detail.get("unqualified");
         if (treatmentsObject instanceof List<?> treatments) {
             for (Object value : treatments) {
@@ -3570,12 +4965,21 @@ public class PxService implements PanelRuntimeService {
         for (int index = 0; index < rows.size(); index++) {
             Map<String, Object> row = rows.get(index);
             double reported = num(row.get("报检数量"));
+            double inspectable = num(row.get("应检数量"));
             double inspected = num(row.get("检验数量"));
             double qualified = num(row.get("合格数量"));
             double unqualified = num(row.get("不合格数量"));
             String result = String.valueOf(row.getOrDefault("检验结果判定", "")).trim();
             if (reported <= 0 || inspected <= 0) throw new IllegalStateException("第 " + (index + 1) + " 行报检/检验数量必须大于 0");
             if (inspected > reported + 0.000001) throw new IllegalStateException("第 " + (index + 1) + " 行检验数量不能超过报检数量");
+            if (inspectable > 0) {
+                if (inspectable > reported + 0.000001) {
+                    throw new IllegalStateException("第 " + (index + 1) + " 行应检数量不能超过报检数量");
+                }
+                if (inspected > inspectable + 0.000001) {
+                    throw new IllegalStateException("第 " + (index + 1) + " 行检验数量不能超过应检数量");
+                }
+            }
             if (Math.abs(qualified + unqualified - inspected) > 0.000001) {
                 throw new IllegalStateException("第 " + (index + 1) + " 行合格数量 + 不合格数量必须等于检验数量");
             }
@@ -3586,20 +4990,136 @@ public class PxService implements PanelRuntimeService {
             if (concession > unqualified + 0.000001) {
                 throw new IllegalStateException("第 " + (index + 1) + " 行让步接收数量不能超过不合格数量");
             }
-            if (!QUALITY_VERDICTS.contains(result)) {
-                throw new IllegalStateException("第 " + (index + 1) + " 行检验结果判定必须是：合格 / 让步接收 / 部分报废 / 全批报废");
+            Set<String> verdicts = processInspection ? PROCESS_VERDICTS : QUALITY_VERDICTS;
+            if (!verdicts.contains(result)) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行检验结果判定必须是："
+                        + (processInspection ? "合格 / 返工 / 让步接收 / 报废"
+                        : "合格 / 让步接收 / 部分报废 / 全批报废 / 全批退回"));
             }
             if (unqualified <= 0 && !"合格".equals(result)) throw new IllegalStateException("第 " + (index + 1) + " 行无不合格数量时结果应为合格");
             if (unqualified > 0 && "合格".equals(result)) throw new IllegalStateException("第 " + (index + 1) + " 行有不合格数量时不能判定合格");
+            if (processInspection) {
+                // 过程检验：返工/工废/料废是不合格数量的分解；填了就必须与不合格数量守恒
+                double rework = num(row.get("检验返工数量"));
+                double processScrap = num(row.get("工废数量"));
+                double materialScrap = num(row.get("料废数量"));
+                if (rework < 0 || processScrap < 0 || materialScrap < 0) {
+                    throw new IllegalStateException("第 " + (index + 1) + " 行返工/工废/料废数量不能为负");
+                }
+                double broken = rework + processScrap + materialScrap;
+                if (broken > 0.000001 && Math.abs(broken - unqualified) > 0.000001) {
+                    throw new IllegalStateException("第 " + (index + 1)
+                            + " 行检验返工数量 + 工废数量 + 料废数量必须等于不合格数量");
+                }
+                if (unqualified > 0) {
+                    double treated = treatmentByLine.getOrDefault(index + 1, 0.0);
+                    if (Math.abs(treated - unqualified) > 0.000001) {
+                        throw new IllegalStateException("第 " + (index + 1)
+                                + " 行不合格处理数量必须等于不合格数量");
+                    }
+                }
+                continue;
+            }
             if (concession > 0 && "全批报废".equals(result)) {
                 throw new IllegalStateException("第 " + (index + 1) + " 行存在让步接收数量时不能判全批报废");
             }
-            if (unqualified > 0) {
+            // 批次处置标记（2026-11-05）：质量处置与商务结算分开校验
+            String disposition = textOf(row.get("处置方式"));
+            String settlement = textOf(row.get("结算方式"));
+            String liability = textOf(row.get("责任归属"));
+            double discountRate = num(row.get("折价率%"));
+            if (!disposition.isEmpty() && !INSPECTION_DISPOSITIONS.contains(disposition)) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行处置方式不合法：" + disposition);
+            }
+            if (!settlement.isEmpty() && !INSPECTION_SETTLEMENTS.contains(settlement)) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行结算方式不合法：" + settlement);
+            }
+            if (!liability.isEmpty() && !INSPECTION_LIABILITIES.contains(liability)) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行责任归属不合法：" + liability);
+            }
+            if (discountRate < 0 || discountRate > 100) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行折价率必须在 0-100 之间");
+            }
+            if ("降价接收".equals(disposition) && discountRate <= 0) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行降价接收必须填写折价率");
+            }
+            if (discountRate > 0 && !"降价接收".equals(disposition) && !"让步接收".equals(disposition)) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行只有让步接收/降价接收可以填写折价率");
+            }
+            boolean fullReturn = "全批退回".equals(disposition);
+            if (fullReturn && !"全批退回".equals(result)) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行处置方式为全批退回时，检验结果判定必须为全批退回");
+            }
+            if ("全批退回".equals(result) && !fullReturn) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行检验结果判定为全批退回时，处置方式必须为全批退回");
+            }
+            if (unqualified > 0 || fullReturn) {
                 double treated = treatmentByLine.getOrDefault(index + 1, 0.0);
-                if (Math.abs(treated - unqualified) > 0.000001) {
-                    throw new IllegalStateException("第 " + (index + 1) + " 行不合格处理数量必须等于不合格数量");
+                double expected = fullReturn ? inspected : unqualified;
+                if (Math.abs(treated - expected) > 0.000001) {
+                    throw new IllegalStateException("第 " + (index + 1)
+                            + (fullReturn ? " 行全批退回的退回数量必须等于检验数量" : " 行不合格处理数量必须等于不合格数量"));
                 }
             }
+            if (unqualified > 0 && (disposition.isEmpty() || "合格接收".equals(disposition))) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行有不合格数量，必须标记处置方式");
+            }
+        }
+    }
+
+    /** 处置标记确认：审核/审批通过或「确认处置」时把待确认行置为已确认。 */
+    @SuppressWarnings("unchecked")
+    static void confirmInspectionDisposition(Map<String, Object> detail) {
+        if (detail == null || !(detail.get("items") instanceof List<?> items)) return;
+        for (Object value : items) {
+            if (!(value instanceof Map<?, ?> raw)) continue;
+            Map<String, Object> row = (Map<String, Object>) raw;
+            String status = textOf(row.get("处置状态"));
+            if (status.isEmpty() || "待确认".equals(status)) row.put("处置状态", "已确认");
+        }
+    }
+
+    private void confirmInspectionDetail(FormData fd) {
+        Map<String, Object> detail = parseData(fd.getDetailData());
+        confirmInspectionDisposition(detail);
+        fd.setDetailData(toJson(detail));
+    }
+
+    /** 生单门禁：检验单存在「待确认」处置行时禁止生成入库/退货/发票。 */
+    private void requireInspectionDispositionConfirmed(String panelCode, List<Map<String, Object>> rows) {
+        if (!"INSPECTION".equals(panelCode)) return;
+        for (int index = 0; index < rows.size(); index++) {
+            if ("待确认".equals(textOf(rows.get(index).get("处置状态")))) {
+                throw new IllegalStateException("第 " + (index + 1)
+                        + " 行处置尚未确认，请先在检验单执行「确认处置」");
+            }
+        }
+    }
+
+    /**
+     * 检验单入库目标守卫：来料检验（来源到货单）只能进采购入库，
+     * 成品/委外检验只能进产成品/委外入库，避免同一张检验单串到错误的入库链。
+     */
+    private static void requireInspectionInboundTarget(String panelCode, String targetPanel,
+                                                       Map<String, Object> head,
+                                                       List<Map<String, Object>> rows) {
+        if (!"INSPECTION".equals(panelCode)) return;
+        boolean fromArrival = rows.stream()
+                .anyMatch(row -> "ARRIVAL_IN".equals(textOf(row.get("来源面板")).trim()));
+        boolean fromFinishReport = rows.stream()
+                .anyMatch(row -> "FINISH_INSPECT".equals(textOf(row.get("来源面板")).trim()));
+        String businessType = textOf(head.get("业务类型")).trim();
+        boolean incoming = fromArrival || "来料检验".equals(businessType);
+        boolean finished = fromFinishReport || "成品检验".equals(businessType)
+                || "首件检验".equals(businessType);
+        if ("PURCHASE_IN".equals(targetPanel) && finished && !incoming) {
+            throw new IllegalStateException("当前检验单不是来料检验（来源为到货单），不能生成采购入库单；"
+                    + "成品检验请使用「生成产成品入库单」，委外检验请使用「生成委外入库单」");
+        }
+        if (("FINISH_IN".equals(targetPanel) || "OUTSOURCE_IN".equals(targetPanel)) && incoming) {
+            throw new IllegalStateException("来料检验不能生成"
+                    + ("FINISH_IN".equals(targetPanel) ? "产成品入库单" : "委外入库单")
+                    + "，请使用「生成采购入库单」");
         }
     }
 
@@ -3615,48 +5135,229 @@ public class PxService implements PanelRuntimeService {
         }
     }
 
-    /** Recalculates accumulated quantities on every source row from effective downstream documents. */
+    private static final class RowAccumulator {
+        double executed;
+        double inspected;
+        double inbound;
+        double returned;
+    }
+
+    private static final class InspectionAccumulator {
+        double inspected;
+        double qualified;
+        double unqualified;
+        double concession;
+        double scrap;
+        double returned;
+        double rework;
+    }
+
+    private static String sourceKey(String panel, String no) {
+        return textOf(panel) + "\n" + textOf(no);
+    }
+
+    private static RowAccumulator rowAccumulator(Map<String, Map<Integer, RowAccumulator>> aggregates,
+                                                 String key, int line) {
+        return aggregates.computeIfAbsent(key, ignored -> new HashMap<>())
+                .computeIfAbsent(line, ignored -> new RowAccumulator());
+    }
+
+    /**
+     * Recalculates accumulated quantities on every source row from effective downstream documents.
+     *
+     * <p>整表重建：累计执行/累计检验/累计入库/累计退货一起重算，入库与经检验的退货沿来源链
+     * 向上累计（采购订单 ← 到货单 ← 检验单 ← 入库/退货），重复执行结果一致。</p>
+     */
     private void refreshSourceExecution(FormData downstream) {
-        Set<String> sources = new HashSet<>();
-        for (Map<String, Object> row : firstDetailRows(parseData(downstream.getDetailData()))) {
-            String sourcePanel = String.valueOf(row.getOrDefault("来源面板", ""));
-            String sourceNo = String.valueOf(row.getOrDefault("来源单号", ""));
-            if (!sourcePanel.isBlank() && !sourceNo.isBlank()) sources.add(sourcePanel + "\n" + sourceNo);
+        List<FormData> all = new ArrayList<>(formMapper.selectList(new LambdaQueryWrapper<FormData>()));
+        Map<String, FormData> byKey = new LinkedHashMap<>();
+        for (FormData document : all) {
+            if (document.getPanelCode() == null || document.getFormNo() == null) continue;
+            byKey.put(sourceKey(document.getPanelCode(), document.getFormNo()), document);
         }
-        for (String key : sources) {
-            String[] parts = key.split("\n", 2);
-            FormData source = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
-                    .eq(FormData::getPanelCode, parts[0]).eq(FormData::getFormNo, parts[1]));
-            if (source == null) continue;
-            Map<String, Object> sourceDetail = parseData(source.getDetailData());
-            List<Map<String, Object>> sourceRows = firstDetailRows(sourceDetail);
-            for (Map<String, Object> row : sourceRows) {
-                row.put("累计执行数量", 0);
-                row.put("累计检验数量", 0);
-                row.put("累计入库数量", 0);
-            }
-            for (FormData target : formMapper.selectList(new LambdaQueryWrapper<FormData>())) {
-                if (!EFFECTIVE_STATUSES.contains(target.getStatus())) continue;
-                for (Map<String, Object> row : firstDetailRows(parseData(target.getDetailData()))) {
-                    if (!parts[0].equals(String.valueOf(row.getOrDefault("来源面板", "")))
-                            || !parts[1].equals(String.valueOf(row.getOrDefault("来源单号", "")))) continue;
-                    int line = (int) Math.round(num(row.get("来源行号")));
-                    if (line <= 0 || line > sourceRows.size()) continue;
-                    Map<String, Object> sourceRow = sourceRows.get(line - 1);
-                    double quantity = executedQuantity(row);
-                    sourceRow.put("累计执行数量", num(sourceRow.get("累计执行数量")) + quantity);
-                    if (QUALITY_INSPECTION_PANELS.contains(target.getPanelCode())) {
-                        sourceRow.put("累计检验数量", num(sourceRow.get("累计检验数量")) + quantity);
-                    }
-                    if (Set.of("PURCHASE_IN", "FINISH_IN", "OUTSOURCE_IN").contains(target.getPanelCode())) {
-                        sourceRow.put("累计入库数量", num(sourceRow.get("累计入库数量")) + quantity);
-                    }
+        if (downstream != null && downstream.getPanelCode() != null && downstream.getFormNo() != null) {
+            String downstreamKey = sourceKey(downstream.getPanelCode(), downstream.getFormNo());
+            byKey.put(downstreamKey, downstream);
+            boolean present = all.stream().anyMatch(document ->
+                    downstream.getPanelCode().equals(document.getPanelCode())
+                            && downstream.getFormNo().equals(document.getFormNo()));
+            if (!present) all.add(downstream);
+        }
+        Map<String, List<Map<String, Object>>> rowsByKey = new LinkedHashMap<>();
+        for (FormData document : all) {
+            rowsByKey.put(sourceKey(document.getPanelCode(), document.getFormNo()),
+                    firstDetailRows(parseData(document.getDetailData())));
+        }
+
+        Set<String> targets = new LinkedHashSet<>();
+        collectAncestorKeys(downstream, rowsByKey, targets);
+        if (targets.isEmpty()) return;
+
+        Map<String, Map<Integer, RowAccumulator>> aggregates = new HashMap<>();
+        Map<String, Map<Integer, InspectionAccumulator>> inspections = new HashMap<>();
+        for (FormData document : all) {
+            if (!EFFECTIVE_STATUSES.contains(document.getStatus())) continue;
+            List<Map<String, Object>> rows = rowsByKey.getOrDefault(
+                    sourceKey(document.getPanelCode(), document.getFormNo()), List.of());
+            boolean inboundDocument = Set.of("PURCHASE_IN", "FINISH_IN", "OUTSOURCE_IN")
+                    .contains(document.getPanelCode());
+            boolean returnDocument = "PURCHASE_RETURN".equals(document.getPanelCode());
+            for (Map<String, Object> row : rows) {
+                String sourcePanel = textOf(row.get("来源面板")).trim();
+                String sourceNo = textOf(row.get("来源单号")).trim();
+                int sourceRowNo = (int) Math.round(num(row.get("来源行号")));
+                if (sourcePanel.isEmpty() || sourceNo.isEmpty() || sourceRowNo <= 0) continue;
+                String key = sourceKey(sourcePanel, sourceNo);
+                double quantity = executedQuantity(document.getPanelCode(), row);
+
+                RowAccumulator own = rowAccumulator(aggregates, key, sourceRowNo);
+                own.executed += quantity;
+                if (QUALITY_INSPECTION_PANELS.contains(document.getPanelCode())) own.inspected += quantity;
+                if (inboundDocument) own.inbound += quantity;
+                boolean inspectionReturn = returnDocument && QUALITY_INSPECTION_PANELS.contains(sourcePanel);
+                if (inspectionReturn) own.returned += quantity;
+
+                if (QUALITY_INSPECTION_PANELS.contains(document.getPanelCode())) {
+                    InspectionAccumulator inspection = inspections
+                            .computeIfAbsent(key, ignored -> new HashMap<>())
+                            .computeIfAbsent(sourceRowNo, ignored -> new InspectionAccumulator());
+                    inspection.inspected += num(row.get("检验数量"));
+                    inspection.qualified += num(row.get("合格数量"));
+                    inspection.unqualified += num(row.get("不合格数量"));
+                    inspection.concession += num(row.get("让步接收数量"));
+                    inspection.scrap += num(row.get("报废数量"));
+                    inspection.returned += num(firstValue(row, "验收退回数量", "判定退货数量"));
+                    inspection.rework += num(row.get("返工数量"));
+                }
+
+                // 沿来源链向上：入库量与「经检验的退货」同时累计到所有祖先行。
+                String currentPanel = sourcePanel;
+                String currentNo = sourceNo;
+                int currentRow = sourceRowNo;
+                Set<String> visited = new HashSet<>();
+                while (visited.add(sourceKey(currentPanel, currentNo) + "#" + currentRow)) {
+                    List<Map<String, Object>> parentRows = rowsByKey.get(sourceKey(currentPanel, currentNo));
+                    if (parentRows == null || currentRow < 1 || currentRow > parentRows.size()) break;
+                    Map<String, Object> parentRow = parentRows.get(currentRow - 1);
+                    String grandPanel = textOf(parentRow.get("来源面板")).trim();
+                    String grandNo = textOf(parentRow.get("来源单号")).trim();
+                    int grandRow = (int) Math.round(num(parentRow.get("来源行号")));
+                    if (grandPanel.isEmpty() || grandNo.isEmpty() || grandRow <= 0) break;
+                    RowAccumulator parent = rowAccumulator(aggregates, sourceKey(grandPanel, grandNo), grandRow);
+                    if (inboundDocument) parent.inbound += quantity;
+                    if (inspectionReturn) parent.returned += quantity;
+                    currentPanel = grandPanel;
+                    currentNo = grandNo;
+                    currentRow = grandRow;
                 }
             }
-            source.setDetailData(toJson(sourceDetail));
+        }
+
+        for (String key : targets) {
+            FormData source = byKey.get(key);
+            if (source == null) continue;
+            Map<String, Object> detail = parseData(source.getDetailData());
+            List<Map<String, Object>> rows = firstDetailRows(detail);
+            Map<Integer, RowAccumulator> accumulators = aggregates.getOrDefault(key, Map.of());
+            Map<Integer, InspectionAccumulator> inspectionRows = inspections.getOrDefault(key, Map.of());
+            for (int index = 0; index < rows.size(); index++) {
+                Map<String, Object> row = rows.get(index);
+                RowAccumulator accumulator = accumulators.get(index + 1);
+                row.put("累计执行数量", accumulator == null ? 0.0 : accumulator.executed);
+                row.put("累计检验数量", accumulator == null ? 0.0 : accumulator.inspected);
+                row.put("累计入库数量", accumulator == null ? 0.0 : accumulator.inbound);
+                row.put("累计退货数量", accumulator == null ? 0.0 : accumulator.returned);
+                if ("PU_REQ".equals(source.getPanelCode())) {
+                    double ordered = accumulator == null ? 0.0 : accumulator.executed;
+                    row.put("已下单数量", ordered);
+                    row.put("未下单数量", Math.max(0, num(row.get("数量")) - ordered));
+                }
+                if ("ARRIVAL_IN".equals(source.getPanelCode())) {
+                    InspectionAccumulator inspection = inspectionRows.get(index + 1);
+                    row.put("检验数量", inspection == null ? 0.0 : inspection.inspected);
+                    row.put("合格数量", inspection == null ? 0.0 : inspection.qualified);
+                    row.put("不合格数量", inspection == null ? 0.0 : inspection.unqualified);
+                    row.put("让步接收数量", inspection == null ? 0.0 : inspection.concession);
+                    row.put("报废数量", inspection == null ? 0.0 : inspection.scrap);
+                }
+                if ("FINISH_INSPECT".equals(source.getPanelCode())) {
+                    InspectionAccumulator inspection = inspectionRows.get(index + 1);
+                    row.put("累计检验数量", inspection == null ? 0.0 : inspection.inspected);
+                    row.put("累计合格数量", inspection == null ? 0.0 : inspection.qualified);
+                    row.put("累计验收退回数量", inspection == null ? 0.0 : inspection.returned);
+                    row.put("累计让步接收数量", inspection == null ? 0.0 : inspection.concession);
+                    row.put("累计报废数量", inspection == null ? 0.0 : inspection.scrap);
+                    row.put("累计已退数量", accumulator == null ? 0.0 : accumulator.returned);
+                }
+                if ("FIRST_INSPECT".equals(source.getPanelCode())) {
+                    InspectionAccumulator inspection = inspectionRows.get(index + 1);
+                    row.put("累计检验数量", inspection == null ? 0.0 : inspection.inspected);
+                    row.put("累计合格数量", inspection == null ? 0.0 : inspection.qualified);
+                    row.put("累计不合格数量", inspection == null ? 0.0 : inspection.unqualified);
+                    row.put("累计检验返工数量", inspection == null ? 0.0 : inspection.rework);
+                }
+            }
+            if ("ARRIVAL_IN".equals(source.getPanelCode())) {
+                Map<String, Object> head = parseData(source.getData());
+                head.put("检验状态", arrivalInspectionStatus(rows, inspectionRows));
+                source.setData(toJson(head));
+            }
+            source.setDetailData(toJson(detail));
             source.setUpdateTime(LocalDateTime.now());
             formMapper.updateById(source);
         }
+    }
+
+    /** 从下游单据出发，把来源单及其全部上游祖先加入待重算集合。 */
+    private void collectAncestorKeys(FormData downstream, Map<String, List<Map<String, Object>>> rowsByKey,
+                                     Set<String> targets) {
+        if (downstream == null) return;
+        for (Map<String, Object> row : firstDetailRows(parseData(downstream.getDetailData()))) {
+            String sourcePanel = textOf(row.get("来源面板")).trim();
+            String sourceNo = textOf(row.get("来源单号")).trim();
+            int sourceRowNo = (int) Math.round(num(row.get("来源行号")));
+            if (sourcePanel.isEmpty() || sourceNo.isEmpty() || sourceRowNo <= 0) continue;
+            String currentKey = sourceKey(sourcePanel, sourceNo);
+            int currentRow = sourceRowNo;
+            Set<String> visited = new HashSet<>();
+            while (visited.add(currentKey + "#" + currentRow)) {
+                targets.add(currentKey);
+                List<Map<String, Object>> parentRows = rowsByKey.get(currentKey);
+                if (parentRows == null || currentRow < 1 || currentRow > parentRows.size()) break;
+                Map<String, Object> parentRow = parentRows.get(currentRow - 1);
+                String grandPanel = textOf(parentRow.get("来源面板")).trim();
+                String grandNo = textOf(parentRow.get("来源单号")).trim();
+                int grandRow = (int) Math.round(num(parentRow.get("来源行号")));
+                if (grandPanel.isEmpty() || grandNo.isEmpty() || grandRow <= 0) break;
+                currentKey = sourceKey(grandPanel, grandNo);
+                currentRow = grandRow;
+            }
+        }
+    }
+
+    /**
+     * 到货单表头检验状态：无有效检验单=未检；所有实收>0 的行都检满=已检，否则=部分检。
+     * 实收数量为 0 的行不参与「是否检满」判断。
+     */
+    private static String arrivalInspectionStatus(List<Map<String, Object>> rows,
+                                                  Map<Integer, InspectionAccumulator> inspectionRows) {
+        boolean referenced = inspectionRows != null && inspectionRows.values().stream()
+                .anyMatch(inspection -> inspection.inspected > 0.000001);
+        boolean anyReceived = false;
+        boolean partial = false;
+        for (int index = 0; index < rows.size(); index++) {
+            Map<String, Object> row = rows.get(index);
+            // 免检行不参与「是否检满」判断：混装到货单里需检行全部检完即视为已检。
+            if ("免检".equals(textOf(row.get("检验方式")).trim())) continue;
+            double received = num(row.get("实收数量"));
+            if (received <= 0.000001) continue;
+            anyReceived = true;
+            InspectionAccumulator inspection = inspectionRows == null ? null : inspectionRows.get(index + 1);
+            double inspected = inspection == null ? 0 : inspection.inspected;
+            if (inspected + 0.000001 < received) partial = true;
+        }
+        if (!anyReceived || !referenced) return "未检";
+        return partial ? "部分检" : "已检";
     }
 
     // ---------- 审批流：提交审批 → 审批中 → 审批通过/审批驳回（全留痕，可扩展多级） ----------
@@ -3773,6 +5474,7 @@ public class PxService implements PanelRuntimeService {
         validateBomForApproval(panelCode, fd);
         validateQualityForApproval(panelCode, fd);
         validateSourceLinks(panelCode, fd.getFormNo(), parseData(fd.getDetailData()));
+        if ("INSPECTION".equals(panelCode)) confirmInspectionDetail(fd);
         String operator = currentUserName();
         String opinion = opinionOf(formData);
         fd.setStatus("已审核");
@@ -3799,6 +5501,78 @@ public class PxService implements PanelRuntimeService {
         out.put("编号", fd.getFormNo());
         out.put("单据状态", "已审核");
         return out;
+    }
+
+    /** 检验项目结果页签：行号/项目/单项判定必须完整，出现不合格项时主行不能判合格。 */
+    private void validateInspectionProjects(Map<String, Object> detail, List<Map<String, Object>> rows) {
+        if (!(detail.get("projects") instanceof List<?> projects) || projects.isEmpty()) return;
+        Map<Integer, Boolean> failedLines = new HashMap<>();
+        for (Object value : projects) {
+            if (!(value instanceof Map<?, ?> project)) continue;
+            int lineNo = (int) Math.round(num(project.get("关联明细行号")));
+            if (lineNo <= 0 || lineNo > rows.size()) {
+                throw new IllegalStateException("检验项目关联的明细行号无效");
+            }
+            String item = textOf(project.get("检验项目")).trim();
+            if (item.isEmpty()) item = textOf(project.get("检验项目编码")).trim();
+            if (item.isEmpty()) throw new IllegalStateException("第 " + lineNo + " 行检验项目不能为空");
+            String judgment = textOf(project.get("单项判定")).trim();
+            if (!"合格".equals(judgment) && !"不合格".equals(judgment)) {
+                throw new IllegalStateException("第 " + lineNo + " 行单项判定必须为合格/不合格");
+            }
+            if ("不合格".equals(judgment)) failedLines.put(lineNo, true);
+        }
+        for (Integer lineNo : failedLines.keySet()) {
+            String verdict = textOf(rows.get(lineNo - 1).get("检验结果判定")).trim();
+            if ("合格".equals(verdict)) {
+                throw new IllegalStateException("第 " + lineNo
+                        + " 行存在不合格检验项目，检验结果判定不能为合格");
+            }
+        }
+    }
+
+    /** 成品报检：已出检验结果时，合格+不合格必须等于报检数量；待检允许为 0。 */
+    private void validateFinishInspectQuantities(List<Map<String, Object>> rows) {
+        for (int index = 0; index < rows.size(); index++) {
+            Map<String, Object> row = rows.get(index);
+            double reported = num(row.get("报检数量"));
+            double qualified = num(row.get("合格数量"));
+            double unqualified = num(row.get("不合格数量"));
+            String result = textOf(row.get("检验结果")).trim();
+            if (qualified < -0.000001 || unqualified < -0.000001) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行合格/不合格数量不能为负");
+            }
+            if (qualified > reported + 0.000001 || unqualified > reported + 0.000001) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行合格/不合格数量不能超过报检数量");
+            }
+            if (!result.isEmpty() && !"待检".equals(result)
+                    && Math.abs(qualified + unqualified - reported) > 0.000001) {
+                throw new IllegalStateException("第 " + (index + 1)
+                        + " 行合格数量 + 不合格数量必须等于报检数量");
+            }
+        }
+    }
+
+    /** 抽检口径（对齐开源 MES 的抽检数量/最大不合格数）：抽样量不超过报检量，允收不良数不超过抽样量。 */
+    private void validateReportSampling(List<Map<String, Object>> rows) {
+        for (int index = 0; index < rows.size(); index++) {
+            Map<String, Object> row = rows.get(index);
+            double reported = num(row.get("报检数量"));
+            double sample = num(row.get("抽检数量"));
+            double maxUnqualified = num(row.get("最大不合格数"));
+            if (sample < -0.000001) throw new IllegalStateException("第 " + (index + 1) + " 行抽检数量不能为负");
+            if (sample > reported + 0.000001) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行抽检数量不能超过报检数量");
+            }
+            if (maxUnqualified < -0.000001) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行最大不合格数不能为负");
+            }
+            double base = sample > 0.000001 ? sample : reported;
+            if (maxUnqualified > base + 0.000001) {
+                throw new IllegalStateException("第 " + (index + 1)
+                        + " 行最大不合格数不能超过" + (sample > 0.000001 ? "抽检数量" : "报检数量"));
+            }
+        }
     }
 
     /**
@@ -4148,7 +5922,6 @@ public class PxService implements PanelRuntimeService {
         else if ("SALE_OUT".equals(panelCode)) biz = "CK-";        // 销售出库单（T+ 出库惯例）
         else if ("MATERIAL_OUT".equals(panelCode)) biz = "CL-";    // 材料出库单（2026-08-24 修复：原默认 MO- 前缀错误）
         else if ("PROCESS_REPORT".equals(panelCode)) biz = "GX-";  // 工序汇报单
-        else if ("PU_IN".equals(panelCode)) biz = "PU-";           // 进货单
         else if ("PU_ORDER".equals(panelCode)) biz = "PO-";        // 采购订单（2026-08-24 修复：原默认 MO- 前缀错误）
         else if ("PU_REQ".equals(panelCode)) biz = "CG-";          // 请购单（T+ 采购惯例 CG）
         else if ("SALE_INV".equals(panelCode)) biz = "XS-";        // 销货单
@@ -4209,8 +5982,8 @@ public class PxService implements PanelRuntimeService {
     private static final Set<String> APPROVAL_PANELS = Set.of(
             "SO_ORDER", "PURCHASE_IN", "FINISH_IN", "OTHER_IN", "SALE_OUT", "MATERIAL_OUT", "OTHER_OUT",
             "MANU_ORDER", "PROCESS_REPORT", "INIT_AP", "INIT_AR", "INIT_BALANCE", "BOM", "ROUTE", "PU_REQ",
-            "ARRIVAL_IN", "DISPATCH", "FINISH_INSPECT", "INSPECTION", "MATERIAL_REQ", "PICK_ORDER",
-            "PU_IN", "PU_ORDER", "SALE_INV",
+            "ARRIVAL_IN", "DISPATCH", "FINISH_INSPECT", "INSPECTION", "PROCESS_INSPECTION", "MATERIAL_REQ", "PICK_ORDER",
+            "PU_ORDER", "SALE_INV", "PURCHASE_RETURN",
             "TRANSFER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_IN", "OUTSOURCE_FEE",
             "QUOTE_ORDER", "SALE_INVOICE", "EXPENSE", "SALE_COST_ALLOC", "PU_INVOICE", "PU_COST_ALLOC",
             "STOCK_CHECK", "LOCATION_ADJUST", "SERIAL_NO");

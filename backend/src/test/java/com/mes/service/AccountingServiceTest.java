@@ -20,9 +20,9 @@ class AccountingServiceTest {
     private final AccountingService service = new AccountingService(null);
 
     @Test
-    void purchaseInDebitsInventoryCreditsPayable() {
+    void purchaseInvoiceDebitsInventoryCreditsPayable() {
         List<AccountingService.Entry> entries = service.buildEntries(
-                "PURCHASE_IN", "RK-001", bd("250"), "华东铝业", "铝棒等");
+                "PU_INVOICE", "PI-001", bd("250"), "华东铝业", "铝棒等");
 
         assertEquals(2, entries.size());
         AccountingService.Entry debit = entries.get(0);
@@ -36,6 +36,13 @@ class AccountingServiceTest {
         assertEquals("应付账款", credit.accountName());
         assertEquals("贷", credit.direction());
         assertEquals(0, bd("250").compareTo(credit.amount()));
+    }
+
+    @Test
+    void purchaseInProducesNoEntries() {
+        // 票到确认（2026-11-06）：入库只落库存，凭证由采购发票审核生成，避免入库+发票双记
+        assertTrue(service.buildEntries("PURCHASE_IN", "RK-001", bd("250"), "华东铝业", "铝棒等").isEmpty());
+        assertNull(service.templateOf("PURCHASE_IN"));
     }
 
     @Test
@@ -93,7 +100,7 @@ class AccountingServiceTest {
     @Test
     void balancedEntriesSumToZero() {
         List<AccountingService.Entry> entries = service.buildEntries(
-                "PURCHASE_IN", "RK-002", bd("888.88"), "供应商A", "混合物料");
+                "PU_INVOICE", "PI-002", bd("888.88"), "供应商A", "混合物料");
 
         BigDecimal debit = BigDecimal.ZERO;
         BigDecimal credit = BigDecimal.ZERO;
@@ -114,8 +121,8 @@ class AccountingServiceTest {
 
     @Test
     void zeroAmountProducesNoEntries() {
-        assertTrue(service.buildEntries("PURCHASE_IN", "RK-003", BigDecimal.ZERO, "供应商", "零金额").isEmpty());
-        assertTrue(service.buildEntries("PURCHASE_IN", "RK-004", null, "供应商", "空金额").isEmpty());
+        assertTrue(service.buildEntries("PU_INVOICE", "PI-003", BigDecimal.ZERO, "供应商", "零金额").isEmpty());
+        assertTrue(service.buildEntries("PU_INVOICE", "PI-004", null, "供应商", "空金额").isEmpty());
     }
 
     @Test
@@ -129,10 +136,11 @@ class AccountingServiceTest {
 
     @Test
     void templateCoversAllFinancialPanels() {
-        for (String panel : List.of("PURCHASE_IN", "PU_INVOICE", "SALE_OUT", "SALE_INVOICE",
+        for (String panel : List.of("PU_INVOICE", "SALE_OUT", "SALE_INVOICE",
                 "RECEIPT", "RECEIPT_PAYABLE", "PURCHASE_RETURN", "SALE_RETURN")) {
             assertTrue(service.templateOf(panel) != null, panel + " 缺少凭证模板");
         }
+        assertNull(service.templateOf("PURCHASE_IN"), "票到确认：采购入库不再生成凭证");
     }
 
     @Test

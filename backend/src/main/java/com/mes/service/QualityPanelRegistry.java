@@ -49,12 +49,7 @@ public class QualityPanelRegistry {
                 customerTraceSettingsConfig(), "QT0102");
         upsert("TRACE_PRINT_TEMPLATE", "追溯打印模板设置", "设置",
                 tracePrintTemplateConfig(), "QT0103");
-        upsert("FIRST_INSPECT", "首件报检单", "单据",
-                reportVoucherConfig("FIRST_INSPECT", "首件报检单", "首件报检", "首件检验",
-                        selectConfigs(
-                                "选生产加工单", selectConfig("MANU_ORDER", "选生产加工单", "products", "数量", "报检数量",
-                                        maps("单据编号", "来源单号", "生产车间", "生产车间"),
-                                        maps("产品编码", "存货编码", "产品名称", "存货名称", "规格型号", "规格型号", "生产单位", "计量单位", "数量", "报检数量")))), "MB1.0");
+        upsert("FIRST_INSPECT", "首件报检单", "单据", firstInspectConfig(), "MB1.0");
         upsert("PROCESS_INSPECT_APPLY", "工序报检单", "单据",
                 reportVoucherConfig("PROCESS_INSPECT_APPLY", "工序报检单", "工序报检", "工序检验",
                         selectConfigs(
@@ -75,62 +70,270 @@ public class QualityPanelRegistry {
     }
 
     private void upgradeCapturedPanels() {
-        upgrade("ARRIVAL_IN", config -> {
-            Map<String, Object> legacy = map(config.get("selectConfig"));
-            enrichSelectConfig(legacy, "数量", "到货数量");
-            config.put("selectConfigs", selectConfigs(
-                    "选采购订单", legacy,
-                    "选检验单", selectConfig("INSPECTION", "选检验单", "items", "检验数量", "到货数量",
-                            maps("单据编号", "来源单号", "供应商", "供应商", "仓库", "仓库"),
-                            maps("存货编码", "存货编码", "存货名称", "存货名称", "规格型号", "规格型号", "计量单位", "采购单位", "检验数量", "到货数量"))));
-            addSourceFields(config);
-        });
-        upgrade("FINISH_INSPECT", config -> {
-            Map<String, Object> legacy = map(config.get("selectConfig"));
-            enrichSelectConfig(legacy, "数量", "报检数量");
-            config.put("selectConfigs", selectConfigs(
-                    "选生产加工单", legacy,
-                    "选委外加工单", selectConfig("OUTSOURCE_ORDER", "选委外加工单", "products", "数量", "报检数量",
-                            maps("单据编号", "加工单号", "委外供应商", "委外供应商"),
-                            maps("产品编码", "存货编码", "产品名称", "存货名称", "规格型号", "规格型号", "计量单位", "计量单位", "数量", "报检数量")),
-                    "选检验单", selectConfig("INSPECTION", "选检验单", "items", "检验数量", "报检数量",
-                            maps("单据编号", "来源单号"),
-                            maps("存货编码", "存货编码", "存货名称", "存货名称", "规格型号", "规格型号", "计量单位", "计量单位", "检验数量", "报检数量"))));
-            addSourceFields(config);
-        });
-        upgrade("INSPECTION", config -> {
-            Map<String, Object> legacy = map(config.get("selectConfig"));
-            enrichSelectConfig(legacy, "到货数量", "报检数量");
-            config.put("selectConfigs", selectConfigs(
-                    "选到货单", legacy,
-                    "选成品报检单", selectConfig("FINISH_INSPECT", "选成品报检单", "items", "报检数量", "报检数量",
-                            maps("单据编号", "来源单号", "生产车间", "部门"),
-                            maps("存货编码", "存货编码", "存货名称", "存货名称", "规格型号", "规格型号", "计量单位", "计量单位", "报检数量", "报检数量"))));
-            addSourceFields(config);
-            upgradeInspectionReferences(config);
-            addUnqualifiedTab(config);
-        });
+        upgrade("ARRIVAL_IN", QualityPanelRegistry::upgradeArrivalIn);
+        upgrade("FINISH_INSPECT", QualityPanelRegistry::upgradeFinishInspect);
+        upgrade("INSPECTION", QualityPanelRegistry::upgradeInspection);
+    }
+
+    static void upgradeArrivalIn(Map<String, Object> config) {
+        Map<String, Object> legacy = map(config.get("selectConfig"));
+        enrichSelectConfig(legacy, "数量", "到货数量");
+        ensureHeaderMap(legacy, "单据编号", "采购订单号");
+        if (!legacy.isEmpty()) {
+            legacy.putIfAbsent("generateButton", "生成到货单");
+            legacy.putIfAbsent("generateLabel", "生成到货单");
+            config.put("selectConfig", legacy);
+        }
+        config.put("selectConfigs", selectConfigs(
+                "选采购订单", legacy,
+                "选检验单", selectConfig("INSPECTION", "选检验单", "items", "检验数量", "到货数量",
+                        maps("单据编号", "来源单号", "供应商", "供应商", "仓库", "仓库"),
+                        maps("存货编码", "存货编码", "存货名称", "存货名称", "规格型号", "规格型号", "计量单位", "采购单位", "检验数量", "到货数量"))));
+        addSourceFields(config);
+        for (String name : List.of("检验数量", "合格数量", "不合格数量", "让步接收数量", "报废数量",
+                "累计入库数量", "累计退货数量")) {
+            ensureDetailField(config, name, "小数", true, true);
+        }
+        for (String name : List.of("累计执行数量", "累计检验数量")) {
+            ensureDetailField(config, name, "小数", true, false);
+        }
+        ensureHeadField(config, "采购订单号", "文本", null, null);
+        ensureHeadField(config, "数据来源", "文本", null, null);
+        ensureHeadField(config, "检验状态", "下拉框", List.of("未检", "部分检", "已检"), "未检");
+        for (String name : List.of("采购订单号", "检验状态", "数据来源")) ensureFormField(config, name);
+        ensureAction(config, "修改", "中止");
+        ensureAction(config, "修改", "取消中止");
+    }
+
+    static void upgradeFinishInspect(Map<String, Object> config) {
+        Map<String, Object> legacy = map(config.get("selectConfig"));
+        enrichSelectConfig(legacy, "数量", "报检数量");
+        config.put("selectConfigs", selectConfigs(
+                "选生产加工单", legacy,
+                "选委外加工单", selectConfig("OUTSOURCE_ORDER", "选委外加工单", "products", "数量", "报检数量",
+                        maps("单据编号", "加工单号", "委外供应商", "委外供应商"),
+                        maps("产品编码", "存货编码", "产品名称", "存货名称", "规格型号", "规格型号", "计量单位", "计量单位", "数量", "报检数量")),
+                "选检验单", selectConfig("INSPECTION", "选检验单", "items", "检验数量", "报检数量",
+                        maps("单据编号", "来源单号"),
+                        maps("存货编码", "存货编码", "存货名称", "存货名称", "规格型号", "规格型号", "计量单位", "计量单位", "检验数量", "报检数量"))));
+        addSourceFields(config);
+        // T+ QM10 表头 + 开源 MES 常用报检字段（保持当前表格形态）
+        ensureHeadReference(config, "委外供应商", "PARTNER", "往来单位名称");
+        ensureHeadReference(config, "部门", "DEPT", "部门名称");
+        ensureHeadReference(config, "负责人", "EMP", "员工名称");
+        ensureHeadField(config, "供应商编码", "文本", null, "");
+        for (String name : List.of("供应商编码", "委外供应商", "部门", "负责人")) ensureFormField(config, name);
+        // 明细：BOM/库存供应商/价格/抽检/累计质量结果/不合格原因/检验方案
+        ensureDetailField(config, "BOM版本号", "文本", false, true);
+        ensureColumnAfter(config, "规格型号", "BOM版本号");
+        ensureDetailField(config, "供应商(库存)", "文本", false, true);
+        ensureColumnAfter(config, "BOM版本号", "供应商(库存)");
+        for (String name : List.of("单价", "含税单价", "金额", "税额", "含税金额")) {
+            ensureDetailField(config, name, "小数", false, true);
+        }
+        ensureDetailField(config, "税率%", "小数", false, true);
+        String[] priceOrder = {"报检数量", "单价", "税率%", "含税单价", "金额", "税额", "含税金额"};
+        for (int index = 1; index < priceOrder.length; index++) {
+            ensureColumnAfter(config, priceOrder[index - 1], priceOrder[index]);
+        }
+        ensureDetailField(config, "抽检数量", "小数", false, true);
+        ensureColumnAfter(config, "抽检比例%", "抽检数量");
+        ensureDetailField(config, "最大不合格数", "整数", false, true);
+        ensureColumnAfter(config, "抽检数量", "最大不合格数");
+        String[] cumulative = {"累计检验数量", "累计合格数量", "累计验收退回数量", "累计让步接收数量",
+                "累计报废数量", "累计入库数量", "累计已退数量"};
+        for (String name : cumulative) ensureDetailField(config, name, "小数", true, true);
+        String previous = "检验要求";
+        for (String name : cumulative) {
+            ensureColumnAfter(config, previous, name);
+            previous = name;
+        }
+        ensureDetailReference(config, "不合格原因", "REJECT", "不合格原因");
+        ensureColumnAfter(config, "累计已退数量", "不合格原因");
+        ensureDetailReference(config, "检验方案", "QC_PLAN", "方案名称");
+        ensureColumnAfter(config, "不合格原因", "检验方案");
+    }
+
+    static void upgradeInspection(Map<String, Object> config) {
+        Map<String, Object> legacy = map(config.get("selectConfig"));
+        // 选到货单：拒收数量不送检，报检数量取实收；检验方式/抽检比例/编码/仓库必须带全，
+        // 否则拉式选单生成的检验行缺存货编码，后续入库取不到价也扣不到库存。
+        enrichSelectConfig(legacy, "实收数量", "报检数量");
+        retargetDetailMap(legacy, "报检数量", "实收数量", "到货数量");
+        retargetDetailMap(legacy, "计量单位", "采购单位", "计量单位");
+        ensureHeaderMap(legacy, "供应商", "供应商");
+        ensureHeaderMap(legacy, "仓库", "仓库");
+        ensureHeaderMap(legacy, "采购订单号", "采购订单号");
+        for (String[] mapping : List.of(
+                new String[]{"实收数量", "报检数量"},
+                new String[]{"存货编码", "存货编码"}, new String[]{"规格型号", "规格型号"},
+                new String[]{"仓库", "仓库"}, new String[]{"检验方式", "检验方式"},
+                new String[]{"抽检比例%", "抽检比例%"}, new String[]{"检验数量", "检验数量"})) {
+            ensureDetailMap(legacy, mapping[0], mapping[1]);
+        }
+        if (!legacy.isEmpty()) {
+            legacy.put("columns", List.of("单据编号", "单据日期", "供应商", "存货名称",
+                    "实收数量", "检验方式", "抽检比例%"));
+            // 选到货单直接走后端「生成检验单」：免检跳过、来源戳、检验方式/抽检比例一次带全，
+            // 不再由客户端按字段映射拼一张不完整的检验草稿。
+            legacy.putIfAbsent("generateButton", "生成检验单");
+            legacy.putIfAbsent("generateLabel", "生成检验单");
+            config.put("selectConfig", legacy);
+        }
+        Map<String, Object> finishReportSelect = selectConfig("FINISH_INSPECT", "选成品报检单", "items",
+                "报检数量", "报检数量",
+                maps("单据编号", "来源单号", "生产车间", "部门", "加工单号", "加工单号"),
+                maps("存货编码", "存货编码", "存货名称", "存货名称", "规格型号", "规格型号",
+                        "计量单位", "计量单位", "报检数量", "报检数量"));
+        finishReportSelect.put("generateButton", "生成检验单");
+        finishReportSelect.put("generateLabel", "生成检验单");
+        config.put("selectConfigs", selectConfigs("选到货单", legacy, "选成品报检单", finishReportSelect));
+        addSourceFields(config);
+        upgradeInspectionReferences(config);
+        addUnqualifiedTab(config);
+        addProjectTab(config);
+        // T+ QM15 表头（保持当前表格形态，不新增页签）
+        ensureHeadReference(config, "检验部门", "DEPT", "部门名称");
+        ensureHeadField(config, "采购订单号", "文本", null, "");
+        ensureHeadField(config, "加工单号", "文本", null, "");
+        for (String name : List.of("检验部门", "采购订单号", "加工单号")) ensureFormField(config, name);
+        // T+ QM15 明细字段：应检数量、验收退回、行级不合格原因、让步接收含税单价、样本记录
+        ensureDetailField(config, "应检数量", "小数", false, true);
+        ensureColumnAfter(config, "报检数量", "应检数量");
+        ensureDetailField(config, "验收退回数量", "小数", true, true);
+        ensureColumnAfter(config, "不合格数量", "验收退回数量");
+        ensureDetailReference(config, "不合格原因", "REJECT", "不合格原因");
+        ensureColumnAfter(config, "报废数量", "不合格原因");
+        ensureDetailField(config, "让步接收含税单价", "小数", false, true);
+        ensureColumnAfter(config, "不合格原因", "让步接收含税单价");
+        // 原价/原含税单价是折价与让步结算的底数，只存不占列
+        ensureDetailField(config, "单价", "小数", false, false);
+        ensureDetailField(config, "含税单价", "小数", false, false);
+        ensureDetailField(config, "记录样本明细", "是否", false, true);
+        ensureDetailField(config, "样本明细个数", "整数", false, true);
+        ensureColumnAfter(config, "检验日期", "检验方案");
+        ensureColumnAfter(config, "检验方案", "记录样本明细");
+        ensureColumnAfter(config, "记录样本明细", "样本明细个数");
+        setDetailDefault(config, "记录样本明细", false);
+        setDetailDefault(config, "样本明细个数", 0);
+        ensureAction(config, "生单", "生成采购入库单");
+        ensureAction(config, "生单", "生成采购退货单");
+        // 到货退回单没有对应的目标单据/路由，T+ 抓取配置里的这个入口在运行库中一并摘掉
+        removeAction(config, "生单", "生成到货退回单");
+        for (String name : List.of("让步接收数量", "报废数量", "判定退货数量")) {
+            ensureDetailField(config, name, "小数", true, true);
+        }
+        // 批次处置标记（2026-11-05）：质量处置 + 商务结算分层，确认后才允许生单
+        ensureDispositionFields(config);
+        setDetailOptions(config, "检验结果判定", List.of("合格", "让步接收", "部分报废", "全批报废", "全批退回"));
+        // 判定退货数量保留为内部兼容字段，不再占主表列（对外显示验收退回数量）
+        ensureDetailField(config, "判定退货数量", "小数", true, false);
+        removeColumn(config, "判定退货数量");
+        ensureDetailField(config, "返工数量", "小数", true, false);
+        ensureAction(config, "处置", "确认处置");
+        ensureAction(config, "修改", "中止");
+        ensureAction(config, "修改", "取消中止");
+    }
+
+    /** 检验明细的批次处置字段（幂等：已有字段补属性，不覆盖管理员配置）。 */
+    private static void ensureDispositionFields(Map<String, Object> config) {
+        Map<String, Object> detail = map(config.get("detail"));
+        List<Map<String, Object>> tabs = listOfMaps(detail.get("tabs"));
+        if (tabs.isEmpty()) return;
+        Map<String, Object> tab = tabs.stream().filter(t -> "items".equals(t.get("key"))).findFirst()
+                .orElse(tabs.get(0));
+        List<Map<String, Object>> fields = listOfMaps(tab.get("fields"));
+        mergeField(fields, optionalSelect("处置方式",
+                "合格接收", "让步接收", "降价接收", "部分退回", "全批退回", "返工", "返修", "挑选接收", "报废"));
+        mergeField(fields, field("处置数量", "小数", false));
+        mergeField(fields, optionalSelect("结算方式", "原价", "折价", "索赔", "免费补货", "退款"));
+        mergeField(fields, field("折价率%", "小数", false));
+        mergeField(fields, computedField("折价金额"));
+        mergeField(fields, computedField("调整后单价"));
+        mergeField(fields, computedField("调整后含税单价"));
+        mergeField(fields, optionalSelect("责任归属", "供应商", "运输", "我方", "待定"));
+        mergeField(fields, defaultValue(optionalSelect("处置状态",
+                "待确认", "已确认", "已执行", "已结算", "已结案"), "待确认"));
+        mergeField(fields, bool("复检要求"));
+        mergeField(fields, field("复检结果", "文本", false));
+        tab.put("fields", fields);
+        detail.put("tabs", tabs);
+        config.put("detail", detail);
+    }
+
+    private static Map<String, Object> optionalSelect(String name, String... options) {
+        Map<String, Object> field = field(name, "下拉框", false);
+        field.put("options", Arrays.asList(options));
+        if (options.length > 0) field.put("defaultValue", options[0]);
+        return field;
+    }
+
+    private static Map<String, Object> computedField(String name) {
+        Map<String, Object> field = field(name, "小数", false);
+        field.put("computed", true);
+        return field;
+    }
+
+    /** 按 dataName 合并字段：缺失追加；既有字段只补缺失属性，选项/默认值/计算标记以定义为准。 */
+    private static void mergeField(List<Map<String, Object>> fields, Map<String, Object> definition) {
+        String name = String.valueOf(definition.get("dataName"));
+        Map<String, Object> target = fields.stream()
+                .filter(f -> name.equals(f.get("dataName"))).findFirst().orElse(null);
+        if (target == null) {
+            fields.add(new LinkedHashMap<>(definition));
+            return;
+        }
+        for (Map.Entry<String, Object> entry : definition.entrySet()) {
+            if (!target.containsKey(entry.getKey())) target.put(entry.getKey(), entry.getValue());
+        }
+        if (definition.containsKey("options")) target.put("options", definition.get("options"));
+        if (definition.containsKey("defaultValue")) target.put("defaultValue", definition.get("defaultValue"));
+        if (definition.containsKey("computed")) target.put("computed", definition.get("computed"));
     }
 
     @SuppressWarnings("unchecked")
-    private void addSourceFields(Map<String, Object> config) {
+    private static void addSourceFields(Map<String, Object> config) {
         Map<String, Object> detail = map(config.get("detail"));
         List<Map<String, Object>> tabs = listOfMaps(detail.get("tabs"));
         if (tabs.isEmpty()) return;
         List<Map<String, Object>> fields = listOfMaps(tabs.get(0).get("fields"));
-        for (String name : List.of("来源面板", "来源单号", "来源行号", "来源数量", "累计执行数量", "累计检验数量", "累计入库数量")) {
-            if (fields.stream().noneMatch(f -> name.equals(f.get("dataName")))) {
-                Map<String, Object> sourceField = field(name, name.contains("数量") ? "小数" : "文本", false);
-                sourceField.put("hidden", true);
-                fields.add(sourceField);
-            }
-        }
+        addSourceFieldsTo(fields);
         tabs.get(0).put("fields", fields);
         detail.put("tabs", tabs);
         config.put("detail", detail);
     }
 
-    private void addUnqualifiedTab(Map<String, Object> config) {
+    /** 检验项目结果页签：按检验方案逐项记录实测值/单项判定（对齐主流检验单的检测项结果区）。 */
+    private static void addProjectTab(Map<String, Object> config) {
+        Map<String, Object> detail = map(config.get("detail"));
+        List<Map<String, Object>> tabs = listOfMaps(detail.get("tabs"));
+        if (tabs.stream().anyMatch(tab -> "projects".equals(tab.get("key")))) return;
+        List<Map<String, Object>> fields = fields(
+                field("关联明细行号", "整数", true),
+                field("检验项目编码", "文本", false),
+                reference("检验项目", "QC_ITEM", "项目名称"),
+                field("检验内容", "文本", false),
+                field("检验标准", "文本", false),
+                field("标准下限", "小数", false),
+                field("标准上限", "小数", false),
+                field("检验结果", "文本", false),
+                select("单项判定", "合格", "不合格"),
+                field("检验时间", "日期", false),
+                reference("检验员", "EMP", "员工名称"),
+                field("备注", "文本", false));
+        int at = 0;
+        for (int index = 0; index < tabs.size(); index++) {
+            if ("items".equals(tabs.get(index).get("key"))) {
+                at = index + 1;
+                break;
+            }
+        }
+        tabs.add(at, tab("projects", "检验项目", fields, null));
+        detail.put("tabs", tabs);
+        config.put("detail", detail);
+    }
+
+    private static void addUnqualifiedTab(Map<String, Object> config) {
         Map<String, Object> detail = map(config.get("detail"));
         List<Map<String, Object>> tabs = listOfMaps(detail.get("tabs"));
         if (tabs.stream().anyMatch(tab -> "unqualified".equals(tab.get("key")))) return;
@@ -145,7 +348,7 @@ public class QualityPanelRegistry {
         config.put("detail", detail);
     }
 
-    private void upgradeInspectionReferences(Map<String, Object> config) {
+    private static void upgradeInspectionReferences(Map<String, Object> config) {
         Map<String, Object> detail = map(config.get("detail"));
         List<Map<String, Object>> tabs = listOfMaps(detail.get("tabs"));
         if (tabs.isEmpty()) return;
@@ -252,14 +455,102 @@ public class QualityPanelRegistry {
         return config(code, name, "单据", head, List.of(tab("items", "明细", items, "报检数量")), groups, selects);
     }
 
+    /**
+     * 首件报检单（对齐 T+ QM07 + 开源 MES 首件/首检字段）：
+     * 来源工序汇报单，明细带工序/加工类型/班组/工人/检验方式/抽检数量/累计结果，保持当前表格式。
+     */
+    private Map<String, Object> firstInspectConfig() {
+        List<Map<String, Object>> head = fields(
+                date("单据日期"), autoCode(), selectDefault("业务类型", "首件报检", "首件报检"),
+                reference("委外供应商", "PARTNER", "往来单位名称"),
+                reference("部门", "DEPT", "部门名称"), reference("负责人", "EMP", "员工名称"),
+                reference("检验员", "EMP", "员工名称"),
+                field("生产车间", "文本", false), field("加工单号", "文本", false),
+                field("来源单号", "文本", false), field("备注", "文本", false));
+        List<Map<String, Object>> items = firstInspectFields();
+        Map<String, Object> select = selectConfig("PROCESS_REPORT", "选工序汇报单", "items", "报工数量", "报检数量",
+                maps("单据编号", "来源单号", "生产车间", "生产车间", "加工单号", "加工单号", "部门", "部门"),
+                maps("产品编码", "存货编码", "产品名称", "存货名称", "规格型号", "规格型号",
+                        "BOM版本号", "BOM版本号", "工序编码", "工序编码", "工序名称", "工序名称",
+                        "工序单位", "计量单位", "报工数量", "报检数量",
+                        "加工单号", "加工单号", "单据编号", "工序汇报单号",
+                        "加工类型", "加工类型", "生产车间", "生产车间"));
+        select.put("columns", List.of("单据编号", "单据日期", "生产车间", "加工单号",
+                "工序编码", "工序名称", "报工数量"));
+        Map<String, Object> selects = selectConfigs("选工序汇报单", select);
+        List<Map<String, Object>> groups = voucherGroups(new ArrayList<>(selects.keySet()), "生成检验单");
+        return config("FIRST_INSPECT", "首件报检单", "单据", head,
+                List.of(tab("items", "明细", items, "报检数量")), groups, selects);
+    }
+
+    private List<Map<String, Object>> firstInspectFields() {
+        List<Map<String, Object>> out = fields(
+                field("存货编码", "文本", false), reference("存货名称", "INV", "存货名称"),
+                field("规格型号", "文本", false), field("BOM版本号", "文本", false),
+                field("计量单位", "文本", false), field("加工单号", "文本", false),
+                field("工序汇报单号", "文本", false),
+                field("工序编码", "文本", false), field("工序名称", "文本", false),
+                selectDefault("加工类型", "自制加工", "自制加工", "委外加工"),
+                field("报检数量", "小数", true),
+                selectDefault("检验方式", "全检", "全检", "抽检"),
+                defaultValue(field("抽检比例%", "小数", false), 100),
+                defaultValue(field("抽检数量", "小数", false), 0),
+                defaultValue(field("最大不合格数", "整数", false), 0),
+                field("检验要求", "文本", false), field("生产车间", "文本", false),
+                optionalSelect("班组", "下料班", "车工班", "铣工班", "热处理班", "质检班"),                field("工人", "文本", false), reference("检验方案", "QC_PLAN", "方案名称"),
+                computedField("累计检验数量"), computedField("累计合格数量"),
+                computedField("累计不合格数量"), computedField("累计检验返工数量"),
+                reference("不合格原因", "REJECT", "不合格原因"),
+                defaultValue(field("数值公用自定义项1", "小数", false), 0),
+                field("板号", "文本", false), field("备注", "文本", false));
+        addSourceFieldsTo(out);
+        return out;
+    }
+
     private Map<String, Object> inspectionVoucherConfig(String code, String name, String businessType,
                                                          Map<String, Object> selects) {
         List<Map<String, Object>> head = voucherHead(businessType);
-        List<Map<String, Object>> items = inspectionFields();
-        List<Map<String, Object>> groups = voucherGroups(new ArrayList<>(selects.keySet()), "生成产成品入库单");
-        Map<String, Object> cfg = config(code, name, "单据", head, List.of(tab("items", "明细", items, "检验数量")), groups, selects);
+        head.add(reference("检验部门", "DEPT", "部门名称"));
+        head.add(field("数据来源", "文本", false));
+        List<Map<String, Object>> items = processInspectionFields();
+        // 生产过程检验单当前只做单据本身；下游退回/入库转换未实现，不挂错误生单入口
+        List<Map<String, Object>> groups = voucherGroups(new ArrayList<>(selects.keySet()), null);
+        Map<String, Object> cfg = config(code, name, "单据", head,
+                List.of(tab("items", "明细", items, "检验数量")), groups, selects);
         addUnqualifiedTab(cfg);
+        addProjectTab(cfg);
         return cfg;
+    }
+
+    /** 生产过程检验单明细：T+ QM16 工序结果 + 主流 MES 的抽样/不良分解字段。 */
+    private List<Map<String, Object>> processInspectionFields() {
+        List<Map<String, Object>> out = fields(
+                field("存货编码", "文本", false), reference("存货名称", "INV", "存货名称"),
+                field("规格型号", "文本", false), field("产品批号", "文本", false),
+                selectDefault("加工类型", "自制加工", "自制加工", "委外加工"),
+                field("加工单号", "文本", false), field("工序汇报单号", "文本", false),
+                field("工序编码", "文本", false), field("工序名称", "文本", false),
+                field("计量单位", "文本", false), field("工序辅单位", "文本", false),
+                field("报检数量", "小数", true), field("应检数量", "小数", false),
+                field("检验数量", "小数", true), field("合格数量", "小数", false),
+                field("不合格数量", "小数", false),
+                field("检验返工数量", "小数", false), field("工废数量", "小数", false),
+                field("料废数量", "小数", false),
+                selectDefault("检验方式", "全检", "全检", "抽检"),
+                defaultValue(field("抽检比例%", "小数", false), 100),
+                defaultValue(field("抽检数量", "小数", false), 0),
+                defaultValue(field("最大不合格数", "整数", false), 0),
+                select("检验结果判定", "合格", "返工", "让步接收", "报废"),
+                reference("检验方案", "QC_PLAN", "方案名称"),
+                reference("检验员", "EMP", "员工名称"), field("检验日期", "日期", false),
+                field("生产车间", "文本", false), field("工作中心", "文本", false),
+                field("设备", "文本", false),
+                optionalSelect("班组", "下料班", "车工班", "铣工班", "热处理班", "质检班"),
+                field("工人", "文本", false),
+                reference("不合格原因", "REJECT", "不合格原因"),
+                field("备注", "文本", false));
+        addSourceFieldsTo(out);
+        return out;
     }
 
     private List<Map<String, Object>> voucherHead(String businessType) {
@@ -280,33 +571,38 @@ public class QualityPanelRegistry {
         return out;
     }
 
-    private List<Map<String, Object>> inspectionFields() {
-        List<Map<String, Object>> out = fields(
-                field("存货编码", "文本", false), reference("存货名称", "INV", "存货名称"), field("规格型号", "文本", false),
-                field("工序编码", "文本", false), field("工序名称", "文本", false), field("计量单位", "文本", false),
-                select("检验方式", "全检", "抽检"), field("报检数量", "小数", true), field("检验数量", "小数", true),
-                field("合格数量", "小数", true), field("不合格数量", "小数", true),
-                select("检验结果判定", "合格", "不合格", "让步接收", "报废"),
-                reference("检验方案", "QC_PLAN", "方案名称"), reference("检验项目", "QC_ITEM", "项目名称"),
-                reference("检验员", "EMP", "员工名称"), date("检验日期"));
-        addSourceFieldsTo(out);
-        return out;
-    }
-
-    private void addSourceFieldsTo(List<Map<String, Object>> fields) {
+    /**
+     * 来源追踪字段：既有 hidden 字段按 dataName 升级为 computed（不再只做「缺失才追加」），
+     * 否则老配置里的累计数量永远显示 0。
+     */
+    private static void addSourceFieldsTo(List<Map<String, Object>> fields) {
         for (String name : List.of("来源面板", "来源单号", "来源行号", "来源数量", "累计执行数量", "累计检验数量", "累计入库数量")) {
-            Map<String, Object> field = field(name, name.contains("数量") ? "小数" : "文本", false);
-            field.put("hidden", true);
-            fields.add(field);
+            Map<String, Object> sourceField = fields.stream()
+                    .filter(f -> name.equals(f.get("dataName"))).findFirst().orElse(null);
+            if (sourceField == null) {
+                sourceField = field(name, name.contains("数量") ? "小数" : "文本", false);
+                sourceField.put("hidden", true);
+                fields.add(sourceField);
+            }
+            if (name.startsWith("累计")) {
+                sourceField.put("dataType", "小数");
+                sourceField.put("computed", true);
+            }
         }
     }
 
     private List<Map<String, Object>> voucherGroups(List<String> selectActions, String generateAction) {
-        return List.of(
+        List<Map<String, Object>> groups = new ArrayList<>(List.of(
                 group("新增", "新增"), group("选单", selectActions.toArray(String[]::new)),
                 group("保存", "保存", "保存新增", "保存为草稿"), group("删除", "删除", "删除单据"),
-                group("审核", "审核", "弃审"), group("生单", generateAction),
-                group("工具", "生单流程联查", "执行情况"), group("更多", "刷新", "放弃"));
+                group("审核", "审核", "弃审")));
+        // 无下游转换时（如生产过程检验单当前只做单据本身）不生成空的「生单」组
+        if (generateAction != null && !generateAction.isBlank()) {
+            groups.add(group("生单", generateAction));
+        }
+        groups.add(group("工具", "生单流程联查", "执行情况"));
+        groups.add(group("更多", "刷新", "放弃"));
+        return groups;
     }
 
     private Map<String, Object> config(String code, String name, String category, List<Map<String, Object>> head,
@@ -353,7 +649,7 @@ public class QualityPanelRegistry {
         return cfg;
     }
 
-    private Map<String, Object> selectConfig(String source, String title, String detailKey,
+    private static Map<String, Object> selectConfig(String source, String title, String detailKey,
                                              String sourceQuantityField, String targetQuantityField,
                                              List<Map<String, String>> headerMap, List<Map<String, String>> detailMap) {
         Map<String, Object> cfg = new LinkedHashMap<>();
@@ -369,7 +665,7 @@ public class QualityPanelRegistry {
         return cfg;
     }
 
-    private void enrichSelectConfig(Map<String, Object> cfg, String sourceQty, String targetQty) {
+    private static void enrichSelectConfig(Map<String, Object> cfg, String sourceQty, String targetQty) {
         if (cfg.isEmpty()) return;
         cfg.put("sourceQuantityField", sourceQty);
         cfg.put("targetQuantityField", targetQty);
@@ -388,6 +684,304 @@ public class QualityPanelRegistry {
         } catch (Exception e) {
             throw new IllegalStateException("质量面板配置升级失败：" + code, e);
         }
+    }
+
+    /** 幂等追加面板动作：分组和顶部按钮各补一份，已有则跳过。 */
+    private static void ensureAction(Map<String, Object> config, String groupName, String action) {
+        Map<String, Object> metadata = map(config.get("metadata"));
+        List<Map<String, Object>> groups = listOfMaps(metadata.get("buttonGroups"));
+        boolean groupFound = false;
+        for (Map<String, Object> group : groups) {
+            if (!groupName.equals(String.valueOf(group.get("name")))) continue;
+            groupFound = true;
+            List<Object> actions = new ArrayList<>();
+            if (group.get("actions") instanceof List<?> list) actions.addAll(list);
+            if (actions.stream().noneMatch(value -> action.equals(String.valueOf(value)))) actions.add(action);
+            group.put("actions", actions);
+        }
+        if (!groupFound) {
+            groups.add(Map.of("name", groupName, "actions", List.of(action)));
+        }
+        metadata.put("buttonGroups", groups);
+
+        List<Map<String, Object>> buttons = listOfMaps(metadata.get("panelButtons"));
+        if (buttons.stream().noneMatch(button -> action.equals(String.valueOf(button.get("buttonName"))))) {
+            buttons.add(Map.of("buttonName", action));
+        }
+        metadata.put("panelButtons", buttons);
+        config.put("metadata", metadata);
+    }
+
+    /** 幂等摘除面板动作（分组 + 顶部按钮），用于清理 T+ 抓取配置里已废弃/无实现的入口。 */
+    private static void removeAction(Map<String, Object> config, String groupName, String action) {
+        Map<String, Object> metadata = map(config.get("metadata"));
+        List<Map<String, Object>> groups = listOfMaps(metadata.get("buttonGroups"));
+        for (Map<String, Object> group : groups) {
+            if (!groupName.equals(String.valueOf(group.get("name")))) continue;
+            List<Object> actions = new ArrayList<>();
+            if (group.get("actions") instanceof List<?> list) {
+                for (Object value : list) {
+                    if (!action.equals(String.valueOf(value))) actions.add(value);
+                }
+            }
+            group.put("actions", actions);
+        }
+        metadata.put("buttonGroups", groups);
+
+        List<Map<String, Object>> buttons = listOfMaps(metadata.get("panelButtons"));
+        buttons.removeIf(button -> action.equals(String.valueOf(button.get("buttonName"))));
+        metadata.put("panelButtons", buttons);
+        config.put("metadata", metadata);
+    }
+
+    /** 选单表头映射补一条；已有同 from/to 时不重复。 */
+    private static void ensureHeaderMap(Map<String, Object> selectConfig, String from, String to) {
+        List<Map<String, String>> headerMap = new ArrayList<>();
+        if (selectConfig.get("headerMap") instanceof List<?> list) {
+            for (Object item : list) {
+                if (!(item instanceof Map<?, ?> raw)) continue;
+                Map<String, String> mapping = new LinkedHashMap<>();
+                raw.forEach((key, value) -> mapping.put(String.valueOf(key), value == null ? "" : String.valueOf(value)));
+                headerMap.add(mapping);
+            }
+        }
+        boolean exists = headerMap.stream()
+                .anyMatch(mapping -> from.equals(mapping.get("from")) && to.equals(mapping.get("to")));
+        if (!exists) headerMap.add(maps(from, to).get(0));
+        selectConfig.put("headerMap", headerMap);
+    }
+
+    /** 明细映射补一条；已有同 to 映射时不重复。 */
+    private static void ensureDetailMap(Map<String, Object> selectConfig, String from, String to) {
+        List<Map<String, String>> detailMap = new ArrayList<>();
+        if (selectConfig.get("detailMap") instanceof List<?> list) {
+            for (Object item : list) {
+                if (!(item instanceof Map<?, ?> raw)) continue;
+                Map<String, String> mapping = new LinkedHashMap<>();
+                raw.forEach((key, value) -> mapping.put(String.valueOf(key), value == null ? "" : String.valueOf(value)));
+                detailMap.add(mapping);
+            }
+        }
+        boolean exists = detailMap.stream().anyMatch(mapping -> to.equals(mapping.get("to")));
+        if (!exists) detailMap.add(maps(from, to).get(0));
+        selectConfig.put("detailMap", detailMap);
+    }
+
+    /** 只改历史遗留映射的 from（如 到货数量→实收数量），管理员改过的其它来源不覆盖。 */
+    private static void retargetDetailMap(Map<String, Object> selectConfig, String to,
+                                          String from, String legacyFrom) {
+        if (!(selectConfig.get("detailMap") instanceof List<?> list)) return;
+        List<Map<String, String>> detailMap = new ArrayList<>();
+        for (Object item : list) {
+            if (!(item instanceof Map<?, ?> raw)) continue;
+            Map<String, String> mapping = new LinkedHashMap<>();
+            raw.forEach((key, value) -> mapping.put(String.valueOf(key), value == null ? "" : String.valueOf(value)));
+            if (to.equals(mapping.get("to")) && legacyFrom.equals(mapping.get("from"))) mapping.put("from", from);
+            detailMap.add(mapping);
+        }
+        selectConfig.put("detailMap", detailMap);
+    }
+
+    /** 明细字段补齐/升级：按 dataName 查找，既有字段改属性，缺失才追加。 */
+    private static void ensureDetailField(Map<String, Object> config, String name, String type,
+                                          boolean computed, boolean visible) {
+        Map<String, Object> detail = map(config.get("detail"));
+        List<Map<String, Object>> tabs = listOfMaps(detail.get("tabs"));
+        if (tabs.isEmpty()) return;
+        Map<String, Object> tab = tabs.stream().filter(t -> "items".equals(t.get("key"))).findFirst()
+                .orElse(tabs.get(0));
+        List<Map<String, Object>> fields = listOfMaps(tab.get("fields"));
+        Map<String, Object> target = fields.stream()
+                .filter(f -> name.equals(f.get("dataName"))).findFirst().orElse(null);
+        if (target == null) {
+            target = field(name, type, false);
+            fields.add(target);
+        }
+        target.put("dataType", type);
+        if (computed) target.put("computed", true); else target.remove("computed");
+        if (visible) target.remove("hidden"); else target.put("hidden", true);
+        tab.put("fields", fields);
+        detail.put("tabs", tabs);
+        config.put("detail", detail);
+        if (visible) ensureColumn(config, name);
+    }
+
+    /** 列表列插到指定列之后；列不存在时追加，已存在时先摘除再插，保证顺序稳定。 */
+    private static void ensureColumnAfter(Map<String, Object> config, String after, String name) {
+        Map<String, Object> metadata = map(config.get("metadata"));
+        Map<String, Object> pageDto = map(metadata.get("panelPageDto"));
+        List<Map<String, Object>> tablePages = listOfMaps(pageDto.get("tablePages"));
+        if (tablePages.isEmpty()) return;
+        Map<String, Object> table = tablePages.get(0);
+        List<Map<String, Object>> gridTabs = listOfMaps(table.get("gridTabs"));
+        if (gridTabs.isEmpty()) return;
+        Map<String, Object> grid = gridTabs.get(0);
+        List<Object> columns = new ArrayList<>();
+        if (grid.get("columns") instanceof List<?> list) columns.addAll(list);
+        columns.remove(name);
+        int index = columns.indexOf(after);
+        if (index >= 0) columns.add(index + 1, name); else columns.add(name);
+        grid.put("columns", columns);
+        table.put("gridTabs", gridTabs);
+        pageDto.put("tablePages", tablePages);
+        metadata.put("panelPageDto", pageDto);
+        config.put("metadata", metadata);
+    }
+
+    /** 列表列摘除（字段仍保留在明细里，只从主表列隐藏）。 */
+    private static void removeColumn(Map<String, Object> config, String name) {
+        Map<String, Object> metadata = map(config.get("metadata"));
+        Map<String, Object> pageDto = map(metadata.get("panelPageDto"));
+        List<Map<String, Object>> tablePages = listOfMaps(pageDto.get("tablePages"));
+        if (tablePages.isEmpty()) return;
+        Map<String, Object> table = tablePages.get(0);
+        List<Map<String, Object>> gridTabs = listOfMaps(table.get("gridTabs"));
+        if (gridTabs.isEmpty()) return;
+        Map<String, Object> grid = gridTabs.get(0);
+        List<Object> columns = new ArrayList<>();
+        if (grid.get("columns") instanceof List<?> list) columns.addAll(list);
+        columns.remove(name);
+        grid.put("columns", columns);
+        table.put("gridTabs", gridTabs);
+        pageDto.put("tablePages", tablePages);
+        metadata.put("panelPageDto", pageDto);
+        config.put("metadata", metadata);
+    }
+
+    /** 明细字段默认值（新字段口径由注册表统一，避免空字符串被当成 false/0）。 */
+    private static void setDetailDefault(Map<String, Object> config, String name, Object value) {
+        Map<String, Object> detail = map(config.get("detail"));
+        List<Map<String, Object>> tabs = listOfMaps(detail.get("tabs"));
+        if (tabs.isEmpty()) return;
+        Map<String, Object> tab = tabs.stream().filter(t -> "items".equals(t.get("key"))).findFirst()
+                .orElse(tabs.get(0));
+        List<Map<String, Object>> fields = listOfMaps(tab.get("fields"));
+        for (Map<String, Object> field : fields) {
+            if (name.equals(field.get("dataName"))) field.put("defaultValue", value);
+        }
+        tab.put("fields", fields);
+        detail.put("tabs", tabs);
+        config.put("detail", detail);
+    }
+
+    /** 明细参照字段：缺失时按参照定义补入，并补主表列。 */
+    private static void ensureDetailReference(Map<String, Object> config, String name, String panel, String refField) {
+        Map<String, Object> detail = map(config.get("detail"));
+        List<Map<String, Object>> tabs = listOfMaps(detail.get("tabs"));
+        if (tabs.isEmpty()) return;
+        Map<String, Object> tab = tabs.stream().filter(t -> "items".equals(t.get("key"))).findFirst()
+                .orElse(tabs.get(0));
+        List<Map<String, Object>> fields = listOfMaps(tab.get("fields"));
+        mergeField(fields, reference(name, panel, refField));
+        tab.put("fields", fields);
+        detail.put("tabs", tabs);
+        config.put("detail", detail);
+        ensureColumn(config, name);
+    }
+
+    /** 列表列补一列（tablePages[0].gridTabs[0].columns），已有不重复。 */
+    private static void ensureColumn(Map<String, Object> config, String name) {
+        Map<String, Object> metadata = map(config.get("metadata"));
+        Map<String, Object> pageDto = map(metadata.get("panelPageDto"));
+        List<Map<String, Object>> tablePages = listOfMaps(pageDto.get("tablePages"));
+        if (tablePages.isEmpty()) return;
+        Map<String, Object> table = tablePages.get(0);
+        List<Map<String, Object>> gridTabs = listOfMaps(table.get("gridTabs"));
+        if (gridTabs.isEmpty()) return;
+        Map<String, Object> grid = gridTabs.get(0);
+        List<Object> columns = new ArrayList<>();
+        if (grid.get("columns") instanceof List<?> list) columns.addAll(list);
+        if (!columns.contains(name)) columns.add(name);
+        grid.put("columns", columns);
+        table.put("gridTabs", gridTabs);
+        pageDto.put("tablePages", tablePages);
+        metadata.put("panelPageDto", pageDto);
+        config.put("metadata", metadata);
+    }
+
+    /** 明细下拉字段的选项对齐（如检验结果判定四态）。 */
+    private static void setDetailOptions(Map<String, Object> config, String name, List<String> options) {
+        Map<String, Object> detail = map(config.get("detail"));
+        List<Map<String, Object>> tabs = listOfMaps(detail.get("tabs"));
+        if (tabs.isEmpty()) return;
+        Map<String, Object> tab = tabs.stream().filter(t -> "items".equals(t.get("key"))).findFirst()
+                .orElse(tabs.get(0));
+        List<Map<String, Object>> fields = listOfMaps(tab.get("fields"));
+        Map<String, Object> target = fields.stream()
+                .filter(f -> name.equals(f.get("dataName"))).findFirst().orElse(null);
+        if (target == null) {
+            target = select(name, options.toArray(String[]::new));
+            fields.add(target);
+        } else {
+            target.put("dataType", "下拉框");
+            target.put("options", new ArrayList<>(options));
+            Object current = target.get("defaultValue");
+            if (current == null || !options.contains(String.valueOf(current))) {
+                target.put("defaultValue", options.get(0));
+            }
+        }
+        tab.put("fields", fields);
+        detail.put("tabs", tabs);
+        config.put("detail", detail);
+    }
+
+    /** 表头字段补齐/升级（dataSchema.fields）。 */
+    private static void ensureHeadField(Map<String, Object> config, String name, String type,
+                                        List<String> options, Object defaultValue) {
+        Map<String, Object> schema = map(config.get("dataSchema"));
+        List<Map<String, Object>> fields = listOfMaps(schema.get("fields"));
+        Map<String, Object> target = fields.stream()
+                .filter(f -> name.equals(f.get("dataName"))).findFirst().orElse(null);
+        if (target == null) {
+            target = field(name, type, false);
+            fields.add(target);
+        }
+        target.put("dataType", type);
+        if (options != null) {
+            target.put("options", new ArrayList<>(options));
+            if (defaultValue != null) target.put("defaultValue", defaultValue);
+        }
+        schema.put("fields", fields);
+        config.put("dataSchema", schema);
+    }
+
+    /** 表头参照字段补齐（如检验部门）；已有字段只补参照属性，不覆盖其它配置。 */
+    private static void ensureHeadReference(Map<String, Object> config, String name, String panel, String refField) {
+        Map<String, Object> schema = map(config.get("dataSchema"));
+        List<Map<String, Object>> fields = listOfMaps(schema.get("fields"));
+        Map<String, Object> target = fields.stream()
+                .filter(f -> name.equals(f.get("dataName"))).findFirst().orElse(null);
+        Map<String, Object> definition = reference(name, panel, refField);
+        if (target == null) {
+            fields.add(new LinkedHashMap<>(definition));
+        } else {
+            for (Map.Entry<String, Object> entry : definition.entrySet()) {
+                target.putIfAbsent(entry.getKey(), entry.getValue());
+            }
+            target.put("dataType", "参照");
+        }
+        schema.put("fields", fields);
+        config.put("dataSchema", schema);
+    }
+
+    /** 表头字段进入表单页 fieldNames（逗号分隔字符串）。 */
+    private static void ensureFormField(Map<String, Object> config, String name) {
+        Map<String, Object> metadata = map(config.get("metadata"));
+        Map<String, Object> pageDto = map(metadata.get("panelPageDto"));
+        List<Map<String, Object>> formPages = listOfMaps(pageDto.get("formPages"));
+        if (formPages.isEmpty()) return;
+        Map<String, Object> form = formPages.get(0);
+        String fieldNames = form.get("fieldNames") == null ? "" : String.valueOf(form.get("fieldNames"));
+        List<String> names = new ArrayList<>();
+        for (String part : fieldNames.split(",")) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty() && !names.contains(trimmed)) names.add(trimmed);
+        }
+        if (!names.contains(name)) names.add(name);
+        form.put("fieldNames", String.join(",", names));
+        pageDto.put("formPages", formPages);
+        metadata.put("panelPageDto", pageDto);
+        config.put("metadata", metadata);
     }
 
     private void upsert(String code, String name, String category, Map<String, Object> config, String version) {

@@ -39,8 +39,8 @@ public class AccountingService {
 
     private static Map<String, Template> buildTemplates() {
         Map<String, Template> m = new LinkedHashMap<>();
-        // 采购入库：借 库存商品 / 贷 应付账款
-        m.put("PURCHASE_IN", new Template("采购入库", "PURCHASE_IN", "1405", "库存商品", "2202", "应付账款"));
+        // 采购入库不生成凭证（票到确认，2026-11-06）：入库只落库存，等采购发票审核后再
+        // 借 库存商品 / 贷 应付账款，避免入库+发票双记。
         // 采购发票：借 库存商品 / 贷 应付账款
         m.put("PU_INVOICE", new Template("采购发票", "PU_INVOICE", "1405", "库存商品", "2202", "应付账款"));
         // 销售出库：借 应收账款 / 贷 主营业务收入

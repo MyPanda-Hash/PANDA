@@ -43,11 +43,15 @@ class PxServiceQualityFlowTest {
 
     @Test
     void generatesInspectionWithTraceableSourceRows() throws Exception {
+        java.util.Map<String, Object> arrivalHead = new java.util.HashMap<>(Map.of(
+                "单据编号", "DH-001", "供应商", "华东铝业", "仓库", "原料仓",
+                "采购订单号", "PO-001", "部门", "品质部"));
+        java.util.Map<String, Object> arrivalItem = new java.util.HashMap<>(Map.of(
+                "存货编码", "CL001", "存货名称", "铝棒", "规格型号", "80mm",
+                "计量单位", "件", "到货数量", 12, "批号", "B-001",
+                "单价", 10, "税率%", 13, "含税单价", 11.3));
         FormData arrival = document("ARRIVAL_IN", "DH-001", "已审核",
-                Map.of("单据编号", "DH-001", "供应商", "华东铝业", "仓库", "原料仓"),
-                Map.of("items", List.of(Map.of(
-                        "存货编码", "CL001", "存货名称", "铝棒", "规格型号", "80mm",
-                        "计量单位", "件", "到货数量", 12))));
+                arrivalHead, Map.of("items", List.of(arrivalItem)));
         when(formMapper.selectOne(any())).thenReturn(arrival);
         when(formMapper.selectList(any())).thenReturn(List.of());
         when(formMapper.selectCount(any())).thenReturn(0L);
@@ -60,13 +64,145 @@ class PxServiceQualityFlowTest {
         ArgumentCaptor<FormData> inserted = ArgumentCaptor.forClass(FormData.class);
         verify(formMapper).insert(inserted.capture());
         FormData target = inserted.getValue();
+        Map<?, ?> head = json.readValue(target.getData(), Map.class);
+        assertEquals("PO-001", head.get("采购订单号"));
+        assertEquals("品质部", head.get("检验部门"));
         Map<?, ?> detail = json.readValue(target.getDetailData(), Map.class);
         Map<?, ?> row = (Map<?, ?>) ((List<?>) detail.get("items")).get(0);
         assertEquals("ARRIVAL_IN", row.get("来源面板"));
         assertEquals("DH-001", row.get("来源单号"));
         assertEquals(1, row.get("来源行号"));
         assertEquals(12.0, ((Number) row.get("来源数量")).doubleValue());
-        assertEquals(12.0, ((Number) row.get("检验数量")).doubleValue());
+        assertEquals(12.0, ((Number) row.get("应检数量")).doubleValue());
+        assertEquals("B-001", row.get("检验批号"));
+        assertEquals(11.3, ((Number) row.get("含税单价")).doubleValue(), 0.0001);
+        assertEquals(11.3, ((Number) row.get("让步接收含税单价")).doubleValue(), 0.0001);
+        assertEquals(false, row.get("记录样本明细"));
+        assertEquals(0, ((Number) row.get("样本明细个数")).intValue());
+    }
+
+    @Test
+    void pureConcessionInboundUsesConcessionTaxPrice() throws Exception {
+        Map<String, Object> item = fields(
+                "存货编码", "CL001", "存货名称", "铝棒", "计量单位", "件",
+                "检验数量", 10, "合格数量", 0, "不合格数量", 10,
+                "让步接收数量", 10, "检验结果判定", "让步接收",
+                "处置方式", "让步接收", "处置状态", "已确认",
+                "单价", 10, "含税单价", 11.3, "让步接收含税单价", 9.04,
+                "税率%", 13);
+        FormData inspection = document("INSPECTION", "JY-C001", "已审核",
+                Map.of("单据编号", "JY-C001", "业务类型", "来料检验",
+                        "供应商", "华东铝业", "仓库", "原料仓"),
+                Map.of("items", List.of(item), "unqualified", List.of()));
+        when(formMapper.selectOne(any())).thenReturn(inspection);
+        when(formMapper.selectCount(any())).thenReturn(0L);
+        when(panelMapper.selectOne(any())).thenReturn(inspectionConfig());
+
+        service.callButton("INSPECTION", "生成采购入库单",
+                Map.of("编号", "JY-C001"), Map.of());
+
+        ArgumentCaptor<FormData> inserted = ArgumentCaptor.forClass(FormData.class);
+        verify(formMapper).insert(inserted.capture());
+        Map<?, ?> detail = json.readValue(inserted.getValue().getDetailData(), Map.class);
+        Map<?, ?> row = (Map<?, ?>) ((List<?>) detail.get("items")).get(0);
+        assertEquals(10.0, ((Number) row.get("实收数量")).doubleValue(), 0.0001);
+        assertEquals(8.0, ((Number) row.get("单价")).doubleValue(), 0.0001);
+        assertEquals(9.04, ((Number) row.get("含税单价")).doubleValue(), 0.0001);
+        assertEquals(90.4, ((Number) row.get("含税金额")).doubleValue(), 0.0001);
+    }
+
+    @Test
+    void rejectsProcessInspectionBrokenQuantityMismatch() throws Exception {
+        Map<String, Object> item = fields(
+                "存货编码", "CP001", "报检数量", 10, "应检数量", 10, "检验数量", 10,
+                "合格数量", 7, "不合格数量", 3,
+                "检验返工数量", 1, "工废数量", 1, "料废数量", 0,
+                "检验结果判定", "返工");
+        FormData inspection = document("PROCESS_INSPECTION", "GC-001", "草稿",
+                Map.of("单据编号", "GC-001", "业务类型", "生产过程检验"),
+                Map.of("items", List.of(item), "unqualified", List.of(Map.of(
+                        "关联明细行号", 1, "不合格原因", "尺寸不良",
+                        "处理方式", "返工", "处理数量", 3))));
+        when(formMapper.selectOne(any())).thenReturn(inspection);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.callButton("PROCESS_INSPECTION", "审核",
+                        Map.of("编号", "GC-001"), Map.of()));
+
+        assertTrue(error.getMessage().contains("检验返工数量 + 工废数量 + 料废数量必须等于不合格数量"));
+    }
+
+    @Test
+    void rejectsProcessInspectionVerdictOutsideProcessSet() throws Exception {
+        Map<String, Object> item = fields(
+                "存货编码", "CP001", "报检数量", 10, "应检数量", 10, "检验数量", 10,
+                "合格数量", 7, "不合格数量", 3, "检验返工数量", 3,
+                "检验结果判定", "全批退回");
+        FormData inspection = document("PROCESS_INSPECTION", "GC-002", "草稿",
+                Map.of("单据编号", "GC-002", "业务类型", "生产过程检验"),
+                Map.of("items", List.of(item), "unqualified", List.of(Map.of(
+                        "关联明细行号", 1, "不合格原因", "尺寸不良",
+                        "处理方式", "返工", "处理数量", 3))));
+        when(formMapper.selectOne(any())).thenReturn(inspection);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.callButton("PROCESS_INSPECTION", "审核",
+                        Map.of("编号", "GC-002"), Map.of()));
+
+        assertTrue(error.getMessage().contains("合格 / 返工 / 让步接收 / 报废"));
+    }
+
+    @Test
+    void rejectsQualifiedVerdictWhenInspectionProjectFailed() throws Exception {
+        Map<String, Object> item = fields(
+                "存货编码", "CP001", "报检数量", 10, "应检数量", 10, "检验数量", 10,
+                "合格数量", 10, "不合格数量", 0, "检验结果判定", "合格");
+        FormData inspection = document("PROCESS_INSPECTION", "GC-003", "草稿",
+                Map.of("单据编号", "GC-003", "业务类型", "生产过程检验"),
+                Map.of("items", List.of(item),
+                        "projects", List.of(Map.of(
+                                "关联明细行号", 1, "检验项目", "长度", "单项判定", "不合格")),
+                        "unqualified", List.of()));
+        when(formMapper.selectOne(any())).thenReturn(inspection);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.callButton("PROCESS_INSPECTION", "审核",
+                        Map.of("编号", "GC-003"), Map.of()));
+
+        assertTrue(error.getMessage().contains("存在不合格检验项目"));
+    }
+
+    @Test
+    void rejectsFinishInspectResultQuantityMismatch() throws Exception {
+        FormData report = document("FINISH_INSPECT", "BJ-Q001", "草稿",
+                Map.of("单据编号", "BJ-Q001", "业务类型", "完工报检"),
+                Map.of("items", List.of(fields(
+                        "产品名称", "铝棒", "报检数量", 10,
+                        "合格数量", 8, "不合格数量", 1, "检验结果", "合格"))));
+        when(formMapper.selectOne(any())).thenReturn(report);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.callButton("FINISH_INSPECT", "审核",
+                        Map.of("编号", "BJ-Q001"), Map.of()));
+
+        assertTrue(error.getMessage().contains("合格数量 + 不合格数量必须等于报检数量"));
+    }
+
+    @Test
+    void rejectsSamplingQuantityExceedingReportedQuantity() throws Exception {
+        FormData report = document("FINISH_INSPECT", "BJ-Q002", "草稿",
+                Map.of("单据编号", "BJ-Q002", "业务类型", "完工报检"),
+                Map.of("items", List.of(fields(
+                        "产品名称", "铝棒", "报检数量", 10,
+                        "合格数量", 10, "不合格数量", 0, "检验结果", "合格",
+                        "抽检数量", 12, "最大不合格数", 0))));
+        when(formMapper.selectOne(any())).thenReturn(report);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.callButton("FINISH_INSPECT", "审核",
+                        Map.of("编号", "BJ-Q002"), Map.of()));
+
+        assertTrue(error.getMessage().contains("抽检数量不能超过报检数量"));
     }
 
     @Test
@@ -99,6 +235,14 @@ class PxServiceQualityFlowTest {
                 () -> service.callButton("INSPECTION", "审核", Map.of("编号", "JY-002"), Map.of()));
 
         assertTrue(error.getMessage().contains("让步接收"), "错误信息应提示三态可选值");
+    }
+
+    private static Map<String, Object> fields(Object... values) {
+        Map<String, Object> map = new java.util.HashMap<>();
+        for (int index = 0; index + 1 < values.length; index += 2) {
+            map.put(String.valueOf(values[index]), values[index + 1]);
+        }
+        return map;
     }
 
     private FormData document(String panel, String no, String status,

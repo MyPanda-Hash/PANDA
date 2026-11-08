@@ -8,6 +8,7 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,22 +48,44 @@ public class ReturnPanelRegistry {
         metadata.put("autoCodeField", "单据编号");
         metadata.put("bizType", bizType);
         metadata.put("voucherType", voucherType);
+        // 采购退货单对齐其他采购单据走审批流；销售退货单仍保持直接审核
+        boolean approval = "PURCHASE_RETURN".equals(code);
         metadata.put("panelState", Map.of("dataName", "单据状态", "dataType", "STRING",
-                "defaultOptions", List.of("草稿", "已审核", "已中止")));
-        metadata.put("panelButtons", List.of(
-                Map.of("buttonName", "新增流程"),
-                Map.of("buttonName", "保存"),
-                Map.of("buttonName", "审核"),
-                Map.of("buttonName", "弃审"),
-                Map.of("buttonName", "刷新")));
-        metadata.put("buttonGroups", List.of(
+                "defaultOptions", approval
+                        ? List.of("草稿", "审批中", "已审核", "已中止")
+                        : List.of("草稿", "已审核", "已中止")));
+        metadata.put("panelButtons", approval
+                ? List.of(
+                        Map.of("buttonName", "新增流程"),
+                        Map.of("buttonName", "保存"),
+                        Map.of("buttonName", "提交审批"),
+                        Map.of("buttonName", "审批通过"),
+                        Map.of("buttonName", "审批驳回"),
+                        Map.of("buttonName", "审批情况"),
+                        Map.of("buttonName", "弃审"),
+                        Map.of("buttonName", "刷新"))
+                : List.of(
+                        Map.of("buttonName", "新增流程"),
+                        Map.of("buttonName", "保存"),
+                        Map.of("buttonName", "审核"),
+                        Map.of("buttonName", "弃审"),
+                        Map.of("buttonName", "刷新")));
+        List<Map<String, Object>> groups = new ArrayList<>(List.of(
                 Map.of("name", "新增", "actions", List.of("新增", "引入常用单据")),
                 Map.of("name", "保存", "actions", List.of("保存", "保存新增", "保存为草稿")),
                 Map.of("name", "删除", "actions", List.of("删除", "删除单据")),
-                Map.of("name", "审核", "actions", List.of("审核", "弃审")),
+                approval
+                        ? Map.of("name", "审批", "actions",
+                                List.of("提交审批", "审批通过", "审批驳回", "审批情况", "弃审"))
+                        : Map.of("name", "审核", "actions", List.of("审核", "弃审")),
                 Map.of("name", "查找", "actions", List.of("查找", "刷新")),
                 Map.of("name", "打印", "actions", List.of("打印", "预览", "导出")),
                 Map.of("name", "更多", "actions", List.of("复制", "放弃", "附件", "消息"))));
+        // 采购退货单是红字发票来源（2026-11-04 起发票不再由进货单生成）
+        if ("PURCHASE_RETURN".equals(code)) {
+            groups.add(Map.of("name", "生单", "actions", List.of("生成采购发票（采购退货）")));
+        }
+        metadata.put("buttonGroups", groups);
 
         String codeName = "客户".equals(partnerField) ? "客户编码" : "供应商编码";
         List<Map<String, Object>> queryFields = List.of(
@@ -70,15 +93,23 @@ public class ReturnPanelRegistry {
                 Map.of("dataName", "单据编号", "dataType", "文本"),
                 Map.of("dataName", partnerField, "dataType", "文本"),
                 Map.of("dataName", "仓库", "dataType", "文本"));
+        // 明细网格：对齐其他单据显示 items 明细，而不是把单据列表行铺在主区域
+        List<String> detailColumns = "PURCHASE_RETURN".equals(code)
+                ? List.of("仓库", "存货编码", "存货名称", "规格型号", "计量单位", "数量", "实收数量",
+                        "单价", "金额", "批号", "来源单号")
+                : List.of("仓库", "存货编码", "存货名称", "规格型号", "计量单位", "数量", "实收数量",
+                        "售价", "销售金额", "批号", "来源单号");
+        String amountField = "PURCHASE_RETURN".equals(code) ? "金额" : "销售金额";
         Map<String, Object> tablePage = Map.of(
                 "tableName", name + "列表",
                 "queryFields", queryFields,
                 "gridTabs", List.of(Map.of(
-                        "label", "列表",
-                        "rowSource", "rows",
-                        "columns", List.of("单据日期", "单据编号", partnerField, "仓库",
-                                "来源单号", "金额", "退货原因", "单据状态"),
-                        "summaryItems", List.of())),
+                        "label", "明细",
+                        "rowSource", "detail",
+                        "columns", detailColumns,
+                        "summaryItems", List.of(
+                                Map.of("label", "数量合计", "field", "数量"),
+                                Map.of("label", "金额合计", "field", amountField)))),
                 "topBarBtn", List.of(Map.of("buttonName", "新增流程"),
                         Map.of("buttonName", "删除"), Map.of("buttonName", "刷新")),
                 "rowOperationBarBtn", List.of(),
@@ -88,9 +119,14 @@ public class ReturnPanelRegistry {
                 "formPages", List.of(Map.of(
                         "formName", name,
                         "fieldNames", "单据日期,单据编号," + partnerField + "," + codeName
-                                + ",仓库,来源单号,退货原因,退货日期,经手人,备注",
-                        "bottomOperationBarBtn", List.of(Map.of("buttonName", "保存"),
-                                Map.of("buttonName", "审核"), Map.of("buttonName", "放弃")),
+                                + ",仓库,来源单号,入库单号,检验单号,退货原因,退货日期,经手人,备注",
+                        "bottomOperationBarBtn", approval
+                                ? List.of(Map.of("buttonName", "保存"),
+                                        Map.of("buttonName", "提交审批"),
+                                        Map.of("buttonName", "放弃"))
+                                : List.of(Map.of("buttonName", "保存"),
+                                        Map.of("buttonName", "审核"),
+                                        Map.of("buttonName", "放弃")),
                         "events", List.of()))));
 
         List<Map<String, Object>> schema = List.of(
@@ -100,7 +136,9 @@ public class ReturnPanelRegistry {
                 field(codeName, "文本", false),
                 field("仓库", "文本", false),
                 field("来源单号", "文本", false),
-                select("退货原因", "质量问题", "规格不符", "客户取消", "其他"),
+                field("入库单号", "文本", false),
+                field("检验单号", "文本", false),
+                select("退货原因", "质量问题", "规格不符", "客户取消", "检验不合格退回", "库存退料", "其他"),
                 field("退货日期", "日期", false),
                 field("经手人", "文本", false),
                 field("金额", "小数", false),
@@ -116,6 +154,10 @@ public class ReturnPanelRegistry {
                 quantity("数量", false),
                 amount("单价", false),
                 amount("售价", false),
+                amount("税率%", false),
+                amount("含税单价", false),
+                amount("税额", false),
+                amount("含税金额", false),
                 amount("金额", false),
                 amount("销售金额", false),
                 field("批号", "文本", false),

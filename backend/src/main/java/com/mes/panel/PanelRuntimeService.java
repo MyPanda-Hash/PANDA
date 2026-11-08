@@ -59,4 +59,12 @@ public interface PanelRuntimeService {
     default Map<String, Object> traceProcess(String docNo) {
         throw new UnsupportedOperationException("traceProcess is not supported by this runtime");
     }
+
+    /**
+     * 采购发票行级选单：返回来源入库单/退货单中未开票的明细行。
+     * mode=purchase|return；默认不支持，由 PxService 实现。
+     */
+    default Map<String, Object> invoiceSourceLines(String mode, String supplier, String keyword) {
+        throw new UnsupportedOperationException("invoiceSourceLines is not supported by this runtime");
+    }
 }

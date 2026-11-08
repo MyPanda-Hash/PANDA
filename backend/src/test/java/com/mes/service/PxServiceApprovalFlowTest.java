@@ -1,5 +1,9 @@
 package com.mes.service;
 
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.conditions.AbstractWrapper;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mes.entity.FormApproval;
 import com.mes.entity.FormData;
@@ -10,20 +14,26 @@ import com.mes.mapper.PanelConfigMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +49,8 @@ class PxServiceApprovalFlowTest {
 
     @BeforeEach
     void setUp() {
+        // LambdaUpdateWrapper 需要实体列缓存；纯单测没有 MyBatis 启动流程，手动初始化一次
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), FormData.class);
         service = new PxService(panelMapper, formMapper, approvalMapper, reportQueryService);
     }
 
@@ -72,6 +84,33 @@ class PxServiceApprovalFlowTest {
         assertEquals("已审核", document.getStatus());
         assertEquals(List.of("SUBMIT", "APPROVE"), history.stream().map(FormApproval::getAction).toList());
         assertEquals(List.of("PENDING", "APPROVED"), history.stream().map(FormApproval::getResult).toList());
+    }
+
+    @Test
+    void unauditClearsStaleApprovalStatusFromHead() throws Exception {
+        FormData document = document("SO_ORDER", "SO-TEST-003", "已审核");
+        Map<String, Object> head = new HashMap<>();
+        head.put("单据编号", "SO-TEST-003");
+        head.put("审批状态", "已通过");
+        head.put("审核人", "admin");
+        document.setData(json.writeValueAsString(head));
+        when(formMapper.selectOne(any())).thenReturn(document);
+        when(formMapper.selectList(any())).thenReturn(List.of());
+        doAnswer(invocation -> 1).when(approvalMapper).insert(any(FormApproval.class));
+
+        Map<String, Object> result = service.callButton("SO_ORDER", "弃审",
+                Map.of("编号", "SO-TEST-003"), Map.of());
+
+        assertEquals("草稿", result.get("单据状态"));
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Wrapper<FormData>> updated = ArgumentCaptor.forClass(Wrapper.class);
+        verify(formMapper).update(isNull(), updated.capture());
+        AbstractWrapper<?, ?, ?> wrapper = (AbstractWrapper<?, ?, ?>) updated.getValue();
+        String dataJson = wrapper.getParamNameValuePairs().values().stream()
+                .filter(value -> value instanceof String text && text.contains("SO-TEST-003"))
+                .map(String.class::cast)
+                .findFirst().orElseThrow();
+        assertFalse(dataJson.contains("审批状态"), "弃审后表头不应残留审批状态");
     }
 
     @Test
