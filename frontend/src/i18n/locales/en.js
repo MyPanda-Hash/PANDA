@@ -615,7 +615,6 @@ export default {
     '采购入库单': 'Purchase Receipt',
     '采购订单': 'Purchase Order',
     '到货单': 'Arrival Order',
-    '进货单': 'Purchase Invoice',
     '报价单': 'Quotation',
     '销售出库单': 'Sales Delivery',
     '产成品入库单': 'FG Receipt',

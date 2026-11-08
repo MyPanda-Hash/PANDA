@@ -113,13 +113,9 @@ async function main() {
   log('采购订单→采购入库单', true, puIn.targetNo);
   await call('/px/callButton', { panelCode: 'PURCHASE_IN', buttonName: '审核', formData: { 编号: puIn.targetNo }, buttonParam: {} });
   log('采购入库单审核', true);
-  // 13. 采购订单 → 进货单 → 审核 → 采购发票
-  const piNo = await generate('PU_ORDER', po.targetNo, '生成进货单');
-  log('采购订单→进货单', true, piNo.targetNo);
-  await call('/px/callButton', { panelCode: 'PU_IN', buttonName: '审核', formData: { 编号: piNo.targetNo }, buttonParam: {} });
-  log('进货单审核', true);
-  const inv = await generate('PU_IN', piNo.targetNo, '生成采购发票（普通采购）');
-  log('进货单→采购发票', true, inv.targetNo);
+  // 13. 采购入库单 → 采购发票（2026-11-04 起发票不再由进货单生成）
+  const inv = await generate('PURCHASE_IN', puIn.targetNo, '生成采购发票（普通采购）');
+  log('采购入库单→采购发票', true, inv.targetNo);
   await call('/px/callButton', { panelCode: 'PU_INVOICE', buttonName: '审核', formData: { 编号: inv.targetNo }, buttonParam: {} });
   log('采购发票审核', true);
 

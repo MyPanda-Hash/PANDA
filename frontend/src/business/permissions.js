@@ -20,7 +20,7 @@ const BUTTON_PERM_MAP = {
   查找: 'query', 查询: 'query', 刷新: 'query',
   新增: 'add', 新增流程: 'add', 引入常用单据: 'add', 选单: 'add', 扫描填单: 'add',
   修改: 'edit', 保存: 'edit', 保存新增: 'edit', 保存为草稿: 'edit',
-  中止: 'edit', 中止执行: 'edit', 整单中止: 'edit', 草稿: 'edit', 取消中止: 'edit',
+  中止: 'edit', 中止执行: 'edit', 整单中止: 'edit', 草稿: 'edit', 取消中止: 'edit', 关闭: 'edit', 确认处置: 'edit',
   删除: 'delete', 删除单据: 'delete',
   导出: 'export', 明细标签打印: 'export', 下载导入模板: 'export', 导入: 'export',
   直接打印: 'print', 打印: 'print', 预览: 'print', 打印模板设置: 'print', 打印情况: 'print', 保存打印: 'print',

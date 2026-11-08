@@ -155,17 +155,23 @@
                 class="fn-card"
                 :class="[
                   'state-' + (nodeProps.data.state || 'none'),
-                  { dim: nodeProps.data.dim, stalled: nodeProps.data.stalled },
+                  { dim: nodeProps.data.dim, stalled: nodeProps.data.stalled, 'no-perm': !canOpenPanel(nodeProps.data.code) },
                 ]"
               >
                 <!-- 连线锚点：Vue Flow 需要节点里有 Handle 才能把边接到卡片边缘；
-                     只留「左进右出」两个，边不指定 handle id 时自动取，避免多锚点解析错位 -->
+                     基础锚点上下左右各一个，边不指定 handle id 时按相对位置自动取；
+                     旁路（如采购订单直接入库）用「左边缘底部出 / 顶部靠左进」，
+                     让折线从卡片下沿拐进卡片列左侧的空白带，不贴到货单左边框 -->
                 <Handle id="in" type="target" :position="Position.Left" class="fn-handle" />
                 <Handle id="out" type="source" :position="Position.Right" class="fn-handle" />
                 <Handle id="in-t" type="target" :position="Position.Top" class="fn-handle" />
                 <Handle id="out-b" type="source" :position="Position.Bottom" class="fn-handle" />
                 <Handle id="out-t" type="source" :position="Position.Top" class="fn-handle" />
                 <Handle id="in-b" type="target" :position="Position.Bottom" class="fn-handle" />
+                <Handle id="out-l-b" type="source" :position="Position.Left" style="top: 100%" class="fn-handle" />
+                <Handle id="in-t-q" type="target" :position="Position.Top" style="left: 25%" class="fn-handle" />
+                <Handle id="out-b-r" type="source" :position="Position.Bottom" style="left: 75%" class="fn-handle" />
+                <Handle id="in-b-l" type="target" :position="Position.Bottom" style="left: 25%" class="fn-handle" />
                 <div class="fn-icon">
                   <AntIcon :name="nodeProps.data.icon" :size="18" />
                 </div>
@@ -207,8 +213,10 @@
               v-for="d in visibleDocs"
               :key="d.code"
               class="bo-item"
+              :class="{ 'no-perm': !canOpenPanel(d.code) }"
+              :title="canOpenPanel(d.code) ? '' : tt('无权限访问')"
               type="button"
-              @click="go('/panelx/list/' + d.code, d.label)"
+              @click="openPanel(d.code, d.label)"
             >
               <AntIcon name="file-text" :size="13" class="bo-item-icon" />
               <span class="bo-item-label">{{ tt(d.label) }}</span>
@@ -227,8 +235,10 @@
               v-for="d in visibleArchives"
               :key="d.code"
               class="bo-item"
+              :class="{ 'no-perm': !canOpenPanel(d.code) }"
+              :title="canOpenPanel(d.code) ? '' : tt('无权限访问')"
               type="button"
-              @click="go('/panelx/list/' + d.code, d.label)"
+              @click="openPanel(d.code, d.label)"
             >
               <AntIcon name="database" :size="13" class="bo-item-icon" />
               <span class="bo-item-label">{{ tt(d.label) }}</span>
@@ -247,8 +257,10 @@
               v-for="d in visibleReports"
               :key="d.code"
               class="bo-item"
+              :class="{ 'no-perm': !canOpenPanel(d.code) }"
+              :title="canOpenPanel(d.code) ? '' : tt('无权限访问')"
               type="button"
-              @click="go('/panelx/list/' + d.code, d.label)"
+              @click="openPanel(d.code, d.label)"
             >
               <AntIcon name="bar-chart" :size="13" class="bo-item-icon" />
               <span class="bo-item-label">{{ tt(d.label) }}</span>
@@ -319,6 +331,7 @@ import '@vue-flow/core/dist/theme-default.css'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useTabsStore } from '@/stores/tabs'
+import { useUserStore } from '@/stores/user'
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
 import AntIcon from '@/business/components/AntIcon.vue'
@@ -327,6 +340,7 @@ import { traceProcess, queryFormDataList } from '@/business/engine'
 const router = useRouter()
 const route = useRoute()
 const tabs = useTabsStore()
+const user = useUserStore()
 const localeStore = useLocaleStore()
 
 /**
@@ -340,8 +354,9 @@ const PANEL_ICONS = {
   EXPENSE: 'money-collect', SALE_COST_ALLOC: 'calculator',
   // 采购
   PU_REQ_ANALYSIS: 'pie-chart', PU_REQ: 'file-add', PU_ORDER: 'shopping-cart',
-  PU_IN: 'import', ARRIVAL_IN: 'truck', PURCHASE_IN: 'inbox',
+  ARRIVAL_IN: 'truck', PURCHASE_IN: 'inbox',
   PURCHASE_RETURN: 'rollback', PU_INVOICE: 'file-text',
+  RECEIPT_PAYABLE: 'money-collect',
   // 生产
   MANU_ORDER: 'tool', PROCESS_REPORT: 'profile', MATERIAL_REQ: 'form',
   MATERIAL_OUT: 'export', FINISH_IN: 'file-done', FINISH_INSPECT: 'file-search',
@@ -581,39 +596,68 @@ const modules = [
   },
   {
     code: 'purchase', name: '采购管理', icon: 'shopping', color: '#52c41a',
-    /** 采购链路补齐到货与检验：请购 → 采购订单 → 到货单 → 检验 → 合格入库 / 不合格退回 */
+    /**
+     * 采购主链：请购 → 采购订单 → 到货（收料通知）→ 检验（拣验货）→ 合格入库 / 不合格退回 → 发票 → 付款/退款。
+     * 采购发票两条来源：采购订单先票后货（收货后单票勾稽）、采购入库单先货后票；退货单开红字。
+     * 另有「直入」旁路：无收料/无质检时采购订单可直接生成采购入库单；同一订单行与到货链互斥。
+     * 付款与退款共用付款单（负数退款）；2026-11-04 移除 T+ 进货单。
+     */
     nodes: [
-      { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' },
-      { code: 'PU_REQ', label: '请购单' },
+      { code: 'PU_REQ', label: '请购单（采购申请）' },
       { code: 'PU_ORDER', label: '采购订单' },
-      { code: 'ARRIVAL_IN', label: '到货单' },
-      { code: 'INSPECTION', label: '来料/成品检验单' },
+      { code: 'ARRIVAL_IN', label: '到货单（收料通知）' },
+      { code: 'INSPECTION', label: '检验单（拣验货）' },
       { code: 'PURCHASE_IN', label: '采购入库单' },
       { code: 'PURCHASE_RETURN', label: '采购退货单' },
-      { code: 'PU_IN', label: '进货单' },
-      { code: 'PU_INVOICE', label: '采购发票' },
+      { code: 'PU_INVOICE', label: '采购发票（入库/退货）' },
+      { code: 'RECEIPT_PAYABLE', label: '付款单/退款单' },
     ],
     edges: [
-      { from: 'PU_REQ_ANALYSIS', to: 'PU_REQ' },
-      { from: 'PU_REQ', to: 'PU_ORDER' },
-      { from: 'PU_ORDER', to: 'ARRIVAL_IN', label: '到货' },
-      { from: 'ARRIVAL_IN', to: 'INSPECTION', label: '报检' },
-      { from: 'INSPECTION', to: 'PURCHASE_IN', label: '合格入库' },
+      { from: 'PU_REQ', to: 'PU_ORDER', label: '确认申请' },
+      { from: 'PU_ORDER', to: 'ARRIVAL_IN', label: '通知收料' },
+      // 零收料/零质检的捷径：左边缘底部出、顶部靠左进，折线走卡片列左侧空白带，不贴到货单边框
+      {
+        from: 'PU_ORDER', to: 'PURCHASE_IN', label: '直接入库',
+        sourceHandle: 'out-l-b', targetHandle: 'in-t-q',
+        sourcePosition: Position.Left, targetPosition: Position.Top,
+      },
+      { from: 'ARRIVAL_IN', to: 'INSPECTION', label: '通知拣验' },
+      { from: 'INSPECTION', to: 'PURCHASE_IN', label: '拣验入库' },
       { from: 'INSPECTION', to: 'PURCHASE_RETURN', label: '不合格退回' },
-      { from: 'PU_ORDER', to: 'PU_IN', label: '进货' },
-      { from: 'PU_IN', to: 'PU_INVOICE', label: '开票' },
+      { from: 'PURCHASE_IN', to: 'PURCHASE_RETURN', label: '如需退货' },
+      // 先票后货：订单预开票，货到后从发票回到采购入库单完成单票勾稽。
+      {
+        from: 'PU_ORDER', to: 'PU_INVOICE', label: '先票后货', dashed: true,
+        sourceHandle: 'out', targetHandle: 'in-t-q',
+        sourcePosition: Position.Right, targetPosition: Position.Top,
+      },
+      // 反向下沉到独立通道，避免和入库→发票的「先货后票」实线重合。
+      {
+        from: 'PU_INVOICE', to: 'PURCHASE_IN', label: '单票勾稽', dashed: true, offset: 44,
+        sourceHandle: 'out-b-r', targetHandle: 'in-b-l',
+        sourcePosition: Position.Bottom, targetPosition: Position.Bottom,
+      },
+      // 先货后票：从入库单底部绕到发票底部，避免横穿中间的退货单卡片。
+      {
+        from: 'PURCHASE_IN', to: 'PU_INVOICE', label: '先货后票（确认应付）',
+        sourceHandle: 'out-b-r', targetHandle: 'in-b-l',
+        sourcePosition: Position.Bottom, targetPosition: Position.Bottom,
+      },
+      { from: 'PURCHASE_RETURN', to: 'PU_INVOICE', label: '红字发票（确认应退）' },
+      // 当前系统付款与退款共用付款单：正数付款、负数退款。
+      { from: 'PU_INVOICE', to: 'RECEIPT_PAYABLE', label: '支付货款/收到退款' },
     ],
     pos: {
-      PU_REQ_ANALYSIS: [440, 0], PU_REQ: [440, 160], PU_ORDER: [440, 320],
-      ARRIVAL_IN: [240, 480], PU_IN: [700, 480],
-      INSPECTION: [240, 640], PU_INVOICE: [700, 640],
+      PU_REQ: [440, 160], PU_ORDER: [440, 320],
+      ARRIVAL_IN: [240, 480], INSPECTION: [240, 640],
       PURCHASE_IN: [120, 800], PURCHASE_RETURN: [380, 800],
+      PU_INVOICE: [720, 800], RECEIPT_PAYABLE: [960, 800],
     },
     docs: [
       { code: 'PU_REQ', label: '请购单' }, { code: 'PU_ORDER', label: '采购订单' },
       { code: 'ARRIVAL_IN', label: '到货单' }, { code: 'INSPECTION', label: '来料检验单' },
       { code: 'PURCHASE_IN', label: '采购入库单' }, { code: 'PURCHASE_RETURN', label: '采购退货单' },
-      { code: 'PU_IN', label: '进货单' }, { code: 'PU_INVOICE', label: '采购发票' },
+      { code: 'PU_INVOICE', label: '采购发票' }, { code: 'RECEIPT_PAYABLE', label: '付款单/退款单' },
     ],
     archives: [{ code: 'PARTNER', label: '往来单位(供应商)' }, { code: 'INV', label: '存货' }, { code: 'WH', label: '仓库' }, { code: 'UOM', label: '计量单位' }],
     reports: [
@@ -1138,9 +1182,17 @@ function layoutNodes(module) {
  * 边的显式 sourceHandle/targetHandle 优先，配置里可覆盖。
  */
 function edgeHandles(e, layout) {
+  // 旁路等特殊走向由模块配置显式指定锚点，绕开中间的节点列
+  if (e.sourceHandle && e.targetHandle) {
+    return {
+      sourceHandle: e.sourceHandle,
+      targetHandle: e.targetHandle,
+      sourcePosition: e.sourcePosition || Position.Bottom,
+      targetPosition: e.targetPosition || Position.Top,
+    }
+  }
   const a = layout[e.from] || { x: 0, y: 0 }
   const b = layout[e.to] || { x: 0, y: 0 }
-  const dx = b.x - a.x
   const dy = b.y - a.y
   // 跨行就是竖直支链：从上往下走「下出上进」，从下往上走「上出下进」，
   // 只有同一行才走「右出左进」。这样支链是直的，不再绕成 S 形长弯。
@@ -1220,7 +1272,7 @@ function buildFlow() {
       target: e.to,
       // 正交连线：制造业流程图用直角折线比贝塞尔曲线更易读
       type: 'smoothstep',
-      pathOptions: { borderRadius: 6, offset: 8 },
+      pathOptions: { borderRadius: 6, offset: Number(e.offset) || 8 },
       ...edgeHandles(e, layout),
       // 流转标签：写在线上，让人不用悬停就知道这条箭头是生单还是选单
       label: e.label ? tt(e.label) : '',
@@ -1236,8 +1288,17 @@ function buildFlow() {
         color: flowing ? '#1677ff' : (bothHit ? '#52c41a' : EDGE_COLOR),
       },
       style: bothHit
-        ? { stroke: flowing ? '#1677ff' : '#95de64', strokeWidth: flowing ? 2.2 : 1.8 }
-        : { stroke: EDGE_COLOR, strokeWidth: 1.6, opacity: tracked.value ? 0.35 : 1 },
+        ? {
+            stroke: flowing ? '#1677ff' : '#95de64',
+            strokeWidth: flowing ? 2.2 : 1.8,
+            ...(e.dashed ? { strokeDasharray: '5 4' } : {}),
+          }
+        : {
+            stroke: EDGE_COLOR,
+            strokeWidth: 1.6,
+            opacity: tracked.value ? 0.35 : 1,
+            ...(e.dashed ? { strokeDasharray: '5 4' } : {}),
+          },
       animated: flowing,
       class: flowing ? 'bo-edge-flow' : (bothHit ? 'bo-edge-done' : ''),
       // 边标签说明流转条件（到货/报检/合格入库/不合格退回…），追踪态下命中边才显示
@@ -1269,6 +1330,21 @@ onMounted(() => {
 
 onUnmounted(() => window.removeEventListener('resize', fitNow))
 
+/** 面板进入权限：与后端 requireVisible 同口径（admin 全通，其余按 sys_role_panel 可见面板判定）。只拦“进入”，不影响流程图与相关单据的展示。 */
+function canOpenPanel(panelCode) {
+  if (!panelCode) return false
+  return !!user.isAdmin || (Array.isArray(user.visiblePanels) && user.visiblePanels.includes(panelCode))
+}
+
+/** 流程图节点 / 右侧相关单据统一入口：无权限时提示并留在当前页，不跳转、不开页签。 */
+function openPanel(panelCode, title) {
+  if (!canOpenPanel(panelCode)) {
+    ElMessage.warning(tt('无权限访问该面板') + '：' + tt(title || panelCode))
+    return
+  }
+  go('/panelx/list/' + panelCode, title)
+}
+
 /**
  * 打开具体单据：统一走列表页（PanelxList），不再跳表单页。
  * 一个单据只有一个样子——列表页有单据栏、列头筛选、表头内联编辑，能力比表单页全。
@@ -1276,6 +1352,10 @@ onUnmounted(() => window.removeEventListener('resize', fitNow))
  */
 function openDoc(panelCode, docNo, title) {
   if (!panelCode) return
+  if (!canOpenPanel(panelCode)) {
+    ElMessage.warning(tt('无权限访问该面板') + '：' + tt(title || panelCode))
+    return
+  }
   const path = '/panelx/list/' + panelCode
   const query = { from: route.path }
   if (docNo) query.code = docNo
@@ -1290,7 +1370,7 @@ function onNodeClick({ node }) {
     openDoc(node.data.code, hit.docNo, node.data.label + '-' + hit.docNo)
     return
   }
-  go('/panelx/list/' + node.data.code, node.data.label)
+  openPanel(node.data.code, node.data.label)
 }
 
 function go(path, title) {
@@ -1530,6 +1610,17 @@ function go(path, title) {
 .fn-handle {
   background: transparent;
   border-color: transparent;
+}
+
+/* 无进入权限：节点仍然显示（保证流程图完整可读），仅置灰并禁止点击进入 */
+.fn-card.no-perm {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.fn-card.no-perm:hover {
+  border-color: #d9d9d9;
+  background: #fff;
 }
 
 .fn-card.dim {
@@ -2176,6 +2267,21 @@ function go(path, title) {
 
 .bo-item:hover .bo-item-icon {
   color: #1677ff;
+}
+
+/* 无进入权限：相关单据/档案/报表仍然列出，仅置灰并阻止跳转 */
+.bo-item.no-perm {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.bo-item.no-perm:hover {
+  background: transparent;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+.bo-item.no-perm:hover .bo-item-icon {
+  color: rgba(0, 0, 0, 0.45);
 }
 
 .bo-item-icon {

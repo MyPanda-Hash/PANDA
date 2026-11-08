@@ -181,7 +181,7 @@ async function generate() {
       if (res && res['编号']) generated.push({ panel: props.panelCode, no: res['编号'], sourceNo: no })
     }
     if (generated.length) {
-      const panelNames = { MANU_ORDER: tt('生产加工单'), PROCESS_REPORT: tt('工序汇报单'), FINISH_IN: tt('产成品入库单'), PU_IN: tt('进货单'), ARRIVAL_IN: tt('到货单'), FINISH_INSPECT: tt('成品报检单'), INSPECTION: tt('检验单'), DISPATCH: tt('工序派工单'), PURCHASE_IN: tt('采购入库单') }
+      const panelNames = { MANU_ORDER: tt('生产加工单'), PROCESS_REPORT: tt('工序汇报单'), FINISH_IN: tt('产成品入库单'), ARRIVAL_IN: tt('到货单'), FINISH_INSPECT: tt('成品报检单'), INSPECTION: tt('检验单'), DISPATCH: tt('工序派工单'), PURCHASE_IN: tt('采购入库单'), PURCHASE_RETURN: tt('采购退货单') }
       ElMessage.success(tt('已生成') + ' ' + generated.length + ' ' + tt('张') + (panelNames[generated[0].panel] || generated[0].panel))
       emit('generated', generated)
       close()
