@@ -58,7 +58,8 @@ public class BomRoutePanelUpgrade {
             fields.add(f);
             changed = true;
         }
-        if (findField(fields, "工艺路线编码") == null) {
+        Map<String, Object> routeField = findField(fields, "工艺路线编码");
+        if (routeField == null) {
             Map<String, Object> f = new LinkedHashMap<>();
             f.put("dataName", "工艺路线编码");
             f.put("dataType", "参照");
@@ -66,7 +67,12 @@ public class BomRoutePanelUpgrade {
             f.put("refField", "工艺路线编码");
             f.put("displayField", "工艺路线名称");
             f.put("isRequired", false);
+            // 走专用弹窗：按顺序横向展示该路线的工序流程，并标注委外工序
+            f.put("refDialog", "route-flow");
             fields.add(f);
+            changed = true;
+        } else if (!"route-flow".equals(routeField.get("refDialog"))) {
+            routeField.put("refDialog", "route-flow");
             changed = true;
         }
         schema.put("fields", fields);

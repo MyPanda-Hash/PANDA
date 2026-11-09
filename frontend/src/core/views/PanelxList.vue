@@ -131,7 +131,7 @@
           :title="tt('取自参照档案，修改请到档案里改')"
         >{{ cellText(cur, headerFieldKey(field)) }}</div>
         <template v-else-if="draftEditable">
-          <div v-if="isRefSelect(field)" class="query-ref-select">
+          <div v-if="isRefSelect(field) && !isRouteFlowField(field)" class="query-ref-select">
             <el-select
               v-model="cur[headerFieldKey(field)]"
               clearable
@@ -511,6 +511,7 @@
 
     <RefPickDialog v-model="queryRefVisible" :field="queryRefField" mode="query" @confirm="onQueryRefConfirm" />
     <RefPickDialog v-model="headerRefVisible" :field="headerRefField" mode="header" @confirm="onHeaderRefConfirm" />
+    <RouteFlowPickDialog v-model="routeFlowVisible" :field="headerRefField" @confirm="onHeaderRefConfirm" />
     <RefPickDialog v-model="detailRefVisible" :field="detailRefPick?.field" mode="detail" @confirm="onDetailRefConfirm" />
     <el-dialog v-model="queryDialogVisible" :title="tt('查询')" width="760px" append-to-body destroy-on-close class="header-query-dialog">
       <div class="query-dialog-fields">
@@ -656,6 +657,7 @@ import { hasUnqualifiedTab, syncUnqualifiedRow } from '@core/inspection-unqualif
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
 import RefPickDialog from './RefPickDialog.vue'
+import RouteFlowPickDialog from './RouteFlowPickDialog.vue'
 import NewVoucherDialog from './NewVoucherDialog.vue'
 import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
@@ -704,6 +706,8 @@ const invalidPanel = computed(() => !panelCode.value || panelCode.value === 'und
 // 物料清单维护和正反向查询统一使用父件/子件主从视图；仅 BOM 草稿开放编辑。
 const isBomMasterPanel = computed(() => ['BOM', 'BOM_FWD', 'BOM_REV'].includes(String(panelCode.value)))
 // 只读浏览时父件表列出「所有单据的父件」，点哪行看哪行的子件；编辑草稿时仍只维护当前单据
+/** 主从视图里点选中的父件所属单据号（「修改」跳转用） */
+const boMasterPickedDoc = ref('')
 const bomBrowseAll = computed(() => isBomMasterPanel.value && !(panelCode.value === 'BOM' && draftEditable.value))
 const bomMasterRows = computed(() => {
   if (panelCode.value === 'BOM') {
@@ -743,9 +747,29 @@ async function onBomPageSizeChange(size) {
 }
 
 // 点父件行 → 当前单据跟着切过去，表头「单据：xxx」与子件都对得上
+/** 当前选中的父件所属 BOM 单据号：优先主从视图里选中的父件行，其次当前单据。 */
+function bomTargetDocNo() {
+  const picked = boMasterPickedDoc.value
+  if (picked) return picked
+  return cur.value?.['编号'] || cur.value?.['单据编号'] || ''
+}
+
+/**
+ * 物料清单「修改」：直接打开选中父件所属的那张 BOM 单据。
+ *
+ * <p>以前用户得自己在单据列表里翻到对应单据，父件一多就找不到；现在点父件行再点「修改」
+ * 就落在那张单上（表单页按 code 定位）。BOM_FWD/BOM_REV 是只读查询视图，同样跳过去看/改。
+ */
+async function openBomDocumentForEdit() {
+  const docNo = bomTargetDocNo()
+  if (!docNo) return ElMessage.warning(tt('请先选择一行父件'))
+  await router.push({ path: '/panelx/form/BOM', query: { code: docNo } })
+}
+
 function onBomSelectMaster(row) {
   const docNo = row && row._docNo
   if (!docNo) return
+  boMasterPickedDoc.value = docNo
   const index = list.value.findIndex((doc) => (doc['编号'] || doc['单据编号'] || '') === docNo)
   if (index >= 0) curIdx.value = index
 }
@@ -768,6 +792,7 @@ const queryDialogVisible = ref(false)
 const queryDraft = reactive({})
 const headerRefVisible = ref(false)
 const headerRefField = ref(null)
+const routeFlowVisible = ref(false)
 const detailRefVisible = ref(false)
 const detailRefPick = ref(null)
 const detailRefSaving = ref(false)
@@ -833,13 +858,22 @@ const reportColumnTree = computed(() => {
   }
   return out
 })
+/** refDialog: route-flow 的字段强制弹窗（不受「≤20 行走下拉」影响，下拉看不到工序流程） */
+function isRouteFlowField(field) {
+  return (field?.refDialog || field?.ref?.dialog) === 'route-flow'
+}
+
 const toolbarGroups = computed(() => (groups.value || []).map((group) => {
   // 2026-11-04（对齐 yinjia）：列表页不再提供能打开整单卡片（VoucherFormDialog）的入口 ——
   //   「修改」动作唯一的作用就是弹那张卡片，卡片删除后它成了死按钮，故与 查询/查找 一样从工具栏摘掉。
   //   单据数据统一在列表页原地内联编辑（草稿态，见 draftEditable）；已审核单据先「弃审」回到草稿。
   // 单据列表模式只保留对整张发票有意义的动作；保存/选单/行级关联/删行在详情页做。
   const detailOnly = new Set(['保存', '保存新增', '保存为草稿', '保存打印', '选单', '选采购入库单', '选采购订单', '选入库单行', '导入发票', '删除'])
-  const actions = actsOf(group).filter((action) => !['查询', '查找', '修改'].includes(action)
+  // 物料清单（BOM/BOM_FWD/BOM_REV）：保留「修改」，作用=跳到选中父件所属的那张 BOM 单据，
+  // 不用用户自己在单据列表里翻找。其余面板维持原规则（修改已无对应交互，不显示）。
+  const keepModify = isBomMasterPanel.value;
+  const blocked = keepModify ? ['查询', '查找'] : ['查询', '查找', '修改'];
+  const actions = actsOf(group).filter((action) => !blocked.includes(action)
     && !(documentListMode.value && detailOnly.has(action)))
   const name = ['查询', '查找'].includes(group.name) ? (actions[0] || group.name) : group.name
   return { ...group, name, actions }
@@ -1784,6 +1818,11 @@ function headerRefText(field) {
 function openHeaderRef(field) {
   if (!draftEditable.value || headerFieldLocked(field)) return
   headerRefField.value = field
+  // 工艺路线这类「要看工序流程」的字段走专用弹窗（panel_config 里声明 refDialog: route-flow）
+  if ((field.refDialog || field.ref?.dialog) === 'route-flow') {
+    routeFlowVisible.value = true
+    return
+  }
   headerRefVisible.value = true
 }
 
@@ -2732,8 +2771,12 @@ async function onButton(action) {
     // 刷新列表并定位到新单，在列表页内联填写（不再弹新增弹窗、不跳转表单页）
     return await directAdd()
   }
-  // 2026-11-04（对齐 yinjia）：「修改」原=打开整单卡片（VoucherFormDialog），卡片已按用户口径删除，
-  //   该动作也一并从工具栏摘掉（toolbarGroups 过滤），此处不再处理。
+  // 「修改」：物料清单主从视图下 = 跳到选中父件所属的那张 BOM 单据（表头 + 子件明细一起改）。
+  // 其余面板仍不处理（该动作已从工具栏摘掉，见 toolbarGroups）。
+  if (action === '修改' && isBomMasterPanel.value) {
+    await openBomDocumentForEdit()
+    return
+  }
   if (['保存', '保存为草稿', '保存新增'].includes(action) && draftEditable.value) {
     await saveInlineDraft(action)
     return

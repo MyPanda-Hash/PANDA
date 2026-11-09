@@ -1242,6 +1242,8 @@ public class PxService implements PanelRuntimeService {
                 ref.put("map", f.get("refMap"));
                 ref.put("multi", Boolean.TRUE.equals(f.get("refMulti")));
                 ref.put("columns", f.get("refColumns"));
+                // 专用选择弹窗（如工艺路线要看工序流程）：透传给前端决定用哪个弹窗
+                if (f.get("refDialog") != null) ref.put("dialog", f.get("refDialog"));
                 m.put("ref", ref);
             }
             meta.add(m);

@@ -360,6 +360,7 @@
       </el-dialog>
     </div>
     <RefPickDialog v-model="refVisible" :field="refPick?.field" :mode="refPick?.mode" @confirm="onRefConfirm" />
+    <RouteFlowPickDialog v-model="routeFlowVisible" :field="refPick?.field" @confirm="onRefConfirm" />
     <ApprovalHistoryDialog v-model="approvalVisible" :panelCode="panelCode" :formNo="approvalNo" />
     <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
     <ProducePreviewDialog v-model="produceVisible" :docNo="produceNo" @generated="onProduceGenerated" />
@@ -409,6 +410,7 @@ import { hasUnqualifiedTab, syncUnqualifiedRow } from '@core/inspection-unqualif
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
 import RefPickDialog from './RefPickDialog.vue'
+import RouteFlowPickDialog from './RouteFlowPickDialog.vue'
 import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
 import ProducePreviewDialog from './ProducePreviewDialog.vue'
@@ -822,6 +824,7 @@ function isSelect(r) {
 
 // ---------- 参照字段弹窗选择（开发约束十一-1：能对应基础档案的字段弹窗拉取勾选导入） ----------
 const refVisible = ref(false)
+const routeFlowVisible = ref(false)
 const refPick = ref(null)
 
 function isRef(r) {
@@ -841,6 +844,11 @@ function drRefText(dr, row) {
 function openRefPick(r) {
   if (!editable.value || fieldLocked(r)) return
   refPick.value = { field: r, kind: 'header', code: r.code, mode: 'header' }
+  // 工艺路线这类「要看工序流程」的字段走专用弹窗（panel_config 里声明 refDialog: route-flow）
+  if ((r.refDialog || r.ref?.dialog) === 'route-flow') {
+    routeFlowVisible.value = true
+    return
+  }
   refVisible.value = true
 }
 
@@ -970,6 +978,8 @@ function loadRefOptions(r, keyword) {
 }
 
 function isRefSelect(r) {
+  // refDialog: route-flow 这类要看流程/图的选择器强制走弹窗，不能退化成下拉（下拉只能看编码名称）
+  if ((r.refDialog || r.ref?.dialog) === 'route-flow') return false
   return isRef(r) && !refMultiOf(r) && refModeMap[refFieldKey(r)] === 'select'
 }
 
