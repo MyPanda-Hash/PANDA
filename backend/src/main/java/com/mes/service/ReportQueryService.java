@@ -99,6 +99,7 @@ public class ReportQueryService {
             case "MATERIAL_OUT_DETAIL" -> inventoryDetail("MATERIAL_OUT", "MATERIAL");
             case "OTHER_OUT_DETAIL" -> inventoryDetail("OTHER_OUT", "OTHER_OUT");
             case "PURCHASE_IN_STATS" -> inventoryStats("PURCHASE");
+            case "PURCHASE_INVOICE_MATCH" -> purchaseInvoiceMatchRows();
             case "FINISH_IN_STATS" -> inventoryStats("FINISH");
             case "OTHER_IN_STATS" -> inventoryStats("OTHER_IN");
             case "SALE_OUT_STATS" -> inventoryStats("SALE");
@@ -325,6 +326,127 @@ public class ReportQueryService {
         return out;
     }
 
+    // ---------- 采购发票勾稽（票到确认，2026-11-06） ----------
+
+    /**
+     * 采购发票勾稽表：按有效采购发票的明细行列出开票数量、来源入库/退货数量与已开票/未开票数量。
+     * 已开票数量按「来源面板|来源单号|来源行号」汇总有效发票 abs(数量)，红字发票行（负数）同样占用来源行额度；
+     * 未开票数量 = max(0, 入库数量 - 已开票数量)。无来源字段的发票行照常输出（来源列为空），
+     * 勾稽状态取发票表头，表头缺失时按未开票数量派生：有剩余=部分勾稽，开完=已勾稽。
+     */
+    private List<Map<String, Object>> purchaseInvoiceMatchRows() {
+        List<FormData> documents = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .in(FormData::getPanelCode, List.of("PU_INVOICE", "PURCHASE_IN", "PURCHASE_RETURN"))
+                .orderByAsc(FormData::getCreateTime)
+                .orderByAsc(FormData::getId));
+        List<Doc> invoices = new ArrayList<>();
+        Map<String, Doc> sources = new HashMap<>();
+        for (FormData entity : documents) {
+            Doc doc = new Doc(entity, parse(entity.getData()), parse(entity.getDetailData()));
+            if ("PU_INVOICE".equals(entity.getPanelCode())) invoices.add(doc);
+            else sources.put(join(entity.getPanelCode(), entity.getFormNo()), doc);
+        }
+
+        Map<String, BigDecimal> invoiced = new HashMap<>();
+        for (Doc invoice : invoices) {
+            if (!effective(invoice)) continue;
+            for (Map<String, Object> item : firstDetailRows(invoice.detail())) {
+                String sourcePanel = invoiceSourcePanel(item);
+                String sourceNo = invoiceSourceNo(item);
+                int sourceLine = invoiceSourceLine(item);
+                if (sourcePanel.isEmpty() || sourceNo.isEmpty() || sourceLine <= 0) continue;
+                BigDecimal quantity = number(item.get("数量")).abs();
+                if (quantity.signum() == 0) continue;
+                invoiced.merge(join(sourcePanel, sourceNo, sourceLine), quantity, BigDecimal::add);
+            }
+        }
+
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc invoice : invoices) {
+            if (!effective(invoice)) continue;
+            String invoiceNo = documentNo(invoice);
+            String invoiceDate = firstText(invoice.head(), "开票日期", "单据日期");
+            String headStatus = text(invoice.head().get("勾稽状态"));
+            for (Map<String, Object> item : firstDetailRows(invoice.detail())) {
+                String sourcePanel = invoiceSourcePanel(item);
+                String sourceNo = invoiceSourceNo(item);
+                int sourceLine = invoiceSourceLine(item);
+                boolean linked = !sourcePanel.isEmpty() && !sourceNo.isEmpty() && sourceLine > 0;
+                BigDecimal received = linked
+                        ? sourceQuantity(sources.get(join(sourcePanel, sourceNo)), sourcePanel, sourceLine)
+                        : BigDecimal.ZERO;
+                BigDecimal invoicedQty = linked
+                        ? invoiced.getOrDefault(join(sourcePanel, sourceNo, sourceLine), BigDecimal.ZERO)
+                        : BigDecimal.ZERO;
+                BigDecimal remaining = received.subtract(invoicedQty).max(BigDecimal.ZERO);
+                String status = headStatus;
+                if (status.isEmpty() && linked) status = remaining.signum() > 0 ? "部分勾稽" : "已勾稽";
+                out.add(row(
+                        "发票编号", invoiceNo, "开票日期", invoiceDate, "单据日期", invoiceDate,
+                        "供应商", firstText(invoice.head(), "供应商", "供应商简称"),
+                        "发票号码", text(invoice.head().get("发票号码")),
+                        "业务类型", text(invoice.head().get("业务类型")),
+                        "来源面板", sourcePanel, "来源单号", sourceNo,
+                        "来源行号", linked ? Integer.valueOf(sourceLine) : "",
+                        "存货编码", firstText(item, "存货编码", "物料编码"),
+                        "存货名称", firstText(item, "存货名称", "物料名称"),
+                        "开票数量", number(item.get("数量")),
+                        "来源数量", received, "入库数量", received,
+                        "已开票数量", invoicedQty, "未开票数量", remaining,
+                        "勾稽状态", status));
+            }
+        }
+        out.sort(Comparator.comparing((Map<String, Object> entry) -> text(entry.get("发票编号")))
+                .thenComparingInt(entry -> (int) Math.round(number(entry.get("来源行号")).doubleValue())));
+        return out;
+    }
+
+    /** 来源行数量：采购入库按实收数量、采购退货按数量；红字/负数来源行一律取绝对值。 */
+    private BigDecimal sourceQuantity(Doc source, String sourcePanel, int sourceLine) {
+        if (source == null || sourceLine <= 0) return BigDecimal.ZERO;
+        List<Map<String, Object>> rows = firstDetailRows(source.detail());
+        if (sourceLine > rows.size()) return BigDecimal.ZERO;
+        Map<String, Object> item = rows.get(sourceLine - 1);
+        Object quantity = "PURCHASE_RETURN".equals(sourcePanel)
+                ? first(item, Map.of(), "数量", "实收数量")
+                : first(item, Map.of(), "实收数量", "数量");
+        return number(quantity).abs();
+    }
+
+    /** 发票行来源面板：行级选单写「来源面板」，明细展示列「源单类型」兜底。 */
+    private String invoiceSourcePanel(Map<String, Object> item) {
+        return firstText(item, "来源面板", "源单类型");
+    }
+
+    /** 发票行来源单号：行级选单写「来源单号」，明细展示列「源单编号」兜底。 */
+    private String invoiceSourceNo(Map<String, Object> item) {
+        return firstText(item, "来源单号", "源单编号");
+    }
+
+    /** 发票行来源行号：行级选单写「来源行号」，明细展示列「源单行号」兜底。 */
+    private int invoiceSourceLine(Map<String, Object> item) {
+        return (int) Math.round(number(first(item, Map.of(), "来源行号", "源单行号")).doubleValue());
+    }
+
+    /** 明细页签：与 PxService.firstDetailRows 同口径，优先 items，再取第一个非空列表。 */
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> firstDetailRows(Map<String, Object> detail) {
+        for (String key : List.of("items", "products", "materials", "detail", "rows", "processes")) {
+            Object value = detail.get(key);
+            if (!(value instanceof List<?> list)) continue;
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (Object item : list) if (item instanceof Map<?, ?>) rows.add((Map<String, Object>) item);
+            return rows;
+        }
+        for (Object value : detail.values()) {
+            if (!(value instanceof List<?> list)) continue;
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (Object item : list) if (item instanceof Map<?, ?>) rows.add((Map<String, Object>) item);
+            if (!rows.isEmpty()) return rows;
+        }
+        return new ArrayList<>();
+    }
+
     // ---------- stock status, summary and ledger ----------
 
     private List<Map<String, Object>> movements() {
@@ -474,34 +596,65 @@ public class ReportQueryService {
         return new ArrayList<>(groups.values());
     }
 
+    /**
+     * 库存台账：先按期初折叠，再逐行滚动结存。
+     *
+     * <p>带开始日期时，开始日期之前的移动（含期初结存行）先折叠为期初余额，结存不得漏掉期初；
+     * 不带开始日期时保持原展示：期初结存行作为台账首行出现，结存从 0 累计。
+     */
     private List<Map<String, Object>> stockLedger(Map<String, Object> condition) {
-        return ledgerRows(movements(), condition);
+        LocalDate start = date(condition.get("开始日期"));
+        Map<String, BigDecimal[]> opening = new HashMap<>();
+        List<Map<String, Object>> inPeriod = new ArrayList<>();
+        for (Map<String, Object> movement : movements()) {
+            LocalDate movementDate = date(movement.get("单据日期"));
+            boolean initial = "INITIAL".equals(text(movement.get("方向")));
+            boolean beforeStart = start != null && movementDate != null && movementDate.isBefore(start);
+            if (start != null && (beforeStart || initial)) {
+                boolean outgoing = "OUT".equals(text(movement.get("方向")));
+                BigDecimal[] acc = opening.computeIfAbsent(ledgerKey(movement),
+                        k -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+                acc[0] = outgoing ? acc[0].subtract(number(movement.get("数量"))) : acc[0].add(number(movement.get("数量")));
+                acc[1] = outgoing ? acc[1].subtract(number(movement.get("金额"))) : acc[1].add(number(movement.get("金额")));
+            } else {
+                inPeriod.add(movement);
+            }
+        }
+        return ledgerRows(inPeriod, condition, opening);
     }
 
     /**
-     * 库存台账行：结存按「存货 + 仓库」分别滚动。
+     * 台账行滚动：结存按「存货 + 仓库」分别累计。
      *
      * <p>此前是全局一个余额往下加，一张台账里混着多种存货时结存数量毫无意义
      * （期初 5000 的下一条就变成 8000）。每一行只反映它自己那种存货的累计结存。
+     *
+     * @param inPeriod 本期要展示的移动行
+     * @param condition 查询条件（日期/存货等过滤）
+     * @param opening  期初余额（分组键 → [数量, 金额]），可为空
      */
-    List<Map<String, Object>> ledgerRows(List<Map<String, Object>> movements, Map<String, Object> condition) {
-        List<Map<String, Object>> selected = filter(movements, null, condition == null ? Map.of() : condition);
+    List<Map<String, Object>> ledgerRows(List<Map<String, Object>> inPeriod,
+                                         Map<String, Object> condition,
+                                         Map<String, BigDecimal[]> opening) {
+        Map<String, BigDecimal[]> balances = new HashMap<>();
+        if (opening != null) {
+            for (Map.Entry<String, BigDecimal[]> entry : opening.entrySet()) {
+                balances.put(entry.getKey(), new BigDecimal[]{entry.getValue()[0], entry.getValue()[1]});
+            }
+        }
+        List<Map<String, Object>> selected = filter(inPeriod, null, condition == null ? Map.of() : condition);
         List<Map<String, Object>> sorted = new ArrayList<>(selected);
         sorted.sort(Comparator.comparing((Map<String, Object> r) -> text(r.get("单据日期")))
                 .thenComparing(r -> text(r.get("单据时间")))
-                .thenComparingLong(r -> (long) number(r.get("时间序")).doubleValue())
-                .thenComparing(r -> text(r.get("存货")))
-                .thenComparing(r -> text(r.get("仓库"))));
-        Map<String, BigDecimal[]> balances = new HashMap<>();
+                .thenComparingLong(r -> (long) number(r.get("时间序")).doubleValue()));
         List<Map<String, Object>> out = new ArrayList<>();
         for (Map<String, Object> movement : sorted) {
             String direction = text(movement.get("方向"));
             BigDecimal qty = number(movement.get("数量"));
             BigDecimal amount = number(movement.get("金额"));
             boolean outgoing = "OUT".equals(direction);
-            // 同一个存货可能跨仓库，结存要按仓分别累计，不能把原料仓和成品仓混在一起
-            String key = text(movement.get("存货")) + "\u0001" + text(movement.get("仓库"));
-            BigDecimal[] balance = balances.computeIfAbsent(key, k -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+            BigDecimal[] balance = balances.computeIfAbsent(ledgerKey(movement),
+                    k -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
             BigDecimal balanceQty = outgoing ? balance[0].subtract(qty) : balance[0].add(qty);
             BigDecimal balanceAmount = outgoing ? balance[1].subtract(amount) : balance[1].add(amount);
             balance[0] = balanceQty;
@@ -519,6 +672,16 @@ public class ReportQueryService {
             out.add(row);
         }
         return out;
+    }
+
+    /** 台账行滚动（无期初折叠）：直接对给定移动行算结存，供报表与单测使用。 */
+    List<Map<String, Object>> ledgerRows(List<Map<String, Object>> inPeriod, Map<String, Object> condition) {
+        return ledgerRows(inPeriod, condition, Map.of());
+    }
+
+    /** 台账结存的分组键：同一存货跨仓库要分别累计，不能把原料仓和成品仓混在一起。 */
+    private String ledgerKey(Map<String, Object> movement) {
+        return text(movement.get("存货")) + "\u0001" + text(movement.get("仓库"));
     }
 
     // ---------- sales and production reports ----------
@@ -899,6 +1062,14 @@ public class ReportQueryService {
     }
 
     private List<Map<String, Object>> outsourceOrderProductStats() {
+        // 已入库数量：按 加工单号+产品 归集 OUTSOURCE_IN 实收数量（与 outsourceOrderExecution 同口径）
+        Map<String, BigDecimal> received = new HashMap<>();
+        for (Doc doc : docs("OUTSOURCE_IN")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String key = join(firstText(doc.head(), "委外加工单号"), item.get("产品编码"), item.get("产品名称"));
+                received.merge(key, number(item.get("实收数量")), BigDecimal::add);
+            }
+        }
         Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
         for (Map<String, Object> source : outsourceOrderProductDetail()) {
             String key = join(source.get("委外供应商"), source.get("产品编码"), source.get("产品名称"));
@@ -911,6 +1082,9 @@ public class ReportQueryService {
             add(target, "加工单数", BigDecimal.ONE);
             add(target, "订单数量", source.get("数量"));
             add(target, "金额", source.get("金额"));
+            add(target, "已入库数量", received.getOrDefault(
+                    join(text(source.get("单据编号")), source.get("产品编码"), source.get("产品名称")),
+                    BigDecimal.ZERO));
         }
         for (Map<String, Object> target : groups.values()) {
             target.put("委外金额", target.get("金额"));
@@ -920,6 +1094,14 @@ public class ReportQueryService {
     }
 
     private List<Map<String, Object>> outsourceOrderMaterialStats() {
+        // 已发料数量：按 加工单号+材料 归集 OUTSOURCE_ISSUE 发料数量
+        Map<String, BigDecimal> issued = new HashMap<>();
+        for (Doc doc : docs("OUTSOURCE_ISSUE")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String key = join(firstText(doc.head(), "委外加工单号"), item.get("材料编码"), item.get("材料名称"));
+                issued.merge(key, number(item.get("数量")), BigDecimal::add);
+            }
+        }
         Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
         for (Map<String, Object> source : outsourceOrderMaterialDetail()) {
             String key = join(source.get("委外供应商"), source.get("材料编码"), source.get("材料名称"));
@@ -931,6 +1113,9 @@ public class ReportQueryService {
                     "未发料数量", BigDecimal.ZERO));
             add(target, "加工单数", BigDecimal.ONE);
             add(target, "计划数量", source.get("计划数量"));
+            add(target, "已发料数量", issued.getOrDefault(
+                    join(text(source.get("单据编号")), source.get("材料编码"), source.get("材料名称")),
+                    BigDecimal.ZERO));
         }
         for (Map<String, Object> target : groups.values()) {
             target.put("未发料数量", number(target.get("计划数量")).subtract(number(target.get("已发料数量"))));
@@ -1073,6 +1258,15 @@ public class ReportQueryService {
     }
 
     private List<Map<String, Object>> manufactureMaterialStats() {
+        // 已领料数量：按 加工单号+材料 归集 MATERIAL_OUT 出库数量
+        Map<String, BigDecimal> picked = new HashMap<>();
+        for (Doc doc : docs("MATERIAL_OUT")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String orderNo = text(first(item, doc.head(), "加工单号", "来源单号"));
+                String key = join(orderNo, item.get("材料编码"), item.get("材料名称"));
+                picked.merge(key, number(first(item, Map.of(), "数量", "实发数量")), BigDecimal::add);
+            }
+        }
         Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
         for (Map<String, Object> source : manufactureMaterialDetail()) {
             String key = join(source.get("材料编码"), source.get("材料名称"));
@@ -1083,6 +1277,9 @@ public class ReportQueryService {
                     "已领料数量", BigDecimal.ZERO, "未领料数量", BigDecimal.ZERO));
             add(target, "加工单数", BigDecimal.ONE);
             add(target, "计划数量", source.get("计划数量"));
+            add(target, "已领料数量", picked.getOrDefault(
+                    join(text(source.get("单据编号")), source.get("材料编码"), source.get("材料名称")),
+                    BigDecimal.ZERO));
         }
         for (Map<String, Object> target : groups.values()) {
             target.put("未领料数量", number(target.get("计划数量")).subtract(number(target.get("已领料数量"))));

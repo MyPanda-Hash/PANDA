@@ -8,7 +8,11 @@
         <div class="portal-content">
           <router-view v-slot="{ Component }">
             <keep-alive :max="20">
-              <component :is="Component" />
+              <!-- key 按 path 区分实例：否则同组件类型的面板（如 /panelx/list/SO_ORDER 与 /panelx/list/PU_ORDER）
+                   复用同一缓存实例，切页签不会重新加载，显示上一个面板的数据。
+                   注意用 path 而非 fullPath：query 会被 ?focus=/?new= 等流程用 router.replace 改写，
+                   用 fullPath 会导致组件在数据加载后重挂载、二次请求 -->
+              <component :is="Component" :key="route.path" />
             </keep-alive>
           </router-view>
         </div>

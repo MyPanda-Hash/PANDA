@@ -5,6 +5,8 @@ import {
   docNoOf,
   docPartnerOf,
   docStatusOf,
+  railCellOf,
+  railColumnsOf,
   railPageCount,
   railRowsOf,
   statusTone,
@@ -49,7 +51,15 @@ test('railRowsOf: 空关键字原样保留全部行，并带上原始下标', ()
   ]
   const out = railRowsOf(rows, '')
   assert.equal(out.length, 2)
-  assert.deepEqual(out[0], { index: 0, no: 'SO-1', date: '2026-11-01', partner: '华东铝业', status: '已审核', tone: 'ok' })
+  assert.deepEqual(out[0], {
+    index: 0,
+    no: 'SO-1',
+    date: '2026-11-01',
+    partner: '华东铝业',
+    status: '已审核',
+    tone: 'ok',
+    cells: ['SO-1', '2026-11-01', '华东铝业', '已审核'],
+  })
   assert.equal(out[1].index, 1)
 })
 
@@ -96,4 +106,50 @@ test('railPageCount: 至少 1 页，按每页条数上取整', () => {
   assert.equal(railPageCount(21, 20), 2)
   assert.equal(railPageCount(128, 50), 3)
   assert.equal(railPageCount(10, 0), 10)
+})
+
+test('railColumnsOf: 请购单显示请购人，采购单显示供应商，销售单显示客户', () => {
+  assert.deepEqual(railColumnsOf('PU_REQ', []).map((c) => c.label), ['单号', '日期', '请购人', '审核状态'])
+  assert.deepEqual(railColumnsOf('PU_ORDER', []).map((c) => c.label), ['单号', '日期', '供应商', '审核状态'])
+  assert.deepEqual(railColumnsOf('ARRIVAL_IN', []).map((c) => c.label), ['单号', '日期', '供应商', '审核状态'])
+  assert.deepEqual(railColumnsOf('SO_ORDER', []).map((c) => c.label), ['单号', '日期', '客户', '审核状态'])
+  assert.deepEqual(railColumnsOf('DISPATCH', []).map((c) => c.label), ['单号', '日期', '加工单号', '审核状态'])
+})
+
+test('railColumnsOf: 未登记面板按行里的往来单位自动取一列，全空时只留三列', () => {
+  assert.deepEqual(
+    railColumnsOf('UNKNOWN', [{ 客户: '华东铝业' }]).map((c) => c.label),
+    ['单号', '日期', '客户', '审核状态'],
+  )
+  assert.deepEqual(
+    railColumnsOf('UNKNOWN', [{ 建议供应商: '' }, { 建议供应商: '中天精工' }]).map((c) => c.label),
+    ['单号', '日期', '建议供应商', '审核状态'],
+  )
+  assert.deepEqual(
+    railColumnsOf('UNKNOWN', [{ 委外供应商: '苏州精工' }]).map((c) => c.label),
+    ['单号', '日期', '委外供应商', '审核状态'],
+  )
+  assert.deepEqual(railColumnsOf('UNKNOWN', [{}]).map((c) => c.label), ['单号', '日期', '审核状态'])
+})
+
+test('railCellOf: 按列的 keys 取值，空值返回空串；derive 列优先', () => {
+  const row = { 编号: 'CG-1', 单据日期: '2026-11-03', 请购人: '李丽', 单据状态: '草稿' }
+  const cols = railColumnsOf('PU_REQ', [row])
+  assert.deepEqual(cols.map((c) => railCellOf(row, c)), ['CG-1', '2026-11-03', '李丽', '草稿'])
+  assert.equal(railCellOf({}, { label: 'x', keys: ['x'] }), '')
+  assert.equal(railCellOf({}, { label: 'x', derive: () => '派生' }), '派生')
+})
+
+test('railRowsOf: 列式单元格与过滤使用同一份列定义（中间列也能搜到）', () => {
+  const rows = [
+    { 编号: 'CG-2026-11-0301', 单据日期: '2026-11-03', 请购人: '李丽', 单据状态: '已审核' },
+    { 编号: 'CG-2026-11-0401', 单据日期: '2026-11-04', 请购人: '王芳', 单据状态: '草稿' },
+  ]
+  const cols = railColumnsOf('PU_REQ', rows)
+  const hit = railRowsOf(rows, '李丽', cols)
+  assert.equal(hit.length, 1)
+  assert.deepEqual(hit[0].cells, ['CG-2026-11-0301', '2026-11-03', '李丽', '已审核'])
+  assert.equal(hit[0].index, 0)
+  assert.equal(railRowsOf(rows, '王芳', cols)[0].index, 1)
+  assert.equal(railRowsOf(rows, '已审核', cols)[0].index, 0)
 })

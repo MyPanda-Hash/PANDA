@@ -2865,6 +2865,51 @@
         "panelName": "采购发票",
         "panelCategory": "单据",
         "autoCodeField": "单据编号",
+        "formSections": [
+          {
+            "title": "基本信息",
+            "fields": [
+              "单据日期",
+              "单据编号",
+              "业务类型",
+              "供应商",
+              "供应商编码",
+              "部门",
+              "业务员",
+              "备注"
+            ]
+          },
+          {
+            "title": "发票信息",
+            "fields": [
+              "开票类型",
+              "发票代码",
+              "发票号码",
+              "开票日期",
+              "入库单号",
+              "原发票号",
+              "红字信息表编号",
+              "采购订单号",
+              "来源单据号"
+            ]
+          }
+        ],
+        "formSummary": {
+          "title": "金额信息",
+          "fields": [
+            "不含税金额",
+            "税额",
+            "价税合计",
+            "勾稽状态"
+          ]
+        },
+        "detailColumnAliases": {
+          "存货编码": "商品编码",
+          "存货名称": "商品名称",
+          "计量单位": "单位",
+          "无税单价": "单价",
+          "税率%": "增值税税率"
+        },
         "panelState": {
           "dataName": "单据状态",
           "dataType": "STRING",
@@ -2879,6 +2924,7 @@
           "tablePages": [
             {
               "tableName": "采购发票列表",
+              "listMode": "document",
               "queryFields": [
                 {
                   "dataName": "单据日期",
@@ -2918,18 +2964,22 @@
               ],
               "gridTabs": [
                 {
-                  "label": "明细",
-                  "rowSource": "detail",
+                  "label": "发票列表",
+                  "rowSource": "rows",
                   "columns": [
-                    "存货编码",
-                    "存货名称",
-                    "规格型号",
-                    "计量单位",
-                    "数量",
-                    "无税单价",
-                    "税率%",
+                    "单据日期",
+                    "单据编号",
+                    "业务类型",
+                    "供应商",
+                    "开票类型",
+                    "发票号码",
+                    "开票日期",
+                    "入库单号",
+                    "不含税金额",
                     "税额",
-                    "价税合计"
+                    "价税合计",
+                    "勾稽状态",
+                    "单据状态"
                   ]
                 }
               ],
@@ -2951,7 +3001,7 @@
           "formPages": [
             {
               "formName": "采购发票",
-              "fieldNames": "单据日期,单据编号,业务类型,供应商,供应商编码,部门,业务员,开票类型,进货单号,采购订单号,价税合计,备注",
+              "fieldNames": "单据日期,单据编号,业务类型,供应商,供应商编码,部门,业务员,开票类型,发票代码,发票号码,开票日期,入库单号,原发票号,红字信息表编号,采购订单号,来源单据号,不含税金额,税额,价税合计,勾稽状态,备注",
               "bottomOperationBarBtn": [
                 {
                   "buttonName": "保存"
@@ -2960,7 +3010,7 @@
                   "buttonName": "删除"
                 },
                 {
-                  "buttonName": "审核"
+                  "buttonName": "提交审批"
                 },
                 {
                   "buttonName": "弃审"
@@ -2987,7 +3037,16 @@
             "buttonName": "保存"
           },
           {
-            "buttonName": "审核"
+            "buttonName": "提交审批"
+          },
+          {
+            "buttonName": "审批通过"
+          },
+          {
+            "buttonName": "审批驳回"
+          },
+          {
+            "buttonName": "审批情况"
           },
           {
             "buttonName": "弃审"
@@ -2996,19 +3055,13 @@
             "buttonName": "放弃"
           },
           {
-            "buttonName": "提交审批"
-          },
-          {
-            "buttonName": "审批通过"
-          },
-          {
-            "buttonName": "驳回审批"
-          },
-          {
             "buttonName": "选单"
           },
           {
-            "buttonName": "选进货单"
+            "buttonName": "选采购入库单"
+          },
+          {
+            "buttonName": "选入库单行"
           }
         ],
         "buttonGroups": [
@@ -3022,7 +3075,14 @@
             "name": "选单",
             "actions": [
               "选单",
-              "选进货单"
+              "选采购入库单"
+            ]
+          },
+          {
+            "name": "关联",
+            "actions": [
+              "选入库单行",
+              "导入发票"
             ]
           },
           {
@@ -3042,14 +3102,13 @@
             ]
           },
           {
-            "name": "审核",
+            "name": "审批",
             "actions": [
-              "审核",
-              "弃审",
-              "审批情况",
               "提交审批",
               "审批通过",
-              "审批驳回"
+              "审批驳回",
+              "审批情况",
+              "弃审"
             ]
           },
           {
@@ -3167,11 +3226,43 @@
             "defaultValue": "增值税专用发票",
             "options": [
               "增值税专用发票",
-              "增值税普通发票"
+              "增值税普通发票",
+              "数电专票",
+              "数电普票"
             ]
           },
           {
-            "dataName": "进货单号",
+            "dataName": "发票代码",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "发票号码",
+            "dataType": "文本",
+            "isRequired": true,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "开票日期",
+            "dataType": "日期",
+            "isRequired": true,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "入库单号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "原发票号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "红字信息表编号",
             "dataType": "文本",
             "isRequired": false,
             "defaultValue": ""
@@ -3183,10 +3274,39 @@
             "defaultValue": ""
           },
           {
+            "dataName": "来源单据号",
+            "dataType": "文本",
+            "isRequired": false,
+            "defaultValue": ""
+          },
+          {
+            "dataName": "不含税金额",
+            "dataType": "小数",
+            "isRequired": false,
+            "computed": true
+          },
+          {
+            "dataName": "税额",
+            "dataType": "小数",
+            "isRequired": false,
+            "computed": true
+          },
+          {
             "dataName": "价税合计",
             "dataType": "小数",
             "isRequired": false,
             "defaultValue": 0
+          },
+          {
+            "dataName": "勾稽状态",
+            "dataType": "下拉框",
+            "isRequired": false,
+            "defaultValue": "未勾稽",
+            "options": [
+              "未勾稽",
+              "部分勾稽",
+              "已勾稽"
+            ]
           },
           {
             "dataName": "备注",
@@ -3212,7 +3332,50 @@
                 "field": "价税合计"
               }
             ],
+            "calc": [
+              {
+                "target": "金额",
+                "formula": "数量 * 无税单价",
+                "round": 2
+              },
+              {
+                "target": "税额",
+                "formula": "金额 * 税率% / 100",
+                "round": 2
+              },
+              {
+                "target": "价税合计",
+                "formula": "金额 + 税额",
+                "round": 2
+              },
+              {
+                "target": "含税单价",
+                "formula": "无税单价 * (1 + 税率% / 100)",
+                "round": 2
+              }
+            ],
             "fields": [
+              {
+                "dataName": "源单类型",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": "",
+                "hidden": true
+              },
+              {
+                "dataName": "源单编号",
+                "dataType": "文本",
+                "isRequired": false,
+                "defaultValue": "",
+                "hidden": true
+              },
+              {
+                "dataName": "源单行号",
+                "dataType": "整数",
+                "isRequired": false,
+                "defaultValue": 0,
+                "hidden": true
+              },
               {
                 "dataName": "存货编码",
                 "dataType": "参照",
@@ -3280,10 +3443,37 @@
                 "defaultValue": 0
               },
               {
+                "dataName": "入库数量",
+                "dataType": "小数",
+                "isRequired": false,
+                "defaultValue": 0,
+                "hidden": true
+              },
+              {
+                "dataName": "已开票数量",
+                "dataType": "小数",
+                "isRequired": false,
+                "defaultValue": 0,
+                "hidden": true
+              },
+              {
+                "dataName": "未开票数量",
+                "dataType": "小数",
+                "isRequired": false,
+                "defaultValue": 0,
+                "hidden": true
+              },
+              {
                 "dataName": "无税单价",
                 "dataType": "小数",
                 "isRequired": false,
                 "defaultValue": 0
+              },
+              {
+                "dataName": "含税单价",
+                "dataType": "小数",
+                "isRequired": false,
+                "computed": true
               },
               {
                 "dataName": "税率%",
@@ -3297,6 +3487,12 @@
                 "computed": true
               },
               {
+                "dataName": "金额",
+                "dataType": "小数",
+                "isRequired": false,
+                "computed": true
+              },
+              {
                 "dataName": "价税合计",
                 "dataType": "小数",
                 "computed": true
@@ -3306,15 +3502,15 @@
         ]
       },
       "selectConfig": {
-        "source": "PU_IN",
-        "title": "选进货单",
-        "tip": "仅显示已审核且未中止的进货单，选中后明细按含税单价拆分税额/价税合计生成采购发票",
+        "source": "PURCHASE_IN",
+        "title": "选采购入库单",
+        "tip": "仅显示已审核的采购入库单，选中后按实收数量与含税单价带入采购发票",
         "columns": [
           "单据编号",
           "单据日期",
           "供应商",
           "存货名称",
-          "数量",
+          "实收数量",
           "含税单价",
           "含税金额"
         ],
@@ -3322,7 +3518,7 @@
         "headerMap": [
           {
             "from": "单据编号",
-            "to": "进货单号"
+            "to": "入库单号"
           },
           {
             "from": "供应商",
@@ -3343,12 +3539,28 @@
             "to": "规格型号"
           },
           {
-            "from": "数量",
+            "from": "实收数量",
             "to": "数量"
           },
           {
             "from": "税率%",
             "to": "税率%"
+          },
+          {
+            "from": "存货编码",
+            "to": "存货编码"
+          },
+          {
+            "from": "计量单位",
+            "to": "计量单位"
+          },
+          {
+            "from": "单价",
+            "to": "无税单价"
+          },
+          {
+            "from": "含税金额",
+            "to": "价税合计"
           }
         ]
       }
@@ -3436,6 +3648,9 @@
             "buttonName": "刷新"
           },
           {
+            "buttonName": "生成请购单"
+          },
+          {
             "buttonName": "退出"
           }
         ],
@@ -3450,6 +3665,12 @@
             "name": "刷新",
             "actions": [
               "刷新"
+            ]
+          },
+          {
+            "name": "生单",
+            "actions": [
+              "生成请购单"
             ]
           },
           {

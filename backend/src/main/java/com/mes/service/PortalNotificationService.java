@@ -110,30 +110,36 @@ public class PortalNotificationService {
     }
 
     private List<Map<String, Object>> messages(String userName) {
-        List<FormApproval> records = new ArrayList<>(approvalMapper.selectList(
-                new LambdaQueryWrapper<FormApproval>()
-                        .in(FormApproval::getAction, List.of("SUBMIT", "APPROVE", "REJECT"))
-                        .orderByDesc(FormApproval::getId)
-                        .last("LIMIT " + APPROVAL_SCAN_LIMIT)));
-        if (records.isEmpty()) return List.of();
-        records.sort(Comparator.comparing(FormApproval::getId,
-                Comparator.nullsLast(Comparator.naturalOrder())));
+        // 先取当前账号自己的 SUBMIT 记录（按单据取最新一次提交人），再按单据反查审批结果。
+        // 旧实现从“最近 2000 条流水”里回配 SUBMIT，单据的提交记录被滑出窗口后结果消息会静默丢失。
+        List<FormApproval> submissions = approvalMapper.selectList(new LambdaQueryWrapper<FormApproval>()
+                .eq(FormApproval::getAction, "SUBMIT")
+                .eq(FormApproval::getOperator, userName)
+                .orderByDesc(FormApproval::getId)
+                .last("LIMIT " + APPROVAL_SCAN_LIMIT));
+        if (submissions.isEmpty()) return List.of();
 
         Map<String, String> submitters = new HashMap<>();
+        Set<String> panelCodes = new HashSet<>();
+        for (FormApproval submission : submissions) {
+            submitters.putIfAbsent(key(submission.getPanelCode(), submission.getFormNo()), submission.getOperator());
+            panelCodes.add(submission.getPanelCode());
+        }
+        List<FormApproval> records = approvalMapper.selectList(new LambdaQueryWrapper<FormApproval>()
+                .in(FormApproval::getPanelCode, panelCodes)
+                .in(FormApproval::getAction, List.of("APPROVE", "REJECT"))
+                .orderByDesc(FormApproval::getId)
+                .last("LIMIT " + APPROVAL_SCAN_LIMIT));
+
         List<FormApproval> outcomes = new ArrayList<>();
         for (FormApproval record : records) {
-            String key = key(record.getPanelCode(), record.getFormNo());
-            if ("SUBMIT".equals(record.getAction())) {
-                submitters.put(key, record.getOperator());
-            } else if (userName.equals(submitters.get(key))) {
+            if (userName.equals(submitters.get(key(record.getPanelCode(), record.getFormNo())))) {
                 outcomes.add(record);
             }
         }
         outcomes.sort(Comparator.comparing(FormApproval::getId,
                 Comparator.nullsLast(Comparator.naturalOrder())).reversed());
 
-        Set<String> panelCodes = new HashSet<>();
-        for (FormApproval outcome : outcomes) panelCodes.add(outcome.getPanelCode());
         Map<String, String> panelNames = panelNames(panelCodes);
         List<Map<String, Object>> result = new ArrayList<>();
         for (FormApproval outcome : outcomes) {

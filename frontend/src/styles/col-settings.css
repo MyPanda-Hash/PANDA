@@ -1,0 +1,13 @@
+/* ── 表格列直接操作（拖拽调序/双击改名/右键菜单）：PanelxList 与 PanelxForm 共用，见 useColSettings.js ── */
+.col-hd { cursor: grab; user-select: none; }
+th.hcol-dragging { opacity: 0.45; }
+th.hcol-over { box-shadow: inset 2px 0 0 #0d5bd3; }
+.col-rename-input { width: 96%; height: 22px; font-size: 12px; padding: 0 4px; border: 1px solid #0d5bd3; border-radius: 3px; outline: none; }
+.col-menu { position: fixed; z-index: 4000; width: 230px; background: #fff; border: 1px solid #e4e7ed; border-radius: 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); padding: 8px; }
+.col-menu-title { font-size: 12px; font-weight: 600; color: #303133; margin-bottom: 6px; }
+.col-menu-list { max-height: 240px; overflow-y: auto; }
+.col-menu-item { display: flex; align-items: center; gap: 6px; padding: 3px 2px; cursor: pointer; }
+.col-menu-name { font-size: 12px; color: #606266; }
+.col-menu-tip { font-size: 11px; color: #909399; margin-top: 6px; line-height: 1.5; }
+.col-menu-foot { display: flex; justify-content: flex-end; gap: 4px; margin-top: 4px; }
+.dark .col-menu { background: #26272e; border-color: #3a3b42; }

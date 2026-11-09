@@ -4,7 +4,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const PANELS = [
   ['PURCHASE_IN', '\u91c7\u8d2d\u5165\u5e93\u5355'], ['FINISH_IN', '\u4ea7\u6210\u54c1\u5165\u5e93\u5355'], ['OTHER_IN', '\u5176\u4ed6\u5165\u5e93\u5355'],
   ['SALE_OUT', '\u9500\u552e\u51fa\u5e93\u5355'], ['MATERIAL_OUT', '\u6750\u6599\u51fa\u5e93\u5355'], ['OTHER_OUT', '\u5176\u4ed6\u51fa\u5e93\u5355'],
-  ['PU_ORDER', '\u91c7\u8d2d\u8ba2\u5355'], ['PU_IN', '\u8fdb\u8d27\u5355'], ['SALE_INV', '\u9500\u8d27\u5355'],
+  ['PU_ORDER', '\u91c7\u8d2d\u8ba2\u5355'], ['SALE_INV', '\u9500\u8d27\u5355'],
   ['PICK_ORDER', '\u914d\u8d27\u5355'], ['MATERIAL_REQ', '\u9886\u6599\u7533\u8bf7\u5355'],
   ['ARRIVAL_IN', '\u5230\u8d27\u5355'], ['FINISH_INSPECT', '\u6210\u54c1\u62a5\u68c0\u5355'], ['INSPECTION', '\u6765\u6599\u6210\u54c1\u68c0\u9a8c\u5355'], ['DISPATCH', '\u5de5\u5e8f\u6d3e\u5de5\u5355'],
 ]

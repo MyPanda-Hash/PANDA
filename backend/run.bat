@@ -1,16 +1,15 @@
 @echo off
-chcp 65001 >nul
 setlocal
 call "%~dp0..\tools\detect-jdk.bat"
 if errorlevel 1 goto :fail
 
 cd /d "%~dp0"
 if not exist target\light-mes-backend-0.1.0.jar (
-  echo æœªæ‰¾åˆ° jarï¼Œè¯·å…ˆè¿è¡Œ build.bat
+  echo Î´ÕÒµ½ jar£¬ÇëÏÈÔËĞĞ build.bat
   goto :fail
 )
 if not defined MES_HTTP_PORT set "MES_HTTP_PORT=8080"
-echo å¯åŠ¨è½»MESåç«¯: http://localhost:%MES_HTTP_PORT%  ï¼ˆéœ€å…ˆåˆå§‹åŒ– MySQLï¼Œè§ READMEï¼‰
+echo Æô¶¯ÇáMESºó¶Ë: http://localhost:%MES_HTTP_PORT%  £¨ĞèÏÈ³õÊ¼»¯ MySQL£¬¼û README£©
 "%JAVA_HOME%\bin\java" -jar target\light-mes-backend-0.1.0.jar
 
 :fail

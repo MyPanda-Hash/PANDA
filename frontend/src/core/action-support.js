@@ -15,6 +15,18 @@
  * 列表页没有这些实现，点了会走 callButton → 后端也没有对应 case。
  */
 
+/**
+ * 采购发票行选来源单（前端弹窗，不调后端 callButton）。
+ * 名字以「选」开头但不是选单生单动作，不能按 selectConfig 判定是否支持。
+ */
+export const INVOICE_LINE_ACTION = '选入库单行'
+
+/**
+ * 采购发票 Excel 导入（前端弹窗，按「发票号码 + 供应商」分组逐张调保存）。
+ * 与明细追加动作「导入」区分：这里整张发票建档，不追加到当前单据。
+ */
+export const INVOICE_IMPORT_ACTION = '导入发票'
+
 /** 前端自己实现的动作 */
 export const FRONTEND_ACTIONS = new Set([
   '新增', '新建', '新增流程', '修改',
@@ -23,6 +35,8 @@ export const FRONTEND_ACTIONS = new Set([
   '查询', '查找', '恢复', '导入',
   '预览', '扫描填单', '表格调整', '字段管理', '打印发票', '排产',
   '审核', '弃审',
+  INVOICE_LINE_ACTION,
+  INVOICE_IMPORT_ACTION,
 ])
 
 /** 与 PxService.callButton 的 switch 分支一一对应（排序无关） */
@@ -30,8 +44,9 @@ export const BACKEND_ACTIONS = new Set([
   '刷新', '新增流程', '保存', '保存新增', '保存为草稿', '提交', '删除',
   '审核', '弃审', '关闭', '手工完工', '中止', '整单中止', '取消中止',
   '齐套检查', '选工艺路线',
-  '生成生产加工单', '生成工序汇报单（自制汇报）', '生成采购订单', '生成采购入库单',
-  '生成进货单', '生成产成品入库单', '生成检验单', '生成材料出库单',
+  '生成生产加工单', '生成工序汇报单（自制汇报）', '生成请购单',
+  '生成采购订单', '生成到货单', '生成采购入库单',
+  '生成产成品入库单', '生成检验单', '生成材料出库单',
   '生成调拨单', '生成调拨单(分单)', '生成委外发料单', '生成委外发料单(分单)',
   '生成委外入库单', '生成委外加工费用单',
   '生成销售订单', '生成销售订单(普通销售)',
@@ -46,6 +61,8 @@ export const BACKEND_ACTIONS = new Set([
   '提交审批', '审批通过', '审批驳回', '驳回审批', '审批情况',
   '核销', '反核销',
   // 冲抵/反冲抵：后端无对应 case（收付款核销走「核销/反核销」），暂不登记。
+  '生成采购退货单',
+  '确认处置',
 ])
 
 /** PanelActionHandler 扩展点注册的动作 */
@@ -59,6 +76,7 @@ export function isSelectAction(action) {
   if (typeof action !== 'string' || action === '') return false
   // 「选工艺路线」是加工单按路线带出工序的后端动作，不是选单来源，别被「选」字前缀误判
   if (action === '选工艺路线') return false
+  if (action === INVOICE_LINE_ACTION) return false
   return action === '选单' || action.startsWith('选')
 }
 

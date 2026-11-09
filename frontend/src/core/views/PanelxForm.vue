@@ -1,8 +1,32 @@
 <template>
-  <div class="panelx-form">
+  <div class="panelx-form" :class="{ 'sectioned-form': formSections.length }">
     <div class="card">
-      <!-- 工具栏（T+ 分组形态） -->
-      <div class="tools">
+      <!-- 采购发票等分段式详情：独立操作栏，避免复用通用 T+ 工具栏的旧视觉 -->
+      <div v-if="formSections.length" class="invoice-topbar">
+        <div class="invoice-title">
+          <span class="no">{{ isEdit ? (form['单据编号'] || form['锭号'] || form['编号'] || '') : tt('（新增）') }}</span>
+          <el-tag v-if="form['单据状态']" size="small" :type="statusTag(form['单据状态'])">{{ tt(form['单据状态']) }}</el-tag>
+          <span v-if="isApproved" class="approved-stamp">{{ tt('已审批') }}</span>
+        </div>
+        <div class="invoice-actions">
+          <el-button type="primary" :disabled="isDisabled('保存')" @click="onButton('保存')">{{ tt('保存') }}</el-button>
+          <el-button :disabled="isDisabled('保存新增')" @click="onButton('保存新增')">{{ tt('保存新增') }}</el-button>
+          <el-button :disabled="isDisabled('提交审批')" @click="onButton('提交审批')">{{ tt('提交审批') }}</el-button>
+          <el-dropdown v-if="sectionMoreActions.length" trigger="click" @command="onButton">
+            <el-button>{{ tt('更多') }}<el-icon><ArrowDown /></el-icon></el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item v-for="action in sectionMoreActions" :key="action" :command="action" :disabled="isDisabled(action)">
+                  {{ tt(action) }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          <el-button @click="back">{{ tt('返回') }}</el-button>
+        </div>
+      </div>
+      <!-- 通用工具栏（T+ 分组形态） -->
+      <div v-else class="tools">
         <template v-for="g in groups" :key="g.name">
           <!-- 收纳组（更多/工具/设置）：整块按钮只负责展开菜单，不执行第一个动作 -->
           <el-dropdown v-if="isCatchAllGroup(g)" @command="(a) => onButton(a)" trigger="click">
@@ -59,7 +83,7 @@
       </div>
 
       <!-- 单据标题 -->
-      <div class="head">
+      <div v-if="!formSections.length" class="head">
         <div class="title">
           <span class="no">{{ isEdit ? (form['单据编号'] || form['锭号'] || form['编号'] || '') : tt('（新增）') }}</span>
           <el-tag v-if="form['单据状态']" size="small" :type="statusTag(form['单据状态'])">{{ tt(form['单据状态']) }}</el-tag>
@@ -67,9 +91,11 @@
         <div v-if="isApproved" class="approved-stamp">{{ tt('已审批') }}</div>
       </div>
 
-      <!-- 表头（3 列） -->
+      <!-- 表头（3 列；配置 formSections 时按「基本信息 / 发票信息」分段） -->
       <div v-loading="loading" class="fields udl-fields">
-        <div v-for="r in visibleMeta" :key="r.code" class="field">
+        <template v-for="section in sectionedMeta" :key="section.title || 'all'">
+          <div v-if="section.title" class="form-section-title">{{ tt(section.title) }}</div>
+          <div v-for="r in section.fields" :key="r.code" class="field">
           <label :title="tt(r.name)">{{ tt(r.name) }}<span v-if="r.isNotNull" class="req">*</span></label>
           <el-input v-if="isText(r)" v-model="form[r.code]" :disabled="!editable || fieldLocked(r)" :placeholder="tt(r.name)" />
           <el-input-number
@@ -120,10 +146,12 @@
           />
           <el-switch v-else-if="isBool(r)" v-model="form[r.code]" :disabled="!editable || fieldLocked(r)" />
           <el-input v-else v-model="form[r.code]" :disabled="!editable || fieldLocked(r)" :placeholder="tt(r.name)" />
-        </div>
+          </div>
+        </template>
       </div>
 
       <!-- 表体：三明细上下堆叠（对齐真实 T+：每区自带 明细/汇总 页签行 + 图标行 + 网格 + 分隔条） -->
+      <div v-if="formSections.length && tabs.length" class="form-section-title detail-section-title">{{ tt('商品信息') }}</div>
       <div v-if="tabs.length" class="detail">
         <div v-for="(tab, ti) in tabs" :key="tab.key" class="detail-block">
           <div class="dt-head">
@@ -142,6 +170,7 @@
               <el-button v-if="editable" type="primary" :icon="Plus" @click="addDetailRow(tab)" class="add-data-btn">{{ tt('新增数据') }}</el-button>
               <span class="dt-ic" v-if="visibleFields(tab).some((field) => field.dataName === '现存量')" @click="refreshTabCurrentStock(tab)">{{ tt('现存量提取') }}</span>
               <span v-if="tab.key === 'materials' && selectedProduct" class="filter-hint">{{ tt('当前产品') }}：{{ selectedProduct }} {{ tt('的 BOM 子件') }}</span>
+              <span v-if="formSections.length" class="dt-scroll-hint">{{ tt('左右滚动查看完整列') }}</span>
               <span class="tab-hint">{{ tt(tabHint(tab)) }}</span>
             </div>
           </div>
@@ -194,8 +223,8 @@
               <el-table-column
                 v-for="dr in visibleFields(tab)"
                 :key="dr.dataName"
-                :label="tt(dr.dataName)"
-                min-width="110"
+                :label="tt(detailAliases[dr.dataName] || dr.dataName)"
+                :min-width="formSections.length ? (['小数', '整数'].includes(dr.dataType) ? 76 : 96) : 110"
                 :class-name="dr.computed ? 'computed-col' : ''"
               >
                 <template #default="{ row }">
@@ -262,8 +291,20 @@
           <div v-if="ti < tabs.length - 1" class="dt-splitter"></div>
         </div>
       </div>
+
+      <!-- 金额信息：配置 formSummary 时在表体后汇总展示（金额/税额/价税合计/勾稽状态） -->
+      <div v-if="summaryFields.length" class="form-summary">
+        <div class="form-section-title">{{ tt(summaryTitle) }}</div>
+        <div class="summary-grid">
+          <div v-for="r in summaryFields" :key="r.code" class="summary-item">
+            <span class="summary-label">{{ tt(r.name) }}</span>
+            <span class="summary-value">{{ displayField(r, form[r.code]) }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- 表尾备注区（对齐真实 T+：备注 + 分隔线 + 审核信息行） -->
-      <div class="remark">
+      <div v-if="!formSections.length" class="remark">
         <label>{{ tt('备注') }}</label>
         <el-input v-model="form['备注']" :disabled="!editable" style="width: 100%" />
       </div>
@@ -324,6 +365,14 @@
     <ProducePreviewDialog v-model="produceVisible" :docNo="produceNo" @generated="onProduceGenerated" />
     <SaleOutPreviewDialog v-model="saleOutVisible" :docNo="saleOutNo" @generated="onSaleOutGenerated" />
     <FinishInPreviewDialog v-model="finishInVisible" :docNo="finishInNo" @generated="onFinishInGenerated" />
+    <InvoiceLinePickDialog
+      v-model="invoicePickVisible"
+      :mode="invoicePickMode"
+      :supplier="invoicePickSupplier"
+      :panel-code="panelCode"
+      @confirm="onInvoiceSourceConfirm"
+    />
+    <InvoiceImportDialog v-model="invoiceImportVisible" :panel-code="panelCode" @imported="onInvoiceImported" />
     <ImportDialog v-model="impVisible" :fields="impFields" :target-label="impLabel" @imported="onImported" />
     <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
     <ScanFillDialog
@@ -338,7 +387,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted, onDeactivated } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onActivated, onDeactivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 // 2026-08-20：支持弹窗嵌入（列表页双击打开表单弹窗）——panelCodeProp/codeProp 优先于路由；embedded 时保存/返回改为 emit
@@ -354,8 +403,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Back, Plus, Delete, ArrowDown, Search } from '@element-plus/icons-vue'
 import { usePanelRuntime } from '@core/panel-runtime'
 import { ensureScanFillAction, ensureSelectAction, hasSelectConfig, isApprovalGroup, isCatchAllGroup, primaryActionOf, approvalSecondaryOf } from '@core/button-groups'
-import { filterSupportedActions } from '@core/action-support'
+import { INVOICE_IMPORT_ACTION, INVOICE_LINE_ACTION, filterSupportedActions } from '@core/action-support'
 import { isDocApproved } from '@core/doc-status'
+import { hasUnqualifiedTab, syncUnqualifiedRow } from '@core/inspection-unqualified.js'
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
 import RefPickDialog from './RefPickDialog.vue'
@@ -364,6 +414,8 @@ import SelectVoucherDialog from './SelectVoucherDialog.vue'
 import ProducePreviewDialog from './ProducePreviewDialog.vue'
 import SaleOutPreviewDialog from './SaleOutPreviewDialog.vue'
 import FinishInPreviewDialog from './FinishInPreviewDialog.vue'
+import InvoiceLinePickDialog from './InvoiceLinePickDialog.vue'
+import InvoiceImportDialog from './InvoiceImportDialog.vue'
 import ImportDialog from './ImportDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
 import ScanFillDialog from './ScanFillDialog.vue'
@@ -411,6 +463,9 @@ function filterGroups(raw) {
 const loading = ref(false)
 const saving = ref(false)
 const payloadCache = ref(null)
+const formSections = ref([])
+const formSummary = ref(null)
+const detailAliases = ref({})
 const approvalVisible = ref(false)
 const approvalNo = ref('')
 const selVisible = ref(false)
@@ -419,6 +474,56 @@ const impFields = ref([])
 const impLabel = ref('明细')
 const scanVisible = ref(false)
 const selCfg = ref(null)
+
+// 采购发票行级选入库单/退货单行：按业务类型取 mode，供应商取当前表头
+const invoicePickVisible = ref(false)
+const invoicePickMode = ref('purchase')
+const invoicePickSupplier = ref('')
+const invoiceImportVisible = ref(false)
+
+function openInvoiceLinePick() {
+  const businessType = String(form['业务类型'] || '')
+  invoicePickMode.value = businessType.includes('退货') ? 'return' : 'purchase'
+  invoicePickSupplier.value = String(form['供应商'] || '')
+  invoicePickVisible.value = true
+}
+
+/** 弹窗确认：追加到主明细，来源行按「来源面板+来源单号+来源行号」去重。 */
+function onInvoiceSourceConfirm(selected) {
+  const picked = Array.isArray(selected) ? selected : []
+  if (!picked.length) return
+  const tab = tabs.value[0]
+  if (!tab) return ElMessage.warning(tt('该面板无明细可追加'))
+  const target = detailData[tab.key] || (detailData[tab.key] = [])
+  const { rows, duplicates } = engine.buildInvoiceLineRows(picked, invoicePickMode.value, target)
+  for (const row of rows) target.push(row)
+
+  if (rows.length) {
+    const supplierRow = picked.find((row) => row['供应商'])
+    if (!String(form['供应商'] || '').trim() && supplierRow?.['供应商']) {
+      form['供应商'] = supplierRow['供应商']
+      if (!String(form['供应商编码'] || '').trim()) form['供应商编码'] = supplierRow['供应商编码'] || ''
+    }
+    if (!String(form['采购订单号'] || '').trim()) {
+      const orderNo = picked.find((row) => row['采购订单号'])?.['采购订单号']
+      if (orderNo) form['采购订单号'] = orderNo
+    }
+    applyCalc()
+    // 表头金额由明细汇总（与后端 deriveInvoiceHeader 同口径）
+    const totals = engine.invoiceHeaderTotals(target)
+    for (const [key, value] of Object.entries(totals)) {
+      if (Object.prototype.hasOwnProperty.call(form, key)) form[key] = value
+    }
+  }
+
+  if (!rows.length) {
+    ElMessage.warning(tt('所选来源行已在明细中，未重复追加'))
+  } else if (duplicates) {
+    ElMessage.success(tt('已追加') + ` ${rows.length} ` + tt('行') + '，' + tt('跳过') + ` ${duplicates} ` + tt('行重复来源'))
+  } else {
+    ElMessage.success(tt('已追加') + ` ${rows.length} ` + tt('行明细'))
+  }
+}
 
 // ---------- 拉式选单（配置驱动：selectConfig 定义来源面板/列/字段映射） ----------
 const selectVisible = ref(false)
@@ -567,6 +672,44 @@ function visibleFields(tab) {
 
 const visibleMeta = computed(() => (meta.value || []).filter((r) => !r.hidden))
 
+const fieldKeyOf = (field) => field.code || field.dataName || field.name
+/** 表头分段：配置 formSections 时按业务分组渲染，未配置的字段兜底进「其他信息」。 */
+const sectionedMeta = computed(() => {
+  const all = visibleMeta.value
+  const sections = Array.isArray(formSections.value) ? formSections.value : []
+  if (!sections.length) return [{ title: '', fields: all }]
+  const summaryKeys = new Set((formSummary.value?.fields || []).map(String))
+  const byKey = new Map(all.map((field) => [fieldKeyOf(field), field]))
+  const seen = new Set()
+  const out = []
+  for (const section of sections) {
+    const fields = (section.fields || [])
+      .map((name) => byKey.get(name))
+      .filter((field) => field && !summaryKeys.has(fieldKeyOf(field)) && !seen.has(fieldKeyOf(field)))
+    for (const field of fields) seen.add(fieldKeyOf(field))
+    if (fields.length) out.push({ title: section.title || '', fields })
+  }
+  const missing = all.filter((field) => !seen.has(fieldKeyOf(field)) && !summaryKeys.has(fieldKeyOf(field)))
+  if (missing.length) out.push({ title: '其他信息', fields: missing })
+  return out.length ? out : [{ title: '', fields: all }]
+})
+/** 金额信息：表体后只读汇总，不参与表头录入。 */
+const summaryFields = computed(() => {
+  const config = formSummary.value
+  if (!config || !Array.isArray(config.fields) || !config.fields.length) return []
+  const byKey = new Map(visibleMeta.value.map((field) => [fieldKeyOf(field), field]))
+  return config.fields.map((name) => byKey.get(name)).filter(Boolean)
+})
+const summaryTitle = computed(() => formSummary.value?.title || '金额信息')
+function displayField(field, value) {
+  if (value === null || value === undefined || value === '') return '-'
+  if (isNumber(field)) {
+    const number = Number(value)
+    if (Number.isFinite(number)) return number.toLocaleString('zh-CN', { maximumFractionDigits: 4 })
+  }
+  return String(value)
+}
+
 function fieldLocked(r) {
   // 锭号：自动编码；仅勾选「是否手工修改单据编码」时草稿可改
   if (r.autoCode) return !(status.value === '草稿' && form['是否手工修改单据编码'])
@@ -606,6 +749,7 @@ function isDisabled(action) {
     审批通过: s !== '审批中' || !isEdit.value,
     审批驳回: s !== '审批中' || !isEdit.value,
     扫描填单: false,
+    [INVOICE_LINE_ACTION]: !editable.value,
   }
   // 2026-08-25：所有「生成XX」生单按钮统一仅已审核/生产中可用（对齐 T+：已审核才能选择生单）
   if (map[action] === undefined && action.startsWith('生成')) {
@@ -619,7 +763,11 @@ function primaryOf(g) {
   return primaryActionOf(g, isDisabled) || g.name
 }
 function groupLabel(g) {
-  return isApprovalGroup(g) ? tt(primaryOf(g)) : tt(g.name)
+  if (isApprovalGroup(g)) return tt(primaryOf(g))
+  const actions = g.actions || g.items || []
+  // 行级选来源单单独成组时直接显示动作名（如「关联」组只有「选入库单行」）
+  if (actions.length === 1 && actions[0] === INVOICE_LINE_ACTION) return tt(INVOICE_LINE_ACTION)
+  return tt(g.name)
 }
 /**
  * 群组主按钮是否只展开菜单：
@@ -642,6 +790,19 @@ function dropOf(g) {
 function secondaryOf(g) {
   return approvalSecondaryOf(g, primaryOf(g), isDisabled)
 }
+
+/** 分段式详情操作栏的「更多」：保留权限过滤后的其余动作。 */
+const sectionMoreActions = computed(() => {
+  const primary = new Set(['保存', '保存新增', '提交审批', '返回'])
+  const out = []
+  for (const group of groups.value || []) {
+    for (const action of (group.actions || group.items || [])) {
+      if (!action || primary.has(action) || out.includes(action)) continue
+      out.push(action)
+    }
+  }
+  return out
+})
 
 function isText(r) {
   return !r.dataType || r.dataType === '文本' || r.dataType === 'STRING'
@@ -749,6 +910,7 @@ async function onRefConfirm(rows) {
     if (tab?.key === 'products' && r.dataName === '产品编码') {
       for (const selected of rows) loadBomFor(selected[refField])
     }
+    if (tab) syncAllUnqualified()
     await engine.fillCurrentStock(changedRows)
   }
   refVisible.value = false
@@ -1043,8 +1205,32 @@ async function onDetailChange(dr, row, tab) {
   if (tab && tab.key === 'products' && dr.dataName === '产品编码') {
     loadBomFor(row[dr.dataName])
   }
+  syncInspectionUnqualified(tab, row)
   if (['存货编码', '存货名称', '产品编码', '产品名称', '材料编码', '材料名称', '仓库', '预出仓库', '出库仓库'].includes(dr.dataName)) {
     try { await engine.fillCurrentStock(row) } catch (error) { ElMessage.error(engine.errMsg(error) || tt('现存量刷新失败')) }
+  }
+}
+
+/** 检验单联动：上方检验行标记不合格后自动维护「不合格处理」页签的关联行。 */
+function syncInspectionUnqualified(tab, row) {
+  if (!tab || !hasUnqualifiedTab(tabs.value)) return
+  const mainTabKey = tabs.value[0]?.key || 'items'
+  if (tab.key !== mainTabKey) return
+  const rows = detailData[mainTabKey]
+  if (!Array.isArray(rows)) return
+  const lineNo = rows.indexOf(row) + 1
+  if (lineNo <= 0) return
+  syncUnqualifiedRow(detailData, lineNo, mainTabKey)
+}
+
+/** 参照批量带出后，按当前主明细整体刷新不合格处理行（幂等）。 */
+function syncAllUnqualified() {
+  if (!hasUnqualifiedTab(tabs.value)) return
+  const mainTabKey = tabs.value[0]?.key || 'items'
+  const rows = detailData[mainTabKey]
+  if (!Array.isArray(rows)) return
+  for (let index = 1; index <= rows.length; index += 1) {
+    syncUnqualifiedRow(detailData, index, mainTabKey)
   }
 }
 
@@ -1177,6 +1363,7 @@ watch(() => localeStore.current, ensureFormDict)
 
 async function load() {
   loading.value = true
+  invoicePickVisible.value = false
   try {
     const configPromise = engine.getPanelConfig(panelCode.value).catch(() => null)
     let payload
@@ -1197,6 +1384,9 @@ async function load() {
     for (const rf of (meta.value || []).filter(isRef)) checkRefMode(rf)
     const panelConfig = await configPromise
     const panelMetadata = panelConfig?.metadata || payload.metadata || {}
+    formSections.value = Array.isArray(panelMetadata.formSections) ? panelMetadata.formSections : []
+    formSummary.value = panelMetadata.formSummary || null
+    detailAliases.value = panelMetadata.detailColumnAliases || {}
     const configuredGroups = payload.buttonGroups?.length
       ? payload.buttonGroups
       : panelMetadata.buttonGroups
@@ -1301,6 +1491,11 @@ async function onProduceGenerated(res) {
 }
 
 async function onButton(action) {
+  // 采购发票 Excel 导入：前端弹窗按「发票号码 + 供应商」分组逐张保存，不走下面的 callButton 分发
+  if (action === INVOICE_IMPORT_ACTION) {
+    invoiceImportVisible.value = true
+    return
+  }
   // 2026-08-25：灰按钮（disabled）点击直接忽略，不执行、不弹提示（如草稿态「生成XX」生单按钮）
   if (isDisabled(action)) return
   if (APPROVE_ACTIONS.includes(action) && !user.isAdmin && !user.approvePanels.includes(panelCode.value)) {
@@ -1327,6 +1522,11 @@ async function onButton(action) {
   if (['生成销售出库单', '生成销售出库单(普通销售)'].includes(action) && panelCode.value === 'SO_ORDER') {
     saleOutNo.value = form['编号'] || form['单据编号'] || ''
     saleOutVisible.value = true
+    return
+  }
+  // 采购发票「选入库单行」：前端弹窗按行追加，不走后端 callButton，也不能落到下面的选单分支
+  if (action === INVOICE_LINE_ACTION) {
+    openInvoiceLinePick()
     return
   }
   if (action === '扫描填单') {
@@ -1477,7 +1677,7 @@ async function onButton(action) {
       formData: rd,
       buttonParam: isEdit.value ? { code: form['编号'] } : {},
     })
-    // 推式生单结果：直接跳转目标面板列表页（不弹窗、不新开标签页），新单按创建时间倒序显示在第一张（草稿内联可编辑）
+    // 推式生单结果：跳转目标面板列表页并定位到新单据（草稿内联可编辑），保留来源单据页签
     if (res?.gotoPanel) {
       if (props.embedded) {
         emit('saved', res)
@@ -1485,9 +1685,9 @@ async function onButton(action) {
       }
       ElMessage.success(tt('已生成') + (res.gotoPanel === 'MANU_ORDER' ? tt('生产加工单') : res.gotoPanel) + '：' + res['编号'] + '，' + tt('请在列表页继续填写'))
       const targetPath = `/panelx/list/${res.gotoPanel}`
-      tabsStore.close(route.path) // 关闭当前源表单页签（页签被目标面板替换）
-      router.push(targetPath)
-      tabsStore.open({ path: targetPath, title: res.gotoPanel })
+      const targetQuery = { code: res['编号'] }
+      router.push({ path: targetPath, query: targetQuery })
+      tabsStore.open({ path: targetPath, title: res.gotoPanel, query: targetQuery })
       return
     }
     // 「审核」在审批面板上等价于提交审批；「提交审批」按钮本身也走这条路。
@@ -1618,6 +1818,20 @@ function onImported(rows) {
   ElMessage.success(tt('已导入') + ' ' + rows.length + ' ' + tt('行到「') + tt(tab.label || tab.key) + tt('」，请点击保存落库'))
 }
 
+// Excel 导入发票完成：成功保存的草稿已在后端建档，跳到发票列表继续处理；部分失败时留在弹窗看错误
+function onInvoiceImported(result) {
+  const count = result?.count || 0
+  if (!count) return
+  if (Array.isArray(result.failed) && result.failed.length) return
+  if (props.embedded) {
+    emit('saved', result)
+    return
+  }
+  const targetPath = `/panelx/list/${panelCode.value || 'PU_INVOICE'}`
+  router.push({ path: targetPath })
+  tabsStore.open({ path: targetPath, title: payloadCache.value?.panelName || panelCode.value, query: {} })
+}
+
 // 新选单弹窗生单完成：2026-08-25 不再弹窗展示，直接跳目标面板列表页并定位新选入单据
 function onSelGenerated(generated) {
   const first = generated && generated[0]
@@ -1633,6 +1847,32 @@ onMounted(() => {
   loadSubBomMap()
 })
 
+// keep-alive 页签切回时刷新面板配置：后端重启后 panel_config 可能已更新，
+// 只刷新布局/字段定义，不重载当前单据，避免丢掉未保存的编辑。
+let formConfigActivated = false
+async function refreshFormConfig() {
+  if (!panelCode.value || panelCode.value === 'undefined') return
+  try {
+    const cfg = await engine.getPanelConfig(panelCode.value)
+    const metadata = cfg?.metadata || {}
+    formSections.value = Array.isArray(metadata.formSections) ? metadata.formSections : []
+    formSummary.value = metadata.formSummary || null
+    if (cfg?.detail) {
+      detailDef.value = cfg.detail
+      applyCalc()
+    }
+  } catch (e) {
+    // 配置刷新失败时保留当前页面，不影响正在编辑的单据
+  }
+}
+onActivated(() => {
+  if (!formConfigActivated) {
+    formConfigActivated = true
+    return
+  }
+  refreshFormConfig()
+})
+
 // keep-alive 切离时关闭所有弹窗（防止 append-to-body 弹窗在路由切换后残留）
 onDeactivated(() => {
   selectVisible.value = false
@@ -1640,6 +1880,8 @@ onDeactivated(() => {
   refVisible.value = false
   impVisible.value = false
   scanVisible.value = false
+  invoicePickVisible.value = false
+  invoiceImportVisible.value = false
 })
 
 // 从列表页「选单」入口（?select=1）跳转而来：load 完成后自动弹出选单对话框（payloadCache 异步赋值）
@@ -1656,6 +1898,8 @@ watch(() => [panelCode.value, code.value], () => {
   selVisible.value = false
   refVisible.value = false
   impVisible.value = false
+  invoicePickVisible.value = false
+  invoiceImportVisible.value = false
   Object.keys(refModeMap).forEach((k) => delete refModeMap[k])
   Object.keys(refSelectData).forEach((k) => delete refSelectData[k])
   Object.keys(refSelectTimers).forEach((k) => clearTimeout(refSelectTimers[k]))
@@ -2134,5 +2378,134 @@ watch(() => [panelCode.value, code.value], () => {
 
   .remark { margin-top: 10px; }
   .audit-line { gap: 6px 12px; font-size: 12px; line-height: 1.6; }
+}
+
+/* 分段式单据详情（采购发票）：基本信息 / 商品信息 / 金额信息各自成段 */
+.sectioned-form .card {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.sectioned-form .tools {
+  margin-bottom: 10px;
+  padding: 8px 14px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+.sectioned-form .head {
+  padding: 0 4px 10px;
+}
+.sectioned-form .invoice-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 4px 14px;
+}
+.sectioned-form .invoice-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.sectioned-form .invoice-title .no {
+  overflow: hidden;
+  color: #1f2937;
+  font-size: 18px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sectioned-form .invoice-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sectioned-form .fields.udl-fields {
+  padding: 16px 18px 8px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  gap: 14px 24px;
+}
+.sectioned-form .form-section-title {
+  grid-column: 1 / -1;
+  margin: 2px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #1f2937;
+  font-size: 13px;
+  font-weight: 600;
+}
+.sectioned-form .form-section-title:not(:first-child) {
+  margin-top: 8px;
+}
+.sectioned-form .detail-section-title {
+  margin: 14px 0 8px;
+  padding: 0 2px 6px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.sectioned-form .detail {
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+/* 发票明细：轻表格，单元格内控件不再画重边框，聚焦/悬停才提示可编辑 */
+.sectioned-form .detail :deep(.el-table--border .el-table__cell) {
+  border-right: 1px solid #f1f5f9;
+}
+.sectioned-form .detail :deep(.el-table th.el-table__cell) {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+}
+.sectioned-form .detail :deep(.el-input__wrapper),
+.sectioned-form .detail :deep(.el-select__wrapper) {
+  background: transparent;
+  box-shadow: none;
+}
+.sectioned-form .detail :deep(.el-input__wrapper:hover),
+.sectioned-form .detail :deep(.el-select__wrapper:hover) {
+  box-shadow: 0 0 0 1px #cbd5e1 inset;
+}
+.sectioned-form .dt-scroll-hint {
+  color: #94a3b8;
+  font-size: 12px;
+}
+.sectioned-form .form-summary {
+  margin-top: 10px;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+.sectioned-form .form-summary .form-section-title {
+  margin-bottom: 8px;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 4px 24px;
+}
+.summary-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px dashed #f0f0f0;
+}
+.summary-label {
+  color: #64748b;
+  font-size: 12px;
+}
+.summary-value {
+  color: #1f2937;
+  font-size: 13px;
+  font-weight: 600;
 }
 </style>

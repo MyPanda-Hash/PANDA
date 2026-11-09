@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { filterSupportedActions, isActionSupported, isSelectAction } from '../src/core/action-support.js'
+import { INVOICE_IMPORT_ACTION, INVOICE_LINE_ACTION, filterSupportedActions, isActionSupported, isSelectAction } from '../src/core/action-support.js'
 import { isCatchAllGroup } from '../src/core/button-groups.js'
 
 test('实现过的动作判为支持，配置里的占位动作判为不支持', () => {
@@ -10,10 +10,13 @@ test('实现过的动作判为支持，配置里的占位动作判为不支持',
   // 「未定义按钮规则」。此前这里断言 true，与 tools/action-support-audit.mjs 的解析结果矛盾，
   // 按钮在界面上可见、点了必然 409。以 Java 实现为唯一口径，改为不支持。
   assert.equal(isActionSupported('生成销售退货单'), false)
+  assert.equal(isActionSupported('生成到货单'), true)
+  assert.equal(isActionSupported('生成请购单'), true)
   assert.equal(isActionSupported('审批通过'), true)
   assert.equal(isActionSupported('变更'), true, 'PanelActionHandler 注册的动作')
   assert.equal(isActionSupported('选工艺路线'), true, '手工建单按路线带出工序，后端有 switch 分支')
   assert.equal(isActionSupported('扫描填单'), true, '前端自己实现')
+  assert.equal(isActionSupported('生成销售退货单'), false, '后端无 switch 分支，不能显示成可点按钮')
   assert.equal(isActionSupported('附件'), false)
   assert.equal(isActionSupported('消息'), false)
   assert.equal(isActionSupported('移动控件位置'), false)
@@ -23,6 +26,28 @@ test('实现过的动作判为支持，配置里的占位动作判为不支持',
   assert.equal(isActionSupported('生成批号'), false)
   assert.equal(isActionSupported(''), false)
   assert.equal(isActionSupported(null), false)
+})
+
+test('「选入库单行」是前端行选动作，不按选单配置判定、始终可见', () => {
+  assert.equal(INVOICE_LINE_ACTION, '选入库单行')
+  assert.equal(isSelectAction('选入库单行'), false, '不是选单生单动作')
+  assert.equal(isActionSupported('选入库单行'), true, '前端自己实现，不依赖 selectConfig')
+  assert.equal(isActionSupported('选入库单行', { hasSelect: false }), true)
+  assert.deepEqual(
+    filterSupportedActions([{ name: '关联', actions: ['选入库单行'] }]),
+    [{ name: '关联', actions: ['选入库单行'] }],
+  )
+})
+
+test('「导入发票」是前端整单导入动作，与明细导入「导入」互不影响', () => {
+  assert.equal(INVOICE_IMPORT_ACTION, '导入发票')
+  assert.equal(isActionSupported('导入发票'), true, '前端自己实现，不依赖后端 callButton')
+  assert.equal(isSelectAction('导入发票'), false, '不是选单生单动作')
+  assert.equal(isActionSupported('导入'), true, '原有明细导入保持可用')
+  assert.deepEqual(
+    filterSupportedActions([{ name: '关联', actions: ['导入发票', '选入库单行'] }]),
+    [{ name: '关联', actions: ['导入发票', '选入库单行'] }],
+  )
 })
 
 test('选单类动作只在面板配了来源时才算支持', () => {

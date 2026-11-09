@@ -276,7 +276,10 @@ export async function archiveIndex(panelCode, keyField) {
 // ==================== SQL 后端接口 ====================
 
 export async function getPanelConfig(panelCode) {
-  return normalizeApprovalConfig(unwrap(await request.get('/px/getPanelConfig', { params: { panelCode } })))
+  // 配置可能在后端启动时被 Registry 重写；加时间戳避免浏览器/代理缓存旧 panel_config。
+  return normalizeApprovalConfig(unwrap(await request.get('/px/getPanelConfig', {
+    params: { panelCode, _t: Date.now() },
+  })))
 }
 
 /**
@@ -326,13 +329,17 @@ export async function getPermMatrix(panelCode) {
 
 export async function getNewFormPermMatrix({ panelCode, operationName }) {
   return normalizeApprovalPayload(
-    unwrap(await request.get('/px/getNewFormPermMatrix', { params: { panelCode, operationName } })),
+    unwrap(await request.get('/px/getNewFormPermMatrix', {
+      params: { panelCode, operationName, _t: Date.now() },
+    })),
   )
 }
 
 export async function getFormDescriptor({ panelCode, code }) {
   return normalizeApprovalPayload(
-    unwrap(await request.get('/px/getFormDescriptor', { params: { panelCode, code } })),
+    unwrap(await request.get('/px/getFormDescriptor', {
+      params: { panelCode, code, _t: Date.now() },
+    })),
   )
 }
 
@@ -540,6 +547,106 @@ export async function callButton({ panelCode, buttonName, formData, buttonParam 
   // 按钮名对齐 SQL 后端（中止执行/整单中止→中止、草稿→取消中止、保存类→提交）
   const apiName = buttonName === '中止执行' || buttonName === '整单中止' ? '中止' : buttonName === '草稿' ? '取消中止' : buttonName === '保存' || buttonName === '保存为草稿' || buttonName === '保存新增' ? '提交' : buttonName
   return unwrap(await request.post('/px/callButton', { panelCode, buttonName: apiName, formData, buttonParam }))
+}
+
+// ==================== 采购发票：行级选入库单/退货单行 ====================
+
+/**
+ * 采购发票可选来源行（已审核采购入库单/采购退货单的未开票行）。
+ * mode=purchase|return；supplier 为空时不限供应商；keyword 匹配单号/存货（供应商用 supplier 过滤）。
+ */
+export async function invoiceSourceLines({ mode = 'purchase', supplier = '', keyword = '' } = {}) {
+  return unwrap(await request.get('/px/invoiceSourceLines', {
+    params: { mode, supplier, keyword },
+  }))
+}
+
+function invoiceSourceLineKey(row) {
+  const panel = String(row?.['来源面板'] ?? '').trim()
+  const no = String(row?.['来源单号'] ?? '').trim()
+  const line = String(row?.['来源行号'] ?? '').trim()
+  if (!panel && !no && !line) return ''
+  return `${panel}|${no}|${line}`
+}
+
+/**
+ * 采购发票「选入库单行」：把选中的来源行转换为发票表体行。
+ * - 数量取本次开票数量（退货为负）；来源数量及入库/已开票/未开票数量保持正数。
+ * - 整行开票时沿用来源税额/含税金额；只开部分数量时按 本次数量 ÷ 未开票数量 折算（2 位精度）。
+ * - 退货行税额、价税合计取负；采购行沿用来源符号。
+ * - 已存在于明细中的来源行（来源面板+来源单号+来源行号）跳过。
+ * 返回 { rows, duplicates }，由列表/表单共用。
+ */
+export function buildInvoiceLineRows(selectedRows, mode = 'purchase', existingRows = []) {
+  const seen = new Set()
+  for (const row of Array.isArray(existingRows) ? existingRows : []) {
+    const key = invoiceSourceLineKey(row)
+    if (key) seen.add(key)
+  }
+
+  const rows = []
+  let duplicates = 0
+  for (const source of Array.isArray(selectedRows) ? selectedRows : []) {
+    if (!source) continue
+    const key = invoiceSourceLineKey(source)
+    if (key && seen.has(key)) {
+      duplicates += 1
+      continue
+    }
+    if (key) seen.add(key)
+
+    const notInvoiced = Number(source['未开票数量'])
+    const selectedQty = roundDecimal(Math.abs(Number(source.selectedQty ?? source['未开票数量'])), 4)
+    const ratio = Number.isFinite(notInvoiced) && notInvoiced > 0
+      ? Math.min(1, selectedQty / notInvoiced)
+      : 1
+    const tax = roundDecimal((Number(source['税额']) || 0) * ratio, 2)
+    const total = roundDecimal((Number(source['含税金额'] ?? source['价税合计']) || 0) * ratio, 2)
+    const sign = mode === 'return' ? -1 : 1
+
+    rows.push({
+      存货编码: source['存货编码'] ?? '',
+      存货名称: source['存货名称'] ?? '',
+      规格型号: source['规格型号'] ?? '',
+      计量单位: source['计量单位'] ?? '',
+      数量: selectedQty * sign,
+      无税单价: Number(source['单价']) || 0,
+      '税率%': Number(source['税率%']) || 0,
+      税额: mode === 'return' ? -Math.abs(tax) : tax,
+      金额: mode === 'return' ? -Math.abs(total - Math.abs(tax)) : roundDecimal(total - tax, 2),
+      价税合计: mode === 'return' ? -Math.abs(total) : total,
+      来源面板: source['来源面板'] ?? '',
+      来源单号: source['来源单号'] ?? '',
+      来源行号: source['来源行号'] ?? '',
+      来源数量: selectedQty,
+      源单类型: source['来源面板'] ?? '',
+      源单编号: source['来源单号'] ?? '',
+      源单行号: source['来源行号'] ?? '',
+      入库数量: Number(source['入库数量']) || 0,
+      已开票数量: Number(source['已开票数量']) || 0,
+      未开票数量: Number(source['未开票数量']) || 0,
+    })
+  }
+  return { rows, duplicates }
+}
+
+/** 采购发票表头金额：由明细价税合计/税额汇总（红字行已是负数，直接相加）。 */
+export function invoiceHeaderTotals(rows) {
+  let net = 0
+  let tax = 0
+  let gross = 0
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const lineGross = Number(row?.['价税合计']) || 0
+    const lineTax = Number(row?.['税额']) || 0
+    gross += lineGross
+    tax += lineTax
+    net += lineGross - lineTax
+  }
+  return {
+    不含税金额: roundDecimal(net, 2),
+    税额: roundDecimal(tax, 2),
+    价税合计: roundDecimal(gross, 2),
+  }
 }
 
 export async function deleteForms({ panelCode, rowCodes }) {

@@ -61,11 +61,13 @@ class PortalNotificationServiceTest {
 
     @Test
     void approvalMessagesReturnOnlyToTheSubmittingAccount() {
-        when(approvalMapper.selectList(any())).thenReturn(List.of(
-                approval(1L, "SO_ORDER", "SO-001", "SUBMIT", "PENDING", "alice"),
-                approval(2L, "SO_ORDER", "SO-001", "APPROVE", "APPROVED", "manager"),
-                approval(3L, "SO_ORDER", "SO-002", "SUBMIT", "PENDING", "bob"),
-                approval(4L, "SO_ORDER", "SO-002", "REJECT", "REJECTED", "manager")));
+        // messages() 查询两次：先按 action=SUBMIT + operator=alice 取本人提交记录，再按面板取审批结果。
+        // 桩必须按调用顺序分别返回，否则审批结果行会混入提交记录，被误认成 alice 的单据。
+        when(approvalMapper.selectList(any())).thenReturn(
+                List.of(approval(1L, "SO_ORDER", "SO-001", "SUBMIT", "PENDING", "alice"),
+                        approval(3L, "SO_ORDER", "SO-002", "SUBMIT", "PENDING", "bob")),
+                List.of(approval(2L, "SO_ORDER", "SO-001", "APPROVE", "APPROVED", "manager"),
+                        approval(4L, "SO_ORDER", "SO-002", "REJECT", "REJECTED", "manager")));
         when(panelMapper.selectList(any())).thenReturn(List.of(panel("SO_ORDER", "销售订单")));
 
         List<Map<String, Object>> result = service.list("alice", "message");

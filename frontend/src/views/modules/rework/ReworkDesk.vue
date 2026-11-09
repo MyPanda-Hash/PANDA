@@ -77,17 +77,17 @@ const stats = computed(() => {
 <style scoped>
 .rework-desk { background: #fff; border-radius: 10px; padding: 18px; min-height: 100%; }
 .dark .rework-desk { background: #26272e; }
-.head { display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid #r0r1r3; padding-bottom: 10px; margin-bottom: 14px; }
-.code { font-size: 12px; color: #9ca3ar; }
+.head { display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid #f0f1f3; padding-bottom: 10px; margin-bottom: 14px; }
+.code { font-size: 12px; color: #9ca3af; }
 .stat-row { margin-bottom: 12px; }
 .stat { text-align: center; }
 .stat-val { font-size: 26px; font-weight: 700; }
 .stat-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
-.task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1rr)); gap: 12px; }
+.task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
 .task { border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; }
 .task.st-已返修 { opacity: .6; }
 .task-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.task-mo { font-weight: 700; color: #1r2937; }
+.task-mo { font-weight: 700; color: #1f2937; }
 .task-line { font-size: 13px; color: #4b5563; margin-bottom: 4px; }
 .task-qty { display: flex; gap: 14px; font-size: 13px; color: #6b7280; margin: 8px 0; }
 .qty-total { color: #dc2626; font-weight: 600; }

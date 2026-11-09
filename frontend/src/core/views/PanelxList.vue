@@ -31,7 +31,17 @@
           <el-icon><ArrowLeft /></el-icon>
           <span>{{ tt('返回') }}</span>
         </button>
-        <template v-if="reportMode">
+        <template v-if="documentListMode">
+          <span class="doc-chip">{{ tt(panelName) }}</span>
+          <span class="report-count">{{ tt('共') }} {{ total }} {{ tt('条') }}</span>
+          <span class="page-btn" :title="tt('首页')" @click="docPage(1)">◁</span>
+          <span class="page-btn" :title="tt('上一页')" @click="docPage(query.pageNo - 1)">◀</span>
+          <span class="page-no">{{ tt('第') }} {{ query.pageNo }}/{{ reportPageCount }} {{ tt('页') }}</span>
+          <span class="page-btn" :title="tt('下一页')" @click="docPage(query.pageNo + 1)">▶</span>
+          <span class="page-btn" :title="tt('末页')" @click="docPage(reportPageCount)">▷</span>
+          <span class="doc-list-tip">{{ tt('双击行打开单据详情') }}</span>
+        </template>
+        <template v-else-if="reportMode">
           <span class="doc-chip">{{ tt(panelName) }}</span>
           <span class="report-count">{{ tt('共') }} {{ total }} {{ tt('条') }}</span>
           <span class="page-btn" :title="tt('首页')" @click="reportPage(1)">◁</span>
@@ -111,7 +121,7 @@
         <el-input v-else v-model="condition[qr.dataName]" :placeholder="qr.placeholder || ''" @keyup.enter="search" clearable @clear="search" />
       </div>
     </div>
-    <div v-else class="fields header-fields udl-fields" :class="{ 'is-draft': draftEditable }">
+    <div v-else-if="!documentListMode" class="fields header-fields udl-fields" :class="{ 'is-draft': draftEditable }">
       <div class="field" v-for="field in headerFields" :key="headerFieldKey(field)">
         <label :class="{ req: field.isRequired }">{{ tt(headerFieldLabel(field)) }}</label>
         <!-- 表头参照带出列（部门.负责人）：档案属性镜像，只读显示 -->
@@ -235,11 +245,39 @@
       </el-table>
     </div>
 
+    <div v-else-if="documentListMode" class="doc-list-body" v-loading="loading">
+      <el-table
+        :data="list"
+        border
+        stripe
+        size="small"
+        height="100%"
+        :row-class-name="docRowCls"
+        :empty-text="tt('暂无符合条件的数据')"
+        @row-click="onDocRowClick"
+        @row-dblclick="openDocForm"
+      >
+        <el-table-column type="index" :label="tt('序号')" width="58" fixed="left" :index="(i) => (query.pageNo - 1) * query.pageSize + i + 1" />
+        <el-table-column
+          v-for="c in documentCols"
+          :key="c"
+          :prop="c"
+          :label="tt(columnAliases[c] || c)"
+          :min-width="c === '单据编号' || c === '发票号码' ? 150 : 110"
+          :align="['不含税金额', '税额', '价税合计'].includes(c) ? 'right' : 'left'"
+          show-overflow-tooltip
+        >
+          <template #default="{ row }">{{ cellText(row, c) }}</template>
+        </el-table-column>
+      </el-table>
+    </div>
+
     <div v-else class="body-outer">
       <!-- 左侧单据选择栏（镜像当前页单据，点行切单据；窄屏自动隐藏） -->
       <DocSelectRail
         v-if="showDocRail"
         :rows="list"
+        :columns="railColumns"
         :current-no="String(cur['编号'] || cur['单据编号'] || cur['单号'] || '')"
         :total="total"
         :page-no="query.pageNo"
@@ -567,8 +605,15 @@
     <ProducePreviewDialog v-model="produceVisible" :docNo="produceNo" @generated="onProduceGenerated" />
     <SaleOutPreviewDialog v-model="saleOutVisible" :docNo="saleOutNo" @generated="onSaleOutGenerated" />
     <FinishInPreviewDialog v-model="finishInVisible" :docNo="finishInNo" @generated="onFinishInGenerated" />
+    <InvoiceLinePickDialog
+      v-model="invoicePickVisible"
+      :mode="invoicePickMode"
+      :supplier="invoicePickSupplier"
+      :panel-code="panelCode"
+      @confirm="onInvoiceSourceConfirm"
+    />
+    <InvoiceImportDialog v-model="invoiceImportVisible" :panel-code="panelCode" @imported="onInvoiceImported" />
     <DetailMaintainDialog v-model="maintainVisible" :panel-code="panelCode" :row="maintainRow" @saved="onMaintainSaved" />
-    <VoucherFormDialog v-model="formVisible" :panel-code="formPanel || panelCode" :code="formCode" @saved="onFormSaved" />
     <ScanFillDialog
       v-model="scanVisible"
       :panel-code="panelCode"
@@ -603,10 +648,11 @@ import { ArrowLeft, Plus, Search } from '@element-plus/icons-vue'
 import { useTabsStore } from '@/stores/tabs'
 import { useUserStore } from '@/stores/user'
 import { usePanelRuntime } from '@core/panel-runtime'
-import { filterSupportedActions } from '@core/action-support'
+import { INVOICE_IMPORT_ACTION, INVOICE_LINE_ACTION, filterSupportedActions } from '@core/action-support'
 import { ensureAuditAction, ensureFieldManageAction, ensureScanFillAction, ensureColumnPrefsAction, ensureSelectAction, hasSelectConfig, isApprovalGroup, isCatchAllGroup, primaryActionOf, approvalSecondaryOf, supportsAudit } from '@core/button-groups'
 import { isDocApproved } from '@core/doc-status'
 import { computeSums, summaryColumnsOf } from './report-sums.js'
+import { hasUnqualifiedTab, syncUnqualifiedRow } from '@core/inspection-unqualified.js'
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
 import RefPickDialog from './RefPickDialog.vue'
@@ -616,17 +662,19 @@ import SelectVoucherDialog from './SelectVoucherDialog.vue'
 import ProducePreviewDialog from './ProducePreviewDialog.vue'
 import SaleOutPreviewDialog from './SaleOutPreviewDialog.vue'
 import FinishInPreviewDialog from './FinishInPreviewDialog.vue'
+import InvoiceLinePickDialog from './InvoiceLinePickDialog.vue'
+import InvoiceImportDialog from './InvoiceImportDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
 import BomMasterDetail from './BomMasterDetail.vue'
 import { flattenDocDetailRows } from './master-detail-rows.js'
 import ImportDialog from './ImportDialog.vue'
 import DetailMaintainDialog from './DetailMaintainDialog.vue'
-import VoucherFormDialog from './VoucherFormDialog.vue'
 import ScanFillDialog from './ScanFillDialog.vue'
 import ColumnPrefsDialog from './ColumnPrefsDialog.vue'
 import FieldManagerDialog from './FieldManagerDialog.vue'
 import ColumnFilterHeader from './ColumnFilterHeader.vue'
 import DocSelectRail from './DocSelectRail.vue'
+import { railColumnsOf } from './doc-rail-rows.js'
 import { activeFilterCount, applyColumnFilters, parseColumnFilter } from './column-filter.js'
 import { buildRefIndex, carriedValue, splitDotted } from './ref-carry.js'
 import {
@@ -725,6 +773,9 @@ const detailRefPick = ref(null)
 const detailRefSaving = ref(false)
 const inlineSaving = ref(false)
 const reportMode = computed(() => cfgCache.value?.metadata?.report === true || cfgCache.value?.metadata?.panelCategory === '报表')
+/** 单据列表模式：tablePages[0].listMode='document' 时只显示表头主信息，新增/双击进入表单页。 */
+const documentListMode = computed(() => cfgCache.value?.metadata?.panelPageDto?.tablePages?.[0]?.listMode === 'document')
+const documentCols = computed(() => (gridTabs.value[0]?.columns || []).filter(Boolean))
 /**
  * 外部入口带来的来源页（如业务总览流程图 ?from=/scm/businessOverview）：
  * 只有这种「从别处跳进来」的访问才显示「返回」，菜单直接打开的面板不显示。
@@ -783,7 +834,13 @@ const reportColumnTree = computed(() => {
   return out
 })
 const toolbarGroups = computed(() => (groups.value || []).map((group) => {
-  const actions = actsOf(group).filter((action) => action !== '查询' && action !== '查找')
+  // 2026-11-04（对齐 yinjia）：列表页不再提供能打开整单卡片（VoucherFormDialog）的入口 ——
+  //   「修改」动作唯一的作用就是弹那张卡片，卡片删除后它成了死按钮，故与 查询/查找 一样从工具栏摘掉。
+  //   单据数据统一在列表页原地内联编辑（草稿态，见 draftEditable）；已审核单据先「弃审」回到草稿。
+  // 单据列表模式只保留对整张发票有意义的动作；保存/选单/行级关联/删行在详情页做。
+  const detailOnly = new Set(['保存', '保存新增', '保存为草稿', '保存打印', '选单', '选采购入库单', '选采购订单', '选入库单行', '导入发票', '删除'])
+  const actions = actsOf(group).filter((action) => !['查询', '查找', '修改'].includes(action)
+    && !(documentListMode.value && detailOnly.has(action)))
   const name = ['查询', '查找'].includes(group.name) ? (actions[0] || group.name) : group.name
   return { ...group, name, actions }
 }).filter((group) => actsOf(group).length))
@@ -800,7 +857,7 @@ const queryDialogFields = computed(() => {
   return fields.filter((field) => headerFieldKey(field) !== '备注')
 })
 const draftEditable = computed(() => {
-  if (reportMode.value || ['BOM_FWD', 'BOM_REV'].includes(String(panelCode.value))) return false
+  if (reportMode.value || documentListMode.value || ['BOM_FWD', 'BOM_REV'].includes(String(panelCode.value))) return false
   const st = cur.value?.['单据状态']
   if (st === '草稿') return true
   // 档案/单单据面板（存货档案、员工、部门、工艺路线等）：启用/停用状态列表页同样内联可编辑（2026-08-24）
@@ -816,6 +873,65 @@ const impFields = ref([])
 const impLabel = ref('明细')
 const scanVisible = ref(false)
 const selCfg = ref(null)
+
+// 采购发票行级选入库单/退货单行：列表页草稿内联编辑态同样支持
+const invoicePickVisible = ref(false)
+const invoicePickMode = ref('purchase')
+const invoicePickSupplier = ref('')
+const invoiceImportVisible = ref(false)
+
+function openInvoiceLinePick() {
+  if (!draftEditable.value) return ElMessage.warning(tt('当前单据不可编辑'))
+  const businessType = String(cur.value['业务类型'] || '')
+  invoicePickMode.value = businessType.includes('退货') ? 'return' : 'purchase'
+  invoicePickSupplier.value = String(cur.value['供应商'] || '')
+  invoicePickVisible.value = true
+}
+
+/** 弹窗确认：追加到主明细，来源行按「来源面板+来源单号+来源行号」去重。 */
+function onInvoiceSourceConfirm(selected) {
+  if (!draftEditable.value) return ElMessage.warning(tt('当前单据不可编辑'))
+  const picked = Array.isArray(selected) ? selected : []
+  if (!picked.length) return
+  const tabKey = cfgCache.value?.detail?.tabs?.[0]?.key || 'items'
+  if (!cur.value.detail) cur.value.detail = {}
+  const target = cur.value.detail[tabKey] || (cur.value.detail[tabKey] = [])
+  const { rows, duplicates } = engine.buildInvoiceLineRows(picked, invoicePickMode.value, target)
+  for (const row of rows) {
+    target.push(row)
+    calculateDetailRow(tabKey, row)
+  }
+  if (rows.length) {
+    // 追加行在末尾：翻到最后一页，否则当前分页看不到新增行（与「新增数据」同口径）
+    const mainBlock = blocks.value.find((b) => b.isMain)
+    if (mainBlock) view[mainBlock.id + ':page'] = pageCount(blockAllRows(mainBlock).length, blockSize(mainBlock))
+  }
+
+  if (rows.length) {
+    const supplierRow = picked.find((row) => row['供应商'])
+    if (!String(cur.value['供应商'] || '').trim() && supplierRow?.['供应商']) {
+      cur.value['供应商'] = supplierRow['供应商']
+      if (!String(cur.value['供应商编码'] || '').trim()) cur.value['供应商编码'] = supplierRow['供应商编码'] || ''
+    }
+    if (!String(cur.value['采购订单号'] || '').trim()) {
+      const orderNo = picked.find((row) => row['采购订单号'])?.['采购订单号']
+      if (orderNo) cur.value['采购订单号'] = orderNo
+    }
+    // 表头金额由明细汇总（与后端 deriveInvoiceHeader 同口径）
+    const totals = engine.invoiceHeaderTotals(target)
+    for (const [key, value] of Object.entries(totals)) {
+      if (Object.prototype.hasOwnProperty.call(cur.value, key)) cur.value[key] = value
+    }
+  }
+
+  if (!rows.length) {
+    ElMessage.warning(tt('所选来源行已在明细中，未重复追加'))
+  } else if (duplicates) {
+    ElMessage.success(tt('已追加') + ` ${rows.length} ` + tt('行') + '，' + tt('跳过') + ` ${duplicates} ` + tt('行重复来源'))
+  } else {
+    ElMessage.success(tt('已追加') + ` ${rows.length} ` + tt('行明细'))
+  }
+}
 
 function selectConfigFor(action = '选单') {
   const cfg = cfgCache.value || {}
@@ -906,6 +1022,8 @@ watch(cur, (v) => {
   current.value = v
   detailRefVisible.value = false
   detailRefPick.value = null
+  // 切换单据时关闭行选弹窗，避免把上一张单据的来源行追加到当前单据
+  invoicePickVisible.value = false
   // 产成品→材料联动：默认不选中（点击产成品明细行才过滤材料明细），切换单据时重置
   if (selectedProduct.value) {
     selectedProduct.value = null
@@ -965,8 +1083,12 @@ const showDocRail = computed(() => (
   !reportMode.value
   && !isBomMasterPanel.value
   && cfgCache.value?.metadata?.panelCategory === '单据'
-  && total.value > 1
+  // 2026-11-05：有单据就显示（原来 total>1 导致只有一张单时侧栏被隐藏，采购单据表现不一致）
+  && total.value > 0
 ))
+// 左侧单据栏的列：单号 | 日期 | 面板主要表头字段 | 审核状态（2026-11-04 对齐「采购订单选择」）
+// 中间列按面板挑（请购人/供应商/客户/加工单号…），未登记的面板自动取往来单位，见 doc-rail-rows.js
+const railColumns = computed(() => railColumnsOf(panelCode.value, list.value))
 function toggleRail() {
   railCollapsed.value = !railCollapsed.value
   try { localStorage.setItem(RAIL_COLLAPSED_KEY, railCollapsed.value ? '1' : '0') } catch (e) { /* 隐私模式写不了就算了 */ }
@@ -1016,6 +1138,30 @@ function onMainRowClick(row) {
 function mainRowCls({ row }) {
   if (row._placeholder) return 'ph-row'
   return row === cur.value ? 'row-cur' : ''
+}
+
+// ══════════ 单据列表模式（配置 listMode=document：列表只显示表头主信息）══════════
+function docRowCls({ row }) {
+  return row === cur.value ? 'row-cur' : ''
+}
+function onDocRowClick(row) {
+  const i = list.value.indexOf(row)
+  if (i >= 0) curIdx.value = i
+}
+/** 新增（无单号）或双击行（有单号）都进入 PanelxForm 单据详情页。 */
+function openDocForm(row) {
+  const no = row && (row['编号'] || row['单据编号'] || row['锭号'])
+  const path = `/panelx/form/${panelCode.value}`
+  const query = no ? { code: String(no) } : {}
+  tabs.open({ path, title: `${panelName.value}-${no || '新增'}`, query })
+  router.push({ path, query })
+}
+async function docPage(pageNo) {
+  const target = Math.max(1, Math.min(Number(pageNo) || 1, reportPageCount.value))
+  if (target === query.pageNo) return
+  query.pageNo = target
+  await load()
+  curIdx.value = 0
 }
 
 function buildBlocks(cfg) {
@@ -1285,13 +1431,14 @@ function tableH(b) {
 
 function blockCols(b) {
   const t = activeTab(b)
+  const rows = blockAllRows(b)
   return (t.cols || []).map((c) => {
     const f = fieldDefOf(c)
     return {
       prop: c,
       label: tt(columnAliases.value[c] || columnLabel(c)),
       field: f,
-      width: colW(f),
+      width: colW(f, c, rows),
       align: f.dataType === '小数' || f.dataType === '整数' ? 'right' : 'left',
       carried: isCarriedCol(c),
     }
@@ -1305,6 +1452,7 @@ function columnLabel(prop) {
 }
 
 const showFooter = computed(() => {
+  if (documentListMode.value) return false
   const cfg = cfgCache.value
   return cfg?.metadata?.panelCategory === '单据' || (cfg?.detail?.tabs || []).length > 0
 })
@@ -1342,7 +1490,7 @@ function columnNameOf(col) {
   return name === undefined || name === null ? '' : String(name)
 }
 
-function colW(f) {
+function colW(f, prop, rows) {
   const t = f.dataType || '文本'
   if (t === '是否') return 74
   if (t === '图片') return 56
@@ -1352,6 +1500,16 @@ function colW(f) {
   // 编号/单号类列要能看全单号（INIT-20261106-001 这种），不能按标签长度算成 96px 截断
   if (/编号|单号/.test(n)) return Math.min(Math.max(n.length * 16 + 30, 150), 220)
   return n.length <= 2 ? 96 : Math.min(Math.max(n.length * 16 + 30, 96), 220)
+  if (!prop) {
+    const n = f.label || f.dataName || ''
+    return n.length <= 2 ? 96 : Math.min(Math.max(n.length * 16 + 30, 96), 220)
+  }
+  let max = (f.label || f.dataName || '').length
+  for (const row of rows || []) {
+    const value = row && row[prop]
+    if (value !== undefined && value !== null) max = Math.max(max, String(value).length)
+  }
+  return Math.min(Math.max(max * 17 + 40, 110), 260)
 }
 
 // ---------- 明细右键/工具条操作（2026-11-03：只保留已实现的动作，未实现的不占位） ----------
@@ -1409,7 +1567,11 @@ function btnName(g) {
 }
 /** 按钮文字：审批组直接写当前能做的动作，不再永远显示组名「审批」 */
 function groupLabel(g) {
-  return isApprovalGroup(g) ? tt(btnName(g)) : tt(g.name)
+  if (isApprovalGroup(g)) return tt(btnName(g))
+  const actions = actsOf(g)
+  // 行级选来源单单独成组时直接显示动作名（如「关联」组只有「选入库单行」）
+  if (actions.length === 1 && actions[0] === INVOICE_LINE_ACTION) return tt(INVOICE_LINE_ACTION)
+  return tt(g.name)
 }
 // 下拉项 = 除主按钮外的其余动作；审批组只列当前真能点的（不摆灰项）
 function dropItems(g) {
@@ -1675,13 +1837,14 @@ function openClickDetailRef(field, row, b) {
 
 function onDetailCellDblclick(row, column, event, b) {
   const field = fieldDefOf(column?.property)
+  // 明细行双击**只**服务「参照触发=双击」的字段（如存货：双击弹参照选择器）；其余情况什么都不做。
+  // 2026-11-04（对齐 yinjia 2026-10-15 用户口径）：原实现在非草稿态还会 openForm(cur.value) ——
+  //   即双击已审核单据的明细行会弹出整单卡片（VoucherFormDialog），所有单据面板都一样；
+  //   用户明确要求双击不要再弹，卡片与工具栏「修改」入口一并删除（见 toolbarGroups 过滤）。
   if (detailEditable(b) && isReferenceField(field) && detailRefTrigger(field) === 'dblclick') {
     event?.stopPropagation?.()
     if (!row?._placeholder) openDetailReference(field, row, b)
-    return
   }
-  if (draftEditable.value) return
-  if (!row?._placeholder) openForm(cur.value)
 }
 
 function newDetailRow(tabKey) {
@@ -1741,9 +1904,27 @@ function discardCreatedDetailRefRow(pick) {
 
 async function onInlineDetailChange(tabKey, row, field) {
   calculateDetailRow(tabKey, row)
+  syncInspectionUnqualified(tabKey, row)
   if (['存货编码', '存货名称', '产品编码', '产品名称', '材料编码', '材料名称', '仓库', '预出仓库', '出库仓库'].includes(field?.dataName)) {
     try { await engine.fillCurrentStock(row) } catch (error) { ElMessage.error(engine.errMsg(error) || tt('现存量刷新失败')) }
   }
+}
+
+/**
+ * 检验单联动：上方检验行标记不合格后，自动在「不合格处理」页签维护关联行
+ * （关联明细行号/存货/不合格原因/处理数量），恢复合格时移除该行处置。
+ */
+function syncInspectionUnqualified(tabKey, row) {
+  const detailTabs = cfgCache.value?.detail?.tabs || []
+  if (!hasUnqualifiedTab(detailTabs)) return
+  const mainTabKey = detailTabs[0]?.key || 'items'
+  if (tabKey !== mainTabKey) return
+  const detail = cur.value?.detail
+  const rows = detail?.[mainTabKey]
+  if (!Array.isArray(rows)) return
+  const lineNo = rows.indexOf(row) + 1
+  if (lineNo <= 0) return
+  syncUnqualifiedRow(detail, lineNo, mainTabKey)
 }
 
 function applyDetailReference(target, field, source) {
@@ -1798,12 +1979,16 @@ function validateInlineDraft() {
       return `${headerFieldLabel(field)}不能为空`
     }
   }
+  // 只校验列表上真正渲染出来的列：字段可能在 panel_config 里标了必填，但没进 gridTabs.columns（或 hidden），
+  // 用户看不到也就无从填写，不能因此卡住保存（如到货单「单价」只在配置里有、列表列里没有）。
+  const visibleFields = new Set((blocks.value || []).flatMap((b) => b.tabs.flatMap((t) => t.cols || [])))
   for (const tab of cfgCache.value?.detail?.tabs || []) {
     const rows = cur.value.detail?.[tab.key] || []
     if (tab.isRequired && !rows.length) return `请至少添加一行${tab.label || '明细'}`
     for (let index = 0; index < rows.length; index++) {
       for (const field of tab.fields || []) {
-        if (field.isRequired && emptyFieldValue(rows[index][field.dataName])) {
+        if (!field.isRequired || field.hidden || !visibleFields.has(field.dataName)) continue
+        if (emptyFieldValue(rows[index][field.dataName])) {
           return `${tab.label || '明细'}第 ${index + 1} 行${field.dataName}不能为空`
         }
       }
@@ -1918,6 +2103,15 @@ async function onDetailRefConfirm(selectedRows) {
     calculateDetailRow(pick.tabKey, row)
     targetRows.push(row)
     changedRows.push(row)
+  }
+
+  // 检验单：参照带出的字段（如不合格原因/存货）也要同步到不合格处理页签
+  const detailTabs = cfgCache.value?.detail?.tabs || []
+  const mainTabKey = detailTabs[0]?.key || 'items'
+  if (hasUnqualifiedTab(detailTabs) && pick.tabKey === mainTabKey) {
+    for (let index = 1; index <= targetRows.length; index += 1) {
+      syncUnqualifiedRow(detail, index, mainTabKey)
+    }
   }
 
   await engine.fillCurrentStock(changedRows)
@@ -2248,9 +2442,10 @@ function isDisabled(action) {
     弃审: !current.value || st !== '已审核',
     中止执行: !current.value || !['已审核', '生产中', '已完工'].includes(st),
     整单中止: !current.value || !['已审核', '生产中', '已完工'].includes(st),
+    中止: !current.value || !['已审核', '生产中', '已完工'].includes(st),
     草稿: !current.value || st !== '已中止',
     取消中止: !current.value || st !== '已中止',
-    修改: !current.value || !['已审核', '生产中', '已完工'].includes(st),
+    关闭: !current.value || !['已审核', '生产中'].includes(st),
     审批情况: false,
     提交审批: !current.value || st !== '草稿',
     审批通过: !current.value || st !== '审批中',
@@ -2260,6 +2455,7 @@ function isDisabled(action) {
     保存为草稿: !draftEditable.value || inlineSaving.value,
     保存新增: !draftEditable.value || inlineSaving.value,
     扫描填单: reportMode.value,
+    [INVOICE_LINE_ACTION]: !draftEditable.value,
   }
   // 2026-08-25：所有「生成XX」生单按钮统一仅已审核/生产中可用（对齐 T+：已审核才能选择生单）
   if (map[action] === undefined && action.startsWith('生成')) {
@@ -2268,33 +2464,18 @@ function isDisabled(action) {
   return map[action] === true
 }
 
-// 2026-08-20：双击明细行/修改按钮改为面板弹窗打开表单（不再跳新页签）；无编号（新增兜底）仍走页签
-const formVisible = ref(false)
-const formCode = ref('')
-// 弹窗面板：双击=当前面板；选单生成=生成的目标面板（可跨面板）
-const formPanel = ref('')
-function openForm(row) {
-  if (row && row['编号']) {
-    formCode.value = row['编号']
-    formVisible.value = true
-    return
-  }
-  const q = { operationName: operationName.value }
-  if (row && row['编号']) q.code = row['编号']
-  const no = row ? row['单据编号'] || row['锭号'] || row['编号'] : ''
-  const title = row ? `${panelName.value}-${no}` : `${panelName.value}-新增`
-  router.push({ path: `/panelx/form/${panelCode.value}`, query: q })
-  tabs.open({ path: `/panelx/form/${panelCode.value}`, title, query: q })
-}
-function onFormSaved() {
-  formVisible.value = false
-  formPanel.value = ''
-  load()
-}
+// 2026-11-04（对齐 yinjia 2026-10-15 用户口径）：列表页**不再有**任何打开「整单卡片」的入口 ——
+//   双击明细行（见 onDetailCellDblclick）与工具栏「修改」都曾走 openForm() 弹 VoucherFormDialog，
+//   两者连同 VoucherFormDialog 组件一并删除；单据数据一律在列表页原地内联编辑（草稿态）。
 
 // 直接新增：调后端保存（空表头）创建最新草稿单（autoCode 编号 + 单据日期=当天自动填入），
 // 刷新列表并定位到新单，在列表页直接内联填写（不跳转表单页/不弹新增弹窗）。
 async function directAdd() {
+  // 单据列表模式：新增打开空白单据详情页，保存时才建档（列表页不再内联编辑）。
+  if (documentListMode.value) {
+    openDocForm(null)
+    return
+  }
   try {
     const res = await engine.callButton({ panelCode: panelCode.value, buttonName: '保存', formData: {}, buttonParam: {} })
     const no = res && (res['编号'] || res.formNo)
@@ -2379,6 +2560,11 @@ async function onProduceGenerated(res) {
 }
 
 async function onButton(action) {
+  // 采购发票 Excel 导入：前端弹窗按「发票号码 + 供应商」分组逐张保存，不走下面的 callButton 分发
+  if (action === INVOICE_IMPORT_ACTION) {
+    invoiceImportVisible.value = true
+    return
+  }
   if (isDisabled(action)) return ElMessage.warning(tt(disabledReason(action)))
   if (APPROVE_ACTIONS.includes(action) && !user.isAdmin && !user.approvePanels.includes(panelCode.value)) {
     return ElMessage.warning(tt('当前角色无审批权限'))
@@ -2519,6 +2705,11 @@ async function onButton(action) {
     impVisible.value = true
     return
   }
+  // 采购发票「选入库单行」：前端弹窗按行追加，不走后端 callButton，也不能落到下面的选单分支
+  if (action === INVOICE_LINE_ACTION) {
+    openInvoiceLinePick()
+    return
+  }
   // 选单通用化：任意 选X 动作且配置有 selectConfig 即走选单（对齐 PanelxForm 的通用分支）
   if (action === '选单' || action.startsWith('选')) {
     const sc = selectConfigFor(action)
@@ -2541,11 +2732,8 @@ async function onButton(action) {
     // 刷新列表并定位到新单，在列表页内联填写（不再弹新增弹窗、不跳转表单页）
     return await directAdd()
   }
-  if (action === '修改') {
-    if (!current.value) return ElMessage.warning(tt('请先选择一行数据'))
-    openForm(current.value)
-    return
-  }
+  // 2026-11-04（对齐 yinjia）：「修改」原=打开整单卡片（VoucherFormDialog），卡片已按用户口径删除，
+  //   该动作也一并从工具栏摘掉（toolbarGroups 过滤），此处不再处理。
   if (['保存', '保存为草稿', '保存新增'].includes(action) && draftEditable.value) {
     await saveInlineDraft(action)
     return
@@ -2699,12 +2887,12 @@ async function onButton(action) {
       buttonParam: {},
     })
     if (res?.gotoPanel) {
-      // 推式生单：直接跳转到目标面板列表页（不新开标签页），新生成的单据按创建时间倒序显示在第一张（草稿内联可编辑）
+      // 推式生单：跳转到目标面板列表页并定位到新生成的单据（草稿内联可编辑），保留来源面板页签
       ElMessage.success(tt('已生成') + (res.gotoPanel === 'MANU_ORDER' ? tt('生产加工单') : res.gotoPanel) + '：' + res['编号'] + '，' + tt('请在列表页继续填写'))
       const targetPath = `/panelx/list/${res.gotoPanel}`
-      tabs.close(route.path) // 关闭当前源面板页签（页签被目标面板替换）
-      router.push(targetPath)
-      tabs.open({ path: targetPath, title: res.gotoPanel })
+      const targetQuery = { code: res['编号'] }
+      router.push({ path: targetPath, query: targetQuery })
+      tabs.open({ path: targetPath, title: res.gotoPanel, query: targetQuery })
       return
     }
     // 「审核」在审批面板上等于「提交审批」（后端 submitApproval），不会直接到已审核。
@@ -2838,6 +3026,18 @@ function onSelGenerated(generated) {
     }
   }
   load().then(finish)
+}
+
+// Excel 导入发票完成：成功保存的草稿已在后端建档，刷新列表并定位到最新一张
+function onInvoiceImported(result) {
+  const count = result?.count || 0
+  if (!count) return
+  const lastNo = result.invoices?.[result.invoices.length - 1]?.['编号']
+  load().then(() => {
+    if (!lastNo) return
+    const idx = list.value.findIndex((row) => (row['编号'] || row['单据编号'] || row['锭号']) === lastNo)
+    if (idx >= 0) curIdx.value = idx
+  })
 }
 
 // Excel 导入完成：单据面板追加到当前单明细并保存；档案面板（无明细 tab）逐行新建档案
@@ -3099,6 +3299,8 @@ onDeactivated(() => {
   scanVisible.value = false
   maintainVisible.value = false
   selVisible.value = false
+  invoicePickVisible.value = false
+  invoiceImportVisible.value = false
 })
 
 onUnmounted(() => {
@@ -3500,6 +3702,18 @@ onUnmounted(() => {
   flex-direction: column;
   background: #f7f8fa;
 }
+/* 单据列表模式：整页只放表头主信息表，明细在 PanelxForm 详情页维护 */
+.doc-list-body {
+  flex: 1;
+  min-height: 0;
+  padding: 8px 10px 10px;
+  background: #f7f8fa;
+}
+.doc-list-tip {
+  margin-left: 6px;
+  color: #8c8c8c;
+  font-size: 12px;
+}
 .report-heading {
   min-height: 44px;
   display: flex;
@@ -3815,6 +4029,7 @@ onUnmounted(() => {
 .main-grid .dt-head { margin-bottom: 4px; }
 .main-grid .dt-head .dt-tab.on { cursor: default; }
 :deep(.main-grid .el-table .row-cur td) { background: #eaf4fe !important; }
+:deep(.doc-list-body .el-table .row-cur td) { background: #eaf4fe !important; }
 :deep(.main-grid .el-table .ph-row td) { height: 31px; }
 
 @media print {

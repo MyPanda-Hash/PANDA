@@ -20,9 +20,9 @@ class AccountingServiceTest {
     private final AccountingService service = new AccountingService(null);
 
     @Test
-    void purchaseInDebitsInventoryCreditsPayable() {
+    void purchaseInvoiceDebitsInventoryCreditsPayable() {
         List<AccountingService.Entry> entries = service.buildEntries(
-                "PURCHASE_IN", "RK-001", bd("250"), "华东铝业", "铝棒等");
+                "PU_INVOICE", "PI-001", bd("250"), "华东铝业", "铝棒等");
 
         assertEquals(2, entries.size());
         AccountingService.Entry debit = entries.get(0);
@@ -40,7 +40,14 @@ class AccountingServiceTest {
 
     /** 收入与应收都在销货单确认；出库单只结转成本（借 主营业务成本 / 贷 库存商品）。 */
     @Test
-    void saleOutPostsCostNotRevenue() {
+    void purchaseInProducesNoEntries() {
+        // 票到确认（2026-11-06）：入库只落库存，凭证由采购发票审核生成，避免入库+发票双记
+        assertTrue(service.buildEntries("PURCHASE_IN", "RK-001", bd("250"), "华东铝业", "铝棒等").isEmpty());
+        assertNull(service.templateOf("PURCHASE_IN"));
+    }
+
+    @Test
+    void saleOutDebitsReceivableCreditsRevenue() {
         List<AccountingService.Entry> entries = service.buildEntries(
                 "SALE_OUT", "CK-001", bd("300"), "中天精工", "成品A");
 
@@ -109,7 +116,7 @@ class AccountingServiceTest {
     @Test
     void balancedEntriesSumToZero() {
         List<AccountingService.Entry> entries = service.buildEntries(
-                "PURCHASE_IN", "RK-002", bd("888.88"), "供应商A", "混合物料");
+                "PU_INVOICE", "PI-002", bd("888.88"), "供应商A", "混合物料");
 
         BigDecimal debit = BigDecimal.ZERO;
         BigDecimal credit = BigDecimal.ZERO;
@@ -130,8 +137,8 @@ class AccountingServiceTest {
 
     @Test
     void zeroAmountProducesNoEntries() {
-        assertTrue(service.buildEntries("PURCHASE_IN", "RK-003", BigDecimal.ZERO, "供应商", "零金额").isEmpty());
-        assertTrue(service.buildEntries("PURCHASE_IN", "RK-004", null, "供应商", "空金额").isEmpty());
+        assertTrue(service.buildEntries("PU_INVOICE", "PI-003", BigDecimal.ZERO, "供应商", "零金额").isEmpty());
+        assertTrue(service.buildEntries("PU_INVOICE", "PI-004", null, "供应商", "空金额").isEmpty());
     }
 
     @Test
@@ -145,10 +152,12 @@ class AccountingServiceTest {
 
     @Test
     void templateCoversAllFinancialPanels() {
-        for (String panel : List.of("PURCHASE_IN", "PU_INVOICE", "SALE_INV", "SALE_OUT",
+        for (String panel : List.of("PU_INVOICE", "SALE_INV", "SALE_OUT",
                 "RECEIPT", "RECEIPT_PAYABLE", "PURCHASE_RETURN", "SALE_RETURN")) {
             assertTrue(service.templateOf(panel) != null, panel + " 缺少凭证模板");
         }
+        assertNull(service.templateOf("PURCHASE_IN"), "票到确认：采购入库不再生成凭证");
+        assertNull(service.templateOf("SALE_INVOICE"), "销售发票只是票据，应收在销货单确认");
     }
 
     @Test

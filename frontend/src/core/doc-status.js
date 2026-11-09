@@ -8,5 +8,10 @@ export const APPROVED_DOC_STATUSES = ['已审核', '生产中', '已完工', '�
 
 export function isDocApproved(row) {
   if (!row) return false
-  return APPROVED_DOC_STATUSES.includes(row['单据状态']) || ['已审批', '已通过'].includes(row['审批状态'])
+  const status = row['单据状态']
+  // 单据状态优先：弃审/驳回会把状态退回草稿/审批中，即使表头残留历史的「审批状态」也不能再显示印章。
+  if (status === '草稿' || status === '审批中') return false
+  if (APPROVED_DOC_STATUSES.includes(status)) return true
+  // 没有单据状态可判时（历史数据）才退回表头审批状态
+  return ['已审批', '已通过'].includes(row['审批状态'])
 }

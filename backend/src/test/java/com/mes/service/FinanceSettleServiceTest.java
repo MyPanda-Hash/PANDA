@@ -19,18 +19,15 @@ class FinanceSettleServiceTest {
     private final FinanceSettleService service = new FinanceSettleService(null, null);
 
     @Test
-    void purchaseInCreatesPayable() {
+    void purchaseInDoesNotCreatePayable() {
         Map<String, Object> head = Map.of("单据编号", "RK-001", "供应商", "华东铝业", "单据日期", "2026-11-02");
         Map<String, Object> detail = Map.of("items", List.of(
                 Map.of("存货名称", "铝棒", "实收数量", 100, "单价", 2, "金额", 200),
                 Map.of("存货名称", "铝板", "实收数量", 10, "单价", 5, "金额", 50)));
 
-        FinanceSettleService.Settlement s = service.buildSettlement("PURCHASE_IN", "RK-001", head, detail);
-
-        assertEquals("AP", s.type());
-        assertEquals("华东铝业", s.partner());
-        assertEquals(0, new BigDecimal("250").compareTo(s.amount()));
-        assertEquals("RK-001", s.sourceNo());
+        // 票到确认：入库只入库存，不产生应付；应付由采购发票审核产生
+        assertNull(service.buildSettlement("PURCHASE_IN", "RK-001", head, detail));
+        assertNull(service.typeOf("PURCHASE_IN"));
     }
 
     /** 出库单只做出库与成本，应收挂在销货单上：不然一张发货单会挂两笔应收。 */
@@ -91,27 +88,28 @@ class FinanceSettleServiceTest {
 
     @Test
     void zeroAmountProducesNull() {
-        Map<String, Object> head = Map.of("单据编号", "RK-002", "供应商", "华东铝业");
+        Map<String, Object> head = Map.of("单据编号", "PF-002", "供应商", "华东铝业");
         Map<String, Object> detail = Map.of("items", List.of(
-                Map.of("存货名称", "铝棒", "实收数量", 0, "单价", 0, "金额", 0)));
+                Map.of("存货名称", "铝棒", "数量", 0, "单价", 0, "金额", 0)));
 
-        assertNull(service.buildSettlement("PURCHASE_IN", "RK-002", head, detail));
+        assertNull(service.buildSettlement("PU_INVOICE", "PF-002", head, detail));
     }
 
     @Test
     void amountFallsBackToQuantityTimesPrice() {
-        Map<String, Object> head = Map.of("单据编号", "RK-003", "供应商", "华东铝业");
+        Map<String, Object> head = Map.of("单据编号", "PF-003", "供应商", "华东铝业");
         Map<String, Object> detail = Map.of("items", List.of(
-                Map.of("存货名称", "铝棒", "实收数量", 4, "单价", 2.5)));
+                Map.of("存货名称", "铝棒", "数量", 4, "单价", 2.5)));
 
-        FinanceSettleService.Settlement s = service.buildSettlement("PURCHASE_IN", "RK-003", head, detail);
+        FinanceSettleService.Settlement s = service.buildSettlement("PU_INVOICE", "PF-003", head, detail);
 
         assertEquals(0, new BigDecimal("10").compareTo(s.amount()));
     }
 
     @Test
     void typeOfPanelsIsExposedForCallers() {
-        assertEquals("AP", service.typeOf("PURCHASE_IN"));
+        // 票到确认：采购入库不再产生 AP，采购发票才是应付来源
+        assertNull(service.typeOf("PURCHASE_IN"));
         assertEquals("AP", service.typeOf("PU_INVOICE"));
         assertEquals("AR", service.typeOf("SALE_INV"));
         assertNull(service.typeOf("SALE_OUT"), "出库单不挂应收");
