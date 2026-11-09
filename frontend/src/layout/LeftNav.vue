@@ -720,13 +720,21 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
   white-space: nowrap;
 }
 .card-body {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  align-content: start;
-  gap: 16px 20px;
+  /* 与 .card-sections 同口径：分类一行并排，放不下就底部横向滚动 */
+  display: flex;
+  align-items: flex-start;
+  gap: 0 12px;
   max-height: calc(var(--fly-card-max-height, 420px) - 44px);
   overflow: auto;
-  padding: 12px 16px 16px;
+  padding: 12px 16px 12px;
+  scrollbar-width: thin;
+}
+.card-body::-webkit-scrollbar {
+  height: 8px;
+}
+.card-body::-webkit-scrollbar-thumb {
+  background: var(--d-border);
+  border-radius: 4px;
 }
 
 /* ===== 两级浮层：左模块清单 + 右当前模块入口 ===== */
@@ -824,18 +832,26 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
   min-width: 880px;
   /* 分类按列并排：主区需要约 700px 才放得下 4 列（4×132 + 间距），否则会退成 2 列、
      最后一两个小分类被迫独占一行，浮层被拉得很长 */
-  max-width: min(980px, calc(100vw - 200px));
+  max-width: min(1220px, calc(100vw - 200px));
 }
 .card-sections {
-  display: grid;
-  /* auto-fit + 120px：主区约 770px 时正好 4 列，六个分类排成两行——
-     第一行 单据(占 2 列)+明细表+统计表，第二行 成本核算/库存账表/序列号 并排，
-     不再是「序列号」独占一行把浮层拉长；分类少时也不会留空列 */
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  align-content: start;
-  gap: 20px 24px;
+  /* 所有分类排成一行并排：分类 = 一列，行与行上下对齐，
+     于是「单据第 i 行」正对着「明细表/统计表第 i 行」，眼一扫就知道对应关系。
+     6 列 × 128px + 5×10px = 818px，1440 屏主区约 890px 能一次排开；
+     再窄时底部出现横向滚动条（不折行，折行会破坏上面的行对应关系）。 */
+  display: flex;
+  align-items: flex-start;
+  gap: 0 10px;
   overflow: auto;
-  padding: 4px 16px 16px;
+  padding: 4px 8px 12px;
+  scrollbar-width: thin;
+}
+.card-sections::-webkit-scrollbar {
+  height: 8px;
+}
+.card-sections::-webkit-scrollbar-thumb {
+  background: var(--d-border);
+  border-radius: 4px;
 }
 .card-main__empty {
   padding: 24px 16px;
@@ -843,7 +859,11 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
   font-size: 12px;
 }
 .card-group {
-  min-width: 0;
+  flex: 0 0 auto;
+  /* 128px + 12px 间距：6 列共 828px，1440 屏主区约 872px 能一次排开、不出滚动条；
+     「产成品入库明细表」这类 8 字标题也放得下，不会被省略号截断。
+     再窄时按用户要求退化为底部横向滚动条。 */
+  width: 128px;
   display: flex;
   flex-direction: column;
 }
@@ -861,6 +881,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
   font-weight: 600;
   line-height: 22px;
   letter-spacing: 0.2px;
+  /* 各列标题等高，下面第 i 行才能一一对齐 */
+  min-height: 22px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -882,20 +904,12 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
   flex-direction: column;
   gap: 2px;
 }
-/* 条目多的分类（>6）横跨两列，避免一条长龙把浮层拉到屏幕外 */
-.card-group.is-wide {
-  grid-column: span 2;
-}
-.card-group.is-wide .card-items {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2px 12px;
-}
+/* 分类一律单列：多列会让「单据第 i 行」与「明细/统计第 i 行」错位 */
 /* 一行 = 单据 + 它的统计表/明细表：报表收成行内小链接，不再各占一行 */
 .card-row {
   display: flex;
   align-items: stretch;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 2px 4px;
   min-height: 40px;
   min-width: 0;
@@ -938,7 +952,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
   align-items: center;
   min-width: 0;
   min-height: 40px;
-  padding: 0 8px;
+  padding: 0 5px;
   border: 0;
   border-radius: var(--d-radius-sm);
   background: transparent;
