@@ -54,7 +54,9 @@
     >
       <div class="card-head">
         <el-icon class="card-head__icon"><component :is="cardModule.icon || 'Folder'" /></el-icon>
-        <span class="card-head__title">{{ tt(cardModule.title) }}</span>
+        <!-- 分组名与当前模块名相同时（基础设置 › 基础设置）不重复显示：
+             左侧模块清单已高亮同名项，顶部再写一遍就是純重复 -->
+        <span v-if="!headTitleDuplicated" class="card-head__title">{{ tt(cardModule.title) }}</span>
         <span v-if="cardModule.desc" class="card-head__desc">{{ tt(cardModule.desc) }}</span>
         <span class="card-head__count">{{ cardItemCount }} {{ tt('项') }}</span>
       </div>
@@ -75,10 +77,8 @@
           </button>
         </div>
         <div class="card-main">
-          <div v-if="activeHeadVisible" class="card-main__head">
-            <span>{{ tt(activeModule?.title || '') }}</span>
-            <em>{{ activeLeafCount }} {{ tt('项') }}</em>
-          </div>
+          <!-- 右边不再重复顶部模块名：左侧清单已高亮当前模块，
+               分类标题本身也带条数，多一行标题只是噪音（用户反馈「基础设置」重复） -->
           <div class="card-sections">
             <section v-for="cat in activeSections" :key="cat.title" class="card-group" :class="{ 'is-wide': cat.total > 6 }">
               <div v-if="cat.showTitle" class="card-group-title">
@@ -86,7 +86,30 @@
                 <em>{{ cat.total }}</em>
               </div>
               <div class="card-items">
-                <div v-for="row in cat.rows" :key="row.node.code" class="card-row">
+                <!-- 有 slots 的报表列：空槽占一行，保证与左侧「单据第 i 行」严格对位 -->
+                <template v-if="cat.slots">
+                  <div v-for="(row, si) in cat.slots" :key="'s' + si" class="card-row" :class="{ 'is-empty': !row }">
+                    <button
+                      v-if="row"
+                      class="card-item"
+                      :class="{ 'is-parent': row.links.length, 'is-leaf': !row.links.length }"
+                      :title="tt(row.node.fullTitle || row.node.title)"
+                      @click="go(row.node)"
+                    >
+                      <span>{{ tt(row.node.title) }}</span>
+                    </button>
+                    <span v-if="row && row.links.length" class="card-links">
+                      <button
+                        v-for="link in row.links"
+                        :key="link.code"
+                        class="card-link"
+                        :title="tt(link.title)"
+                        @click="go(link)"
+                      >{{ tt(link.title) }}</button>
+                    </span>
+                  </div>
+                </template>
+                <div v-else v-for="row in cat.rows" :key="row.node.code" class="card-row">
                   <button
                     class="card-item"
                     :class="{ 'is-parent': row.links.length, 'is-leaf': !row.links.length }"
@@ -120,7 +143,29 @@
             <em>{{ cat.total }}</em>
           </div>
           <div class="card-items">
-            <div v-for="row in cat.rows" :key="row.node.code" class="card-row">
+            <template v-if="cat.slots">
+              <div v-for="(row, si) in cat.slots" :key="'s' + si" class="card-row" :class="{ 'is-empty': !row }">
+                <button
+                  v-if="row"
+                  class="card-item"
+                  :class="{ 'is-parent': row.links.length, 'is-leaf': !row.links.length }"
+                  :title="tt(row.node.fullTitle || row.node.title)"
+                  @click="go(row.node)"
+                >
+                  <span>{{ tt(row.node.title) }}</span>
+                </button>
+                <span v-if="row && row.links.length" class="card-links">
+                  <button
+                    v-for="link in row.links"
+                    :key="link.code"
+                    class="card-link"
+                    :title="tt(link.title)"
+                    @click="go(link)"
+                  >{{ tt(link.title) }}</button>
+                </span>
+              </div>
+            </template>
+            <div v-else v-for="row in cat.rows" :key="row.node.code" class="card-row">
               <button
                 class="card-item"
                 :class="{ 'is-parent': row.links.length, 'is-leaf': !row.links.length }"
@@ -465,15 +510,65 @@ function sectionsOf(module) {
   })
 }
 
-const activeSections = computed(() => sectionsOf(activeModule.value))
-const cardSections = computed(() => sectionsOf(cardSingleModule.value || cardModule.value))
+/**
+ * 报表列按名称对齐到单据行。
+ *
+ * <p>原来只靠「第 i 行」对齐：库存核算恰好同序所以看着对，
+ * 但销售管理的「报价单」会和「销售订单明细表」并排——语义对不上。
+ * 这里按名称把报表挂到它对应的单据行上（采购入库单 ↔ 采购入库明细表），
+ * 挂不上的追加到该列尾部；成本核算/库存账表这类独立分类仍从顶部开始。
+ */
+const REPORT_TITLE = /明细表|统计表|执行表|汇总表|更多/
+function alignReportColumns(sections) {
+  const docIdx = sections.findIndex((s) => /单据/.test(s.title))
+  if (docIdx < 0) return sections
+  const docKeys = sections[docIdx].rows.map((r) => reportKeyOf(r.node.title, true))
+  // 报表名以单据名开头即视为对应（销售订单 → 销售订单生产进度表）；取最长匹配避免串行
+  const indexOfReport = (reportName) => {
+    const key = reportKeyOf(reportName, false)
+    let best = -1
+    let bestLen = 0
+    docKeys.forEach((docKey, i) => {
+      if (!docKey) return
+      if (key !== docKey && !key.startsWith(docKey)) return
+      if (docKey.length > bestLen) { best = i; bestLen = docKey.length }
+    })
+    return best
+  }
+  return sections.map((sec, i) => {
+    if (i === docIdx || !REPORT_TITLE.test(sec.title)) return sec
+    const slots = new Array(docKeys.length).fill(null)
+    const extra = []
+    for (const row of sec.rows) {
+      const at = indexOfReport(row.node.title)
+      if (at >= 0 && !slots[at]) slots[at] = row
+      else extra.push(row)
+    }
+    return { ...sec, slots: [...slots, ...extra] }
+  })
+}
+
+/** 对齐用的名字：单据去掉末尾「单」；报表去掉末尾「表」和「明细/统计/执行/汇总/生产进度」等修饰 */
+function reportKeyOf(name, isDoc) {
+  const base = String(name || '').trim()
+  if (isDoc) return base.replace(/单$/, '')
+  return base
+    .replace(/表$/, '')
+    .replace(/(明细|统计|执行|汇总|生产进度|报表)$/, '')
+    .trim()
+}
+
+const activeSections = computed(() => alignReportColumns(sectionsOf(activeModule.value)))
+const cardSections = computed(() => alignReportColumns(sectionsOf(cardSingleModule.value || cardModule.value)))
 const activeLeafCount = computed(() => activeSections.value.reduce((n, cat) => n + cat.total, 0))
-// 模块只有一个入口且名字与模块相同时（如 TOP应用 › 方案中心），右侧不再重复一遍模块名
-const activeHeadVisible = computed(() => {
-  const sections = activeSections.value
-  if (!sections.length) return false
-  return !(sections.length === 1 && !sections[0].showTitle)
+/** 分组名是否与当前模块名重复（基础设置 › 基础设置、系统管理 › 系统管理）。 */
+const headTitleDuplicated = computed(() => {
+  const group = cardModule.value
+  const active = cardIsGroup.value ? activeModule.value : null
+  if (!group || !active) return false
+  return active.title === group.title
 })
+
 const cardTotalForGroup = computed(() => (
   cardModules.value.reduce((n, m) => n + sectionsOf(m).reduce((k, c) => k + c.total, 0), 0)
 ))
@@ -811,16 +906,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
   min-width: 0;
   overflow: hidden;
 }
-.card-main__head {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: baseline;
-  gap: 8px;
-  padding: 10px 16px 6px;
-  color: var(--d-text);
-  font-size: 14px;
-  font-weight: 600;
-}
 .card-main__head em {
   color: var(--d-text-3);
   font-size: 12px;
@@ -860,10 +945,9 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
 }
 .card-group {
   flex: 0 0 auto;
-  /* 128px + 12px 间距：6 列共 828px，1440 屏主区约 872px 能一次排开、不出滚动条；
-     「产成品入库明细表」这类 8 字标题也放得下，不会被省略号截断。
-     再窄时按用户要求退化为底部横向滚动条。 */
-  width: 128px;
+  /* 列宽按内容自适应，最小 128px：长名字（委外加工单产成品明细表）不再被省略号截断；
+     总宽超出主区时按用户要求出底部横向滚动条。 */
+  min-width: 128px;
   display: flex;
   flex-direction: column;
 }
@@ -906,6 +990,11 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
 }
 /* 分类一律单列：多列会让「单据第 i 行」与「明细/统计第 i 行」错位 */
 /* 一行 = 单据 + 它的统计表/明细表：报表收成行内小链接，不再各占一行 */
+/* 报表列的空槽：占一行高度以保持与「单据第 i 行」对齐，但不可见、不可点 */
+.card-row.is-empty {
+  visibility: hidden;
+  pointer-events: none;
+}
 .card-row {
   display: flex;
   align-items: stretch;
@@ -917,6 +1006,10 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
 .card-row .card-item {
   flex: 1;
   min-width: 0;
+}
+/* 条目文字保持单行，列宽按内容自适应 */
+.card-item span {
+  white-space: nowrap;
 }
 .card-links {
   display: flex;
