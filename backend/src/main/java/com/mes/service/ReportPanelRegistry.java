@@ -54,6 +54,10 @@ public class ReportPanelRegistry {
         return DEFINITIONS.get(panelCode);
     }
 
+    /** 声明了「只合计这些列」的报表；未声明的报表仍合计所有数值列。 */
+    private static final Map<String, List<String>> SUMMARY_COLUMNS = Map.of(
+            "STOCK_LEDGER", List.of("收入金额", "发出金额"));
+
     public static Set<String> codes() {
         return DEFINITIONS.keySet();
     }
@@ -89,6 +93,9 @@ public class ReportPanelRegistry {
         grid.put("rowSource", "rows");
         grid.put("columns", def.columns());
         if (!def.columnGroups().isEmpty()) grid.put("columnGroups", def.columnGroups());
+        // 混计量单位的报表（库存台账）只合计金额：kg + 件 + 升 相加没有业务意义
+        List<String> summaryColumns = SUMMARY_COLUMNS.get(def.code());
+        if (summaryColumns != null) grid.put("summaryColumns", summaryColumns);
 
         Map<String, Object> tablePage = new LinkedHashMap<>();
         tablePage.put("tableName", def.name());
@@ -283,7 +290,7 @@ public class ReportPanelRegistry {
                         "本期出库", c("本期出库数量", "出库平均单价", "本期出库金额"),
                         "期末结存", c("期末结存数量", "期末平均单价", "期末结存金额"))));
 
-        List<String> ledgerColumns = c("单据日期", "单据类型", "单据编号", "业务类型", "往来单位", "项目",
+        List<String> ledgerColumns = c("单据日期", "单据时间", "单据类型", "单据编号", "业务类型", "往来单位", "项目",
                 "收入数量", "收入单价", "收入金额", "发出数量", "发出单价", "发出金额", "结存数量", "结存平均单价", "结存金额");
         out.put("STOCK_LEDGER", d("STOCK_LEDGER", "库存台账", ledgerColumns,
                 query("开始日期", "结束日期", "仓库", "存货", "单据类型"), groups(

@@ -208,7 +208,7 @@
               :key="d.code"
               class="bo-item"
               type="button"
-              @click="go('/panelx/list/' + d.code, d.label)"
+              @click="go(pathOf(d.code), d.label)"
             >
               <AntIcon name="file-text" :size="13" class="bo-item-icon" />
               <span class="bo-item-label">{{ tt(d.label) }}</span>
@@ -228,7 +228,7 @@
               :key="d.code"
               class="bo-item"
               type="button"
-              @click="go('/panelx/list/' + d.code, d.label)"
+              @click="go(pathOf(d.code), d.label)"
             >
               <AntIcon name="database" :size="13" class="bo-item-icon" />
               <span class="bo-item-label">{{ tt(d.label) }}</span>
@@ -248,7 +248,7 @@
               :key="d.code"
               class="bo-item"
               type="button"
-              @click="go('/panelx/list/' + d.code, d.label)"
+              @click="go(pathOf(d.code), d.label)"
             >
               <AntIcon name="bar-chart" :size="13" class="bo-item-icon" />
               <span class="bo-item-label">{{ tt(d.label) }}</span>
@@ -343,7 +343,7 @@ const PANEL_ICONS = {
   PU_IN: 'import', ARRIVAL_IN: 'truck', PURCHASE_IN: 'inbox',
   PURCHASE_RETURN: 'rollback', PU_INVOICE: 'file-text',
   // 生产
-  MANU_ORDER: 'tool', PROCESS_REPORT: 'profile', MATERIAL_REQ: 'form',
+  MANU_ORDER: 'tool', PLAN: 'calendar', PROCESS_REPORT: 'profile', MATERIAL_REQ: 'form',
   MATERIAL_OUT: 'export', FINISH_IN: 'file-done', FINISH_INSPECT: 'file-search',
   TRANSFER: 'swap', PICK_ORDER: 'container', OUTSOURCE_ORDER: 'deployment-unit',
   OUTSOURCE_ISSUE: 'export', OUTSOURCE_IN: 'import', OUTSOURCE_FEE: 'money-collect',
@@ -441,6 +441,7 @@ const modules = [
     nodes: [
       { code: 'SO_ORDER', label: '销售订单' },
       { code: 'MANU_ORDER', label: '生产加工单' },
+      { code: 'PLAN', label: '工单排产' },
       { code: 'MATERIAL_REQ', label: '领料申请单' },
       { code: 'MATERIAL_OUT', label: '材料出库单' },
       { code: 'TRANSFER', label: '调拨单' },
@@ -453,7 +454,9 @@ const modules = [
     ],
     edges: [
       { from: 'SO_ORDER', to: 'MANU_ORDER', label: '生单' },
-      { from: 'MANU_ORDER', to: 'MATERIAL_REQ', label: '领料' },
+      { from: 'MANU_ORDER', to: 'PLAN', label: '排产' },
+      { from: 'PLAN', to: 'MATERIAL_REQ', label: '按批次领料' },
+      { from: 'PLAN', to: 'PROCESS_REPORT', label: '按批次报工' },
       { from: 'MATERIAL_REQ', to: 'MATERIAL_OUT', label: '出库' },
       { from: 'MATERIAL_REQ', to: 'TRANSFER', label: '调拨' },
       { from: 'MANU_ORDER', to: 'PROCESS_REPORT', label: '报工' },
@@ -466,8 +469,8 @@ const modules = [
     ],
     /** 分层布局：每条边都是上一层 → 下一层，避免同层连线被画成 U 形 */
     pos: {
-      SO_ORDER: [430, 0], MANU_ORDER: [430, 150],
-      MATERIAL_REQ: [40, 310], PROCESS_REPORT: [300, 310], FIRST_INSPECT: [560, 310], FINISH_INSPECT: [820, 310],
+      SO_ORDER: [430, 0], MANU_ORDER: [430, 150], PLAN: [430, 300],
+      MATERIAL_REQ: [40, 450], PROCESS_REPORT: [300, 450], FIRST_INSPECT: [560, 310], FINISH_INSPECT: [820, 310],
       MATERIAL_OUT: [40, 470], TRANSFER: [180, 470], PROCESS_INSPECT_APPLY: [300, 470], FINISH_IN: [690, 470],
       PROCESS_INSPECTION: [300, 630],
     },
@@ -545,7 +548,7 @@ const modules = [
       { code: 'SALE_INV', label: '销货单' },
       { code: 'SALE_OUT', label: '销售出库单' },
       { code: 'SALE_RETURN', label: '销售退货单' },
-      { code: 'SALE_INVOICE', label: '销售发票' },
+      { code: 'SALE_INVOICE', label: '销售开票' },
       { code: 'SALE_COST_ALLOC', label: '销售费用分摊单' },
       { code: 'EXPENSE', label: '费用单' },
     ],
@@ -570,7 +573,7 @@ const modules = [
     docs: [
       { code: 'QUOTE_ORDER', label: '报价单' }, { code: 'SO_ORDER', label: '销售订单' },
       { code: 'SALE_INV', label: '销货单' }, { code: 'SALE_OUT', label: '销售出库单' },
-      { code: 'SALE_RETURN', label: '销售退货单' }, { code: 'SALE_INVOICE', label: '销售发票' },
+      { code: 'SALE_RETURN', label: '销售退货单' }, { code: 'SALE_INVOICE', label: '销售开票' },
       { code: 'SALE_COST_ALLOC', label: '销售费用分摊单' }, { code: 'EXPENSE', label: '费用单' },
     ],
     archives: [{ code: 'PARTNER', label: '往来单位(客户)' }, { code: 'INV', label: '存货' }, { code: 'DEPT', label: '部门' }, { code: 'EMP', label: '员工' }, { code: 'UOM', label: '计量单位' }, { code: 'WH', label: '仓库' }],
@@ -1270,13 +1273,29 @@ onMounted(() => {
 onUnmounted(() => window.removeEventListener('resize', fitNow))
 
 /**
+ * 有些面板已经有专属的作业界面（不再是通用单据表格），这里统一改道。
+ * 新增专属页面时在这里登记即可，节点点击、单据列表、追踪跳转都会跟着走。
+ */
+const CUSTOM_PAGES = {
+  SALE_INVOICE: '/scm/invoiceWorkbench',
+  PLAN: '/mes/plan',
+}
+
+/** 面板默认落点：有专属页面就去专属页面，否则走通用列表页。 */
+function pathOf(panelCode) {
+  return CUSTOM_PAGES[panelCode] || '/panelx/list/' + panelCode
+}
+
+/**
  * 打开具体单据：统一走列表页（PanelxList），不再跳表单页。
  * 一个单据只有一个样子——列表页有单据栏、列头筛选、表头内联编辑，能力比表单页全。
  * 带 code 定位到该单（PanelxList.load 读 ?code=），带 from 让列表页出现「返回」回到业务总览。
  */
 function openDoc(panelCode, docNo, title) {
   if (!panelCode) return
-  const path = '/panelx/list/' + panelCode
+  // 专属页面目前不支持按单据号定位，带 docNo 时仍走通用列表页
+  const useCustom = !docNo && !!CUSTOM_PAGES[panelCode]
+  const path = useCustom ? CUSTOM_PAGES[panelCode] : '/panelx/list/' + panelCode
   const query = { from: route.path }
   if (docNo) query.code = docNo
   router.push({ path, query })
@@ -1290,7 +1309,7 @@ function onNodeClick({ node }) {
     openDoc(node.data.code, hit.docNo, node.data.label + '-' + hit.docNo)
     return
   }
-  go('/panelx/list/' + node.data.code, node.data.label)
+  go(pathOf(node.data.code), node.data.label)
 }
 
 function go(path, title) {

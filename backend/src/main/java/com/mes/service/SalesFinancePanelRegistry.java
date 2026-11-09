@@ -35,6 +35,77 @@ public class SalesFinancePanelRegistry {
         upsert("SALE_INVOICE", "销售发票", saleInvoiceConfig());
         upsert("EXPENSE", "费用单", expenseConfig());
         upsert("SALE_COST_ALLOC", "销售费用分摊单", saleCostAllocConfig());
+        upgradeSaleInvSelectSources();
+    }
+
+    /**
+     * 销货单补齐多来源选单：工具栏有「选销售出库单」，但面板只配了一份「选销售订单」，
+     * 前端对任意「选*」动作都会回落到它 —— 点「选销售出库单」实际弹出销售订单。
+     * 这里按标题补出 selectConfigs，让每个选单入口对应自己的来源。
+     */
+    private void upgradeSaleInvSelectSources() {
+        PanelConfig row = panelMapper.selectOne(new LambdaQueryWrapper<PanelConfig>()
+                .eq(PanelConfig::getPanelCode, "SALE_INV"));
+        if (row == null || row.getConfig() == null) return;
+        Map<String, Object> config;
+        try {
+            config = json.readValue(row.getConfig(), new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            return;
+        }
+        Map<String, Object> sources = saleInvSelectSources(config);
+        if (sources.isEmpty()) return;
+
+        config.put("selectConfigs", sources);
+        try {
+            row.setConfig(json.writeValueAsString(config));
+            row.setVersion(VERSION);
+            row.setUpdateTime(LocalDateTime.now());
+            panelMapper.updateById(row);
+        } catch (Exception ignored) {
+            // 配置升级失败不影响主流程，选单入口会退回到原来的单来源
+        }
+    }
+
+    /**
+     * 按标题补齐销货单的选单来源：原有 selectConfig（选销售订单）+ 选销售出库单。
+     *
+     * <p>包可见，便于单测直接验证映射，不必拉起 mapper。
+     */
+    Map<String, Object> saleInvSelectSources(Map<String, Object> config) {
+        Map<String, Object> sources = new LinkedHashMap<>();
+        Object legacy = config == null ? null : config.get("selectConfig");
+        if (legacy instanceof Map<?, ?> old0 && !old0.isEmpty()) {
+            Map<String, Object> old = new LinkedHashMap<>();
+            old0.forEach((k, v) -> old.put(String.valueOf(k), v));
+            sources.put(String.valueOf(old.getOrDefault("title", "选单")), old);
+        }
+        if (config != null && config.get("selectConfigs") instanceof Map<?, ?> existing) {
+            existing.forEach((k, v) -> sources.putIfAbsent(String.valueOf(k), v));
+        }
+        // 该来源以代码为准，覆盖库里可能存在的旧映射（否则修正过的映射永远不生效）
+        sources.put("选销售出库单", saleInvFromSaleOutSelect());
+        return sources;
+    }
+
+    /** 销货单 ← 销售出库单：只选已审核出库单，带出客户/业务员与商品明细（售价即含税售价）。 */
+    private Map<String, Object> saleInvFromSaleOutSelect() {
+        return selectConfig("SALE_OUT", "选销售出库单",
+                "仅显示已审核的销售出库单；选择后带入客户、来源信息及商品明细",
+                List.of("单据编号", "单据日期", "客户", "存货名称", "数量", "售价", "含税售价"),
+                List.of(
+                        mapping("单据编号", "来源单号"), fixed("来源单据", "SALE_OUT"),
+                        mapping("客户", "客户"), mapping("客户编码", "客户编码"),
+                        mapping("结算客户", "结算客户"), mapping("业务员", "经手人")),
+                List.of(
+                        mapping("存货编码", "存货编码"), mapping("存货名称", "存货名称"),
+                        mapping("规格型号", "规格型号"), mapping("仓库", "仓库"),
+                        mapping("计量单位", "销售单位"),
+                        mapping("数量", "数量"), mapping("售价", "单价"),
+                        mapping("含税售价", "含税单价"), mapping("税率%", "税率%"),
+                        mapping("销售金额", "金额"), mapping("税额", "税额"),
+                        mapping("含税销售金额", "含税金额")),
+                "数量", "数量", Map.of("单据状态", "已审核"));
     }
 
     private Map<String, Object> saleInvoiceConfig() {

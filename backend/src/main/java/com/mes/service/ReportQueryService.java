@@ -29,6 +29,7 @@ public class ReportQueryService {
 
     private static final Set<String> EFFECTIVE_STATUSES = Set.of("已审核", "生产中", "已完工", "已关闭");
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("HH:mm");
 
     private final FormDataMapper formMapper;
     private final ObjectMapper json;
@@ -335,8 +336,18 @@ public class ReportQueryService {
         for (String source : List.of("SALE_OUT", "MATERIAL_OUT", "OTHER_OUT")) {
             for (Doc doc : docs(source)) if (effective(doc)) addMovements(out, doc, "OUT", documentType(source));
         }
-        out.sort(Comparator.comparing(r -> text(r.get("单据日期"))));
+        // 同一天按单据时分排（审核时间优先），同一分钟再按创建先后兜底
+        out.sort(Comparator.comparing((Map<String, Object> r) -> text(r.get("单据日期")))
+                .thenComparing(r -> text(r.get("单据时间")))
+                .thenComparingLong(r -> (long) number(r.get("时间序")).doubleValue()));
         return out;
+    }
+
+    /** 单据时分（HH:mm）：审核时间优先，未审核用创建时间；都没有时留空。 */
+    private String documentClock(Doc doc) {
+        LocalDateTime time = doc.entity().getAuditTime() != null
+                ? doc.entity().getAuditTime() : doc.entity().getCreateTime();
+        return time == null ? "" : time.format(CLOCK);
     }
 
     private void addMovements(List<Map<String, Object>> out, Doc doc, String direction, String type) {
@@ -354,6 +365,8 @@ public class ReportQueryService {
                     : new String[]{"金额", "成本金额"}));
             if (amount.signum() == 0 && qty.signum() != 0 && price.signum() != 0) amount = qty.multiply(price);
             out.add(row("方向", direction, "单据日期", value(doc, "单据日期"), "单据类型", type,
+                    "时间序", doc.entity().getId(),
+                    "单据时间", documentClock(doc),
                     "单据编号", documentNo(doc), "业务类型", value(doc, "业务类型"),
                     "往来单位", firstText(doc.head(), "供应商", "客户", "来料客户"),
                     "项目", first(item, doc.head(), "项目"), "仓库编码", warehouseCodes.getOrDefault(warehouse, ""),
@@ -462,20 +475,40 @@ public class ReportQueryService {
     }
 
     private List<Map<String, Object>> stockLedger(Map<String, Object> condition) {
-        List<Map<String, Object>> selected = filter(movements(), null, condition);
-        selected.sort(Comparator.comparing(r -> text(r.get("单据日期"))));
-        BigDecimal balanceQty = BigDecimal.ZERO;
-        BigDecimal balanceAmount = BigDecimal.ZERO;
+        return ledgerRows(movements(), condition);
+    }
+
+    /**
+     * 库存台账行：结存按「存货 + 仓库」分别滚动。
+     *
+     * <p>此前是全局一个余额往下加，一张台账里混着多种存货时结存数量毫无意义
+     * （期初 5000 的下一条就变成 8000）。每一行只反映它自己那种存货的累计结存。
+     */
+    List<Map<String, Object>> ledgerRows(List<Map<String, Object>> movements, Map<String, Object> condition) {
+        List<Map<String, Object>> selected = filter(movements, null, condition == null ? Map.of() : condition);
+        List<Map<String, Object>> sorted = new ArrayList<>(selected);
+        sorted.sort(Comparator.comparing((Map<String, Object> r) -> text(r.get("单据日期")))
+                .thenComparing(r -> text(r.get("单据时间")))
+                .thenComparingLong(r -> (long) number(r.get("时间序")).doubleValue())
+                .thenComparing(r -> text(r.get("存货")))
+                .thenComparing(r -> text(r.get("仓库"))));
+        Map<String, BigDecimal[]> balances = new HashMap<>();
         List<Map<String, Object>> out = new ArrayList<>();
-        for (Map<String, Object> movement : selected) {
+        for (Map<String, Object> movement : sorted) {
             String direction = text(movement.get("方向"));
             BigDecimal qty = number(movement.get("数量"));
             BigDecimal amount = number(movement.get("金额"));
             boolean outgoing = "OUT".equals(direction);
-            balanceQty = outgoing ? balanceQty.subtract(qty) : balanceQty.add(qty);
-            balanceAmount = outgoing ? balanceAmount.subtract(amount) : balanceAmount.add(amount);
+            // 同一个存货可能跨仓库，结存要按仓分别累计，不能把原料仓和成品仓混在一起
+            String key = text(movement.get("存货")) + "\u0001" + text(movement.get("仓库"));
+            BigDecimal[] balance = balances.computeIfAbsent(key, k -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+            BigDecimal balanceQty = outgoing ? balance[0].subtract(qty) : balance[0].add(qty);
+            BigDecimal balanceAmount = outgoing ? balance[1].subtract(amount) : balance[1].add(amount);
+            balance[0] = balanceQty;
+            balance[1] = balanceAmount;
             Map<String, Object> row = row(
-                    "单据日期", movement.get("单据日期"), "单据类型", movement.get("单据类型"),
+                    "单据日期", movement.get("单据日期"), "单据时间", movement.get("单据时间"),
+                    "单据类型", movement.get("单据类型"),
                     "单据编号", movement.get("单据编号"), "业务类型", movement.get("业务类型"),
                     "往来单位", movement.get("往来单位"), "项目", movement.get("项目"),
                     "收入数量", outgoing ? BigDecimal.ZERO : qty, "收入单价", outgoing ? BigDecimal.ZERO : movement.get("单价"),
@@ -960,6 +993,8 @@ public class ReportQueryService {
         List<Map<String, Object>> out = new ArrayList<>();
         Map<String, BigDecimal> reportedByProcess = new HashMap<>();
         for (Doc doc : docs("PROCESS_REPORT")) {
+            // 只算已审核的汇报单：草稿/审批中/中止的还没真正报工，算进去会让进度虚高
+            if (!"已审核".equals(doc.entity().getStatus())) continue;
             for (Map<String, Object> item : detailRows(doc, "items")) {
                 String orderNo = text(first(item, doc.head(), "加工单号"));
                 String key = join(orderNo, item.get("工序编码"));
@@ -967,21 +1002,29 @@ public class ReportQueryService {
             }
         }
         for (Doc doc : docs("MANU_ORDER")) {
+            // 工序行没带产品信息时回落到加工单的产成品：老单据的工序明细没有产品编码
+            Map<String, Object> headProduct = detailRows(doc, "products").isEmpty()
+                    ? Map.of() : detailRows(doc, "products").get(0);
             for (Map<String, Object> process : detailRows(doc, "processes")) {
                 String orderNo = documentNo(doc);
                 String key = join(orderNo, process.get("工序编码"));
                 BigDecimal planQty = number(process.get("计划数量"));
                 BigDecimal reported = reportedByProcess.getOrDefault(key, BigDecimal.ZERO);
+                // 状态由实际报工数推出来，不照抄历史字段（老单据里可能还是「未完工」但实际已报满）
+                String status = planQty.signum() > 0 && reported.compareTo(planQty) >= 0
+                        ? "完工"
+                        : (reported.signum() > 0 ? "进行中" : "未开工");
                 out.add(row("单据编号", orderNo, "单据状态", doc.entity().getStatus(),
-                        "产品编码", first(process, Map.of(), "产品编码"), "产品名称", first(process, Map.of(), "产品名称"),
-                        "规格型号", first(process, Map.of(), "规格型号"), "数量", planQty,
+                        "产品编码", first(process, headProduct, "产品编码"),
+                        "产品名称", first(process, headProduct, "产品名称"),
+                        "规格型号", first(process, headProduct, "规格型号"), "数量", planQty,
                         "工序编码", process.get("工序编码"), "工序名称", process.get("工序名称"),
                         "生产车间", first(process, doc.head(), "生产车间"), "工作中心", process.get("工作中心"),
                         "设备", process.get("设备"), "班组", first(process, Map.of(), "班组", "班组名称"),
                         "工人", first(process, Map.of(), "工人", "工人名称"),
                         "计划数量", planQty, "报工数量", reported,
                         "合格数量", reported,
-                        "工序完工状态", firstText(process, "工序完工状态", "派工加工状态"),
+                        "工序完工状态", status,
                         "工序进度%", percent(reported, planQty)));
             }
         }

@@ -18,6 +18,20 @@
               </el-dropdown-menu>
             </template>
           </el-dropdown>
+          <!-- 多来源组（生单/选单）：主按钮＝展开菜单，不再偷偷执行组内第一个动作 -->
+          <el-dropdown v-else-if="menuOnly(g)" @command="(a) => onButton(a)" trigger="click">
+            <span class="tb-group">
+              <span class="tb-main">{{ groupLabel(g) }}</span>
+              <span class="tb-caret"><el-icon><ArrowDown /></el-icon></span>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item v-for="a in dropOf(g)" :key="a" :command="a" :disabled="isDisabled(a)">
+                  <span class="act-name">{{ tt(a) }}</span><span v-if="SHORTCUTS[a]" class="act-sc">{{ SHORTCUTS[a] }}</span>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
           <span v-else class="tb-group">
             <span class="tb-main" :class="{ disabled: isDisabled(primaryOf(g)) }" @click="onButton(primaryOf(g))">{{ groupLabel(g) }}</span>
             <el-dropdown v-if="dropOf(g).length" @command="(a) => onButton(a)" trigger="click">
@@ -307,6 +321,9 @@
     <RefPickDialog v-model="refVisible" :field="refPick?.field" :mode="refPick?.mode" @confirm="onRefConfirm" />
     <ApprovalHistoryDialog v-model="approvalVisible" :panelCode="panelCode" :formNo="approvalNo" />
     <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
+    <ProducePreviewDialog v-model="produceVisible" :docNo="produceNo" @generated="onProduceGenerated" />
+    <SaleOutPreviewDialog v-model="saleOutVisible" :docNo="saleOutNo" @generated="onSaleOutGenerated" />
+    <FinishInPreviewDialog v-model="finishInVisible" :docNo="finishInNo" @generated="onFinishInGenerated" />
     <ImportDialog v-model="impVisible" :fields="impFields" :target-label="impLabel" @imported="onImported" />
     <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
     <ScanFillDialog
@@ -344,6 +361,9 @@ import { useLocaleStore } from '@/stores/locale'
 import RefPickDialog from './RefPickDialog.vue'
 import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
+import ProducePreviewDialog from './ProducePreviewDialog.vue'
+import SaleOutPreviewDialog from './SaleOutPreviewDialog.vue'
+import FinishInPreviewDialog from './FinishInPreviewDialog.vue'
 import ImportDialog from './ImportDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
 import ScanFillDialog from './ScanFillDialog.vue'
@@ -600,6 +620,17 @@ function primaryOf(g) {
 }
 function groupLabel(g) {
   return isApprovalGroup(g) ? tt(primaryOf(g)) : tt(g.name)
+}
+/**
+ * 群组主按钮是否只展开菜单：
+ * 组内动作没有与组名同名的动作（如「生单」「选单」），说明主按钮没有无歧义的默认动作，
+ * 点了只能靠猜 —— 统一改成展开菜单，与右侧 ▼ 行为一致。
+ * 审批组、以及「保存」「删除」这类有同名动作的组仍保留直接执行。
+ */
+function menuOnly(g) {
+  if (isApprovalGroup(g)) return false
+  if ((g.actions || []).includes(g.name)) return false
+  return dropOf(g).length > 0
 }
 function dropOf(g) {
   const primary = primaryOf(g)
@@ -1208,11 +1239,95 @@ async function load() {
   }
 }
 
+// 销售订单 → 生产加工单：先弹生单预览（库存与建议生产量）
+const produceVisible = ref(false)
+const produceNo = ref('')
+
+const saleOutVisible = ref(false)
+const saleOutNo = ref('')
+
+const finishInVisible = ref(false)
+const finishInNo = ref('')
+
+async function onFinishInGenerated(res) {
+  if (res?.gotoPanel) {
+    if (props.embedded) {
+      emit('saved', res)
+      return
+    }
+    const no = res['编号'] || res.formNo || ''
+    ElMessage.success(tt('已生成') + tt('产成品入库单') + '：' + no + '，' + tt('请在列表页继续填写'))
+    const targetPath = `/panelx/list/${res.gotoPanel}`
+    tabsStore.close(route.path)
+    await router.push({ path: targetPath, query: no ? { code: no } : {} })
+    tabsStore.open({ path: targetPath, title: res.gotoPanel, query: no ? { code: no } : {} })
+    return
+  }
+  await load()
+}
+
+async function onSaleOutGenerated(res) {
+  if (res?.gotoPanel) {
+    if (props.embedded) {
+      emit('saved', res)
+      return
+    }
+    const no = res['编号'] || res.formNo || ''
+    ElMessage.success(tt('已生成') + tt('销售出库单') + '：' + no + '，' + tt('请在列表页继续填写'))
+    const targetPath = `/panelx/list/${res.gotoPanel}`
+    tabsStore.close(route.path)
+    await router.push({ path: targetPath, query: no ? { code: no } : {} })
+    tabsStore.open({ path: targetPath, title: res.gotoPanel, query: no ? { code: no } : {} })
+    return
+  }
+  await load()
+}
+
+async function onProduceGenerated(res) {
+  if (res?.gotoPanel) {
+    if (props.embedded) {
+      emit('saved', res)
+      return
+    }
+    const no = res['编号'] || res.formNo || ''
+    ElMessage.success(tt('已生成') + tt('生产加工单') + '：' + no + '，' + tt('请在列表页继续填写'))
+    const targetPath = `/panelx/list/${res.gotoPanel}`
+    tabsStore.close(route.path)
+    await router.push({ path: targetPath, query: no ? { code: no } : {} })
+    tabsStore.open({ path: targetPath, title: res.gotoPanel, query: no ? { code: no } : {} })
+    return
+  }
+  await load()
+}
+
 async function onButton(action) {
   // 2026-08-25：灰按钮（disabled）点击直接忽略，不执行、不弹提示（如草稿态「生成XX」生单按钮）
   if (isDisabled(action)) return
   if (APPROVE_ACTIONS.includes(action) && !user.isAdmin && !user.approvePanels.includes(panelCode.value)) {
     return ElMessage.warning(tt('当前角色无审批权限'))
+  }
+  if (action === '生成生产加工单' && panelCode.value === 'SO_ORDER') {
+    produceNo.value = form['编号'] || form['单据编号'] || ''
+    produceVisible.value = true
+    return
+  }
+  if (action === '生成产成品入库单' && panelCode.value === 'MANU_ORDER') {
+    finishInNo.value = form['编号'] || form['单据编号'] || ''
+    finishInVisible.value = true
+    return
+  }
+  // 销售发票打印：审批通过后可用
+  if (action === '打印发票') {
+    const no = form['编号'] || form['单据编号'] || ''
+    if (!no) return ElMessage.warning(tt('请先保存发票'))
+    if (status.value !== '已审核') return ElMessage.warning(tt('发票审批通过后才能打印'))
+    window.open(`${location.origin}${location.pathname}#/print/invoice?code=${encodeURIComponent(no)}`, '_blank')
+    return
+  }
+  if (['生成销售出库单', '生成销售出库单(普通销售)'].includes(action) && panelCode.value === 'SO_ORDER') {
+    saleOutNo.value = form['编号'] || form['单据编号'] || ''
+    saleOutVisible.value = true
+    return
   }
   if (action === '扫描填单') {
     if (!editable.value) {
@@ -1310,8 +1425,13 @@ async function onButton(action) {
     if (status.value !== need) return ElMessage.warning(action === '提交审批' ? tt('仅草稿状态可提交审批') : tt('仅审批中状态可审批通过'))
     const no = form['单据编号'] || form['锭号'] || form['编号'] || ''
     try {
+      // 确认框是用户真正做决定的地方，必须把「这一步之后还差什么」写清楚：
+      // 只写单据号+状态，用户会以为提交即完成，随后点「生单」被 409 拦下。
+      const nextStep = action === '提交审批'
+        ? '提交后单据进入「审批中」，还需完成「审批通过」才算审核完成，之后才能生单。'
+        : '审批通过后单据归档为「已审核」，可继续生单。'
       const { value } = await ElMessageBox.prompt(
-        '单据：' + no + '（当前状态：' + status.value + '）',
+        '单据：' + no + '（当前状态：' + status.value + '）\n' + nextStep,
         action + '确认',
         { confirmButtonText: '确认' + action, cancelButtonText: '取消', inputType: 'textarea', inputPlaceholder: action === '审批通过' ? '审批意见（选填）' : '提交说明（选填）' }
       )
@@ -1370,7 +1490,14 @@ async function onButton(action) {
       tabsStore.open({ path: targetPath, title: res.gotoPanel })
       return
     }
-    ElMessage.success('「' + tt(action) + '」' + tt('成功'))
+    // 「审核」在审批面板上等价于提交审批；「提交审批」按钮本身也走这条路。
+    // 用户点了这两个里的任何一个，单据都停在「审批中」，必须提示还差「审批通过」这一步，
+    // 否则他会以为审完了，接着点「生单」被 409 拦下。
+    if (['审核', '提交审批'].includes(action) && res && res['单据状态'] === '审批中') {
+      ElMessage.success(tt('已提交审批') + '，' + tt('需「审批通过」后才算审核完成，之后才能生单'))
+    } else {
+      ElMessage.success('「' + tt(action) + '」' + tt('成功'))
+    }
     if (action === '新增流程' && !isEdit.value) {
       back()
       return

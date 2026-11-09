@@ -38,10 +38,26 @@ class AccountingServiceTest {
         assertEquals(0, bd("250").compareTo(credit.amount()));
     }
 
+    /** 收入与应收都在销货单确认；出库单只结转成本（借 主营业务成本 / 贷 库存商品）。 */
     @Test
-    void saleOutDebitsReceivableCreditsRevenue() {
+    void saleOutPostsCostNotRevenue() {
         List<AccountingService.Entry> entries = service.buildEntries(
                 "SALE_OUT", "CK-001", bd("300"), "中天精工", "成品A");
+
+        assertEquals(2, entries.size());
+        assertEquals("6401", entries.get(0).accountCode());   // 主营业务成本 借
+        assertEquals("主营业务成本", entries.get(0).accountName());
+        assertEquals("借", entries.get(0).direction());
+        assertEquals("1405", entries.get(1).accountCode());   // 库存商品 贷
+        assertEquals("贷", entries.get(1).direction());
+        assertTrue(service.buildEntries("SALE_INVOICE", "FP-001", bd("300"), "中天精工", "成品A").isEmpty(),
+                "发票不重复入账");
+    }
+
+    @Test
+    void saleInvDebitsReceivableCreditsRevenue() {
+        List<AccountingService.Entry> entries = service.buildEntries(
+                "SALE_INV", "XS-001", bd("300"), "中天精工", "成品A");
 
         assertEquals(2, entries.size());
         assertEquals("1122", entries.get(0).accountCode());   // 应收账款 借
@@ -129,7 +145,7 @@ class AccountingServiceTest {
 
     @Test
     void templateCoversAllFinancialPanels() {
-        for (String panel : List.of("PURCHASE_IN", "PU_INVOICE", "SALE_OUT", "SALE_INVOICE",
+        for (String panel : List.of("PURCHASE_IN", "PU_INVOICE", "SALE_INV", "SALE_OUT",
                 "RECEIPT", "RECEIPT_PAYABLE", "PURCHASE_RETURN", "SALE_RETURN")) {
             assertTrue(service.templateOf(panel) != null, panel + " 缺少凭证模板");
         }
@@ -138,7 +154,7 @@ class AccountingServiceTest {
     @Test
     void summaryIncludesSourceAndPartner() {
         List<AccountingService.Entry> entries = service.buildEntries(
-                "SALE_OUT", "CK-002", bd("500"), "西部材料", "铝板");
+                "SALE_INV", "XS-002", bd("500"), "西部材料", "铝板");
 
         for (AccountingService.Entry e : entries) {
             assertEquals("西部材料", e.partner());
@@ -147,5 +163,34 @@ class AccountingServiceTest {
 
     private static BigDecimal bd(String v) {
         return new BigDecimal(v);
+    }
+
+    /** 销货单拆销项税：借应收（含税），贷收入（不含税）+ 贷销项税额。 */
+    @Test
+    void saleInvoiceSplitsOutputTax() {
+        List<AccountingService.Entry> entries = service.buildSaleEntries(
+                "XS-001", bd("1130"), bd("130"), "中天精工", "普通销售");
+
+        assertEquals(3, entries.size());
+        assertEquals("1122", entries.get(0).accountCode());
+        assertEquals("借", entries.get(0).direction());
+        assertEquals(0, bd("1130").compareTo(entries.get(0).amount()));
+        assertEquals("6001", entries.get(1).accountCode());
+        assertEquals("贷", entries.get(1).direction());
+        assertEquals(0, bd("1000").compareTo(entries.get(1).amount()));
+        assertEquals("222101", entries.get(2).accountCode());
+        assertEquals("贷", entries.get(2).direction());
+        assertEquals(0, bd("130").compareTo(entries.get(2).amount()));
+        assertTrue(service.isBalanced(entries), "借贷必须平衡");
+    }
+
+    /** 没有税额时退化为两行（借应收 / 贷收入），不凭空造销项税。 */
+    @Test
+    void saleInvoiceWithoutTaxFallsBackToTwoEntries() {
+        List<AccountingService.Entry> entries = service.buildSaleEntries(
+                "XS-002", bd("500"), BigDecimal.ZERO, "西部材料", "普通销售");
+
+        assertEquals(2, entries.size());
+        assertEquals(0, bd("500").compareTo(entries.get(1).amount()));
     }
 }

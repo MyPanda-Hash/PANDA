@@ -373,6 +373,169 @@ export async function fillCurrentStock(rows) {
   return targets.length
 }
 
+/**
+ * 生单预览：销售订单 → 生产加工单。
+ * 返回逐行的 需求数量 / 现存量 / 已下单生产数量 / 建议生产数量 / 是否不足。
+ */
+export async function previewProduce({ docNo }) {
+  return unwrap(await request.post('/px/previewProduce', { docNo }))
+}
+
+/**
+ * 出库预览：销售订单 → 销售出库单。
+ * 返回逐行的 需求 / 已出库 / 剩余待出 / 现存量 / 建议出库数量 / 是否不足。
+ */
+export async function previewSaleOut({ docNo, warehouse }) {
+  return unwrap(await request.post('/px/previewSaleOut', { docNo, warehouse: warehouse || undefined }))
+}
+
+/**
+ * 入库预览：生产加工单 → 产成品入库单。
+ * 返回逐行的 计划 / 已入库 / 剩余入库 / 建议入库数量。
+ */
+/** 导出开票清单（CSV）。返回 Blob，由调用方触发下载。 */
+/** 响应拦截器已把响应体直接解出，blob 请求拿到的是 Blob 本身，不是 axios response。 */
+function asBlob(v, mime) {
+  if (v instanceof Blob) return mime ? new Blob([v], { type: mime }) : v
+  return new Blob([v], mime ? { type: mime } : undefined)
+}
+
+export async function invoiceExport(codes) {
+  return asBlob(await request.post('/px/invoiceExport', { codes }, { responseType: 'blob' }))
+}
+
+/** 某张发票已归档的官方票面文件列表。 */
+export async function invoiceFileList(code) {
+  return unwrap(await request.get('/px/invoiceFile/list', { params: { code } }))
+}
+
+/** 回传官方票面（OFD / PDF）。 */
+export async function invoiceFileUpload(code, file) {
+  const fd = new FormData()
+  fd.append('file', file)
+  return unwrap(await request.post(`/px/invoiceFile/upload?code=${encodeURIComponent(code)}`, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }))
+}
+
+/** 下载官方票面：带鉴权头取 blob，再用临时链接触发保存。 */
+export async function invoiceFileDownload(id, fileName) {
+  const data = await request.get('/px/invoiceFile/download', { params: { id }, responseType: 'blob' })
+  const url = URL.createObjectURL(asBlob(data, mimeOf(fileName)))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName || 'invoice'
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 2000)
+}
+
+/**
+ * 预览官方票面。
+ *
+ * <p>PDF 浏览器能直接渲染，所以先同步开一个空白窗口（否则 await 之后会被弹窗拦截），
+ * 取到 blob 再把窗口地址换成 blob URL。OFD 浏览器不支持渲染，调用方只给下载。
+ */
+export async function invoiceFilePreview(id, fileName) {
+  const win = window.open('', '_blank')
+  try {
+    const data = await request.get('/px/invoiceFile/download', { params: { id }, responseType: 'blob' })
+    const url = URL.createObjectURL(asBlob(data, mimeOf(fileName)))
+    if (win) win.location.href = url
+    else window.open(url, '_blank')
+    setTimeout(() => URL.revokeObjectURL(url), 60000)
+  } catch (e) {
+    if (win) win.close()
+    throw e
+  }
+}
+
+function mimeOf(fileName) {
+  return String(fileName || '').toLowerCase().endsWith('.ofd') ? 'application/ofd' : 'application/pdf'
+}
+
+/** 触发浏览器保存 Blob（导出清单用）。 */
+export function saveBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName || 'export.csv'
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 2000)
+}
+
+/** 按排产批次的领料需求。 */
+export async function materialIssueBoard(manuOrderNo) {
+  return unwrap(await request.get('/px/materialIssueBoard', { params: { manuOrderNo } }))
+}
+
+/** 某排产批次的报工记录。 */
+export async function batchReports(dispatchNo) {
+  return unwrap(await request.get('/px/batchReports', { params: { dispatchNo } }))
+}
+
+/** 核销弹窗：可核销的往来单与未结金额。 */
+export async function openWriteOffLines(panelCode, formNo) {
+  return unwrap(await request.get('/px/openWriteOffLines', { params: { panelCode, formNo } }))
+}
+
+/** 按批次领料：生成材料出库单（多行）。 */
+export async function issueBatch(payload) {
+  return unwrap(await request.post('/px/issueBatch', payload))
+}
+
+/** 单种材料领料（兼容旧调用）。 */
+export async function issueByBatch(payload) {
+  return unwrap(await request.post('/px/issueByBatch', payload))
+}
+
+/** 按排产批次报工看板。 */
+export async function reportBatchBoard() {
+  return unwrap(await request.get('/px/reportBatchBoard'))
+}
+
+/** 按排产批次报工：合格 + 不合格 = 报工数量。 */
+export async function reportByBatch(dispatchNo, qualified, rejected) {
+  return unwrap(await request.post('/px/reportByBatch', { 排产单号: dispatchNo, 合格数量: qualified, 不合格数量: rejected }))
+}
+
+/** 工单排产：某加工单每道工序的可排产量与已有批次。 */
+export async function planBoard(manuOrderNo) {
+  return unwrap(await request.get('/px/planBoard', { params: { manuOrderNo } }))
+}
+
+/** 建排产批次（一张派工单 = 一个批次）。 */
+export async function planBatch(payload) {
+  return unwrap(await request.post('/px/planBatch', payload))
+}
+
+/** 工序报工工作台：一行一道工序，带剩余量与可否报工。 */
+export async function processReportBoard(manuOrderNo) {
+  return unwrap(await request.get('/px/processReportBoard', { params: manuOrderNo ? { manuOrderNo } : {} }))
+}
+
+/** 按工序报工：生成只含该工序一行的工序汇报单。 */
+export async function reportProcess(manuOrderNo, processCode, quantity) {
+  return unwrap(await request.post('/px/reportProcess', { 加工单号: manuOrderNo, 工序编码: processCode, 报工数量: quantity }))
+}
+
+/** 开票工作台：以销货单为行，带发票号与状态。 */
+export async function invoiceWorkbench() {
+  return unwrap(await request.get('/px/invoiceWorkbench'))
+}
+
+/** 开票方（销售方）信息，销售发票打印用。 */
+export async function companyInfo() {
+  return unwrap(await request.get('/px/companyInfo'))
+}
+
+export async function previewFinishIn({ docNo }) {
+  return unwrap(await request.post('/px/previewFinishIn', { docNo }))
+}
+
 export async function callButton({ panelCode, buttonName, formData, buttonParam }) {
   // 按钮名对齐 SQL 后端（中止执行/整单中止→中止、草稿→取消中止、保存类→提交）
   const apiName = buttonName === '中止执行' || buttonName === '整单中止' ? '中止' : buttonName === '草稿' ? '取消中止' : buttonName === '保存' || buttonName === '保存为草稿' || buttonName === '保存新增' ? '提交' : buttonName

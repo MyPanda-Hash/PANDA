@@ -23,6 +23,13 @@ const routes = [
       { path: 'sys/backup', component: () => import('@/views/sys/DbBackup.vue'), meta: { title: '数据备份', requireAdmin: true } },
       { path: 'sys/usage', component: () => import('@/views/sys/UsageLog.vue'), meta: { title: '使用日志', requireAdmin: true } },
       { path: 'scm/businessOverview', component: () => import('@/views/scm/BusinessOverview.vue'), meta: { title: '业务总览', code: 'businessOverview' } },
+      { path: 'scm/invoiceWorkbench', component: () => import('@/views/scm/InvoiceWorkbench.vue'), meta: { title: '销售开票', code: 'invoiceWorkbench' } },
+      { path: 'mes/productionBoard', component: () => import('@/views/mes/ProductionBoard.vue'), meta: { title: '生产进度看板', code: 'productionBoard' } },
+      { path: 'mes/processReport', component: () => import('@/views/mes/ProcessReportBoard.vue'), meta: { title: '工序报工', code: 'processReport' } },
+      { path: 'mes/plan', component: () => import('@/views/mes/PlanBoard.vue'), meta: { title: '工单排产', code: 'plan' } },
+      { path: 'mes/materialIssue', component: () => import('@/views/mes/MaterialIssueBoard.vue'), meta: { title: '生产领料', code: 'materialIssue' } },
+      // 销售发票打印页（增值税发票版式）：不放在面板容器里，独立全屏渲染便于打印
+      { path: 'print/invoice', component: () => import('@/views/print/InvoicePrint.vue'), meta: { title: '销售发票打印' } },
       { path: 'scm/mobileWarehouse', component: () => import('@/views/scm/MobileWarehouse.vue'), meta: { title: '移动仓管', code: 'mobileWarehouse' } },
       { path: 'scm/serialNumber', component: () => import('@/views/scm/SerialNumber.vue'), meta: { title: '序列号管理', code: 'serialNumber' } },
       { path: 'panelx/list/:panelCode', component: PanelxList, meta: { title: '单据', operationName: '新增流程' } },

@@ -27,7 +27,7 @@ export const menuTree = [
               { code: 'salesOrder', title: '销售订单', path: '/panelx/list/SO_ORDER', icon: 'Tickets', panelCode: 'SO_ORDER', operationName: '新增流程' },
               { code: 'saleInv', title: '销货单', path: '/panelx/list/SALE_INV', icon: 'Tickets', panelCode: 'SALE_INV', operationName: '新增流程' },
               { code: 'saleReturn', title: '销售退货单', path: '/panelx/list/SALE_RETURN', icon: 'Tickets', panelCode: 'SALE_RETURN', operationName: '新增流程' },
-              { code: 'saleInvoice', title: '销售发票', path: '/panelx/list/SALE_INVOICE', icon: 'Tickets', panelCode: 'SALE_INVOICE', operationName: '新增流程' },
+              { code: 'saleInvoice', title: '销售开票', path: '/scm/invoiceWorkbench', icon: 'Tickets', panelCode: 'SALE_INVOICE', operationName: '新增流程' },
               { code: 'expense', title: '费用单', path: '/panelx/list/EXPENSE', icon: 'Tickets', panelCode: 'EXPENSE', operationName: '新增流程' },
               { code: 'saleCostAlloc', title: '销售费用分摊单', path: '/panelx/list/SALE_COST_ALLOC', icon: 'Tickets', panelCode: 'SALE_COST_ALLOC', operationName: '新增流程' },
             ] },
@@ -217,6 +217,9 @@ export const menuTree = [
           {
             code: 'doc', title: '单据', children: [
               { code: 'manufactureOrder', title: '生产加工单', path: '/panelx/list/MANU_ORDER', icon: 'Document', panelCode: 'MANU_ORDER', operationName: '新增流程' },
+              { code: 'processReport', title: '工序报工', path: '/mes/processReport', icon: 'Timer', panelCode: 'PROCESS_REPORT' },
+              { code: 'materialIssue', title: '生产领料', path: '/mes/materialIssue', icon: 'Box', panelCode: 'MATERIAL_OUT' },
+              { code: 'productionBoard', title: '生产进度看板', path: '/mes/productionBoard', icon: 'DataLine', panelCode: 'MANU_ORDER' },
               { code: 'dispatch', title: '工序派工单', path: '/panelx/list/DISPATCH', icon: 'AlarmClock', panelCode: 'DISPATCH', operationName: '新增流程' },
               { code: 'transfer', title: '调拨单', path: '/panelx/list/TRANSFER', icon: 'RefreshRight', panelCode: 'TRANSFER', operationName: '新增流程' },
               { code: 'manufactureOrderProc', title: '生产加工单工序统计表', path: '/panelx/list/MANU_PROC_STATS', panelCode: 'MANU_PROC_STATS', icon: 'Histogram' },
@@ -433,6 +436,7 @@ export const menuTree = [
         children: [
           {
             code: 'info', title: '基本信息', children: [
+              { code: 'companyInfo', title: '企业信息', path: '/panelx/list/COMPANY_INFO', icon: 'OfficeBuilding', panelCode: 'COMPANY_INFO' },
               { code: 'dept', title: '部门', path: '/panelx/list/DEPT', icon: 'OfficeBuilding', panelCode: 'DEPT' },
               { code: 'employee', title: '员工', path: '/panelx/list/EMP', icon: 'User', panelCode: 'EMP' },
               { code: 'partner', title: '往来单位', path: '/panelx/list/PARTNER', icon: 'OfficeBuilding', panelCode: 'PARTNER' },

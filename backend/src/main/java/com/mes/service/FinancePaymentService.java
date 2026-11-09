@@ -104,6 +104,22 @@ public class FinancePaymentService {
             }
         }
         List<Allocation> plan = allocate(payment, scoped);
+        return applyPlan(paymentNo, plan, operator);
+    }
+
+    /**
+     * 按单核销：用户勾选要核销的往来单及金额（不按 FIFO 猜），先清旧记录再落新计划。
+     * 金额上限由调用方校验（不得超过该单未结额与收款额）。
+     */
+    @Transactional
+    public int executePlan(String paymentNo, List<Allocation> plan, String operator) {
+        if (paymentNo == null || paymentNo.isBlank()) throw new IllegalArgumentException("缺少收款/付款单编号");
+        writeOffMapper.delete(new LambdaQueryWrapper<FinanceWriteOff>()
+                .eq(FinanceWriteOff::getPaymentNo, paymentNo));
+        return applyPlan(paymentNo, plan, operator);
+    }
+
+    private int applyPlan(String paymentNo, List<Allocation> plan, String operator) {
         for (Allocation a : plan) {
             FinanceVoucher v = a.voucher();
             BigDecimal settled = nz(v.getSettledAmount()).add(a.amount());

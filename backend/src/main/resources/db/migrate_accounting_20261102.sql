@@ -36,7 +36,8 @@ INSERT INTO accounting_account (account_code, account_name, category, direction,
   ('1405', '库存商品',       '资产', '借', 1),
   ('2202', '应付账款',       '负债', '贷', 1),
   ('6001', '主营业务收入',   '收入', '贷', 1),
-  ('6401', '主营业务成本',   '费用', '借', 1)
+  ('6401', '主营业务成本',   '费用', '借', 1),
+  ('222101', '应交税费-应交增值税(销项税额)', '负债', '贷', 1)
 ON DUPLICATE KEY UPDATE account_name = account_name;
 
 SELECT COUNT(*) AS accounts FROM accounting_account;

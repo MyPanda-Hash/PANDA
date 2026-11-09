@@ -523,11 +523,50 @@
         <el-button type="primary" :icon="Search" @click="applyHeaderQuery">{{ tt('查询') }}</el-button>
       </template>
     </el-dialog>
+    <!-- 核销：按单勾选（来源单/未结金额/本次核销） -->
+    <el-dialog v-model="writeOffVisible" :title="tt('核销') + ' · ' + writeOffNo" width="min(680px, 94vw)" append-to-body>
+      <el-table :data="writeOffRows" size="small" border max-height="360">
+        <el-table-column prop="往来单号" :label="tt('来源单号')" min-width="150" />
+        <el-table-column prop="业务日期" :label="tt('业务日期')" width="110" />
+        <el-table-column prop="未结金额" :label="tt('未结金额')" width="110" align="right" />
+        <el-table-column :label="tt('本次核销')" width="150">
+          <template #default="{ row }">
+            <el-input-number v-model="row.核销金额" :min="0" :max="Number(row['未结金额'])" size="small" controls-position="right" style="width: 120px" />
+          </template>
+        </el-table-column>
+      </el-table>
+      <template #footer>
+        <el-button size="small" @click="writeOffVisible = false">{{ tt('取消') }}</el-button>
+        <el-button size="small" type="primary" @click="submitWriteOff">{{ tt('确认核销') }}</el-button>
+      </template>
+    </el-dialog>
+    <!-- 选工艺路线：按 PDM 路线带出工序明细 -->
+    <el-dialog v-model="routeVisible" :title="tt('选工艺路线')" width="min(520px, 94vw)" append-to-body>
+      <el-form label-width="96px" size="small">
+        <el-form-item :label="tt('加工单')"><span>{{ routeForm['编号'] }}</span></el-form-item>
+        <el-form-item :label="tt('工艺路线')" required>
+          <el-select v-model="routeForm['工艺路线编码']" filterable style="width: 260px">
+            <el-option v-for="r in routeOptions" :key="r.code" :label="r.name + '（' + r.code + '）'" :value="r.code" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="tt('工序数量')">
+          <el-input-number v-model="routeForm['数量']" :min="0" style="width: 160px" controls-position="right" />
+          <span class="dim" style="margin-left: 8px">{{ tt('留空取产成品数量') }}</span>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button size="small" @click="routeVisible = false">{{ tt('取消') }}</el-button>
+        <el-button size="small" type="primary" @click="submitRoute">{{ tt('带入工序') }}</el-button>
+      </template>
+    </el-dialog>
     <NewVoucherDialog v-model:visible="newVisible" :panelCode="panelCode" :panel-name="panelName" @saved="onNewSaved" />
     <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
     <ImportDialog v-model="impVisible" :fields="impFields" :target-label="impLabel" @imported="onImported" />
     <ApprovalHistoryDialog v-model="approvalVisible" :panelCode="panelCode" :formNo="approvalNo" />
     <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
+    <ProducePreviewDialog v-model="produceVisible" :docNo="produceNo" @generated="onProduceGenerated" />
+    <SaleOutPreviewDialog v-model="saleOutVisible" :docNo="saleOutNo" @generated="onSaleOutGenerated" />
+    <FinishInPreviewDialog v-model="finishInVisible" :docNo="finishInNo" @generated="onFinishInGenerated" />
     <DetailMaintainDialog v-model="maintainVisible" :panel-code="panelCode" :row="maintainRow" @saved="onMaintainSaved" />
     <VoucherFormDialog v-model="formVisible" :panel-code="formPanel || panelCode" :code="formCode" @saved="onFormSaved" />
     <ScanFillDialog
@@ -567,12 +606,16 @@ import { usePanelRuntime } from '@core/panel-runtime'
 import { filterSupportedActions } from '@core/action-support'
 import { ensureAuditAction, ensureFieldManageAction, ensureScanFillAction, ensureColumnPrefsAction, ensureSelectAction, hasSelectConfig, isApprovalGroup, isCatchAllGroup, primaryActionOf, approvalSecondaryOf, supportsAudit } from '@core/button-groups'
 import { isDocApproved } from '@core/doc-status'
+import { computeSums, summaryColumnsOf } from './report-sums.js'
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
 import RefPickDialog from './RefPickDialog.vue'
 import NewVoucherDialog from './NewVoucherDialog.vue'
 import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
+import ProducePreviewDialog from './ProducePreviewDialog.vue'
+import SaleOutPreviewDialog from './SaleOutPreviewDialog.vue'
+import FinishInPreviewDialog from './FinishInPreviewDialog.vue'
 import SubBomDialog from './SubBomDialog.vue'
 import BomMasterDetail from './BomMasterDetail.vue'
 import { flattenDocDetailRows } from './master-detail-rows.js'
@@ -778,9 +821,50 @@ function selectConfigFor(action = '选单') {
   const cfg = cfgCache.value || {}
   const configs = cfg.selectConfigs || {}
   if (configs[action]) return configs[action]
-  // 单来源面板的组动作常写成「选销售订单」「选报价单」，都指向同一份 selectConfig
-  if (cfg.selectConfig && (action === '选单' || action.startsWith('选'))) return cfg.selectConfig
-  return action === '选单' ? Object.values(configs)[0] : null
+  // 单来源面板的组动作常写成「选销售订单」「选报价单」，只有与配置标题一致时才复用，
+  // 否则「选销售出库单」会悄悄弹出「选销售订单」（来源与用户点的不一致）
+  if (cfg.selectConfig) {
+    const title = String(cfg.selectConfig.title || '选单')
+    if (action === '选单' || action === title) return cfg.selectConfig
+  }
+  return action === '选单' ? Object.values(configs)[0] || null : null
+}
+const routeVisible = ref(false)
+const routeOptions = ref([])
+const routeForm = ref({ 编号: '', 工艺路线编码: '', 数量: 0 })
+async function submitRoute() {
+  if (!routeForm.value['工艺路线编码']) return ElMessage.warning(tt('请选择工艺路线'))
+  try {
+    const res = await engine.callButton({
+      panelCode: 'MANU_ORDER', buttonName: '选工艺路线',
+      formData: routeForm.value, buttonParam: { code: routeForm.value['编号'] },
+    })
+    ElMessage.success(`已按路线带入 ${res?.['工序数'] || 0} 道工序，保存后生效`)
+    routeVisible.value = false
+    await load()
+  } catch (e) {
+    ElMessage.error(engine.errMsg(e) || tt('选工艺路线失败'))
+  }
+}
+const writeOffVisible = ref(false)
+const writeOffNo = ref('')
+const writeOffRows = ref([])
+async function submitWriteOff() {
+  const lines = writeOffRows.value
+    .filter((r) => Number(r.核销金额) > 0)
+    .map((r) => ({ 往来单号: r['往来单号'], 核销金额: Number(r.核销金额) }))
+  if (!lines.length) return ElMessage.warning(tt('请填写核销金额'))
+  try {
+    await engine.callButton({
+      panelCode: panelCode.value, buttonName: '核销',
+      formData: { 编号: writeOffNo.value, 核销明细: lines }, buttonParam: { code: writeOffNo.value },
+    })
+    ElMessage.success(tt('核销成功'))
+    writeOffVisible.value = false
+    await load()
+  } catch (e) {
+    ElMessage.error(engine.errMsg(e) || tt('核销失败'))
+  }
 }
 const delMode = ref(false)
 const delSel = ref([])
@@ -1231,30 +1315,13 @@ function num(v) {
 }
 
 function sumMethod({ columns, data }) {
-  return computeSums(columns, data)
+  // 库存台账这类混单位的报表只合计金额，列由 gridTabs[0].summaryColumns 声明
+  return computeSums(columns, data, fieldDefOf, summaryColumnsOf(gridTabs.value[0]))
 }
 
 // 明细区块的合计：按「整块全部行」算，翻页后合计不跟着变成单页小计
 function sumMethodOf(b, { columns }) {
-  return computeSums(columns, blockAllRows(b))
-}
-
-function computeSums(columns, rows) {
-  const sums = []
-  // 占位行不参与合计
-  const real = (rows || []).filter((r) => !r._placeholder)
-  columns.forEach((col, i) => {
-    if (i === 0) {
-      sums[i] = '合计'
-      return
-    }
-    // 只对「小数/整数」类型的字段求和：纯数字文本（身份证号/手机号/编码）不参与合计
-    const f = fieldDefOf(col.property)
-    const isNumeric = f && (f.dataType === '小数' || f.dataType === '整数')
-    const vals = real.map((r) => Number(r[col.property]))
-    sums[i] = isNumeric && vals.length && vals.every((v) => Number.isFinite(v)) ? Math.round(vals.reduce((a, b) => a + b, 0) * 100) / 100 : ''
-  })
-  return sums
+  return computeSums(columns, blockAllRows(b), fieldDefOf, null)
 }
 
 // 审批流：当前单据已审批（直接审核/审批流通用，见 core/doc-status）→ 明细块左上角「已审批」印章；已审批行浅绿底色
@@ -1282,6 +1349,8 @@ function colW(f) {
   if (t === '小数' || t === '整数') return 104
   if (t === '日期' || t === '日期时间') return 136
   const n = f.label || f.dataName || ''
+  // 编号/单号类列要能看全单号（INIT-20261106-001 这种），不能按标签长度算成 96px 截断
+  if (/编号|单号/.test(n)) return Math.min(Math.max(n.length * 16 + 30, 150), 220)
   return n.length <= 2 ? 96 : Math.min(Math.max(n.length * 16 + 30, 96), 220)
 }
 
@@ -1357,9 +1426,18 @@ function secondaryOf(g) {
 function toggleGroup(gi) {
   openGroup.value = openGroup.value === gi ? -1 : gi
 }
-/** 主按钮点击：审批组等按状态取动作执行；收纳组（更多/工具/设置）只展开菜单 */
+/**
+ * 多来源组（生单/选单）主按钮只展开菜单：
+ * 组内没有与组名同名的动作，说明主按钮没有无歧义的默认动作（否则点「生单」会直接执行组内第一个来源）。
+ */
+function menuOnlyGroup(g) {
+  if (isApprovalGroup(g)) return false
+  if ((g.actions || []).includes(g.name)) return false
+  return dropItems(g).length > 0
+}
+/** 主按钮点击：审批组等按状态取动作执行；收纳组/多来源组只展开菜单 */
 function onGroupMain(gi, g) {
-  if (isCatchAllGroup(g)) {
+  if (isCatchAllGroup(g) || menuOnlyGroup(g)) {
     toggleGroup(gi)
     return
   }
@@ -2233,7 +2311,12 @@ async function directAdd() {
 function disabledReason(action) {
   const st = current.value?.['单据状态']
   if (!current.value) return '请先选择一张单据'
-  if (action.startsWith('生成')) return '需单据已审核后才可生单，请先审核'
+  if (action.startsWith('生成')) {
+    // 审批面板上「审核」只把单据推进到「审批中」，用户很容易以为已经审完；
+    // 这里按真实状态给出下一步动作，而不是笼统让他「先审核」。
+    if (st === '审批中') return '已提交审批，需「审批通过」后才可生单'
+    return '需单据已审核后才可生单，请先审核'
+  }
   if (action === '审核') return `仅草稿可审核，当前为「${st || '-'}」`
   if (action === '弃审') return `仅已审核可弃审，当前为「${st || '-'}」`
   if (action === '提交审批') return `仅草稿可提交审批，当前为「${st || '-'}」`
@@ -2245,10 +2328,143 @@ function disabledReason(action) {
   return `当前状态不可执行「${action}」`
 }
 
+// 销售订单 → 生产加工单：先弹生单预览，让用户看到库存并勾选要投产的行
+const produceVisible = ref(false)
+const produceNo = ref('')
+
+const saleOutVisible = ref(false)
+const saleOutNo = ref('')
+
+const finishInVisible = ref(false)
+const finishInNo = ref('')
+
+async function onFinishInGenerated(res) {
+  if (res?.gotoPanel) {
+    const no = res['编号'] || res.formNo || ''
+    ElMessage.success(tt('已生成') + tt('产成品入库单') + '：' + no + '，' + tt('请在列表页继续填写'))
+    const targetPath = `/panelx/list/${res.gotoPanel}`
+    tabs.close(route.path)
+    await router.push({ path: targetPath, query: no ? { code: no } : {} })
+    tabs.open({ path: targetPath, title: res.gotoPanel, query: no ? { code: no } : {} })
+    return
+  }
+  await load()
+}
+
+async function onSaleOutGenerated(res) {
+  if (res?.gotoPanel) {
+    const no = res['编号'] || res.formNo || ''
+    ElMessage.success(tt('已生成') + tt('销售出库单') + '：' + no + '，' + tt('请在列表页继续填写'))
+    const targetPath = `/panelx/list/${res.gotoPanel}`
+    tabs.close(route.path)
+    await router.push({ path: targetPath, query: no ? { code: no } : {} })
+    tabs.open({ path: targetPath, title: res.gotoPanel, query: no ? { code: no } : {} })
+    return
+  }
+  await load()
+}
+
+async function onProduceGenerated(res) {
+  // 生单完成后直接跳到生产加工单，并定位到刚生成的那张，省掉用户手找
+  if (res?.gotoPanel) {
+    const no = res['编号'] || res.formNo || ''
+    ElMessage.success(tt('已生成') + tt('生产加工单') + '：' + no + '，' + tt('请在列表页继续填写'))
+    const targetPath = `/panelx/list/${res.gotoPanel}`
+    tabs.close(route.path)
+    await router.push({ path: targetPath, query: no ? { code: no } : {} })
+    tabs.open({ path: targetPath, title: res.gotoPanel, query: no ? { code: no } : {} })
+    return
+  }
+  await load()
+}
+
 async function onButton(action) {
   if (isDisabled(action)) return ElMessage.warning(tt(disabledReason(action)))
   if (APPROVE_ACTIONS.includes(action) && !user.isAdmin && !user.approvePanels.includes(panelCode.value)) {
     return ElMessage.warning(tt('当前角色无审批权限'))
+  }
+  // 选工艺路线：手工建加工单时按路线带出工序
+  if (action === '选工艺路线' && panelCode.value === 'MANU_ORDER') {
+    const no = current.value?.['编号'] || current.value?.['单据编号'] || ''
+    if (!no) return ElMessage.warning(tt('请先保存加工单再选路线'))
+    try {
+      const res = await engine.queryFormDataList({ panelCode: 'ROUTE', pageNo: 1, pageSize: 50 })
+      const seen = new Map()
+      for (const doc of res?.list || []) {
+        for (const p of doc?.detail?.processes || []) {
+          const code = String(p['工艺路线编码'] || '')
+          if (code && !seen.has(code)) seen.set(code, String(p['工艺路线名称'] || code))
+        }
+      }
+      routeOptions.value = [...seen.entries()].map(([code, name]) => ({ code, name }))
+      if (!routeOptions.value.length) return ElMessage.warning(tt('PDM 里还没有工艺路线'))
+      routeForm.value = { 编号: no, 工艺路线编码: routeOptions.value[0].code, 数量: Number((current.value?.detail?.products || [])[0]?.['数量'] || 0) }
+      routeVisible.value = true
+    } catch (e) {
+      ElMessage.error(engine.errMsg(e) || tt('加载工艺路线失败'))
+    }
+    return
+  }
+  // 核销：先列出本客户未结往来单，勾选后再核销（不再无提示地按 FIFO 冲最早一笔）
+  if (action === '核销') {
+    const no = current.value?.['编号'] || current.value?.['单据编号'] || ''
+    if (!no) return ElMessage.warning(tt('请先选择一张单据'))
+    try {
+      const rows = (await engine.openWriteOffLines(panelCode.value, no)) || []
+      if (!rows.length) return ElMessage.warning(tt('该往来单位没有未结单据'))
+      writeOffNo.value = no
+      // 默认按收款金额先进先出预填，用户可改成只核某几张单
+      let remain = Number(current.value['金额'] || current.value['未核销金额'] || 0)
+      writeOffRows.value = rows.map((r) => {
+        const open = Number(r['未结金额']) || 0
+        const take = remain <= 0 ? 0 : Math.min(open, remain)
+        remain = Math.round((remain - take) * 100) / 100
+        return { ...r, 核销金额: take }
+      })
+      writeOffVisible.value = true
+    } catch (e) {
+      ElMessage.error(engine.errMsg(e) || tt('加载未结单据失败'))
+    }
+    return
+  }
+  if (action === '生成生产加工单' && panelCode.value === 'SO_ORDER') {
+    if (!current.value) return ElMessage.warning(tt('请先选择一行数据'))
+    produceNo.value = current.value['编号'] || current.value['单据编号'] || ''
+    produceVisible.value = true
+    return
+  }
+  if (action === '生成产成品入库单' && panelCode.value === 'MANU_ORDER') {
+    if (!current.value) return ElMessage.warning(tt('请先选择一行数据'))
+    finishInNo.value = current.value['编号'] || current.value['单据编号'] || ''
+    finishInVisible.value = true
+    return
+  }
+  // 生产加工单：进入工单排产工作台（按工序分批排产）
+  if (action === '排产') {
+    const no = current.value?.['编号'] || current.value?.['单据编号'] || ''
+    if (!no) return ElMessage.warning(tt('请先选择一张加工单'))
+    const st = String(current.value?.['单据状态'] || '')
+    if (st !== '已审核' && st !== '生产中') return ElMessage.warning(tt('仅已审核/生产中的加工单可以排产'))
+    const path = '/mes/plan'
+    const query = { code: no }
+    router.push({ path, query })
+    tabs.open({ path, title: `工单排产-${no}`, query })
+    return
+  }
+
+  // 销售发票打印：审批通过后可用，独立页面渲染便于直接打印
+  if (action === '打印发票') {
+    const no = current.value?.['编号'] || current.value?.['单据编号'] || ''
+    if (!no) return ElMessage.warning(tt('请先选择一张发票'))
+    if (current.value?.['单据状态'] !== '已审核') return ElMessage.warning(tt('发票审批通过后才能打印'))
+    window.open(`${location.origin}${location.pathname}#/print/invoice?code=${encodeURIComponent(no)}`, '_blank')
+    return
+  }
+  if (['生成销售出库单', '生成销售出库单(普通销售)'].includes(action) && panelCode.value === 'SO_ORDER') {
+    if (!current.value) return ElMessage.warning(tt('请先选择一行数据'))
+    saleOutNo.value = current.value['编号'] || current.value['单据编号'] || ''
+    saleOutVisible.value = true
+    return
   }
   if (action === '扫描填单') {
     scanVisible.value = true
@@ -2437,8 +2653,12 @@ async function onButton(action) {
       if (current.value['单据状态'] !== need) return ElMessage.warning(action === '提交审批' ? '仅草稿状态可提交审批' : '仅审批中状态可审批通过')
       const no = current.value['编号'] || current.value['单据编号'] || ''
       try {
+        // 同表单页：确认框要说明这一步之后还差什么，否则用户以为提交即完成。
+        const nextStep = action === '提交审批'
+          ? '提交后单据进入「审批中」，还需完成「审批通过」才算审核完成，之后才能生单。'
+          : '审批通过后单据归档为「已审核」，可继续生单。'
         const { value } = await ElMessageBox.prompt(
-          '单据：' + no + '（当前状态：' + (current.value['单据状态'] || '') + '）',
+          '单据：' + no + '（当前状态：' + (current.value['单据状态'] || '') + '）\n' + nextStep,
           action + '确认',
           { confirmButtonText: '确认' + action, cancelButtonText: '取消', inputType: 'textarea', inputPlaceholder: action === '审批通过' ? '审批意见（选填）' : '提交说明（选填）' }
         )
@@ -2487,7 +2707,26 @@ async function onButton(action) {
       tabs.open({ path: targetPath, title: res.gotoPanel })
       return
     }
-    ElMessage.success(`「${action}」执行成功`)
+    // 「审核」在审批面板上等于「提交审批」（后端 submitApproval），不会直接到已审核。
+    // 不提示清楚的话，用户会以为审完了，接着点「生单」被 409 拦下。
+    // 「审核」和「提交审批」都会把单据推进到「审批中」，两者都要给出下一步提示。
+    // 齐套检查：结果不是「成功/失败」，而是可开工数量 + 缺料清单，直接播报提示语
+    if (action === '齐套检查' && res && res['提示']) {
+      const enough = res['单据状态'] === '齐套'
+      ElMessage({
+        type: enough ? 'success' : 'warning',
+        message: res['提示'],
+        duration: enough ? 3000 : 6000,
+        showClose: true,
+      })
+      await load()
+      return
+    }
+    if (['审核', '提交审批'].includes(action) && res && res['单据状态'] === '审批中') {
+      ElMessage.success(tt('已提交审批') + '，' + tt('需「审批通过」后才算审核完成，之后才能生单'))
+    } else {
+      ElMessage.success(`「${action}」执行成功`)
+    }
     await load()
     const actionIndex = list.value.findIndex((item) => (
       (item['编号'] || item['单据编号'] || item['锭号']) === actionDocumentNo

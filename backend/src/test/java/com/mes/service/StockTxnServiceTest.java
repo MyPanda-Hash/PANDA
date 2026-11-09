@@ -1,5 +1,6 @@
 package com.mes.service;
 
+import com.mes.entity.StockBalance;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -140,5 +141,30 @@ class StockTxnServiceTest {
         assertEquals("OUT", service.directionOf("MATERIAL_OUT"));
         assertEquals("OUT", service.directionOf("OTHER_OUT"));
         assertNull(service.directionOf("SO_ORDER"));
+    }
+
+    /** 结存平均成本：同类存货有多个仓库行时按数量加权。 */
+    @Test
+    void averageCostWeightsWarehouseBalances() {
+        StockBalanceService balances = org.mockito.Mockito.mock(StockBalanceService.class);
+        StockBalance a = new StockBalance();
+        a.setItemCode("CP004");
+        a.setItemName("减速箱体 A");
+        a.setWarehouse("成品仓");
+        a.setQuantity(new BigDecimal("10"));
+        a.setAmount(new BigDecimal("3000"));
+        StockBalance b = new StockBalance();
+        b.setItemCode("CP004");
+        b.setItemName("减速箱体 A");
+        b.setWarehouse("半成品仓");
+        b.setQuantity(new BigDecimal("10"));
+        b.setAmount(new BigDecimal("3400"));
+        org.mockito.Mockito.when(balances.list()).thenReturn(List.of(a, b));
+
+        StockTxnService svc = new StockTxnService(null, balances);
+
+        assertEquals(0, new BigDecimal("320").compareTo(svc.averageCostOf("CP004", "减速箱体 A")));
+        assertEquals(0, new BigDecimal("300").compareTo(svc.averageCostOf("CP004", "减速箱体 A", "成品仓")));
+        assertEquals(0, BigDecimal.ZERO.compareTo(svc.averageCostOf("NOT-EXIST", "", null)));
     }
 }

@@ -30,6 +30,16 @@ mybatis-plus:
       id-type: auto
 
 mes:
+  # 开票方（销售方）信息：销售发票打印页使用，可用环境变量覆盖
+  # 销货单审批通过后是否自动开票。true=一路自动（发票直接进草稿）；
+  # false=由「销售开票」工作台手动勾选销货单开票。
+  invoice:
+    auto-issue: "${MES_INVOICE_AUTO_ISSUE:false}"
+  company:
+    name: "${MES_COMPANY_NAME:智造方寸（未配置企业全称）}"
+    tax-no: "${MES_COMPANY_TAX_NO:—}"
+    addr-tel: "${MES_COMPANY_ADDR_TEL:—}"
+    bank-account: "${MES_COMPANY_BANK_ACCOUNT:—}"
   jwt:
     # 生产环境必须通过环境变量 MES_JWT_SECRET 注入随机值（历史版本曾提交真实密钥且已公开，须轮换）
     secret: "${MES_JWT_SECRET:}"

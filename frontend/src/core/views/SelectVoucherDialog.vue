@@ -72,9 +72,24 @@ function close() {
 }
 
 // 列值兼容：加工单等单据编号存于「锭号」，来源行统一回退到 编号/锭号
+/** 选中的那页明细（配置了 detailKey 就用它，否则取第一页）。 */
+function detailRowsOf(row) {
+  const d = row.detail || {}
+  const key = props.config?.detailKey || Object.keys(d)[0]
+  const arr = d[key]
+  return Array.isArray(arr) ? arr : []
+}
+
 function cellText(c, row) {
   if (row[c] !== undefined && row[c] !== null && row[c] !== '') return row[c]
   if (c === '单据编号') return row['锭号'] || row['编号'] || ''
+  // 表头取不到时回落到明细行：产品名称/工序名称/计划数量这类字段只在明细里，
+  // 直接返回空会让人以为单据没数据。多行时去重拼接，超出 3 项给个数量。
+  const rows = detailRowsOf(row)
+  if (rows.length) {
+    const vals = [...new Set(rows.map((r) => r[c]).filter((v) => v !== undefined && v !== null && v !== ''))]
+    if (vals.length) return vals.slice(0, 3).join('、') + (vals.length > 3 ? ` ${tt('等')}${vals.length}${tt('项')}` : '')
+  }
   return row[c] ?? ''
 }
 
@@ -87,14 +102,13 @@ function selVal(row, f) {
 }
 
 function itemsText(row) {
-  const d = row.detail
-  if (d && typeof d === 'object') {
-    const key = Object.keys(d)[0]
-    const arr = d[key]
-    if (Array.isArray(arr) && arr.length) {
-      const names = arr.slice(0, 2).map((i) => i['存货名称'] || i['产品名称'] || '').filter(Boolean)
-      return names.join('、') + (arr.length > 2 ? ' ' + tt('等') + ' ' + arr.length + ' ' + tt('行') : '')
-    }
+  const arr = detailRowsOf(row)
+  if (arr.length) {
+    const names = arr
+      .slice(0, 2)
+      .map((i) => i['工序名称'] || i['存货名称'] || i['材料名称'] || i['产品名称'] || '')
+      .filter(Boolean)
+    return names.join('、') + (arr.length > 2 ? ' ' + tt('等') + ' ' + arr.length + ' ' + tt('行') : '')
   }
   return ''
 }

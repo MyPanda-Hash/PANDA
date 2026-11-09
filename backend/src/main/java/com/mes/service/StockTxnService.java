@@ -1,6 +1,7 @@
 package com.mes.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.mes.entity.StockBalance;
 import com.mes.entity.StockTxn;
 import com.mes.mapper.StockTxnMapper;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,86 @@ public class StockTxnService {
     public StockTxnService(StockTxnMapper txnMapper, StockBalanceService balanceService) {
         this.txnMapper = txnMapper;
         this.balanceService = balanceService;
+    }
+
+    /**
+     * 该存货实际存放的仓库（数量最多的那个）；没有库存记录返回 null。
+     *
+     * <p>用于加工单材料明细自动带出「预出仓库」：此前固定写「原料仓」，
+     * 辅料仓的料被从原料仓出，直接出成负库存。
+     */
+    public String warehouseOfItem(String itemCode, String itemName) {
+        String code = itemCode == null ? "" : itemCode.trim();
+        String name = itemName == null ? "" : itemName.trim();
+        String best = null;
+        BigDecimal bestQty = BigDecimal.ZERO;
+        for (StockBalance balance : balanceService.list()) {
+            boolean codeMatch = !code.isEmpty()
+                    ? code.equals(balance.getItemCode() == null ? "" : balance.getItemCode().trim())
+                    : !name.isEmpty() && name.equals(balance.getItemName() == null ? "" : balance.getItemName().trim());
+            if (!codeMatch) continue;
+            String warehouse = balance.getWarehouse() == null ? "" : balance.getWarehouse().trim();
+            if (warehouse.isEmpty()) continue;
+            BigDecimal qty = balance.getQuantity() == null ? BigDecimal.ZERO : balance.getQuantity();
+            if (qty.compareTo(bestQty) > 0) {
+                bestQty = qty;
+                best = warehouse;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * 某存货在某仓库的现存量；无记录返回 0。
+     *
+     * <p>供生单前做可用量校验用。编码为空的历史单据回退按名称匹配，
+     * 与 {@link StockBalanceService#aggregate} 的唯一键口径保持一致。
+     */
+    public BigDecimal quantityOf(String itemCode, String itemName, String warehouse) {
+        String code = itemCode == null ? "" : itemCode.trim();
+        String name = itemName == null ? "" : itemName.trim();
+        String wh = warehouse == null ? "" : warehouse.trim();
+        BigDecimal sum = BigDecimal.ZERO;
+        for (StockBalance balance : balanceService.list()) {
+            boolean codeMatch = !code.isEmpty()
+                    ? code.equals(balance.getItemCode() == null ? "" : balance.getItemCode().trim())
+                    : !name.isEmpty() && name.equals(balance.getItemName() == null ? "" : balance.getItemName().trim());
+            if (!codeMatch) continue;
+            if (!wh.isEmpty() && !wh.equals(balance.getWarehouse() == null ? "" : balance.getWarehouse().trim())) continue;
+            sum = sum.add(balance.getQuantity() == null ? BigDecimal.ZERO : balance.getQuantity());
+        }
+        return sum;
+    }
+
+    /**
+     * 结存平均成本（金额 / 数量），可限定仓库；没有结存返回 0。
+     *
+     * <p>销售出库按出库时刻的结存均价取成本价，产成品入库按材料结存均价折材料成本，
+     * 两边共用同一个口径，避免成本台账出现两套数。
+     */
+    public BigDecimal averageCostOf(String itemCode, String itemName, String warehouse) {
+        if (balanceService == null) return BigDecimal.ZERO;
+        String code = itemCode == null ? "" : itemCode.trim();
+        String name = itemName == null ? "" : itemName.trim();
+        String wh = warehouse == null ? "" : warehouse.trim();
+        BigDecimal qty = BigDecimal.ZERO;
+        BigDecimal amount = BigDecimal.ZERO;
+        for (StockBalance balance : balanceService.list()) {
+            boolean codeMatch = !code.isEmpty()
+                    ? code.equals(balance.getItemCode() == null ? "" : balance.getItemCode().trim())
+                    : !name.isEmpty() && name.equals(balance.getItemName() == null ? "" : balance.getItemName().trim());
+            if (!codeMatch) continue;
+            if (!wh.isEmpty() && !wh.equals(balance.getWarehouse() == null ? "" : balance.getWarehouse().trim())) continue;
+            qty = qty.add(balance.getQuantity() == null ? BigDecimal.ZERO : balance.getQuantity());
+            amount = amount.add(balance.getAmount() == null ? BigDecimal.ZERO : balance.getAmount());
+        }
+        if (qty.signum() == 0) return BigDecimal.ZERO;
+        return amount.divide(qty, 4, java.math.RoundingMode.HALF_UP);
+    }
+
+    /** 全部仓库的结存平均成本。 */
+    public BigDecimal averageCostOf(String itemCode, String itemName) {
+        return averageCostOf(itemCode, itemName, null);
     }
 
     /** 面板对应的出入库方向；非库存面板返回 null。 */

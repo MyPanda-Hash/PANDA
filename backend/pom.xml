@@ -30,6 +30,13 @@
   </properties>
 
   <dependencies>
+    <!-- Excel 导出（开票清单）：输出真正的 .xlsx，而不是 CSV -->
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>5.4.1</version>
+    </dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>

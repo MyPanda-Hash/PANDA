@@ -98,4 +98,27 @@ class SalesFinancePanelRegistryTest {
     private List<String> strings(Object value) {
         return (List<String>) value;
     }
+
+    /** 销货单要按入口区分选单来源：选销售出库单不能再回落到选销售订单。 */
+    @Test
+    void upgradesSaleInvSelectSourcesByTitle() throws Exception {
+        SalesFinancePanelRegistry registry = new SalesFinancePanelRegistry(panelMapper, json);
+        Map<String, Object> base = new java.util.LinkedHashMap<>();
+        base.put("metadata", Map.of("panelCode", "SALE_INV"));
+        base.put("selectConfig", Map.of("source", "SO_ORDER", "title", "选销售订单", "detailKey", "items"));
+
+        Map<String, Object> sources = registry.saleInvSelectSources(base);
+
+        assertTrue(sources.containsKey("选销售订单"), "原有单来源要保留：" + sources.keySet());
+        Map<String, Object> saleOut = map(sources.get("选销售出库单"));
+        assertEquals("SALE_OUT", saleOut.get("source"));
+        assertEquals("items", saleOut.get("detailKey"));
+        assertEquals("数量", saleOut.get("sourceQuantityField"));
+        assertEquals("数量", saleOut.get("targetQuantityField"));
+        assertEquals("已审核", map(saleOut.get("condition")).get("单据状态"));
+        String detailJson = json.writeValueAsString(saleOut.get("detailMap"));
+        assertTrue(detailJson.contains("仓库"), "选单必须带出仓库，否则销货单保存报「仓库不能为空」：" + detailJson);
+        assertTrue(detailJson.contains("含税售价") && detailJson.contains("含税单价"),
+                "出库单的含税售价要映射到销货单含税单价：" + detailJson);
+    }
 }

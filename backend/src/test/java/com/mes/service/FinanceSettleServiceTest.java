@@ -33,29 +33,38 @@ class FinanceSettleServiceTest {
         assertEquals("RK-001", s.sourceNo());
     }
 
+    /** 出库单只做出库与成本，应收挂在销货单上：不然一张发货单会挂两笔应收。 */
     @Test
-    void saleOutCreatesReceivable() {
+    void saleOutDoesNotCreateReceivable() {
         Map<String, Object> head = Map.of("单据编号", "CK-001", "客户", "中天精工");
         Map<String, Object> detail = Map.of("items", List.of(
                 Map.of("存货名称", "成品A", "数量", 30, "售价", 10, "销售金额", 300)));
 
-        FinanceSettleService.Settlement s = service.buildSettlement("SALE_OUT", "CK-001", head, detail);
+        assertNull(service.buildSettlement("SALE_OUT", "CK-001", head, detail), "出库单不挂应收");
+    }
+
+    /** 销货单是唯一的应收来源。 */
+    @Test
+    void saleInvCreatesReceivable() {
+        Map<String, Object> head = Map.of("单据编号", "XS-001", "客户", "中天精工");
+        Map<String, Object> detail = Map.of("items", List.of(
+                Map.of("存货名称", "成品A", "数量", 30, "含税单价", 10, "含税金额", 300)));
+
+        FinanceSettleService.Settlement s = service.buildSettlement("SALE_INV", "XS-001", head, detail);
 
         assertEquals("AR", s.type());
         assertEquals("中天精工", s.partner());
         assertEquals(0, new BigDecimal("300").compareTo(s.amount()));
     }
 
+    /** 发票只是票据，应收已经由销货单挂过，不能再挂一次。 */
     @Test
-    void saleInvoiceCreatesReceivable() {
+    void saleInvoiceDoesNotCreateReceivable() {
         Map<String, Object> head = Map.of("单据编号", "FP-001", "客户", "西部材料");
         Map<String, Object> detail = Map.of("items", List.of(
                 Map.of("存货名称", "成品B", "数量", 5, "含税金额", 500)));
 
-        FinanceSettleService.Settlement s = service.buildSettlement("SALE_INVOICE", "FP-001", head, detail);
-
-        assertEquals("AR", s.type());
-        assertEquals(0, new BigDecimal("500").compareTo(s.amount()));
+        assertNull(service.buildSettlement("SALE_INVOICE", "FP-001", head, detail), "发票不重复挂应收");
     }
 
     @Test
@@ -104,8 +113,9 @@ class FinanceSettleServiceTest {
     void typeOfPanelsIsExposedForCallers() {
         assertEquals("AP", service.typeOf("PURCHASE_IN"));
         assertEquals("AP", service.typeOf("PU_INVOICE"));
-        assertEquals("AR", service.typeOf("SALE_OUT"));
-        assertEquals("AR", service.typeOf("SALE_INVOICE"));
+        assertEquals("AR", service.typeOf("SALE_INV"));
+        assertNull(service.typeOf("SALE_OUT"), "出库单不挂应收");
+        assertNull(service.typeOf("SALE_INVOICE"), "发票不重复挂应收");
         assertNull(service.typeOf("SO_ORDER"));
     }
 

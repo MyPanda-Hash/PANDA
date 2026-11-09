@@ -22,7 +22,7 @@ import java.util.Map;
  * - AccountingEntry = 会计凭证分录（借贷记账）
  *
  * 科目按《小企业会计准则》常用编码：1002 银行存款、1122 应收账款、
- * 1405 库存商品、2202 应付账款、6001 主营业务收入。
+ * 1405 库存商品、2202 应付账款、6001 主营业务收入、6401 主营业务成本。
  */
 @Service
 public class AccountingService {
@@ -43,10 +43,10 @@ public class AccountingService {
         m.put("PURCHASE_IN", new Template("采购入库", "PURCHASE_IN", "1405", "库存商品", "2202", "应付账款"));
         // 采购发票：借 库存商品 / 贷 应付账款
         m.put("PU_INVOICE", new Template("采购发票", "PU_INVOICE", "1405", "库存商品", "2202", "应付账款"));
-        // 销售出库：借 应收账款 / 贷 主营业务收入
-        m.put("SALE_OUT", new Template("销售出库", "SALE_OUT", "1122", "应收账款", "6001", "主营业务收入"));
-        // 销售发票：借 应收账款 / 贷 主营业务收入
-        m.put("SALE_INVOICE", new Template("销售发票", "SALE_INVOICE", "1122", "应收账款", "6001", "主营业务收入"));
+        // 销售：应收与收入统一在销货单确认（出库单管库存、发票管票据，都不重复入账）
+        m.put("SALE_INV", new Template("销货单", "SALE_INV", "1122", "应收账款", "6001", "主营业务收入"));
+        // 销售出库：只结转成本，借 主营业务成本 / 贷 库存商品
+        m.put("SALE_OUT", new Template("销售出库成本", "SALE_OUT", "6401", "主营业务成本", "1405", "库存商品"));
         // 收款：借 银行存款 / 贷 应收账款
         m.put("RECEIPT", new Template("收款", "RECEIPT", "1002", "银行存款", "1122", "应收账款"));
         // 付款：借 应付账款 / 贷 银行存款
@@ -79,6 +79,63 @@ public class AccountingService {
         return List.of(
                 new Entry(t.debitCode(), t.debitName(), "借", money, partner == null ? "" : partner),
                 new Entry(t.creditCode(), t.creditName(), "贷", money, partner == null ? "" : partner));
+    }
+
+    /**
+     * 销货单分录：借 1122 应收账款（含税）、贷 6001 主营业务收入（不含税）、贷 222101 应交税费-应交增值税(销项税额)。
+     *
+     * <p>没有税额时退化为两行，避免凭空造出销项税。
+     */
+    public List<Entry> buildSaleEntries(String sourceNo, BigDecimal gross, BigDecimal tax,
+                                        String partner, String summary) {
+        BigDecimal g = gross == null ? BigDecimal.ZERO : gross;
+        BigDecimal t = tax == null ? BigDecimal.ZERO : tax;
+        if (g.signum() == 0) return List.of();
+        String p = partner == null ? "" : partner;
+        if (t.signum() <= 0) {
+            return List.of(new Entry("1122", "应收账款", "借", g, p),
+                    new Entry("6001", "主营业务收入", "贷", g, p));
+        }
+        BigDecimal net = g.subtract(t);
+        List<Entry> entries = new ArrayList<>();
+        entries.add(new Entry("1122", "应收账款", "借", g, p));
+        entries.add(new Entry("6001", "主营业务收入", "贷", net, p));
+        entries.add(new Entry("222101", "应交税费-应交增值税(销项税额)", "贷", t, p));
+        return entries;
+    }
+
+    /** 记一张销货单的凭证（含销项税拆分）。 */
+    @Transactional
+    public int postSaleInvoice(String sourceNo, BigDecimal gross, BigDecimal tax, String partner,
+                               String summary, LocalDate bizDate) {
+        return writeEntries("SALE_INV", sourceNo, buildSaleEntries(sourceNo, gross, tax, partner, summary),
+                partner, summary, bizDate);
+    }
+
+    private int writeEntries(String panelCode, String sourceNo, List<Entry> entries, String partner,
+                             String summary, LocalDate bizDate) {
+        entryMapper.delete(new LambdaQueryWrapper<AccountingEntry>()
+                .eq(AccountingEntry::getSourcePanel, panelCode)
+                .eq(AccountingEntry::getSourceNo, sourceNo));
+        if (entries.isEmpty()) return 0;
+        assertBalanced(entries);
+        String voucherNo = buildVoucherNo(panelCode, sourceNo);
+        for (Entry e : entries) {
+            AccountingEntry entity = new AccountingEntry();
+            entity.setVoucherNo(voucherNo);
+            entity.setSourcePanel(panelCode);
+            entity.setSourceNo(sourceNo);
+            entity.setAccountCode(e.accountCode());
+            entity.setAccountName(e.accountName());
+            entity.setDirection(e.direction());
+            entity.setAmount(e.amount());
+            entity.setPartner(e.partner());
+            entity.setSummary(summary);
+            entity.setBizDate(bizDate);
+            entity.setCreateTime(LocalDateTime.now());
+            entryMapper.insert(entity);
+        }
+        return entries.size();
     }
 
     /** 借贷是否平衡。 */
