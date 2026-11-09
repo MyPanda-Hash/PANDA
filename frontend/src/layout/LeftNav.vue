@@ -721,7 +721,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
 }
 .card-body {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   align-content: start;
   gap: 16px 20px;
   max-height: calc(var(--fly-card-max-height, 420px) - 44px);
@@ -821,12 +821,17 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
 }
 /* 两级浮层需要更宽的卡面：右栏才能排成两列，条目不必竖着排到屏幕外 */
 .fly-card:has(.card-split) {
-  min-width: 680px;
-  max-width: min(800px, calc(100vw - 200px));
+  min-width: 880px;
+  /* 分类按列并排：主区需要约 700px 才放得下 4 列（4×132 + 间距），否则会退成 2 列、
+     最后一两个小分类被迫独占一行，浮层被拉得很长 */
+  max-width: min(980px, calc(100vw - 200px));
 }
 .card-sections {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
+  /* auto-fit + 120px：主区约 770px 时正好 4 列，六个分类排成两行——
+     第一行 单据(占 2 列)+明细表+统计表，第二行 成本核算/库存账表/序列号 并排，
+     不再是「序列号」独占一行把浮层拉长；分类少时也不会留空列 */
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   align-content: start;
   gap: 20px 24px;
   overflow: auto;
@@ -890,7 +895,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
 .card-row {
   display: flex;
   align-items: stretch;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 2px 4px;
   min-height: 40px;
   min-width: 0;
 }
