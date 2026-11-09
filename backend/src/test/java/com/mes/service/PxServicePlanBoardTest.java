@@ -84,6 +84,56 @@ class PxServicePlanBoardTest {
                 Map.of("items", List.of(Map.of("工序编码", procCode, "派工数量", qty))));
     }
 
+    /**
+     * 排产顺序必须来自工艺路线：路线里存成乱序（加工顺序 3,1,2），
+     * 加工单工序明细与排产看板都要按 1,2,3 给出，而不是按数组顺序。
+     */
+    @Test
+    void planBoardFollowsRouteSequence() throws Exception {
+        // 工艺路线：存储乱序，加工顺序才是权威
+        FormData route = doc("ROUTE", "ROUTE-001", "已审核",
+                Map.of("工艺路线编码", "GY-010", "工艺路线名称", "三段路线"),
+                Map.of("processes", List.of(
+                        Map.of("工序编码", "PX007", "工序名称", "检验", "加工顺序", 3, "生产车间", "测试车间"),
+                        Map.of("工序编码", "PX001", "工序名称", "下料", "加工顺序", 1, "生产车间", "熔铸车间"),
+                        Map.of("工序编码", "PX002", "工序名称", "车削", "加工顺序", 2, "生产车间", "熔铸车间"))));
+        // BOM 把产品绑到这条路线
+        FormData bom = doc("BOM", "BOM-1", "已审核",
+                Map.of("产品编码", "CP001", "工艺路线编码", "GY-010"), Map.of("children", List.of()));
+        when(formMapper.selectList(any())).thenReturn(List.of(route), List.of(bom));
+
+        // 1) 加工单按路线展开：顺序 = 下料 → 车削 → 检验
+        List<Map<String, Object>> procs = service.resolveProcesses(
+                List.of(Map.of("产品编码", "CP001", "数量", 100)), "熔铸车间");
+        assertEquals(List.of("PX001", "PX002", "PX007"),
+                procs.stream().map((r) -> r.get("工序编码")).toList(),
+                "加工单工序必须按路线加工顺序展开");
+        assertEquals(List.of(1, 2, 3),
+                procs.stream().map((r) -> (int) ((Number) r.get("加工顺序")).doubleValue()).toList(),
+                "加工顺序按路线重新编号");
+
+        // 2) 排产看板：同样的顺序，且第 2 道额度取上道合格量
+        FormData mo = doc("MANU_ORDER", "MO-1", "已审核",
+                Map.of("单据编号", "MO-1", "生产车间", "熔铸车间"),
+                Map.of("products", List.of(Map.of("产品编码", "CP001", "数量", 100)),
+                        "processes", procs));
+        FormData qualified = report("PX001", 100, 90);   // 下料合格 90
+        when(formMapper.selectOne(any())).thenReturn(mo);
+        when(formMapper.selectList(any())).thenReturn(List.of(qualified), List.of());
+
+        List<Map<String, Object>> board = service.planBoard("MO-1");
+
+        assertEquals(List.of("PX001", "PX002", "PX007"),
+                board.stream().map((r) -> r.get("工序编码")).toList(),
+                "排产看板顺序必须与工艺路线一致");
+        assertEquals(List.of(1, 2, 3),
+                board.stream().map((r) -> (int) ((Number) r.get("工序顺序")).doubleValue()).toList());
+        assertEquals(100.0, ((Number) board.get(0).get("可排产量")).doubleValue(), 0.001,
+                "第 1 道按加工单数量");
+        assertEquals(90.0, ((Number) board.get(1).get("可排产量")).doubleValue(), 0.001,
+                "第 2 道按上道合格量（不合格不流入下道）");
+    }
+
     @Test
     void firstProcessCanBePlannedUpToOrderQuantity() throws Exception {
         when(formMapper.selectOne(any())).thenReturn(mo(100));
