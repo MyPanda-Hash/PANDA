@@ -1232,6 +1232,8 @@ public class PxService implements PanelRuntimeService {
             m.put("isNotNull", Boolean.TRUE.equals(f.get("isRequired")));
             m.put("defaultValue", f.getOrDefault("defaultValue", ""));
             if (f.containsKey("options")) m.put("options", f.get("options"));
+            // readonly：派生展示字段（如 BOM「工艺路线名称」由编码决定），前端据此禁用手改
+            if (Boolean.TRUE.equals(f.get("readonly"))) m.put("readonly", true);
             // 参照字段信息（2026-08-20 补：对齐前端 mock buildMeta 的 ref 结构——弹窗拉取面板数据勾选导入）
             if ("参照".equals(f.get("dataType")) && f.get("refPanel") != null) {
                 Map<String, Object> ref = new HashMap<>();
@@ -1355,6 +1357,7 @@ public class PxService implements PanelRuntimeService {
         out.put("detail", fieldsOf(panelCode).get("detail"));
         Map<String, Object> detailData = parseData(fd.getDetailData());
         if ("ROUTE".equals(panelCode)) normalizeRouteDetailForRead(detailData);
+        if ("BOM".equals(panelCode)) data.put("工艺路线名称", routeNameOf(data, routeNameIndex()));
         if (hasCurrentStockField(detailData)) {
             refreshCurrentStock(detailData, reportQueryService.currentStockRows());
         }
@@ -1427,6 +1430,8 @@ public class PxService implements PanelRuntimeService {
         // 对齐 docs/frontend/前端面板设计.md 数据契约；前端渲染器和选单弹窗按此结构消费。
         List<Map<String, Object>> flat = new ArrayList<>();
         List<Map<String, Object>> currentStock = null;
+        // BOM 表头只存路线编码，名称按编码派生（每请求建一次索引，避免逐行扫 ROUTE）
+        Map<String, String> routeNames = "BOM".equals(panelCode) ? routeNameIndex() : Map.of();
         for (FormData fd : all) {
             Map<String, Object> head = parseData(fd.getData());
             head.put("编号", fd.getFormNo());
@@ -1441,6 +1446,7 @@ public class PxService implements PanelRuntimeService {
             }
             if ("INV".equals(panelCode)) fillInvRoute(detail);
             if ("ROUTE".equals(panelCode)) normalizeRouteDetailForRead(detail);
+            if ("BOM".equals(panelCode)) head.put("工艺路线名称", routeNameOf(head, routeNames));
             if (!detail.isEmpty()) head.put("detail", detail);
             flat.add(head);
         }
@@ -4931,6 +4937,27 @@ public class PxService implements PanelRuntimeService {
         int seq = 0;
         for (Map<String, Object> row : rows) row.put("工序顺序", ++seq);
         detail.put("processes", rows);
+    }
+
+    /** 工艺路线编码 → 名称索引（BOM 表头只存编码，名称是派生展示，不进 form_data）。 */
+    private Map<String, String> routeNameIndex() {
+        Map<String, String> names = new HashMap<>();
+        for (FormData route : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "ROUTE"))) {
+            Map<String, Object> head = parseData(route.getData());
+            String code = str(head.get("工艺路线编码"));
+            if (code.isEmpty()) continue;
+            names.putIfAbsent(code, str(head.get("工艺路线名称")));
+        }
+        return names;
+    }
+
+    /** BOM 行的工艺路线名称：以编码为准派生；编码为空或找不到路线时保留已存值。 */
+    private String routeNameOf(Map<String, Object> head, Map<String, String> names) {
+        String code = str(head.get("工艺路线编码"));
+        if (code.isEmpty()) return str(head.get("工艺路线名称"));
+        String name = names == null ? "" : names.getOrDefault(code, "");
+        return name.isEmpty() ? str(head.get("工艺路线名称")) : name;
     }
 
     /**

@@ -75,6 +75,21 @@ public class BomRoutePanelUpgrade {
             routeField.put("refDialog", "route-flow");
             changed = true;
         }
+        // 选完路线把名称一起带出（名称只读，改由编码决定；后端读出口还会再派生一次兜底）
+        if (routeField != null && routeField.get("refMap") == null) {
+            routeField.put("refMap", new ArrayList<>(List.of(Map.of("from", "工艺路线名称", "to", "工艺路线名称"))));
+            changed = true;
+        }
+        // 只读展示列：BOM 上同时看到编码与名称，名称不允许手改
+        if (findField(fields, "工艺路线名称") == null) {
+            Map<String, Object> f = new LinkedHashMap<>();
+            f.put("dataName", "工艺路线名称");
+            f.put("dataType", "文本");
+            f.put("isRequired", false);
+            f.put("readonly", true);
+            fields.add(f);
+            changed = true;
+        }
         schema.put("fields", fields);
         config.put("dataSchema", schema);
         // 表单也要能看到这两个字段
@@ -87,6 +102,7 @@ public class BomRoutePanelUpgrade {
             List<String> add = new ArrayList<>();
             if (!text.contains("产品编码")) add.add("产品编码");
             if (!text.contains("工艺路线编码")) add.add("工艺路线编码");
+            if (!text.contains("工艺路线名称")) add.add("工艺路线名称");
             if (!add.isEmpty()) {
                 page.put("fieldNames", (text.isEmpty() ? "" : text + ",") + String.join(",", add));
                 changed = true;

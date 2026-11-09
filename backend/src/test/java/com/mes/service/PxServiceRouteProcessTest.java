@@ -266,6 +266,24 @@ class PxServiceRouteProcessTest {
                 "每道工序要带 1..N 的工序顺序，界面据此显示先后");
     }
 
+    /** BOM 只存路线编码；列表要按编码派生只读的工艺路线名称（历史单据也要有名称）。 */
+    @Test
+    void bomListDerivesRouteNameFromCode() throws Exception {
+        FormData bom = doc("BOM", "BOM-001",
+                Map.of("产品编码", "CP004", "工艺路线编码", "GY-002"), Map.of("children", List.of()));
+        FormData route = doc("ROUTE", "ROUTE-002",
+                Map.of("工艺路线编码", "GY-002", "工艺路线名称", "减速箱体 A 加工路线"), Map.of("processes", List.of()));
+        when(formMapper.selectList(any())).thenReturn(List.of(route), List.of(bom));
+
+        Map<String, Object> out = service.queryFormDataList("BOM", "", Map.of(), 1, 20);
+
+        List<?> list = (List<?>) out.get("list");
+        Map<?, ?> row = (Map<?, ?>) list.get(0);
+        assertEquals("GY-002", row.get("工艺路线编码"));
+        assertEquals("减速箱体 A 加工路线", row.get("工艺路线名称"),
+                "名称必须由编码派生，不能要求 BOM 里冗余存一份");
+    }
+
     /** 已审核的加工单不能改工序（要先弃审）。 */
     @Test
     void rejectsRouteApplyOnApprovedOrder() throws Exception {

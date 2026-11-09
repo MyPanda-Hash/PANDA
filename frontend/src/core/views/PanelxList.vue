@@ -1802,7 +1802,9 @@ function formatFieldValue(field, value) {
 
 function headerFieldLocked(field) {
   const key = headerFieldKey(field)
-  return !!field.computed || !!field.autoCode || ['编号', '单据状态', '创建时间', '更新时间', '发起人编号'].includes(key)
+  // readonly：派生展示字段（如 BOM 的「工艺路线名称」由编码决定），不允许手改
+  return !!field.computed || !!field.readonly || !!field.autoCode
+    || ['编号', '单据状态', '创建时间', '更新时间', '发起人编号'].includes(key)
     || priceLocked(key)
 }
 

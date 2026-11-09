@@ -713,6 +713,8 @@ function displayField(field, value) {
 }
 
 function fieldLocked(r) {
+  // readonly：派生展示字段（如 BOM 的「工艺路线名称」由编码决定），不允许手改
+  if (r.readonly) return true
   // 锭号：自动编码；仅勾选「是否手工修改单据编码」时草稿可改
   if (r.autoCode) return !(status.value === '草稿' && form['是否手工修改单据编码'])
   // 存货类别：创建后固定，不允许修改
