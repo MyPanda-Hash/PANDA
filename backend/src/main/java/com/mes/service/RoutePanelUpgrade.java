@@ -156,6 +156,18 @@ public class RoutePanelUpgrade {
                 tab.put("fields", fields);
                 changed = true;
             }
+            // 工序顺序：读路径由后端按加工顺序算好写进每行（1..N），这里登记成 computed 只读列，
+            // 让「哪道先做」在明细里看得见，且用户不能手改（顺序只由行序决定）。
+            if (findField(fields, "工序顺序") == null) {
+                Map<String, Object> seq = new LinkedHashMap<>();
+                seq.put("dataName", "工序顺序");
+                seq.put("dataType", "整数");
+                seq.put("computed", true);
+                seq.put("readonly", true);
+                fields.add(0, seq);
+                tab.put("fields", fields);
+                changed = true;
+            }
         }
         detail.put("tabs", tabs);
         config.put("detail", detail);
@@ -165,8 +177,8 @@ public class RoutePanelUpgrade {
     /**
      * 列表明细列：去掉已升为表头的三个字段与「加工顺序」。
      *
-     * <p>不补「道次」之类的派生列——工序先后由明细行序表达（表格自带行号），
-     * 补一个没有数据字段支撑的列只会渲染成空白。
+     * <p>明细区块没有行号列，只看工序编码看不出先后；因此补一列只读「工序顺序」，
+     * 值由读路径按加工顺序算好（见 PxService#normalizeRouteDetailForRead），不是可编辑字段。
      */
     private boolean hideProcessSequenceColumn(Map<String, Object> config) {
         Map<String, Object> metadata = map(config.get("metadata"));
@@ -178,17 +190,16 @@ public class RoutePanelUpgrade {
             for (Map<String, Object> gt : gridTabs) {
                 if (!(gt.get("columns") instanceof List<?> rawCols)) continue;
                 List<Object> cols = new ArrayList<>();
-                boolean dropped = false;
                 for (Object c : rawCols) {
                     String name = String.valueOf(c);
                     if (name.equals("工艺路线编码") || name.equals("工艺路线名称")
                             || name.equals("停用") || name.equals("加工顺序")) {
-                        dropped = true;
                         continue;
                     }
                     cols.add(c);
                 }
-                if (!dropped) continue;
+                // 「工序顺序」放第一列：工序先后是排产依据，必须一眼看到
+                if (!cols.contains("工序顺序")) cols.add(0, "工序顺序");
                 gt.put("columns", cols);
                 changed = true;
             }

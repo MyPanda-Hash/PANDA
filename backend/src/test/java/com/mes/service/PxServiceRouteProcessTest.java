@@ -241,6 +241,31 @@ class PxServiceRouteProcessTest {
         assertEquals("新名称", head.get("工艺路线名称"), "名称保留在表头");
     }
 
+    /** 列表接口：工序必须按加工顺序返回，并给出 1..N 的工序顺序（排产依据要看得到先后）。 */
+    @Test
+    void listReturnsRouteProcessesInSequenceOrder() throws Exception {
+        FormData route = doc("ROUTE", "ROUTE-009",
+                Map.of("工艺路线编码", "GY-009", "工艺路线名称", "乱序存储的路线"),
+                Map.of("processes", List.of(
+                        Map.of("工序编码", "PX007", "工序名称", "检验", "加工顺序", 3),
+                        Map.of("工序编码", "PX001", "工序名称", "下料", "加工顺序", 1),
+                        Map.of("工序编码", "PX002", "工序名称", "车削", "加工顺序", 2))));
+        when(formMapper.selectList(any())).thenReturn(List.of(route));
+
+        Map<String, Object> out = service.queryFormDataList("ROUTE", "", Map.of(), 1, 20);
+
+        List<?> list = (List<?>) out.get("list");
+        Map<?, ?> first = (Map<?, ?>) list.get(0);
+        Map<?, ?> detail = (Map<?, ?>) first.get("detail");
+        List<?> procs = (List<?>) detail.get("processes");
+        assertEquals(List.of("PX001", "PX002", "PX007"),
+                procs.stream().map((r) -> ((Map<?, ?>) r).get("工序编码")).toList(),
+                "工序必须按加工顺序升序返回，不能依赖存储时的数组顺序");
+        assertEquals(List.of(1, 2, 3),
+                procs.stream().map((r) -> ((Map<?, ?>) r).get("工序顺序")).toList(),
+                "每道工序要带 1..N 的工序顺序，界面据此显示先后");
+    }
+
     /** 已审核的加工单不能改工序（要先弃审）。 */
     @Test
     void rejectsRouteApplyOnApprovedOrder() throws Exception {

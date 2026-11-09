@@ -92,6 +92,12 @@ public class PxService implements PanelRuntimeService {
     private final com.mes.mapper.FinanceVoucherMapper financeVoucherMapper;
     private final AccountingService accountingService;
     private final ProcessTraceQueryService processTraceQueryService;
+    /**
+     * 计划分析：用可选注入而不是构造器参数 —— 已有 44 个测试用短构造器建 PxService，
+     * 加参数会全线破坏；缺这个 bean 时接口降级为「未实现」而非启动失败。
+     */
+    @Autowired(required = false)
+    private PlanAnalyzeQueryService planAnalyzeQueryService;
     private final ObjectMapper json = new ObjectMapper();
 
     /** 权限码 → 受控按钮名（矩阵过滤映射；未列出的按钮不受权限控制） */
@@ -1346,6 +1352,7 @@ public class PxService implements PanelRuntimeService {
         out.put("privilege", privilege);
         out.put("detail", fieldsOf(panelCode).get("detail"));
         Map<String, Object> detailData = parseData(fd.getDetailData());
+        if ("ROUTE".equals(panelCode)) normalizeRouteDetailForRead(detailData);
         if (hasCurrentStockField(detailData)) {
             refreshCurrentStock(detailData, reportQueryService.currentStockRows());
         }
@@ -1431,6 +1438,7 @@ public class PxService implements PanelRuntimeService {
                 refreshCurrentStock(detail, currentStock);
             }
             if ("INV".equals(panelCode)) fillInvRoute(detail);
+            if ("ROUTE".equals(panelCode)) normalizeRouteDetailForRead(detail);
             if (!detail.isEmpty()) head.put("detail", detail);
             flat.add(head);
         }
@@ -4903,6 +4911,27 @@ public class PxService implements PanelRuntimeService {
     }
 
     /**
+     * 工艺路线读路径：工序按「加工顺序」升序返回，并给每行写 1..N 的「工序顺序」。
+     *
+     * <p>写入时 {@link #normalizeRouteDetail} 已按行序重排过加工顺序，但历史数据、迁移数据
+     * 或手工改库都可能让数组顺序与加工顺序不一致。排产与工序汇报都依赖这个先后，
+     * 界面也要看得见，所以读出口统一再排一次，不能依赖存储时的数组顺序。
+     */
+    @SuppressWarnings("unchecked")
+    private void normalizeRouteDetailForRead(Map<String, Object> detail) {
+        if (detail == null || !(detail.get("processes") instanceof List<?> procs) || procs.isEmpty()) return;
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Object o : procs) {
+            if (o instanceof Map<?, ?> raw) rows.add((Map<String, Object>) raw);
+        }
+        if (rows.isEmpty()) return;
+        rows.sort(PROCESS_SEQ_ORDER);
+        int seq = 0;
+        for (Map<String, Object> row : rows) row.put("工序顺序", ++seq);
+        detail.put("processes", rows);
+    }
+
+    /**
      * 某条工艺路线的工序行，按加工顺序排序。
      *
      * <p>兼容两种存储形态（工艺路线 2026-11 改为主从结构：一条路线一张单据）：
@@ -7105,6 +7134,30 @@ public class PxService implements PanelRuntimeService {
      * 已审核单据重存时要把自己排除，否则自身旧版本会被重复计入。
      * 没有加工单号的直接领料不受此约束（不挂生产的零星领用）。
      */
+    /**
+     * 计划分析可选的销售订单：已审核且还有未排产数量。
+     * 计划分析面板的「选单」下拉用这个，避免把已全部排产的订单也列出来。
+     */
+    @Override
+    public List<Map<String, Object>> planAnalyzeCandidates() {
+        if (planAnalyzeQueryService == null) return List.of();
+        return planAnalyzeQueryService.candidateOrders();
+    }
+
+    /**
+     * 计划分析：一张销售订单 → 成品 / 物料缺口 / 工艺路线 / 风险 / 结论。
+     *
+     * <p>这是「主生产计划 + 物料需求运算 + 齐套分析 + 采购需求分析」四个面板的合并入口：
+     * 那四个是横向汇总，这里按单张订单纵向展开全链路。
+     */
+    @Override
+    public Map<String, Object> planAnalyze(String salesOrderNo) {
+        if (planAnalyzeQueryService == null) {
+            throw new UnsupportedOperationException("计划分析服务未装配");
+        }
+        return planAnalyzeQueryService.analyze(salesOrderNo);
+    }
+
     /**
      * 工单排产数据：按加工单 × 工序给出「可排产量」，并列出已有批次。
      *
