@@ -18,6 +18,7 @@
 | `docs-audit.mjs` | 当前文档的编码、结构、链接和导航检查 |
 | `architecture-audit.mjs` | 检查通用面板核心不反向依赖 MES/PLM 业务适配器 |
 | `action-support-audit.mjs` | 校验前端按钮动作支持表与后端 `PxService.callButton` 的 switch 分支一致（漂移即失败） |
+| `entry-audit.mjs` | 校验自定义页面与 [入口清单](../docs/frontend/面板入口清单.md) 互相覆盖、站内跳转目标都有路由（死链即失败） |
 | `docs-format.mjs` | 统一当前文档元信息和换行格式 |
 | `detect-jdk.bat` | 查找本机可用的 JDK 17+ |
 | `apache-maven-3.9.9/`、`settings.xml` | 固定 Maven 版本和镜像配置 |

@@ -478,7 +478,8 @@ public class QualityPanelRegistry {
         select.put("columns", List.of("单据编号", "单据日期", "生产车间", "加工单号",
                 "工序编码", "工序名称", "报工数量"));
         Map<String, Object> selects = selectConfigs("选工序汇报单", select);
-        List<Map<String, Object>> groups = voucherGroups(new ArrayList<>(selects.keySet()), "生成检验单");
+        List<Map<String, Object>> groups = withApprovalGroup(
+                voucherGroups(new ArrayList<>(selects.keySet()), "生成检验单"));
         return config("FIRST_INSPECT", "首件报检单", "单据", head,
                 List.of(tab("items", "明细", items, "报检数量")), groups, selects);
     }
@@ -490,6 +491,10 @@ public class QualityPanelRegistry {
                 field("计量单位", "文本", false), field("加工单号", "文本", false),
                 field("工序汇报单号", "文本", false),
                 field("工序编码", "文本", false), field("工序名称", "文本", false),
+                // 检验判定紧跟工序：这是这张单的结论，不能压在十几列之后滚动才看见
+                // （不预置默认值，质检员必须自己判，避免"审核即合格"）
+                verdictField(),
+                dispositionField(), field("处置数量", "小数", false), field("判定说明", "文本", false),
                 selectDefault("加工类型", "自制加工", "自制加工", "委外加工"),
                 field("报检数量", "小数", true),
                 selectDefault("检验方式", "全检", "全检", "抽检"),
@@ -502,7 +507,9 @@ public class QualityPanelRegistry {
                 computedField("累计不合格数量"), computedField("累计检验返工数量"),
                 reference("不合格原因", "REJECT", "不合格原因"),
                 defaultValue(field("数值公用自定义项1", "小数", false), 0),
-                field("板号", "文本", false), field("备注", "文本", false));
+                field("板号", "文本", false),
+                // 重新首检时回填原单号：反查得到"这行是返工后重检的"
+                field("原首检单号", "文本", false), field("备注", "文本", false));
         addSourceFieldsTo(out);
         return out;
     }
@@ -1038,6 +1045,35 @@ public class QualityPanelRegistry {
     private static Map<String, Object> date(String name) { return field(name, "日期", true); }
     private static Map<String, Object> bool(String name) { Map<String, Object> f = field(name, "是否", false); f.put("defaultValue", false); return f; }
     private static Map<String, Object> boolDefault(String name, boolean value) { return defaultValue(bool(name), value); }
+
+    /** 首件检验判定：合格 / 不合格 / 让步接收，无默认值（必须人判）。 */
+    private static Map<String, Object> verdictField() {
+        Map<String, Object> field = field("检验判定", "下拉框", true);
+        field.put("options", Arrays.asList("合格", "不合格", "让步接收"));
+        field.put("defaultValue", "");
+        return field;
+    }
+
+    /** 不合格处置：返工 / 返修 / 让步接收 / 报废，无默认值（人判后才选）。 */
+    private static Map<String, Object> dispositionField() {
+        Map<String, Object> field = field("处置方式", "下拉框", false);
+        field.put("options", Arrays.asList("返工", "返修", "让步接收", "报废"));
+        field.put("defaultValue", "");
+        return field;
+    }
+
+    /** 把「审核/弃审」组换成「审批」组：提交审批 → 审批通过/驳回，提交人与审批人分离留痕。 */
+    private static List<Map<String, Object>> withApprovalGroup(List<Map<String, Object>> groups) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> g : groups) {
+            if ("审核".equals(String.valueOf(g.get("name")))) {
+                out.add(group("审批", "提交审批", "审批通过", "审批驳回", "审批情况", "弃审"));
+            } else {
+                out.add(g);
+            }
+        }
+        return out;
+    }
 
     private static Map<String, Object> select(String name, String... options) {
         Map<String, Object> field = field(name, "下拉框", true); field.put("options", Arrays.asList(options));

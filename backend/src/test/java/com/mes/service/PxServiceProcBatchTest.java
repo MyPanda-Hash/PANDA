@@ -52,9 +52,18 @@ class PxServiceProcBatchTest {
     private PxService service;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         service = new PxService(panelMapper, formMapper, approvalMapper, reportQueryService,
                 new PanelActionRegistry(List.of()), null, null, stockTxnService);
+        org.mockito.Mockito.lenient().when(formMapper.selectList(any())).thenReturn(List.of(materialOut()));
+    }
+
+    /** 报工前置门：该加工单必须已有已审核材料出库。 */
+    private FormData materialOut() throws Exception {
+        return document("MATERIAL_OUT", "CL-1", "已审核",
+                Map.of("单据编号", "CL-1", "加工单号", "MO-1", "仓库", "原料仓"),
+                Map.of("items", List.of(Map.of("加工单号", "MO-1", "材料编码", "M-1",
+                        "材料名称", "铝锭", "数量", 100))));
     }
 
     private FormData document(String panel, String no, String status,
@@ -96,7 +105,7 @@ class PxServiceProcBatchTest {
                                         "班组", "车工班", "工人", "李强", "工序单位", "件"))));
     }
 
-    /** 首轮：没有历史汇报，默认按计划量报工，合格数默认等于报工数，并打当天批次。 */
+    /** 首轮：没有历史汇报也没有首检单 → 只报首件数量（首件是报工门），合格数默认等于报工数，并打当天批次。 */
     @Test
     void firstBatchDefaultsReportedAndQualified() throws Exception {
         PxService spied = spy(service);
@@ -115,8 +124,10 @@ class PxServiceProcBatchTest {
 
         String batch = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         assertEquals(batch, String.valueOf(head.get("批次号")), "表头批次号应为当天日期");
-        assertEquals(100.0, ((Number) first.get("报工数量")).doubleValue(), 0.001);
-        assertEquals(100.0, ((Number) first.get("合格数量")).doubleValue(), 0.001, "合格数默认等于报工数");
+        assertEquals(1.0, ((Number) first.get("报工数量")).doubleValue(), 0.001,
+                "首件未检只能报首件数量，首检通过后才整批报");
+        assertEquals(1.0, ((Number) first.get("合格数量")).doubleValue(), 0.001, "合格数默认等于报工数");
+        assertEquals(100.0, ((Number) first.get("可报工数量")).doubleValue(), 0.001, "可报工上限仍是整道余量");
         assertEquals(batch, String.valueOf(first.get("批次号")), "明细也要带批次号，便于追溯");
     }
 
@@ -128,6 +139,10 @@ class PxServiceProcBatchTest {
         when(panelMapper.selectOne(any())).thenReturn(config("PROCESS_REPORT"));
         when(formMapper.selectOne(any())).thenReturn(mo());
         when(formMapper.selectCount(any())).thenReturn(0L);
+        // 首检已通过：本道才允许按剩余量继续报工
+        when(formMapper.selectList(any())).thenReturn(List.of(materialOut(), document("FIRST_INSPECT", "SJ-1", "已审核",
+                Map.of("单据编号", "SJ-1", "加工单号", "MO-1"),
+                Map.of("items", List.of(Map.of("工序编码", "PX001", "工序名称", "下料", "报检数量", 1))))));
 
         spied.callButton("MANU_ORDER", "生成工序汇报单（自制汇报）", Map.of("编号", "MO-1"), Map.of());
 
@@ -139,6 +154,25 @@ class PxServiceProcBatchTest {
         assertEquals(60.0, ((Number) first.get("合格数量")).doubleValue(), 0.001);
         assertEquals(40.0, ((Number) first.get("累计汇报数量")).doubleValue(), 0.001);
         assertEquals(60.0, ((Number) first.get("可报工数量")).doubleValue(), 0.001);
+    }
+
+    /** 一道工序一张汇报单：两道都没报时只带第一道，不能把后面的工序一起塞进来。 */
+    @Test
+    void onlyCurrentProcessPerReport() throws Exception {
+        PxService spied = spy(service);
+        doReturn(Map.of()).when(spied).reportedQtyByProcess(anyString());
+        when(panelMapper.selectOne(any())).thenReturn(config("PROCESS_REPORT"));
+        when(formMapper.selectOne(any())).thenReturn(mo());
+        when(formMapper.selectCount(any())).thenReturn(0L);
+
+        spied.callButton("MANU_ORDER", "生成工序汇报单（自制汇报）", Map.of("编号", "MO-1"), Map.of());
+
+        FormData target = captureInserted();
+        Map<?, ?> detail = json.readValue(target.getDetailData(), Map.class);
+        List<?> items = (List<?>) detail.get("items");
+        assertEquals(1, items.size(), "一张汇报单只放当前这道工序");
+        Map<?, ?> first = (Map<?, ?>) items.get(0);
+        assertEquals("PX001", first.get("工序编码"), "轮到的应该是第一道工序");
     }
 
     /** 全部报完后不再产出新行。 */
@@ -177,9 +211,13 @@ class PxServiceProcBatchTest {
         assertEquals("合格", row.get("检验结果判定"));
     }
 
+    /** 首件报工会同时插一张首检单，这里只取工序汇报单那一张。 */
     private FormData captureInserted() {
         ArgumentCaptor<FormData> captor = ArgumentCaptor.forClass(FormData.class);
-        verify(formMapper).insert(captor.capture());
-        return captor.getValue();
+        verify(formMapper, org.mockito.Mockito.atLeastOnce()).insert(captor.capture());
+        for (FormData row : captor.getAllValues()) {
+            if ("PROCESS_REPORT".equals(row.getPanelCode())) return row;
+        }
+        return captor.getAllValues().get(0);
     }
 }

@@ -15,7 +15,7 @@
         <el-option v-for="w in warehouses" :key="w.code" :label="w.name" :value="w.name" />
       </el-select>
       <span class="fi-tip">
-        {{ tt('建议入库数量 = 计划数量 − 已入库数量，可以分批入库。') }}
+        {{ tt('建议入库数量 = 计划数量 − 已入库数量 − 报废数量，可以分批入库。') }}
       </span>
     </div>
 
@@ -43,6 +43,9 @@
       </el-table-column>
       <el-table-column :label="tt('已入库')" width="100" align="right">
         <template #default="{ row }">{{ fmt(row['已入库数量']) }}</template>
+      </el-table-column>
+      <el-table-column v-if="hasScrap" :label="tt('报废')" width="90" align="right">
+        <template #default="{ row }">{{ fmt(row['报废数量']) }}</template>
       </el-table-column>
       <el-table-column :label="tt('剩余入库')" width="100" align="right">
         <template #default="{ row }">{{ fmt(row['剩余入库数量']) }}</template>
@@ -93,6 +96,8 @@ const picked = ref([])
 const warehouse = ref('成品仓')
 const warehouses = ref([{ code: 'CK03', name: '成品仓' }])
 
+// 有首检判报废的加工单才显示「报废」列，避免正常单据多一列 0
+const hasScrap = computed(() => rows.value.some((r) => Number(r['报废数量']) > 0))
 const pickedCount = computed(() => picked.value.filter((r) => Number(r['入库数量']) > 0).length)
 const pickedQty = computed(() =>
   picked.value.reduce((sum, r) => sum + (Number(r['入库数量']) || 0), 0)

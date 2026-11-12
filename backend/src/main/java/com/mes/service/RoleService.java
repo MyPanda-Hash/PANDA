@@ -35,6 +35,7 @@ public class RoleService {
         m.put("view", "查看");
         m.put("query", "查询");
         m.put("add", "新增");
+        m.put("generate", "生成");
         m.put("edit", "修改");
         m.put("delete", "删除");
         m.put("export", "导出");

@@ -69,6 +69,10 @@ public class PxService implements PanelRuntimeService {
     @org.springframework.beans.factory.annotation.Value("${mes.invoice.auto-issue:false}")
     private boolean invoiceAutoIssue;
 
+    /** 报工是否要求该加工单已有已审核材料出库（mes.production.require-material-issue，默认开）。 */
+    @org.springframework.beans.factory.annotation.Value("${mes.production.require-material-issue:true}")
+    private boolean requireMaterialIssue = true;
+
     /** 开票方信息（application.yml 的 mes.company.*，环境变量可覆盖）。单测环境下为空。 */
     @org.springframework.beans.factory.annotation.Value("${mes.company.name:}")
     private String companyName;
@@ -110,10 +114,12 @@ public class PxService implements PanelRuntimeService {
             "print", List.of("直接打印", "打印", "预览", "打印模板设置", "打印情况", "保存打印"),
             "audit", List.of("提交审批", "审批通过", "审批驳回", "驳回审批", "审批情况", "弃审", "审核"));
 
-    /** 按钮名 → 权限码（含「生成XX」生单按钮 → add） */
+    /** 按钮名 → 权限码（「生成XX」生单按钮走独立 generate 权限，不再共用 add） */
     private static String permOfButton(String buttonName) {
         if (buttonName == null || buttonName.isEmpty()) return null;
-        if (buttonName.startsWith("生成")) return "add";
+        // 生单权限独立：能生下游单据 ≠ 能在本面板新建单据（此前两者共用 add，
+        // 导致仓管为了生成领料单必须拿到「新增加工单」的权限）
+        if (buttonName.startsWith("生成")) return "generate";
         for (Map.Entry<String, List<String>> e : ACTION_BUTTONS.entrySet()) {
             if (e.getValue().contains(buttonName)) return e.getKey();
         }
@@ -207,6 +213,10 @@ public class PxService implements PanelRuntimeService {
                             Map.of("from", "存货名称", "to", "产品名称"),
                             Map.of("from", "规格型号", "to", "规格型号"),
                             Map.of("from", "计量单位", "to", "生产单位")));
+            // 产成品行只能填产成品/半成品：原材料、辅助材料、包装物走材料明细
+            restrictProductsToOutputs(config);
+            // 适用BOM 的下拉按实际物料清单动态生成（配置里写死的是 BOM-001..003，新增 BOM 看不到）
+            injectBomOptions(config);
         } else if ("SO_ORDER".equals(panelCode)) {
             upgradeDetailReference(config, "items", "存货编码",
                     List.of("存货编码", "存货名称", "规格型号", "品牌", "计量单位", "参考成本", "停用"),
@@ -685,6 +695,49 @@ public class PxService implements PanelRuntimeService {
         }
     }
 
+    /** 产成品明细.产品编码 的参照只保留产成品/半成品（材料明细另有一套参照）。 */
+    @SuppressWarnings("unchecked")
+    private void restrictProductsToOutputs(Map<String, Object> config) {
+        Map<String, Object> detail = (Map<String, Object>) config.get("detail");
+        if (detail == null || !(detail.get("tabs") instanceof List<?> tabs)) return;
+        for (Object tabObj : tabs) {
+            if (!(tabObj instanceof Map<?, ?> rawTab)) continue;
+            Map<String, Object> tab = (Map<String, Object>) rawTab;
+            if (!"products".equals(String.valueOf(tab.get("key")))) continue;
+            if (!(tab.get("fields") instanceof List<?> fields)) continue;
+            for (Object fieldObj : fields) {
+                if (!(fieldObj instanceof Map<?, ?> rawField)) continue;
+                Map<String, Object> field = (Map<String, Object>) rawField;
+                if (!"产品编码".equals(String.valueOf(field.get("dataName")))) continue;
+                field.put("filter", Map.of("所属类别", List.of("产成品", "半成品"), "停用", false));
+            }
+        }
+    }
+
+    /** 适用BOM 下拉：按现有物料清单动态生成选项，避免写死列表与真实 BOM 脱节。 */
+    @SuppressWarnings("unchecked")
+    private void injectBomOptions(Map<String, Object> config) {
+        List<String> bomNos = new ArrayList<>();
+        for (FormData bom : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "BOM").orderByAsc(FormData::getFormNo))) {
+            if (!EFFECTIVE_STATUSES.contains(bom.getStatus())) continue;
+            bomNos.add(bom.getFormNo());
+        }
+        if (bomNos.isEmpty()) return;
+        Map<String, Object> detail = (Map<String, Object>) config.get("detail");
+        if (detail == null || !(detail.get("tabs") instanceof List<?> tabs)) return;
+        for (Object tabObj : tabs) {
+            if (!(tabObj instanceof Map<?, ?> rawTab)) continue;
+            Map<String, Object> tab = (Map<String, Object>) rawTab;
+            if (!(tab.get("fields") instanceof List<?> fields)) continue;
+            for (Object fieldObj : fields) {
+                if (!(fieldObj instanceof Map<?, ?> rawField)) continue;
+                Map<String, Object> field = (Map<String, Object>) rawField;
+                if ("适用BOM".equals(String.valueOf(field.get("dataName")))) field.put("options", bomNos);
+            }
+        }
+    }
+
     public Map<String, Object> getPanelConfig(String panelCode) {
         return getPanelConfig(panelCode, null);
     }
@@ -707,12 +760,17 @@ public class PxService implements PanelRuntimeService {
         final String name;
         final String alias;
         final boolean visible;
-        ColumnPref(String name, String alias, boolean visible) {
+        final Integer width;
+        ColumnPref(String name, String alias, boolean visible, Integer width) {
             this.name = name;
             this.alias = alias;
             this.visible = visible;
+            this.width = width;
         }
     }
+
+    /** 全公司共用的列定制行（owner=''）；个人行（legacy）优先，没有才用共用行 */
+    private static final String SHARED_OWNER = "";
 
     /** 列名提取：列配置兼容字符串与对象（dataName/name/label）两种形态 */
     private static String columnNameOf(Object col) {
@@ -737,8 +795,14 @@ public class PxService implements PanelRuntimeService {
         List<Map<String, Object>> rows;
         try {
             rows = jdbcTemplate.queryForList(
-                    "SELECT col_name, seq, alias, visible FROM px_column_pref WHERE panel_code = ? AND owner = ? ORDER BY seq, id",
+                    "SELECT col_name, seq, alias, visible, width FROM px_column_pref WHERE panel_code = ? AND owner = ? ORDER BY seq, id",
                     panelCode, userName);
+            if (rows.isEmpty()) {
+                // 没有个人定制就用全公司共用的一套（字段管理里保存的那份）
+                rows = jdbcTemplate.queryForList(
+                        "SELECT col_name, seq, alias, visible, width FROM px_column_pref WHERE panel_code = ? AND owner = ? ORDER BY seq, id",
+                        panelCode, SHARED_OWNER);
+            }
         } catch (Exception e) {
             return; // 表未建/库未迁移：保持配置默认
         }
@@ -752,9 +816,12 @@ public class PxService implements PanelRuntimeService {
         for (Map<String, Object> r : rows) {
             String name = String.valueOf(r.get("col_name"));
             Object alias = r.get("alias");
+            Object width = r.get("width");
+            Integer w = width == null ? null : (int) Math.round(num(width));
             prefs.add(new ColumnPref(name,
                     alias == null ? "" : String.valueOf(alias),
-                    visibleFlag(r.get("visible"))));
+                    visibleFlag(r.get("visible")),
+                    w == null || w <= 0 ? null : w));
         }
 
         // 应用到每个 tablePage 的 gridTabs（明细页签与其同源汇总页签都应用）
@@ -781,7 +848,38 @@ public class PxService implements PanelRuntimeService {
                     if (prefs.stream().anyMatch(p -> name.equals(p.name) && !p.visible)) continue;
                     reordered.add(col);
                 }
+                applyWidthAndOrder(reordered, prefs);
                 ((Map<String, Object>) tab).put("columns", reordered);
+            }
+        }
+
+        // 明细页签字段：同样按共用顺序/宽度/显隐排一遍（表单里的明细表与列表同源）
+        Map<String, Object> detailConf = (Map<String, Object>) cfg.get("detail");
+        if (detailConf != null && detailConf.get("tabs") instanceof List<?> detailTabs) {
+            Map<?, ?> detailMap = detailConf;
+            for (Object tabObj : detailTabs) {
+                if (!(tabObj instanceof Map<?, ?>)) continue;
+                @SuppressWarnings("unchecked")
+                Map<String, Object> tab = (Map<String, Object>) tabObj;
+                if (!(tab.get("fields") instanceof List<?> fields)) continue;
+                List<Object> reordered = new ArrayList<>();
+                Set<String> seen = new HashSet<>();
+                for (ColumnPref p : prefs) {
+                    if (!p.visible) continue;
+                    Object field = findColumn(fields, p.name);
+                    if (field != null) {
+                        reordered.add(field);
+                        seen.add(p.name);
+                    }
+                }
+                for (Object field : fields) {
+                    String name = columnNameOf(field);
+                    if (name == null || seen.contains(name)) continue;
+                    if (prefs.stream().anyMatch(p -> name.equals(p.name) && !p.visible)) continue;
+                    reordered.add(field);
+                }
+                applyWidthAndOrder(reordered, prefs);
+                tab.put("fields", reordered);
             }
         }
 
@@ -794,10 +892,27 @@ public class PxService implements PanelRuntimeService {
             m.put("name", p.name);
             m.put("alias", p.alias);
             m.put("visible", p.visible);
+            if (p.width != null) m.put("width", p.width);
             columnPrefs.add(m);
         }
         metadata.put("columnAliases", aliases);
         metadata.put("columnPrefs", columnPrefs);
+    }
+
+    /** 把配置里的列宽改成定制值（只对对象形态的列生效，字符串列保持原样） */
+    @SuppressWarnings("unchecked")
+    private static void applyWidthAndOrder(List<Object> columns, List<ColumnPref> prefs) {
+        for (Object col : columns) {
+            if (!(col instanceof Map<?, ?>)) continue;
+            Map<String, Object> map = (Map<String, Object>) col;
+            String name = columnNameOf(map);
+            if (name == null) continue;
+            for (ColumnPref p : prefs) {
+                if (!name.equals(p.name) || p.width == null) continue;
+                map.put("width", p.width);
+                break;
+            }
+        }
     }
 
     private static Object findColumn(List<?> cols, String name) {
@@ -807,13 +922,18 @@ public class PxService implements PanelRuntimeService {
         return null;
     }
 
-    /** 保存列定制（空数组=恢复默认：删除该用户该面板全部行） */
+    /**
+     * 保存字段布局（顺序/宽度/显隐/别名）：写入**全公司共用**的一套（owner=''）。
+     *
+     * <p>这是权限功能：需要该面板的「调整」权限（adjust，管理员默认有），普通用户只能看。
+     * 空数组 = 恢复默认（删除该面板共用行）。
+     */
     @Transactional
     public void saveColumnPrefs(String panelCode, String userName, List<Map<String, Object>> columns) {
         if (panelCode == null || panelCode.isBlank()) throw new IllegalArgumentException("panelCode 不能为空");
         if (userName == null || userName.isBlank()) throw new IllegalArgumentException("未登录用户不能保存表格调整");
-        requirePanelPermission(panelCode, "view", userName);
-        jdbcTemplate.update("DELETE FROM px_column_pref WHERE panel_code = ? AND owner = ?", panelCode, userName);
+        requirePanelPermission(panelCode, "adjust", userName);
+        jdbcTemplate.update("DELETE FROM px_column_pref WHERE panel_code = ? AND owner = ?", panelCode, SHARED_OWNER);
         if (columns == null || columns.isEmpty()) return;
         Set<String> aliases = new HashSet<>();
         int seq = 10;
@@ -824,13 +944,104 @@ public class PxService implements PanelRuntimeService {
             if (!alias.isEmpty() && !aliases.add(alias)) {
                 throw new IllegalArgumentException("栏名别名重复：" + alias);
             }
+            Object widthObj = c.get("width");
+            Integer width = widthObj == null || String.valueOf(widthObj).isBlank()
+                    ? null : (int) Math.round(num(widthObj));
+            if (width != null && (width < 40 || width > 800)) {
+                throw new IllegalArgumentException("列宽 " + width + " 超出范围（40-800）");
+            }
             jdbcTemplate.update(
-                    "INSERT INTO px_column_pref (panel_code, owner, col_name, seq, alias, visible, update_by) "
-                            + "VALUES (?, ?, ?, ?, ?, ?, ?) "
-                            + "ON DUPLICATE KEY UPDATE seq = VALUES(seq), alias = VALUES(alias), visible = VALUES(visible), update_by = VALUES(update_by)",
-                    panelCode, userName, name, seq, alias, visibleFlag(c.get("visible")) ? 1 : 0, userName);
+                    "INSERT INTO px_column_pref (panel_code, owner, col_name, seq, alias, width, visible, update_by) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
+                            + "ON DUPLICATE KEY UPDATE seq = VALUES(seq), alias = VALUES(alias), width = VALUES(width), "
+                            + "visible = VALUES(visible), update_by = VALUES(update_by)",
+                    panelCode, SHARED_OWNER, name, seq, alias, width,
+                    visibleFlag(c.get("visible")) ? 1 : 0, userName);
             seq += 10;
         }
+    }
+
+    /**
+     * 字段布局：表头 + 各明细页签的全部字段，带当前的顺序 / 列宽 / 显隐。
+     *
+     * <p>字段管理弹窗用它初始化，顺序按共用布局（owner=''）优先。
+     */
+    public List<Map<String, Object>> fieldLayout(String panelCode) {
+        Map<String, Object> cfg = loadConfig(panelCode);
+        Map<String, Map<String, Object>> prefByName = new LinkedHashMap<>();
+        try {
+            for (Map<String, Object> r : jdbcTemplate.queryForList(
+                    "SELECT col_name, seq, width, visible FROM px_column_pref WHERE panel_code = ? AND owner = ?",
+                    panelCode, SHARED_OWNER)) {
+                prefByName.put(String.valueOf(r.get("col_name")), r);
+            }
+        } catch (Exception e) {
+            // 表未迁移：按默认布局
+        }
+        List<Map<String, Object>> out = new ArrayList<>();
+        int seq = 0;
+        Map<String, Object> schema = cfg.get("dataSchema") instanceof Map<?, ?> sm ? (Map<String, Object>) sm : Map.of();
+        if (schema.get("fields") instanceof List<?> fields) {
+            for (Object f : fields) {
+                if (f instanceof Map<?, ?> fm) {
+                    seq = 10;
+                    out.add(layoutRow("header", "", castRow(fm), prefByName, out.size() * 10 + seq));
+                }
+            }
+        }
+        Map<String, Object> detail = cfg.get("detail") instanceof Map<?, ?> dm ? (Map<String, Object>) dm : Map.of();
+        if (detail.get("tabs") instanceof List<?> tabs) {
+            for (Object t : tabs) {
+                if (!(t instanceof Map<?, ?> tm)) continue;
+                Map<String, Object> tab = castRow(tm);
+                String tabKey = str(tab.get("key"));
+                if (tab.get("fields") instanceof List<?> fields) {
+                    int i = 0;
+                    for (Object f : fields) {
+                        if (f instanceof Map<?, ?> fm) {
+                            out.add(layoutRow("detail", tabKey, castRow(fm), prefByName, i * 10));
+                            i++;
+                        }
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
+    private Map<String, Object> layoutRow(String scope, String tabKey, Map<String, Object> field,
+                                          Map<String, Map<String, Object>> prefByName, int defaultSeq) {
+        String name = str(field.get("dataName"));
+        Map<String, Object> pref = prefByName.get(name);
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("位置", "header".equals(scope) ? "header" : tabKey);
+        row.put("字段名", name);
+        row.put("类型", field.getOrDefault("dataType", "文本"));
+        row.put("必填", Boolean.TRUE.equals(field.get("isRequired")));
+        row.put("序号", pref == null ? defaultSeq : (int) Math.round(num(pref.get("seq"))));
+        row.put("列宽", pref == null ? field.get("width") : pref.get("width"));
+        row.put("显示", pref == null || visibleFlag(pref.get("visible")));
+        return row;
+    }
+
+    /** 保存字段布局（顺序/列宽/显隐）：转成共用列定制保存。 */
+    @Transactional
+    public void saveFieldLayout(String panelCode, String userName, List<Map<String, Object>> rows) {
+        List<Map<String, Object>> columns = new ArrayList<>();
+        if (rows != null) {
+            List<Map<String, Object>> sorted = new ArrayList<>(rows);
+            sorted.sort(Comparator.comparingDouble(r -> num(r.get("序号"))));
+            for (Map<String, Object> r : sorted) {
+                String name = str(r.get("字段名"));
+                if (name.isBlank()) continue;
+                Map<String, Object> col = new LinkedHashMap<>();
+                col.put("name", name);
+                col.put("width", r.get("列宽"));
+                col.put("visible", r.get("显示"));
+                columns.add(col);
+            }
+        }
+        saveColumnPrefs(panelCode, userName, columns);
     }
 
     // ---------- 自定义字段（面板自助加字段：登记元数据 → 读出口合并） ----------
@@ -1232,6 +1443,10 @@ public class PxService implements PanelRuntimeService {
             m.put("isNotNull", Boolean.TRUE.equals(f.get("isRequired")));
             m.put("defaultValue", f.getOrDefault("defaultValue", ""));
             if (f.containsKey("options")) m.put("options", f.get("options"));
+            // label：只改显示名不动数据键（如 MANU_ORDER 的 锭号/批号/合同号 沿用旧键兼容历史数据）
+            if (f.get("label") != null && !String.valueOf(f.get("label")).isBlank()) {
+                m.put("label", String.valueOf(f.get("label")));
+            }
             // readonly：派生展示字段（如 BOM「工艺路线名称」由编码决定），前端据此禁用手改
             if (Boolean.TRUE.equals(f.get("readonly"))) m.put("readonly", true);
             // 参照字段信息（2026-08-20 补：对齐前端 mock buildMeta 的 ref 结构——弹窗拉取面板数据勾选导入）
@@ -1432,6 +1647,9 @@ public class PxService implements PanelRuntimeService {
         List<Map<String, Object>> currentStock = null;
         // BOM 表头只存路线编码，名称按编码派生（每请求建一次索引，避免逐行扫 ROUTE）
         Map<String, String> routeNames = "BOM".equals(panelCode) ? routeNameIndex() : Map.of();
+        // 成品报检单的侧栏要显示下游产成品入库单的审批状态：按加工单号建一次索引（不要逐行查）
+        Map<String, Map<String, String>> downstreamOfMo = "FINISH_INSPECT".equals(panelCode)
+                ? finishInByManuOrder() : Map.of();
         for (FormData fd : all) {
             Map<String, Object> head = parseData(fd.getData());
             head.put("编号", fd.getFormNo());
@@ -1447,6 +1665,18 @@ public class PxService implements PanelRuntimeService {
             if ("INV".equals(panelCode)) fillInvRoute(detail);
             if ("ROUTE".equals(panelCode)) normalizeRouteDetailForRead(detail);
             if ("BOM".equals(panelCode)) head.put("工艺路线名称", routeNameOf(head, routeNames));
+            // 成品报检单：带上同一张加工单上的产成品入库单，侧栏直接看得出入库审批到哪一步
+            if (!downstreamOfMo.isEmpty()) {
+                String dsMo = str(head.get("加工单号"));
+                if (dsMo.isBlank()) dsMo = str(head.get("来源单号"));
+                Map<String, String> ds = downstreamOfMo.get(dsMo);
+                if (ds != null) {
+                    head.put("下游单据", ds.get("单号"));
+                    head.put("下游状态", ds.get("状态"));
+                }
+                // 侧栏/表头筛选用的桶：未转入库单 / 入库单审批中 / 已审批 / 已驳回
+                head.put("入库单状态", issueBucketOf(ds == null ? "" : ds.get("状态")));
+            }
             if (!detail.isEmpty()) head.put("detail", detail);
             flat.add(head);
         }
@@ -1458,6 +1688,14 @@ public class PxService implements PanelRuntimeService {
                 for (Map.Entry<String, Object> e : condition.entrySet()) {
                     Object v = e.getValue();
                     if (v == null || "".equals(String.valueOf(v))) continue;
+                    // 下游桶字段（入库单状态）：按桶精确匹配，「转入库单」= 除未转以外的全部
+                    if ("入库单状态".equals(e.getKey())) {
+                        if (!matchIssueBucket(str(row.get("入库单状态")), String.valueOf(v).trim())) {
+                            hit = false;
+                            break;
+                        }
+                        continue;
+                    }
                     Object rv = row.get(e.getKey());
                     // 缺键（null）：该行不匹配条件（修复：缺 单据日期/单据编号 的行不再被查询条件漏过）
                     if (rv == null) { hit = false; break; }
@@ -1480,6 +1718,84 @@ public class PxService implements PanelRuntimeService {
         out.put("totalSize", rows.size());
         out.put("list", rows.subList(from, to));
         return out;
+    }
+
+    /** 下游入库单状态 → 筛选桶。 */
+    private String issueBucketOf(String downstreamState) {
+        switch (downstreamState == null ? "" : downstreamState) {
+            case "待审批": return "入库单审批中";
+            case "已审批": return "入库单已审批";
+            case "已驳回": return "入库单已驳回";
+            case "": return "未转入库单";
+            default: return "入库单草稿";
+        }
+    }
+
+    /** 表头筛选「入库单状态」的匹配规则：转入库单 = 除未转以外的全部；其余按桶相等。 */
+    private boolean matchIssueBucket(String bucket, String wanted) {
+        String value = bucket == null || bucket.isBlank() ? "未转入库单" : bucket;
+        if ("转入库单".equals(wanted)) return !"未转入库单".equals(value);
+        return wanted.equals(value);
+    }
+
+    /**
+     * 成品报检单 → 下游产成品入库单：按【加工单号】建索引。
+     *
+     * <p>入库单是「加工单 → 入库单」生成的，报检单与入库单之间只共享加工单号，所以按加工单号对齐。
+     * 一张加工单可能分批入库（多张入库单），取最需要处理的那张：待审批 &gt; 已驳回 &gt; 草稿 &gt; 已审批。
+     */
+    private Map<String, Map<String, String>> finishInByManuOrder() {
+        Map<String, String> lastAction = new LinkedHashMap<>();
+        for (FormApproval rec : approvalMapper.selectList(new LambdaQueryWrapper<FormApproval>()
+                .eq(FormApproval::getPanelCode, "FINISH_IN").orderByAsc(FormApproval::getId))) {
+            lastAction.put(rec.getFormNo(), rec.getAction());
+        }
+        Map<String, Map<String, String>> out = new LinkedHashMap<>();
+        Map<String, Integer> rankOf = new LinkedHashMap<>();
+        for (FormData fd : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "FINISH_IN").orderByDesc(FormData::getId))) {
+            if ("作废".equals(fd.getStatus()) || "已中止".equals(fd.getStatus())) continue;
+            Map<String, Object> head;
+            try {
+                head = parseData(fd.getData());
+            } catch (Exception e) {
+                continue;
+            }
+            String mo = str(head.get("加工单号"));
+            if (mo.isBlank()) mo = str(head.get("来源单号"));
+            if (mo.isBlank()) continue;
+            String text = downstreamStateText(fd.getStatus(), lastAction.get(fd.getFormNo()));
+            if (text.isEmpty()) continue;
+            int rank = downstreamRank(text);
+            Integer prev = rankOf.get(mo);
+            if (prev != null && prev >= rank) continue;
+            rankOf.put(mo, rank);
+            Map<String, String> value = new LinkedHashMap<>();
+            value.put("单号", fd.getFormNo());
+            value.put("状态", text);
+            out.put(mo, value);
+        }
+        return out;
+    }
+
+    /** 下游单据状态文案：待审批 / 已审批 / 已驳回（草稿且最新审批是驳回）/ 草稿。 */
+    private String downstreamStateText(String status, String lastAction) {
+        switch (status == null ? "" : status) {
+            case "审批中": return "待审批";
+            case "已审核": return "已审批";
+            case "草稿": return "REJECT".equals(lastAction) ? "已驳回" : "草稿";
+            default: return "";
+        }
+    }
+
+    private int downstreamRank(String text) {
+        switch (text == null ? "" : text) {
+            case "待审批": return 4;
+            case "已驳回": return 3;
+            case "草稿": return 2;
+            case "已审批": return 1;
+            default: return 0;
+        }
     }
 
     /**
@@ -1745,15 +2061,22 @@ public class PxService implements PanelRuntimeService {
                 return changeStatus(panelCode, formData, "手工完工");
             case "中止":
                 return changeStatus(panelCode, formData, "中止");
+            case "中止（释放未执行量）":   // 排产批次按产能调整：没做的量放回可排产量，可重新排
+                return releaseBatchRemain(panelCode, formData);
             case "整单中止":
                 return changeStatus(panelCode, formData, "中止");
             case "取消中止":
                 return changeStatus(panelCode, formData, "取消中止");
             case "生成生产加工单":   // 推式生单：销售订单 → 生产加工单（对齐真实 T+「生单-生成生产加工单」）
                 return createMoFromSo(panelCode, formData, buttonParam);
+            case "按产成品重算材料":  // 产成品数量变了：材料明细按 BOM 重新展开
+                return recomputeMaterials(panelCode, formData);
             case "选工艺路线":       // 手工建单：按路线整体替换工序明细
-                return applyRouteProcesses(panelCode, formData);
-            case "生成工序汇报单（自制汇报）":   // 推式生单：生产加工单 → 工序汇报单（拉取加工单工序明细）
+                // 带 items 的是「按产品逐个选」（一张加工单可能同时生产多个产品）
+                return formData != null && formData.get("items") != null
+                        ? applyProductRoutes(panelCode, formData)
+                        : applyRouteProcesses(panelCode, formData);
+            case "生成工序汇报单（自制汇报）":   // 推荐入口已改为「工序报工」工作台；已排批次时这里会拒绝
                 return createProcReportFromMo(panelCode, formData);
             case "生成采购订单":       // 推式生单：请购单 → 采购订单
                 if (!"PU_REQ".equals(panelCode)) {
@@ -1800,10 +2123,22 @@ public class PxService implements PanelRuntimeService {
                 out.put("提示", kr.message());
                 return out;
             }
-            case "生成产成品入库单":   // 推式生单：生产加工单 → 产成品入库单
+            case "生成领料申请单": {  // 推式生单：生产加工单 → 领料申请单（材料明细按剩余领用量）
+                return createMaterialReqFromMo(panelCode, formData);
+            }
+            case "倒冲差异调整":  // 实际消耗 ≠ 定额消耗时：多耗补扣、少耗回冲
+                return createBackflushVarianceAdjustment(panelCode, formData);
+            case "生成返工生产加工单（按累计报废入库数量）":  // 返工：数量取首检判报废的处置数量
+                return createReworkOrder(panelCode, formData, "返工生产");
+            case "生成补投生产加工单（按累计报废入库数量）":  // 补投：同样取报废数量，补齐订单
+                return createReworkOrder(panelCode, formData, "补投生产");
+            case "生成成品报检单": {  // 推式生单：生产加工单 → 成品报检单（全部工序报工完成才行）
+                return createFinishInspectFromMo(panelCode, formData);
+            }
+            case "生成产成品入库单":   // 推式生单：生产加工单/成品报检单 → 产成品入库单
                 return "INSPECTION".equals(panelCode) || "PROCESS_INSPECTION".equals(panelCode)
                         ? createInventoryInFromInspection(panelCode, formData, "FINISH_IN", buttonParam)
-                        : createFinishInFromMo(panelCode, formData, buttonParam);
+                        : createFinishInFromMo(finishInSourcePanel(panelCode, formData), finishInFormData(panelCode, formData), buttonParam);
             case "生成检验单":
                 return createInspectionFromReport(panelCode, formData);
             case "生成材料出库单":     // 推式生单：领料申请单/生产加工单/调拨单 → 材料出库单
@@ -2219,13 +2554,16 @@ public class PxService implements PanelRuntimeService {
         List<Map<String, Object>> products = dm.get("products") instanceof List
                 ? (List<Map<String, Object>>) dm.get("products") : new ArrayList<>();
         List<Map<String, Object>> rows = new ArrayList<>();
+        Map<String, Double> scrappedByProduct = scrappedQtyByProduct(String.valueOf(moNo));
         for (Map<String, Object> p : products) {
             String code = String.valueOf(p.getOrDefault("产品编码", "")).trim();
             String name = String.valueOf(p.getOrDefault("产品名称", "")).trim();
             if (code.isEmpty() && name.isEmpty()) continue;
             double plan = num(p.getOrDefault("数量", 0));
             double received = num(p.getOrDefault("累计入库数量", 0));
-            double remaining = Math.max(0, round2(plan - received));
+            // 首检判报废的数量不能再入成品仓，直接从可入库量里扣掉
+            double scrapped = scrappedByProduct.getOrDefault(code, 0.0);
+            double remaining = Math.max(0, round2(plan - received - scrapped));
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("产品编码", code);
             row.put("产品名称", name);
@@ -2233,6 +2571,7 @@ public class PxService implements PanelRuntimeService {
             row.put("计量单位", p.getOrDefault("生产单位", "件"));
             row.put("计划数量", plan);
             row.put("已入库数量", round2(received));
+            row.put("报废数量", round2(scrapped));
             row.put("剩余入库数量", remaining);
             row.put("建议入库数量", remaining);
             row.put("是否完成", remaining <= 0);
@@ -2278,11 +2617,38 @@ public class PxService implements PanelRuntimeService {
             row.put("已下单生产数量", round2(ordered));
             row.put("本行可满足数量", round2(covered));
             row.put("建议生产数量", suggest);
+            // 可生产上限 = 需求 − 已下单生产：库存够也能按订单数量预生产，但不超过订单量
+            row.put("可生产上限", Math.max(0, round2(demand - round2(ordered))));
             row.put("是否不足", suggest > 0);
             row.put("仓库", SALE_OUT_WAREHOUSE);
             rows.add(row);
         }
         return rows;
+    }
+
+    /**
+     * 投产数量不能超过订单还没投产的量：库存够的时候允许预生产，
+     * 但预生产也是「按订单生产」，不能凭空多投。
+     */
+    private void assertProduceQtyWithinOrder(List<Map<String, Object>> orderItems,
+                                             List<Map<String, Object>> picked) {
+        Map<String, Double> ordered = new LinkedHashMap<>();
+        for (Map<String, Object> it : orderItems) {
+            String code = String.valueOf(it.getOrDefault("存货编码", "")).trim();
+            if (code.isEmpty()) continue;
+            ordered.merge(code, num(it.getOrDefault("数量", 0)), Double::sum);
+        }
+        for (Map<String, Object> row : picked) {
+            String code = String.valueOf(row.getOrDefault("存货编码", "")).trim();
+            if (code.isEmpty()) continue;
+            double qty = num(row.get("数量"));
+            double cap = ordered.getOrDefault(code, 0.0);
+            if (qty > cap + 0.000001) {
+                throw new IllegalStateException("第 " + code + " " + row.getOrDefault("存货名称", "")
+                        + " 生产数量 " + round2(qty) + " 超过订单数量 " + round2(cap)
+                        + "，预生产也不能超过订单量");
+            }
+        }
     }
 
     /**
@@ -2357,7 +2723,14 @@ public class PxService implements PanelRuntimeService {
         Object itemsObj = detailMap.get("items");
         List<Map<String, Object>> items = itemsObj instanceof List ? (List<Map<String, Object>>) itemsObj : new ArrayList<>();
 
-        String newNo = generateFormNo("MANU_ORDER", head);
+        // 排产生成的加工单号 = 销售订单号-行号；普通生单仍按通用编号规则
+        String forcedNo = buttonParam == null ? ""
+                : String.valueOf(buttonParam.getOrDefault("加工单号", "")).trim();
+        String newNo = forcedNo.isEmpty() ? generateFormNo("MANU_ORDER", head) : forcedNo;
+        if (!forcedNo.isEmpty() && formMapper.selectCount(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getFormNo, forcedNo)) > 0) {
+            throw new IllegalStateException("加工单号已存在：" + forcedNo);
+        }
         Map<String, Object> moData = new HashMap<>();
         moData.put("合同号", head.getOrDefault("单据日期", ""));
         // 锭号=单据编号：审批面板草稿不预填，提交审核时自动填写（ensureAuditStamp）
@@ -2381,8 +2754,24 @@ public class PxService implements PanelRuntimeService {
         moData.put("外部单据号", "");
         moData.put("负责人", head.getOrDefault("业务员", ""));
         moData.put("启用领料申请", false);
+        moData.put("领料方式", "一次性领料");
         moData.put("对方仓库", "");
 
+        // 排产模式（销售订单 → 排产 → 加工单）：buttonParam 带「行号」，一次只投产该订单行。
+        // 靠行号而不是存货编码定位：同一产品在订单里可以出现多行，编码会撞。
+        Integer planLineNo = planLineNoOf(buttonParam);
+        if (planLineNo != null) {
+            if (planLineNo < 1 || planLineNo > items.size()) {
+                throw new IllegalStateException("销售订单没有第 " + planLineNo + " 行");
+            }
+            Map<String, Object> picked = new HashMap<>(items.get(planLineNo - 1));
+            Object qtyObj = buttonParam.get("数量");
+            picked.put("数量", qtyObj == null ? picked.getOrDefault("数量", 0) : num(qtyObj));
+            assertProduceQtyWithinOrder(items, List.of(picked));
+            items = new ArrayList<>(List.of(picked));
+            // 单号带行号，加工单也要记住自己对应订单第几行（再次排产时据此算可排数量）
+            moData.put(SaleOrderPlanRules.LINE_FIELD, planLineNo);
+        }
         // 生单预览弹窗勾选的结果：只投产被勾选且数量 > 0 的行，数量以用户填的为准，
         // 避免"有货的也一起投产"造成过度生产。
         Map<String, Double> selectedQty = selectedLineQty(buttonParam);
@@ -2399,6 +2788,7 @@ public class PxService implements PanelRuntimeService {
             if (picked.isEmpty()) {
                 throw new IllegalStateException("请至少勾选一行要投产的产品，并填写大于 0 的生产数量");
             }
+            assertProduceQtyWithinOrder(items, picked);
             items = picked;
         }
         List<Map<String, Object>> products = new ArrayList<>();
@@ -2410,7 +2800,8 @@ public class PxService implements PanelRuntimeService {
             p.put("产品名称", it.getOrDefault("存货名称", ""));
             p.put("规格型号", it.getOrDefault("规格型号", ""));
             p.put("型号", "");
-            p.put("适用BOM", "BOM-001");
+            // 以前写死 BOM-001，所有产品都挂到第一张 BOM 上；改成按产品自己的父件关系解析
+            p.put("适用BOM", defaultBomNoOf(String.valueOf(it.getOrDefault("存货编码", ""))));
             p.put("BOM展开方式", "单阶");
             p.put("生产单位", it.getOrDefault("销售单位", "件"));
             p.put("数量", it.getOrDefault("数量", 0));
@@ -2444,7 +2835,10 @@ public class PxService implements PanelRuntimeService {
                     bomRow.put("材料名称", it.getOrDefault("子件名称", ""));
                     bomRow.put("规格型号", it.getOrDefault("规格型号", ""));
                     bomRow.put("计量单位", it.getOrDefault("子件计量单位", "kg"));
-                    bomRow.put("定额需用数量", it.getOrDefault("定额数量", 0));
+                    // 定额是按 BOM「生产数量」这个基准给的，先折成单件用量
+                    bomRow.put("定额需用数量", PlanAnalyzeService.unitUsage(
+                            BigDecimal.valueOf(num(it.getOrDefault("定额数量", 0))),
+                            BigDecimal.valueOf(num(it.getOrDefault("生产数量", 1)))).doubleValue());
                     bomRow.put("损耗率%", it.getOrDefault("损耗率%", 0));
                     bomByItem.computeIfAbsent(parent, k -> new ArrayList<>()).add(bomRow);
                 }
@@ -2472,8 +2866,15 @@ public class PxService implements PanelRuntimeService {
                         : stockTxnService.warehouseOfItem(String.valueOf(m.get("材料编码")),
                                 String.valueOf(m.get("材料名称")));
                 m.put("预出仓库", matWarehouse == null || matWarehouse.isBlank() ? "原料仓" : matWarehouse);
-                m.put("材料倒冲方式", "按定额倒冲");
-                m.put("领料工序", "下料");
+                m.put("材料倒冲方式", backflushModeOf(b));
+                // 领料工序：BOM 子件优先，缺省看该产品路线首道工序；编码尽量补齐
+                String childProcess = String.valueOf(b.getOrDefault("领料工序", "")).trim();
+                String childProcessCode = String.valueOf(b.getOrDefault("领料工序编码", "")).trim();
+                if (childProcess.isEmpty() && !childProcessCode.isEmpty()) childProcess = processNameOf(childProcessCode);
+                if (childProcess.isEmpty()) childProcess = firstProcessOf(pcode);
+                if (childProcessCode.isEmpty()) childProcessCode = processCodeOf(childProcess);
+                m.put("领料工序", childProcess);
+                m.put("领料工序编码", childProcessCode);
                 m.put("允许循环", false);
                 m.put("行中止", false);
                 m.put("定额生产数量", 1);
@@ -2521,7 +2922,25 @@ public class PxService implements PanelRuntimeService {
         out.put("编号", newNo);
         out.put("单据状态", "草稿");
         out.put("gotoPanel", "MANU_ORDER");
+        // 排产不审批：生成即生效，直接走到已审核（下游领料/报工据此放行）
+        if (planLineNo != null) {
+            submitApproval("MANU_ORDER", new LinkedHashMap<>(Map.of("编号", newNo)));
+            approveApproval("MANU_ORDER", new LinkedHashMap<>(Map.of("编号", newNo)));
+            out.put("单据状态", "已审核");
+        }
         return out;
+    }
+
+    /** 排产模式下行号：buttonParam.行号；非排产生单返回 null */
+    private static Integer planLineNoOf(Map<String, Object> buttonParam) {
+        if (buttonParam == null) return null;
+        Object raw = buttonParam.get("行号");
+        if (raw == null || String.valueOf(raw).isBlank()) return null;
+        try {
+            return Integer.parseInt(String.valueOf(raw).trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("行号必须是整数：" + raw);
+        }
     }
     /**
      * 推式生单：生产加工单（MANU_ORDER）→ 工序汇报单（PROCESS_REPORT）
@@ -2540,6 +2959,10 @@ public class PxService implements PanelRuntimeService {
             throw new IllegalStateException("仅已审核/生产中的生产加工单可生成工序汇报单");
         }
 
+        if (hasApprovedBatch(String.valueOf(no))) {
+            throw new IllegalStateException("加工单 " + no + " 已按工序排了批次：报工请到「工序报工」工作台"
+                    + "（/mes/processReport）选批次报工，避免同一工序被重复报工");
+        }
         Map<String, Object> head = parseData(mo.getData());
         Map<String, Object> detailMap = parseData(mo.getDetailData());
         List<Map<String, Object>> products = detailMap.get("products") instanceof List
@@ -2573,14 +2996,89 @@ public class PxService implements PanelRuntimeService {
         // 一天一个批次：同一加工单同一天多次报工共用批次号；跨天自动换批。
         String batchNo = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         prData.put("批次号", batchNo);
+        // 先领料再报工：没出库就报工等于用"黑料"生产，材料账与产成品账对不上
+        requireMaterialIssued(String.valueOf(no));
         Map<String, Double> reported = reportedQtyByProcess(String.valueOf(no));
         List<Map<String, Object>> items = new ArrayList<>();
-        for (Map<String, Object> pr : procs) {
+        // 一道工序一张汇报单：只带「当前该报」的那道——前道全部报满、本道还有余量。
+        // 以前的实现把未报满的工序一次性全塞进一张单，等于跳过工序顺序。
+        Map<String, Object> current = null;
+        Map<String, Object> blocked = null;
+        double currentRemain = 0;
+        for (int i = 0; i < procs.size(); i++) {
+            Map<String, Object> pr = procs.get(i);
+            String procCode = String.valueOf(pr.getOrDefault("工序编码", "")).trim();
+            double planQty = num(pr.getOrDefault("计划数量", 0));
+            double remainQty = round2(planQty - reported.getOrDefault(procCode, 0.0));
+            if (remainQty <= 0) continue;
+            boolean prevDone = true;
+            for (int j = 0; j < i; j++) {
+                Map<String, Object> prev = procs.get(j);
+                String pc = String.valueOf(prev.getOrDefault("工序编码", "")).trim();
+                if (round2(num(prev.getOrDefault("计划数量", 0)) - reported.getOrDefault(pc, 0.0)) > 0) {
+                    prevDone = false;
+                    blocked = prev;
+                    break;
+                }
+            }
+            if (prevDone) {
+                current = pr;
+                currentRemain = remainQty;
+            }
+            break; // 第一道还没报满的工序就是当前工序，它之前的不许跳
+        }
+        if (current == null) {
+            if (blocked != null) {
+                String bc = String.valueOf(blocked.getOrDefault("工序编码", "")).trim();
+                String bn = String.valueOf(blocked.getOrDefault("工序名称", "")).trim();
+                FormData pfi = firstInspectOf(String.valueOf(no), bc);
+                if (pfi != null && !"已审核".equals(pfi.getStatus())) {
+                    throw new IllegalStateException("上一道工序「" + bn + "」的首件检验单 " + pfi.getFormNo()
+                            + " 状态为「" + pfi.getStatus() + "」，首件合格后本道工序才能开工");
+                }
+                throw new IllegalStateException("上一道工序「" + bn + "」还没报满（已报 "
+                        + round2(reported.getOrDefault(bc, 0.0)) + "/"
+                        + round2(num(blocked.getOrDefault("计划数量", 0)))
+                        + "），本道工序不能开工（一道做完再报下一道）");
+            }
+            throw new IllegalStateException("全部工序已全部报工，无需再生成工序汇报单");
+        }
+        // 首件是报工门：本道还没有首检单 → 本次只报首件样本量并生成首检单；
+        // 首检单没审核 → 不许继续报工（首件未判定合格不能批量生产）。
+        String currentCode = String.valueOf(current.getOrDefault("工序编码", "")).trim();
+        String currentName = String.valueOf(current.getOrDefault("工序名称", "")).trim();
+        FormData pendingInspect = firstInspectOf(String.valueOf(no), currentCode);
+        boolean firstArticle = pendingInspect == null;
+        double reportQty = currentRemain;
+        if (pendingInspect != null && !"已审核".equals(pendingInspect.getStatus())) {
+            throw new IllegalStateException("工序「" + currentName + "」的首件检验单 "
+                    + pendingInspect.getFormNo() + " 状态为「" + pendingInspect.getStatus()
+                    + "」，首件判定合格后才能继续报工");
+        }
+        if (pendingInspect != null && !inspectionPassed(pendingInspect)) {
+            String disposition = inspectionDisposition(pendingInspect);
+            double disposeQty = inspectionDispositionQty(pendingInspect);
+            // 报废：不自动重检，报废件不能再当合格品往下做
+            if ("报废".equals(disposition)) {
+                throw new IllegalStateException("工序「" + currentName + "」的首件检验单 " + pendingInspect.getFormNo()
+                        + " 判定「不合格」且处置为「报废」（报废 " + round2(disposeQty) + "），该工序不再报工；"
+                        + "请走返工/补投生产加工单，或把报废件入废品仓");
+            }
+            // 返工/返修（含未填处置的老单）：直接开一张重新首检单，别让人去翻旧单
+            Map<String, Object> retry = createFirstInspectForProcess("MANU_ORDER", String.valueOf(no),
+                    head, p0, current, Math.min(firstArticleQty(current), currentRemain), "",
+                    pendingInspect.getFormNo());
+            throw new IllegalStateException("工序「" + currentName + "」的首件检验单 " + pendingInspect.getFormNo()
+                    + " 判定「不合格」（处置：" + (disposition.isEmpty() ? "未填" : disposition) + "），该工序已锁："
+                    + "已生成重新首检单 " + (retry == null ? "" : retry.get("编号"))
+                    + "，处置重检合格后才能继续报工");
+        }
+        if (firstArticle) reportQty = Math.min(firstArticleQty(current), currentRemain);
+        requireBackflushStock(String.valueOf(no), currentCode, reportQty);
+        for (Map<String, Object> pr : List.of(current)) {
             String procCode = String.valueOf(pr.getOrDefault("工序编码", "")).trim();
             double planQty = num(pr.getOrDefault("计划数量", 0));
             double doneQty = reported.getOrDefault(procCode, 0.0);
-            double remainQty = round2(planQty - doneQty);
-            if (remainQty <= 0) continue; // 该工序已报满，本次批次不再带出
             Map<String, Object> it = new HashMap<>();
             it.put("加工单号", String.valueOf(no));
             it.put("批次号", batchNo);
@@ -2600,10 +3098,10 @@ public class PxService implements PanelRuntimeService {
             it.put("班组名称", pr.getOrDefault("班组", ""));
             it.put("工人名称", pr.getOrDefault("工人", ""));
             it.put("工序单位", pr.getOrDefault("工序单位", "件"));
-            // 默认带剩余可报工量，合格数默认等于报工数（都可改）
-            it.put("报工数量", remainQty);
-            it.put("可报工数量", remainQty);
-            it.put("合格数量", remainQty);
+            // 首件报工只带样本量；首检通过后按剩余可报工量整批报（都可改）
+            it.put("报工数量", reportQty);
+            it.put("可报工数量", currentRemain);
+            it.put("合格数量", reportQty);
             it.put("不合格数量", 0);
             it.put("工资类型", pr.getOrDefault("工资类型", "计件"));
             it.put("工价", pr.getOrDefault("工价", 0));
@@ -2641,13 +3139,26 @@ public class PxService implements PanelRuntimeService {
         pr.setFormNo(newNo);
         pr.setData(toJson(prData));
         pr.setDetailData(toJson(detail));
-        pr.setStatus("草稿");
+        // 报工不审批：建单即已审核，完工进度立刻生效
+        pr.setStatus("已审核");
         pr.setCreateBy(currentUserName());
         pr.setCreateTime(LocalDateTime.now());
+        pr.setUpdateTime(LocalDateTime.now());
+        pr.setAuditBy(currentUserName());
+        pr.setAuditTime(LocalDateTime.now());
         formMapper.insert(pr);
 
+        // 报工免审批：建单即已审核，必须在这里把「报工之后该做的事」一次做完，
+        // 否则批次累计、加工单完工进度、累计汇报套数、倒冲料都不会推进（成品报检还会被累计完工量 0 拦住）。
+        afterProcessReportApproved(pr);
+
+        // 首件报工：同时生成该工序的首件报检单（首检未审前不许继续报工/转序）
+        if (firstArticle) {
+            createFirstInspectForProcess("MANU_ORDER", String.valueOf(no), head, p0, current, reportQty, newNo, "");
+        }
+
         Map<String, Object> out = new HashMap<>();
-        out.put("单据状态", "草稿");
+        out.put("单据状态", "已审核");
         out.put("gotoPanel", "PROCESS_REPORT");
         out.put("编号", newNo);
         return out;
@@ -2670,8 +3181,8 @@ public class PxService implements PanelRuntimeService {
     @SuppressWarnings("unchecked")
     private Map<String, Object> insertGenerated(String targetPanel, String sourcePanel, String sourceNo,
                                                 Map<String, Object> head, Map<String, Object> detail) {
-        // 生单同时要求目标面板新增权限，防止仅有来源面板权限的用户越权创建下游单据。
-        requirePanelPermission(targetPanel, "add");
+        // 生单要求目标面板的「生成」权限（独立权限位，不共用新增）。
+        requirePanelPermission(targetPanel, "generate");
         validateSourceLinks(targetPanel, null, detail);
         String newNo = generateFormNo(targetPanel, head);
         // 新建兜底：字段默认值 + 单据日期=当天 + 单据编号/锭号=form_no（修复：生单目标单必填字段缺失无法保存草稿）
@@ -3527,8 +4038,9 @@ public class PxService implements PanelRuntimeService {
         FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, String.valueOf(no)));
         if (src == null) throw new IllegalArgumentException("生产加工单不存在：" + no);
-        if (!"已审核".equals(src.getStatus()) && !"生产中".equals(src.getStatus())) {
-            throw new IllegalStateException("仅已审核/生产中的生产加工单可生成产成品入库单");
+        if (!Set.of("已审核", "生产中", "已完工").contains(src.getStatus())) {
+            // 完工 = 全部工序报满，正是要入库的时候；把已完工挡在外面会让最后一批货入不了账
+            throw new IllegalStateException("仅已审核/生产中/已完工的生产加工单可生成产成品入库单");
         }
         // 完工入库前置：末道工序必须报满（累计报工 = 加工单数量），没做完不能入库
         Map<String, Object> completion = completionSummary(String.valueOf(no));
@@ -3541,6 +4053,8 @@ public class PxService implements PanelRuntimeService {
         }
         // 质量门：首件报检单没审核不能入库，否则首检只是张草稿纸
         requireFirstInspectApproved(String.valueOf(no), totalProc);
+        // 完工检验门：成品报检（整单全面检验）通过才允许产成品入库
+        requireFinishInspectApproved(String.valueOf(no), totalProc);
         Map<String, Object> head = parseData(src.getData());
         Map<String, Object> dm = parseData(src.getDetailData());
         List<Map<String, Object>> products = dm.get("products") instanceof List
@@ -3548,10 +4062,13 @@ public class PxService implements PanelRuntimeService {
         if (products.isEmpty()) throw new IllegalStateException("生产加工单无产成品明细：" + no);
         // 只入「还没入过的量」：累计入库数量由入库单审核维护，整单照抄会重复入库。
         List<Map<String, Object>> remainingProducts = new ArrayList<>();
+        Map<String, Double> scrappedByProduct = scrappedQtyByProduct(String.valueOf(no));
         for (Map<String, Object> p : products) {
             double plan = num(p.getOrDefault("数量", 0));
             double received = num(p.getOrDefault("累计入库数量", 0));
-            double remaining = round2(plan - received);
+            double scrapped = scrappedByProduct.getOrDefault(
+                    String.valueOf(p.getOrDefault("产品编码", "")).trim(), 0.0);
+            double remaining = round2(plan - received - scrapped);
             if (remaining <= 0) continue;
             Map<String, Object> copy = new HashMap<>(p);
             copy.put("数量", remaining);
@@ -3632,6 +4149,330 @@ public class PxService implements PanelRuntimeService {
         return insertGenerated("FINISH_IN", "MANU_ORDER", String.valueOf(no), fiData, detail);
     }
 
+    /**
+     * 产成品入库的来源归一到生产加工单：成品报检单入库时先取出它的加工单号。
+     *
+     * <p>入库单必须挂在加工单上（累计入库、剩余入库量都按加工单算），
+     * 所以从成品报检单点「生成产成品入库单」时只是换个入口，底层仍走加工单。
+     */
+    private String finishInSourcePanel(String panelCode, Map<String, Object> formData) {
+        return "FINISH_INSPECT".equals(panelCode) ? "MANU_ORDER" : panelCode;
+    }
+
+    /** 同上：成品报检单 → 用它的加工单号继续；其他来源原样透传。 */
+    private Map<String, Object> finishInFormData(String panelCode, Map<String, Object> formData) {
+        if (!"FINISH_INSPECT".equals(panelCode)) return formData;
+        Object no = formData == null ? null : formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData inspect = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "FINISH_INSPECT").eq(FormData::getFormNo, String.valueOf(no)));
+        if (inspect == null) throw new IllegalArgumentException("成品报检单不存在：" + no);
+        if (!"已审核".equals(inspect.getStatus())) {
+            throw new IllegalStateException("成品报检单 " + no + " 状态为「" + inspect.getStatus()
+                    + "」，检验通过后才能产成品入库");
+        }
+        String moNo = str(parseData(inspect.getData()).get("加工单号")).trim();
+        if (moNo.isEmpty()) throw new IllegalStateException("成品报检单 " + no + " 没有关联加工单号");
+        return Map.of("编号", moNo);
+    }
+
+    /**
+     * 推式生单：生产加工单 → 领料申请单。
+     *
+     * <p>材料按加工单材料明细带出，数量 = 计划数量 − 累计领用数量（只带还没领的部分）；
+     * 仓库取材料的预出仓库，领料工序沿用材料行上的设定，后续材料出库单按这张申请单出库。
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createMaterialReqFromMo(String panelCode, Map<String, Object> formData) {
+        Object no = formData == null ? null : formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, String.valueOf(no)));
+        if (mo == null) throw new IllegalArgumentException("生产加工单不存在：" + no);
+        if (!"已审核".equals(mo.getStatus()) && !"生产中".equals(mo.getStatus())) {
+            throw new IllegalStateException("仅已审核/生产中的生产加工单可生成领料申请单");
+        }
+        Map<String, Object> head = parseData(mo.getData());
+        Map<String, Object> detail = parseData(mo.getDetailData());
+        List<Map<String, Object>> materials = detail.get("materials") instanceof List
+                ? (List<Map<String, Object>>) detail.get("materials") : new ArrayList<>();
+        if (materials.isEmpty()) throw new IllegalStateException("生产加工单没有材料明细：" + no);
+
+        // 产品归属：材料行带「子件BOM」= 产品编码；老加工单没带就按物料清单子件反查父件；
+        // 再兜底到唯一产品。产品名称按编码回查，绝不写空串（否则领料单看不出给哪个产品领的）。
+        Map<String, String> productNameByCode = new LinkedHashMap<>();
+        if (detail.get("products") instanceof List<?> products) {
+            for (Object o : products) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                String code = str(raw.get("产品编码"));
+                if (!code.isBlank()) productNameByCode.putIfAbsent(code, str(raw.get("产品名称")));
+            }
+        }
+        Map<String, String> parentByMaterial = bomParentByMaterial();
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        boolean skippedBackflush = false;
+        for (Map<String, Object> m : materials) {
+            // 倒冲料报工时自动扣账（backflushMaterials），手工再领一次会重复扣料
+            if (isBackflushMode(str(m.get("材料倒冲方式")))) {
+                skippedBackflush = true;
+                continue;
+            }
+            double plan = num(m.get("计划数量"));
+            double used = num(m.get("累计领用数量"));
+            double remain = round2(plan - used);
+            if (remain <= 0) continue;
+            String materialCode = str(m.get("材料编码"));
+            String productCode = str(m.get("子件BOM"));
+            if (productCode.isBlank()) productCode = parentByMaterial.getOrDefault(materialCode, "");
+            if (productCode.isBlank() && productNameByCode.size() == 1) {
+                productCode = productNameByCode.keySet().iterator().next();
+            }
+            String productName = productNameByCode.getOrDefault(productCode, "");
+            if (productName.isBlank() && !productCode.isBlank()) productName = productNameOf(productCode);
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("加工单号", String.valueOf(no));
+            row.put("产品编码", productCode);
+            row.put("产品名称", productName);
+            row.put("材料名称", m.getOrDefault("材料名称", ""));
+            row.put("领料工序", m.getOrDefault("领料工序", ""));
+            row.put("仓库", m.getOrDefault("预出仓库", head.getOrDefault("仓库", "")));
+            row.put("计量单位", m.getOrDefault("计量单位", ""));
+            row.put("数量", remain);
+            row.put("单价", 0);
+            row.put("金额", 0);
+            row.put("累计领料数量", used);
+            // 领料按批次：把该材料领料工序对应的排产批次带上，材料出库才能按批次控量
+            String batchNo = dispatchNoOfProcess(String.valueOf(no), str(m.get("领料工序编码")),
+                    str(m.get("领料工序")));
+            if (!batchNo.isBlank()) row.put("排产单号", batchNo);
+            row.put("倒冲料", isBackflushMode(str(m.get("材料倒冲方式"))) ? "是" : "否");
+            row.put("材料编码", m.getOrDefault("材料编码", ""));
+            row.put("规格型号", m.getOrDefault("规格型号", ""));
+            rows.add(row);
+        }
+        if (rows.isEmpty()) {
+            throw new IllegalStateException(skippedBackflush
+                    ? "该加工单的材料全部是倒冲料（报工时自动扣账），不需要生成领料申请单"
+                    : "材料已全部领完，无需再生成领料申请单");
+        }
+
+        Map<String, Object> reqData = new LinkedHashMap<>();
+        reqData.put("业务类型", "生产领料");
+        reqData.put("生产车间", head.getOrDefault("生产车间", ""));
+        reqData.put("仓库", head.getOrDefault("仓库", ""));
+        reqData.put("预计领料日期", LocalDate.now().toString());
+        reqData.put("领料方式", head.getOrDefault("领料方式", "一次性领料"));
+        reqData.put("加工单号", String.valueOf(no));
+        Map<String, Object> reqDetail = new LinkedHashMap<>();
+        reqDetail.put("items", rows);
+        return insertGenerated("MATERIAL_REQ", "MANU_ORDER", String.valueOf(no), reqData, reqDetail);
+    }
+
+    /** 材料的投料方式是否倒冲：注意「不倒冲」也含"倒冲"两个字，必须先排掉。 */
+    private static boolean isBackflushMode(String mode) {
+        return mode.contains("倒冲") && !mode.contains("不倒冲");
+    }
+
+    /** 物料清单里「子件编码 → 父件编码」的映射：老加工单材料行没带产品时按它反查归属。 */
+    private Map<String, String> bomParentByMaterial() {
+        Map<String, String> out = new LinkedHashMap<>();
+        for (FormData doc : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "BOM"))) {
+            if (!"BOM".equals(doc.getPanelCode())) continue;
+            if ("作废".equals(doc.getStatus())) continue;
+            Map<String, Object> detail;
+            try {
+                detail = parseData(doc.getDetailData());
+            } catch (Exception e) {
+                continue;
+            }
+            if (!(detail.get("children") instanceof List<?> rows)) continue;
+            for (Object o : rows) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> child = castRow(raw);
+                String materialCode = str(child.get("子件编码"));
+                String parentCode = str(child.get("父件编码"));
+                if (!materialCode.isBlank() && !parentCode.isBlank()) {
+                    out.putIfAbsent(materialCode, parentCode);
+                }
+            }
+        }
+        return out;
+    }
+
+    /** 产品编码 → 产品名称（物料清单父件优先，再退到存货档案）。 */
+    private String productNameOf(String productCode) {
+        for (FormData doc : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "BOM"))) {
+            if (!"BOM".equals(doc.getPanelCode())) continue;
+            try {
+                Map<String, Object> detail = parseData(doc.getDetailData());
+                if (!(detail.get("children") instanceof List<?> rows)) continue;
+                for (Object o : rows) {
+                    if (!(o instanceof Map<?, ?> raw)) continue;
+                    Map<String, Object> child = castRow(raw);
+                    if (productCode.equals(str(child.get("父件编码")))) {
+                        return str(child.get("父件名称"));
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return "";
+    }
+
+    /** 按加工单生成成品报检单（控制器/选单弹窗入口）。 */
+    @Override
+    public Map<String, Object> createFinishInspectFromMo(String manuOrderNo) {
+        return createFinishInspectFromMo("MANU_ORDER", Map.of("编号", manuOrderNo));
+    }
+
+    /**
+     * 推式生单：生产加工单 → 成品报检单。
+     *
+     * <p>完工检验是入库前置硬门，所以必须**全部工序报工完成**才允许报检；
+     * 同一张加工单只建一张报检单，已有未作废的就直接提示去处理那张。
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createFinishInspectFromMo(String panelCode, Map<String, Object> formData) {
+        Object no = formData == null ? null : formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, String.valueOf(no)));
+        if (mo == null) throw new IllegalArgumentException("生产加工单不存在：" + no);
+        if (!Set.of("已审核", "生产中", "已完工").contains(mo.getStatus())) {
+            throw new IllegalStateException("仅已审核/生产中/已完工的生产加工单可生成成品报检单");
+        }
+        Map<String, Object> completion = completionSummary(String.valueOf(no));
+        int totalProc = (int) Math.round(num(completion.get("工序数")));
+        int doneProc = (int) Math.round(num(completion.get("已完成工序数")));
+        if (totalProc > 0 && doneProc < totalProc) {
+            throw new IllegalStateException("工序还没全部报工完成（" + doneProc + "/" + totalProc
+                    + " 道），全部工序汇报完成才能生成成品报检单");
+        }
+        for (FormData doc : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "FINISH_INSPECT"))) {
+            if (!"FINISH_INSPECT".equals(doc.getPanelCode())) continue;
+            if ("作废".equals(doc.getStatus())) continue;
+            if (!String.valueOf(no).equals(str(parseData(doc.getData()).get("加工单号")))) continue;
+            throw new IllegalStateException("加工单 " + no + " 已有成品报检单 " + doc.getFormNo()
+                    + "（状态：" + doc.getStatus() + "），请直接处理该单据");
+        }
+        // 完工检验前先把工序首检这道门关严：首检没有全部通过，成品报检没有意义
+        requireAllFirstInspectionsPassed(String.valueOf(no));
+
+        Map<String, Object> head = parseData(mo.getData());
+        Map<String, Object> detail = parseData(mo.getDetailData());
+        List<Map<String, Object>> products = detail.get("products") instanceof List
+                ? (List<Map<String, Object>>) detail.get("products") : new ArrayList<>();
+        if (products.isEmpty()) throw new IllegalStateException("生产加工单无产成品明细：" + no);
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> p : products) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("产品名称", p.getOrDefault("产品名称", ""));
+            row.put("存货编码", p.getOrDefault("产品编码", ""));
+            row.put("规格型号", p.getOrDefault("规格型号", ""));
+            row.put("计量单位", p.getOrDefault("生产单位", "件"));
+            row.put("报检数量", num(p.get("数量")));
+            row.put("合格数量", 0);
+            row.put("不合格数量", 0);
+            row.put("检验结果", "");
+            rows.add(row);
+        }
+        Map<String, Object> inspectData = new LinkedHashMap<>();
+        inspectData.put("业务类型", "完工报检");
+        inspectData.put("报检类别", "完工检验");
+        inspectData.put("生产车间", head.getOrDefault("生产车间", ""));
+        inspectData.put("加工单号", String.valueOf(no));
+        inspectData.put("报检说明", "加工单 " + no + " 全部工序报工完成，完工检验");
+        Map<String, Object> inspectDetail = new LinkedHashMap<>();
+        inspectDetail.put("items", rows);
+        // 单号与加工单挂钩：<加工单号>-JY，同一张加工单只可能有一张（前面已挡重复）
+        String forcedNo = String.valueOf(no) + "-JY";
+        // 单据日期/单据编号在生成时就写进表头：草稿也要能看出是哪天报检、单号是什么
+        inspectData.put("单据日期", LocalDate.now().toString());
+        inspectData.put("单据编号", forcedNo);
+        if (formMapper.selectCount(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "FINISH_INSPECT")
+                .eq(FormData::getFormNo, forcedNo)) > 0) {
+            throw new IllegalStateException("成品报检单 " + forcedNo + " 已存在，不能重复生成");
+        }
+        Map<String, Object> res = insertGeneratedWithNo("FINISH_INSPECT", "MANU_ORDER",
+                String.valueOf(no), forcedNo, inspectData, inspectDetail);
+        return res;
+    }
+
+    /**
+     * 成品报检候选：已把所有工序报工完成、且还没有成品报检单的加工单。
+     *
+     * <p>完工检验是入库前置，候选列表只给做完了的；已经生成过的挡在外面，避免重复报检。
+     */
+    public List<Map<String, Object>> finishInspectCandidates() {
+        List<FormData> orders = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER")
+                .in(FormData::getStatus, List.of("已审核", "生产中"))
+                .orderByDesc(FormData::getId));
+        java.util.Set<String> taken = new java.util.HashSet<>();
+        for (FormData doc : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "FINISH_INSPECT"))) {
+            if ("作废".equals(doc.getStatus())) continue;
+            String mo = str(parseData(doc.getData()).get("加工单号")).trim();
+            if (!mo.isEmpty()) taken.add(mo);
+        }
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (FormData mo : orders) {
+            if (taken.contains(mo.getFormNo())) continue;
+            Map<String, Object> completion = completionSummary(mo.getFormNo());
+            int total = (int) Math.round(num(completion.get("工序数")));
+            int done = (int) Math.round(num(completion.get("已完成工序数")));
+            if (total > 0 && done < total) continue;
+            Map<String, Object> head = parseData(mo.getData());
+            Map<String, Object> detail = parseData(mo.getDetailData());
+            Map<String, Object> product = detail.get("products") instanceof List<?> ps && !ps.isEmpty()
+                    ? castRow((Map<?, ?>) ps.get(0)) : Map.of();
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("加工单号", mo.getFormNo());
+            row.put("单据状态", mo.getStatus());
+            row.put("客户", head.getOrDefault("客户", ""));
+            row.put("产品编码", product.getOrDefault("产品编码", ""));
+            row.put("产品名称", product.getOrDefault("产品名称", ""));
+            row.put("规格型号", product.getOrDefault("规格型号", ""));
+            row.put("数量", num(product.get("数量")));
+            row.put("工序数", total);
+            row.put("已完成工序数", done);
+            row.put("报检单号", mo.getFormNo() + "-JY");
+            out.add(row);
+        }
+        return out;
+    }
+
+    /** 指定单号生单：排产/报检这类要跟来源单号挂钩的单据用。 */
+    private Map<String, Object> insertGeneratedWithNo(String targetPanel, String sourcePanel, String sourceNo,
+                                                      String forcedNo, Map<String, Object> head,
+                                                      Map<String, Object> detail) {
+        requirePanelPermission(targetPanel, "add");
+        validateSourceLinks(targetPanel, null, detail);
+        fillNewDefaults(targetPanel, head, forcedNo);
+        FormData fd = new FormData();
+        fd.setPanelCode(targetPanel);
+        fd.setFormNo(forcedNo);
+        head.put("来源单据", sourcePanel);
+        head.put("来源单号", sourceNo);
+        fd.setData(toJson(head));
+        fd.setDetailData(toJson(detail));
+        fd.setStatus("草稿");
+        fd.setCreateBy(currentUserName());
+        fd.setCreateTime(LocalDateTime.now());
+        fd.setUpdateTime(LocalDateTime.now());
+        formMapper.insert(fd);
+        Map<String, Object> out = new HashMap<>();
+        out.put("单据状态", "草稿");
+        out.put("gotoPanel", targetPanel);
+        out.put("编号", forcedNo);
+        return out;
+    }
+
     /** 推式生单：领料申请单（MATERIAL_REQ）或生产加工单（MANU_ORDER）→ 材料出库单（MATERIAL_OUT） */
     @SuppressWarnings("unchecked")
     private Map<String, Object> createMaterialOut(String panelCode, Map<String, Object> formData) {
@@ -3647,6 +4488,13 @@ public class PxService implements PanelRuntimeService {
                 .eq(FormData::getPanelCode, panelCode).eq(FormData::getFormNo, String.valueOf(no)));
         if (src == null) throw new IllegalArgumentException("来源单据不存在：" + no);
         if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核单据可生成材料出库单");
+        // 一来源一单：同一张来源单据（领料申请单/调拨单/加工单）只允许一张材料出库单，
+        // 草稿也算已生成——草稿不联动、又不挡重复，两张都审核就会多扣一倍库存。
+        String existingOut = findExistingMaterialOut(panelCode, String.valueOf(no));
+        if (existingOut != null) {
+            throw new IllegalStateException("该单据已生成材料出库单 " + existingOut
+                    + "，不能重复生成；如需调整数量请先处理该出库单（弃审或作废）");
+        }
         Map<String, Object> head = parseData(src.getData());
         Map<String, Object> dm = parseData(src.getDetailData());
         List<Map<String, Object>> rows = new ArrayList<>();
@@ -3690,6 +4538,12 @@ public class PxService implements PanelRuntimeService {
                         it.getOrDefault("材料编码", it.getOrDefault("存货编码", "")),
                         it.getOrDefault("材料名称", it.getOrDefault("存货名称", "")), "原料仓"));
                 r.put("加工单号", it.getOrDefault("加工单号", ""));
+                r.put("领料工序", it.getOrDefault("领料工序", ""));
+                // 申请单明细已经挂到排产批次，出库单必须跟着带上：
+                // 生产领料看板按「排产单号 + 材料」汇总已领，丢了这一列就显示"未领料"，会重复领
+                if (it.get("排产单号") != null && !str(it.get("排产单号")).isBlank()) {
+                    r.put("排产单号", str(it.get("排产单号")));
+                }
                 // 编码必须落库：库存台账的 item_code 取自 材料编码/存货编码
                 String lineCode = String.valueOf(it.getOrDefault("材料编码",
                         it.getOrDefault("存货编码", "")));
@@ -3887,6 +4741,8 @@ public class PxService implements PanelRuntimeService {
         List<Map<String, Object>> items = dm.get("products") instanceof List
                 ? (List<Map<String, Object>>) dm.get("products") : new ArrayList<>();
         if (items.isEmpty()) throw new IllegalStateException("委外加工单无产成品明细：" + no);
+        // 委外回厂同样按工序首检：缺的先按工艺路线工序补齐并拦一次，审完才能入库
+        requireOutsourceFirstInspects(String.valueOf(no), head, dm, items);
         Map<String, Object> data = new HashMap<>();
         data.put("单据日期", LocalDate.now().toString());
         data.put("业务类型", "委外入库");
@@ -3911,6 +4767,48 @@ public class PxService implements PanelRuntimeService {
         Map<String, Object> detail = new HashMap<>();
         detail.put("items", rows);
         return insertGenerated("OUTSOURCE_IN", "OUTSOURCE_ORDER", String.valueOf(no), data, detail);
+    }
+
+    /**
+     * 委外入库前的工序首检门。
+     *
+     * <p>委外加工单没有工序明细，按产成品的工艺路线带出工序：缺的首检单先补建，
+     * 补完就拦一次并报出补了哪几道，避免"点生单莫名其妙多出单据"却没人知道。
+     */
+    private void requireOutsourceFirstInspects(String ooNo, Map<String, Object> head,
+                                               Map<String, Object> detail,
+                                               List<Map<String, Object>> products) {
+        Map<String, Object> product = products.isEmpty() ? Map.of() : products.get(0);
+        List<Map<String, Object>> procs = processRowsOf(detail, head);
+        List<String> created = new ArrayList<>();
+        for (Map<String, Object> proc : procs) {
+            String code = str(proc.get("工序编码"));
+            if (code.isBlank() || firstInspectOf(ooNo, code) != null) continue;
+            double limit = num(proc.getOrDefault("计划数量", product.getOrDefault("数量", 0)));
+            if (limit <= 0) continue;
+            createFirstInspectForProcess("OUTSOURCE_ORDER", ooNo, head, product, proc,
+                    Math.min(firstArticleQty(proc), limit), "", "");
+            created.add(str(proc.getOrDefault("工序名称", code)));
+        }
+        if (!created.isEmpty()) {
+            throw new IllegalStateException("委外回厂按工序首检：已为委外加工单 " + ooNo + " 生成 "
+                    + created.size() + " 张首件报检单（" + String.join("、", created)
+                    + "），请检完并审核后再入库");
+        }
+        for (Map<String, Object> proc : procs) {
+            String code = str(proc.get("工序编码"));
+            FormData doc = firstInspectOf(ooNo, code);
+            if (doc == null) continue;
+            String name = str(proc.getOrDefault("工序名称", code));
+            if (!"已审核".equals(doc.getStatus())) {
+                throw new IllegalStateException("工序「" + name + "」的首件报检单 " + doc.getFormNo()
+                        + " 状态为「" + doc.getStatus() + "」，首检通过后才能入库");
+            }
+            if (!inspectionPassed(doc)) {
+                throw new IllegalStateException("工序「" + name + "」的首件报检单 " + doc.getFormNo()
+                        + " 判定「" + inspectionVerdict(doc) + "」，不能入库");
+            }
+        }
     }
 
     /** 推式生单：委外加工单（OUTSOURCE_ORDER）→ 委外加工费用单（OUTSOURCE_FEE）：按产成品明细委外单价×数量汇总 */
@@ -4912,6 +5810,8 @@ public class PxService implements PanelRuntimeService {
             if (!(o instanceof Map<?, ?> raw)) continue;
             Map<String, Object> row = (Map<String, Object>) raw;
             row.put("加工顺序", ++seq);
+            // 工序顺序 = 行序：第一行就是第一道工序，读出口也用同一口径
+            row.put("工序顺序", seq);
             row.remove("工艺路线编码");
             row.remove("工艺路线名称");
             row.remove("停用");
@@ -5061,6 +5961,857 @@ public class PxService implements PanelRuntimeService {
         return out;
     }
 
+    /**
+     * 按产成品逐个选工艺路线。
+     *
+     * <p>一张加工单可能同时生产多个产品，每个产品有各自的路线，所以不能像
+     * {@link #applyRouteProcesses} 那样整单套一条。流程：
+     * <ol>
+     *   <li>把每个产品选中的路线回填到该产品的物料清单（BOM 表头 工艺路线编码/名称）；</li>
+     *   <li>按各自路线展开工序，工序行带上 产品编码/产品名称（报工要按产品分）；</li>
+     *   <li>没选路线且 BOM 也没配的产品单独报回来，不静默丢掉。</li>
+     * </ol>
+     *
+     * @param formData 需带 编号 与 items[{产品编码,工艺路线编码}]
+     */
+    public Map<String, Object> applyProductRoutes(String panelCode, Map<String, Object> formData) {
+        String no = str(formData == null ? null : formData.get("编号"));
+        if (no.isEmpty()) throw new IllegalArgumentException("缺少加工单号");
+        FormData fd = formOf(panelCode, no);
+        if (fd == null) throw new IllegalStateException("加工单不存在：" + no);
+        if (!"草稿".equals(fd.getStatus())) {
+            throw new IllegalStateException("已审核/生产中的加工单不能改工序，请先弃审");
+        }
+        Map<String, Object> detail = parseData(fd.getDetailData());
+        if (!(detail.get("products") instanceof List<?> productRows) || productRows.isEmpty()) {
+            throw new IllegalStateException("加工单没有产成品明细，无法按产品选路线");
+        }
+
+        // 入参：产品编码 → 路线编码
+        Map<String, String> picked = new LinkedHashMap<>();
+        if (formData.get("items") instanceof List<?> items) {
+            for (Object o : items) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> row = castRow(raw);
+                String product = str(row.get("产品编码"));
+                String routeCode = str(row.get("工艺路线编码"));
+                if (!product.isEmpty() && !routeCode.isEmpty()) picked.put(product, routeCode);
+            }
+        }
+
+        // 1) 回填 BOM：用户在这里明确选了，覆盖旧值（不同于按编码约定自动关联时的"不覆盖"）
+        List<String> backfilled = new ArrayList<>();
+        List<String> noBom = new ArrayList<>();
+        for (Map.Entry<String, String> entry : picked.entrySet()) {
+            FormData bom = defaultBomOf(entry.getKey());
+            if (bom == null) {
+                noBom.add(entry.getKey());
+                continue;
+            }
+            Map<String, Object> bomHead = parseData(bom.getData());
+            bomHead.put("工艺路线编码", entry.getValue());
+            String routeName = routeNameOf(entry.getValue());
+            if (!routeName.isEmpty()) bomHead.put("工艺路线名称", routeName);
+            bom.setData(toJson(bomHead));
+            bom.setUpdateTime(LocalDateTime.now());
+            formMapper.updateById(bom);
+            backfilled.add(entry.getKey());
+        }
+
+        // 2) 按产品各自路线展开工序
+        List<Map<String, Object>> procs = new ArrayList<>();
+        List<String> missing = new ArrayList<>();
+        List<String> usedRoutes = new ArrayList<>();
+        int seq = 0;
+        for (Object o : productRows) {
+            if (!(o instanceof Map<?, ?> raw)) continue;
+            Map<String, Object> product = castRow(raw);
+            String productCode = str(product.get("产品编码"));
+            if (productCode.isEmpty()) continue;
+            String routeCode = picked.getOrDefault(productCode, bomRouteOf(productCode));
+            if (routeCode.isEmpty()) {
+                missing.add(productCode);
+                continue;
+            }
+            List<Map<String, Object>> routeRows = routeRowsOf(routeCode);
+            if (routeRows.isEmpty()) {
+                missing.add(productCode);
+                continue;
+            }
+            if (!usedRoutes.contains(routeCode)) usedRoutes.add(routeCode);
+            double qty = num(product.get("数量"));
+            for (Map<String, Object> r : routeRows) {
+                seq++;
+                List<Map<String, Object>> one = new ArrayList<>();
+                addDefaultProc(one, seq, str(r.get("工序编码")), str(r.get("工序名称")),
+                        str(r.getOrDefault("生产车间", "熔铸车间")), str(r.get("设备")),
+                        str(r.get("班组")), "", qty, num(r.getOrDefault("工价", r.get("计件单价"))),
+                        num(r.get("单位标准工时")), "", "");
+                Map<String, Object> row = one.get(0);
+                row.put("产品编码", productCode);
+                row.put("产品名称", str(product.get("产品名称")));
+                procs.add(row);
+            }
+        }
+        if (procs.isEmpty()) throw new IllegalStateException("选中的产品都还没有工艺路线，无法带入工序");
+
+        detail.put("processes", procs);
+        fd.setDetailData(toJson(detail));
+        Map<String, Object> head = parseData(fd.getData());
+        head.put("工艺路线编码", String.join(",", usedRoutes));
+        fd.setData(toJson(head));
+        fd.setUpdateTime(LocalDateTime.now());
+        formMapper.updateById(fd);
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("编号", no);
+        out.put("工序数", procs.size());
+        out.put("工艺路线编码", String.join(",", usedRoutes));
+        out.put("已回填", backfilled);
+        out.put("未配置", missing);
+        out.put("无物料清单", noBom);
+        return out;
+    }
+
+    /**
+     * 首个排产批次回填加工单「开工日期」。
+     *
+     * <p>开工日期是只读字段：不手工填，第一道工序一开始排产就写批次预开工日；
+     * 已有值不覆盖，避免后续批次把真实开工日改掉。
+     *
+     * @return 是否真的写入了
+     */
+    boolean fillStartDateIfEmpty(FormData mo, String planStart) {
+        if (mo == null) return false;
+        Map<String, Object> head = parseData(mo.getData());
+        if (!str(head.get("开工日期")).isEmpty()) return false;
+        String value = str(planStart).isEmpty() ? LocalDate.now().toString() : str(planStart);
+        head.put("开工日期", value);
+        mo.setData(toJson(head));
+        mo.setUpdateTime(LocalDateTime.now());
+        formMapper.updateById(mo);
+        return true;
+    }
+
+    /**
+     * 按当前产成品明细重算材料明细（产成品数量调整后手动触发，不静默覆盖人工行）。
+     *
+     * @param formData 需带 编号；加工单须为草稿
+     */
+    public Map<String, Object> recomputeMaterials(String panelCode, Map<String, Object> formData) {
+        String no = str(formData == null ? null : formData.get("编号"));
+        if (no.isEmpty()) throw new IllegalArgumentException("缺少加工单号");
+        FormData fd = formOf(panelCode, no);
+        if (fd == null) throw new IllegalStateException("加工单不存在：" + no);
+        if (!"草稿".equals(fd.getStatus())) {
+            throw new IllegalStateException("已审核/生产中的加工单不能重算材料，请先弃审");
+        }
+        Map<String, Object> detail = parseData(fd.getDetailData());
+        if (!(detail.get("products") instanceof List<?> rawProducts) || rawProducts.isEmpty()) {
+            throw new IllegalStateException("加工单没有产成品明细，无法重算材料");
+        }
+        List<Map<String, Object>> products = new ArrayList<>();
+        for (Object o : rawProducts) {
+            if (o instanceof Map<?, ?> raw) products.add(castRow(raw));
+        }
+        List<Map<String, Object>> materials = materialsForProducts(products);
+        if (materials.isEmpty()) throw new IllegalStateException("产成品没有配物料清单，重算不出材料");
+        detail.put("materials", materials);
+        fd.setDetailData(toJson(detail));
+        fd.setUpdateTime(LocalDateTime.now());
+        formMapper.updateById(fd);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("编号", no);
+        out.put("材料行数", materials.size());
+        return out;
+    }
+
+    /**
+     * 倒冲料补料：按「报工数量 × 单件定额 ×（1+损耗率）」算出应累计领用量，
+     * 减去已领（累计领用数量），只补差额。
+     *
+     * <p>倒冲的语义是"料随工走"：报工即视为已消耗，不需要人工开领料单。
+     * 已领量来自已审核材料出库单的汇总，所以重复报工不会重复扣账。
+     *
+     * @param materials         加工单材料明细
+     * @param reportedByProcess 工序名称 → 已（累计）报工数量
+     * @return 需要补开的材料出库行（数量 &gt; 0）
+     */
+    static List<Map<String, Object>> backflushDeltas(List<Map<String, Object>> materials,
+                                                     Map<String, Double> reportedByProcess) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        if (materials == null || materials.isEmpty()) return out;
+        Map<String, Double> reported = reportedByProcess == null ? Map.of() : reportedByProcess;
+        for (Map<String, Object> row : materials) {
+            // 注意「不倒冲」也含"倒冲"两个字，必须排掉；手工标记「不可倒冲」的（贵料/批次料）不自动扣
+            String mode = str(row.get("材料倒冲方式"));
+            if (!mode.contains("倒冲") || mode.contains("不倒冲")) continue;
+            if (Boolean.TRUE.equals(row.get("不可倒冲"))) continue;
+            // 优先用工序编码匹配（工序改名不影响），老数据没编码再按名称兜底
+            String processCode = str(row.get("领料工序编码"));
+            String process = processCode.isEmpty() ? str(row.get("领料工序")) : processCode;
+            double done = reported.getOrDefault(process, 0.0);
+            if (done <= 0) continue;
+            double unit = num(row.get("定额需用数量"));
+            double lossRate = num(row.get("损耗率%"));
+            double want = done * unit * (1 + lossRate / 100.0);
+            double issued = num(row.get("累计领用数量"));
+            double delta = round2(want - issued);
+            if (delta <= 0.0001) continue;
+            Map<String, Object> line = new LinkedHashMap<>();
+            line.put("材料编码", str(row.get("材料编码")));
+            line.put("材料名称", str(row.get("材料名称")));
+            line.put("规格型号", str(row.get("规格型号")));
+            line.put("计量单位", str(row.get("计量单位")));
+            // 目标仓优先线边仓（车间超市），没有线边仓就扣总仓
+            String sourceWarehouse = str(row.get("预出仓库")).isEmpty() ? "原料仓" : str(row.get("预出仓库"));
+            String lineSide = str(row.get("线边仓"));
+            line.put("仓库", lineSide.isEmpty() ? sourceWarehouse : lineSide);
+            line.put("源仓库", sourceWarehouse);
+            line.put("批次号", str(row.get("批次号")));
+            line.put("领料工序", str(row.get("领料工序")));
+            line.put("领料工序编码", processCode);
+            line.put("数量", delta);
+            line.put("来源", "报工倒冲");
+            out.add(line);
+        }
+        return out;
+    }
+
+    /**
+     * 报工后按倒冲口径补材料出库（已审核 + 落库存事务）。
+     *
+     * <p>幂等：应领量按「累计报工 × 单件定额 ×（1+损耗率）」算，已领量按已审核材料出库单汇总，
+     * 只补差额，所以重复报工不会重复扣账。
+     */
+    void backflushMaterials(String manuOrderNo) {
+        if (manuOrderNo == null || manuOrderNo.isBlank()) return;
+        FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, manuOrderNo));
+        if (mo == null) return;
+        Map<String, Object> detail = parseData(mo.getDetailData());
+        if (!(detail.get("materials") instanceof List<?> rawMaterials) || rawMaterials.isEmpty()) return;
+        List<Map<String, Object>> materials = new ArrayList<>();
+        for (Object o : rawMaterials) {
+            if (o instanceof Map<?, ?> raw) materials.add(new HashMap<>(castRow(raw)));
+        }
+        if (materials.stream().noneMatch(m -> str(m.get("材料倒冲方式")).contains("倒冲")
+                && !str(m.get("材料倒冲方式")).contains("不倒冲"))) {
+            return;
+        }
+
+        // 已报工数量：按工序（工序名称）汇总已审核工序汇报单
+        Map<String, Double> reported = new LinkedHashMap<>();
+        for (FormData report : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "PROCESS_REPORT"))) {
+            if (!"已审核".equals(report.getStatus())) continue;
+            if (!manuOrderNo.equals(str(parseData(report.getData()).get("加工单号")))) continue;
+            if (!(parseData(report.getDetailData()).get("items") instanceof List<?> lines)) continue;
+            for (Object o : lines) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> line = castRow(raw);
+                double qty = num(line.get("报工数量"));
+                String processCode = str(line.get("工序编码"));
+                String processName = str(line.get("工序名称"));
+                if (!processCode.isEmpty()) reported.merge(processCode, qty, Double::sum);
+                if (!processName.isEmpty()) reported.merge(processName, qty, Double::sum);
+            }
+        }
+        if (reported.isEmpty()) return;
+
+        // 已领/已倒冲数量：按材料编码汇总已审核材料出库单
+        Map<String, Double> issued = new LinkedHashMap<>();
+        for (FormData out : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MATERIAL_OUT"))) {
+            if (!"已审核".equals(out.getStatus())) continue;
+            if (!(parseData(out.getDetailData()).get("items") instanceof List<?> lines)) continue;
+            for (Object o : lines) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> line = castRow(raw);
+                if (!manuOrderNo.equals(str(line.get("加工单号")))) continue;
+                String code = str(line.get("材料编码"));
+                if (code.isEmpty()) continue;
+                issued.merge(code, Math.abs(num(line.get("数量"))), Double::sum);
+            }
+        }
+        for (Map<String, Object> row : materials) {
+            row.put("累计领用数量", issued.getOrDefault(str(row.get("材料编码")), 0.0));
+        }
+
+        List<Map<String, Object>> deltas = backflushDeltas(materials, reported);
+        if (deltas.isEmpty()) return;
+        createBackflushMaterialOut(manuOrderNo, deltas);
+    }
+
+    /** 生成一张「已审核」的倒冲材料出库单并落库存事务（不走人工审核）。 */
+    private void createBackflushMaterialOut(String manuOrderNo, List<Map<String, Object>> deltas) {
+        // 先做库存校验（含线边仓补料），任何一条料不够就整单不出，绝不把库存扣成负数
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> delta : deltas) {
+            String code = str(delta.get("材料编码"));
+            String name = str(delta.get("材料名称"));
+            double qty = num(delta.get("数量"));
+            if (code.isBlank() || qty <= 0) continue;
+            String target = str(delta.get("仓库")).isEmpty() ? "原料仓" : str(delta.get("仓库"));
+            String source = str(delta.get("源仓库")).isEmpty() ? target : str(delta.get("源仓库"));
+            double available = availableOf(code, name, target);
+            if (available + 0.000001 < qty && !target.equals(source)) {
+                double gap = round2(qty - available);
+                double sourceAvailable = availableOf(code, name, source);
+                if (sourceAvailable + 0.000001 < gap) return; // 总仓也不够：不出库
+                createBackflushTransfer(manuOrderNo, delta, source, target, gap);
+                // 补料单已落库存，线边仓可用量至少够本次倒冲
+                available = available + gap;
+            }
+            if (available + 0.000001 < qty) return; // 库存不足：不出库
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("仓库", target);
+            row.put("加工单号", manuOrderNo);
+            row.put("领料工序", str(delta.get("领料工序")));
+            row.put("领料工序编码", str(delta.get("领料工序编码")));
+            row.put("材料编码", code);
+            row.put("存货编码", code);
+            row.put("材料名称", name);
+            row.put("规格型号", str(delta.get("规格型号")));
+            row.put("计量单位", str(delta.get("计量单位")).isEmpty() ? "kg" : str(delta.get("计量单位")));
+            String batch = str(delta.get("批次号"));
+            if (!batch.isBlank()) row.put("批次号", batch);
+            double price = stockAvgPrice(code, name, target);
+            row.put("数量", qty);
+            row.put("单价", price);
+            row.put("金额", round2(qty * price));
+            row.put("领料人", "倒冲");
+            rows.add(row);
+        }
+        if (rows.isEmpty()) return;
+
+        Map<String, Object> head = new LinkedHashMap<>();
+        head.put("单据日期", LocalDate.now().toString());
+        head.put("业务类型", "材料出库");
+        head.put("出库类别", "倒冲出库");
+        head.put("加工单号", manuOrderNo);
+        head.put("备注", "报工自动倒冲");
+        writeStockDoc("MATERIAL_OUT", head, rows, "MANU_ORDER", manuOrderNo);
+    }
+
+    /**
+     * 倒冲差异调整：把「实际消耗数量」和「已倒冲数量」的差额补平。
+     *
+     * <p>倒冲按定额扣账，现场超耗/少耗不会自己体现，这一支负责把差额落成单据：
+     * 多耗 → 倒冲差异补扣（材料出库）；少耗 → 倒冲差异回冲（其他入库）。
+     */
+    private Map<String, Object> createBackflushVarianceAdjustment(String panelCode, Map<String, Object> formData) {
+        if (!"MANU_ORDER".equals(panelCode)) {
+            throw new IllegalStateException("仅生产加工单支持倒冲差异调整，当前单据：" + panelCode);
+        }
+        Object no = formData == null ? null : formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        String moNo = String.valueOf(no);
+        FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, moNo));
+        if (mo == null) throw new IllegalArgumentException("生产加工单不存在：" + moNo);
+        Map<String, Object> detail = parseData(mo.getDetailData());
+        if (!(detail.get("materials") instanceof List<?> materials)) {
+            throw new IllegalStateException("生产加工单没有材料明细：" + moNo);
+        }
+        Map<String, Double> issued = issuedQtyByMaterial(moNo);
+        List<Map<String, Object>> outs = new ArrayList<>();
+        List<Map<String, Object>> ins = new ArrayList<>();
+        for (Object o : materials) {
+            if (!(o instanceof Map<?, ?> raw)) continue;
+            Map<String, Object> m = castRow(raw);
+            String mode = str(m.get("材料倒冲方式"));
+            if (!mode.contains("倒冲") || mode.contains("不倒冲")) continue;
+            if (Boolean.TRUE.equals(m.get("不可倒冲"))) continue;
+            double actual = num(m.get("实际消耗数量"));
+            if (actual <= 0) continue;
+            String code = str(m.get("材料编码"));
+            double diff = round2(actual - issued.getOrDefault(code, 0.0));
+            if (Math.abs(diff) < 0.005) continue;
+            String target = str(m.get("线边仓")).isEmpty() ? str(m.get("预出仓库")) : str(m.get("线边仓"));
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("仓库", target.isEmpty() ? "原料仓" : target);
+            row.put("加工单号", moNo);
+            row.put("材料编码", code);
+            row.put("存货编码", code);
+            row.put("材料名称", str(m.get("材料名称")));
+            row.put("存货名称", str(m.get("材料名称")));
+            row.put("规格型号", str(m.get("规格型号")));
+            row.put("计量单位", str(m.get("计量单位")).isEmpty() ? "kg" : str(m.get("计量单位")));
+            String batch = str(m.get("批次号"));
+            if (!batch.isBlank()) row.put("批次号", batch);
+            row.put("数量", Math.abs(diff));
+            row.put("单价", stockAvgPrice(code, str(m.get("材料名称")), str(row.get("仓库"))));
+            row.put("金额", round2(Math.abs(diff)
+                    * stockAvgPrice(code, str(m.get("材料名称")), str(row.get("仓库")))));
+            if (diff > 0) outs.add(row);
+            else ins.add(row);
+        }
+        if (outs.isEmpty() && ins.isEmpty()) {
+            throw new IllegalStateException("没有倒冲差异：先在加工单材料行填「实际消耗数量」，"
+                    + "且要和已倒冲数量不一致才有差异可调");
+        }
+        if (!outs.isEmpty()) {
+            Map<String, Object> head = new LinkedHashMap<>();
+            head.put("业务类型", "材料出库");
+            head.put("出库类别", "倒冲差异补扣");
+            head.put("加工单号", moNo);
+            head.put("备注", "倒冲差异调整（实际消耗大于定额）");
+            writeStockDoc("MATERIAL_OUT", head, outs, "MANU_ORDER", moNo);
+        }
+        if (!ins.isEmpty()) {
+            Map<String, Object> head = new LinkedHashMap<>();
+            head.put("业务类型", "其他入库");
+            head.put("入库类别", "倒冲差异回冲");
+            head.put("加工单号", moNo);
+            head.put("备注", "倒冲差异调整（实际消耗小于定额）");
+            writeStockDoc("OTHER_IN", head, ins, "MANU_ORDER", moNo);
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("加工单号", moNo);
+        out.put("补扣行数", outs.size());
+        out.put("回冲行数", ins.size());
+        return out;
+    }
+
+    /** 该加工单各材料已领/已倒冲数量（按已审核材料出库单汇总）。 */
+    private Map<String, Double> issuedQtyByMaterial(String manuOrderNo) {
+        Map<String, Double> issued = new LinkedHashMap<>();
+        for (FormData out : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MATERIAL_OUT"))) {
+            if (!"MATERIAL_OUT".equals(out.getPanelCode())) continue;
+            if (!"已审核".equals(out.getStatus())) continue;
+            Map<String, Object> detail;
+            try {
+                detail = parseData(out.getDetailData());
+            } catch (Exception e) {
+                continue;
+            }
+            if (!(detail.get("items") instanceof List<?> lines)) continue;
+            for (Object o : lines) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> line = castRow(raw);
+                if (!manuOrderNo.equals(str(line.get("加工单号")))) continue;
+                String code = str(line.get("材料编码"));
+                if (code.isEmpty()) continue;
+                issued.merge(code, Math.abs(num(line.get("数量"))), Double::sum);
+            }
+        }
+        return issued;
+    }
+
+    /** 线边仓不足时从总仓补料：调拨单（已审核，直接落库存）→ 再按线边仓倒冲。 */
+    private void createBackflushTransfer(String manuOrderNo, Map<String, Object> delta,
+                                         String fromWarehouse, String toWarehouse, double qty) {
+        Map<String, Object> head = new LinkedHashMap<>();
+        head.put("单据日期", LocalDate.now().toString());
+        head.put("业务类型", "调拨");
+        head.put("调出仓库", fromWarehouse);
+        head.put("调入仓库", toWarehouse);
+        head.put("备注", "倒冲补料（线边仓不足自动补）");
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("存货编码", str(delta.get("材料编码")));
+        row.put("存货名称", str(delta.get("材料名称")));
+        row.put("规格型号", str(delta.get("规格型号")));
+        row.put("计量单位", str(delta.get("计量单位")).isEmpty() ? "kg" : str(delta.get("计量单位")));
+        row.put("数量", qty);
+        row.put("单价", stockAvgPrice(str(delta.get("材料编码")), str(delta.get("材料名称")), fromWarehouse));
+        row.put("加工单号", manuOrderNo);
+        row.put("行中止", false);
+        writeStockDoc("TRANSFER", head, List.of(row), "MANU_ORDER", manuOrderNo);
+    }
+
+    /** 插入一张「已审核」的库存单据并立刻落库存事务（倒冲/补料/差异调整共用）。 */
+    private void writeStockDoc(String panelCode, Map<String, Object> head,
+                               List<Map<String, Object>> rows, String sourcePanel, String sourceNo) {
+        head.putIfAbsent("单据日期", LocalDate.now().toString());
+        String no = generateFormNo(panelCode, head);
+        fillNewDefaults(panelCode, head, no);
+        head.put("来源单据", sourcePanel);
+        head.put("来源单号", sourceNo);
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("items", rows);
+        FormData fd = new FormData();
+        fd.setPanelCode(panelCode);
+        fd.setFormNo(no);
+        fd.setData(toJson(head));
+        fd.setDetailData(toJson(detail));
+        fd.setStatus("已审核");
+        fd.setCreateBy("system");
+        fd.setCreateTime(LocalDateTime.now());
+        fd.setUpdateTime(LocalDateTime.now());
+        formMapper.insert(fd);
+        postStockTxn(panelCode, no, head, detail);
+    }
+
+    /** 某仓库某物料的现存量（无库存服务时按 0，纯业务单测走这条）。 */
+    private double availableOf(String code, String name, String warehouse) {
+        if (stockTxnService == null) return Double.MAX_VALUE;
+        BigDecimal qty = stockTxnService.quantityOf(code, name, warehouse);
+        return qty == null ? 0 : qty.doubleValue();
+    }
+
+
+    /** 工序档案：工序编码 → 工序名称（取 OP 面板 operations 明细）。 */
+    private Map<String, Object> processCatalog() {
+        Map<String, Object> out = new HashMap<>();
+        for (FormData op : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "OP"))) {
+            if (!EFFECTIVE_STATUSES.contains(op.getStatus()) && !"启用".equals(op.getStatus())) continue;
+            Map<String, Object> detail = parseData(op.getDetailData());
+            if (!(detail.get("operations") instanceof List<?> rows)) continue;
+            for (Object o : rows) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> row = castRow(raw);
+                String code = str(row.get("工序编码"));
+                String name = str(row.get("工序名称"));
+                if (!code.isEmpty()) out.put("code:" + code, name);
+                if (!name.isEmpty()) out.put("name:" + name, code);
+            }
+        }
+        return out;
+    }
+
+    private String processNameOf(String processCode) {
+        return str(processCatalog().get("code:" + processCode));
+    }
+
+    private String processCodeOf(String processName) {
+        return str(processCatalog().get("name:" + processName));
+    }
+
+    /** BOM 子件的投料方式：领料 / 倒冲（倒冲料报工时自动扣账，不许手工领）。 */
+    private static String backflushModeOf(Map<String, Object> bomChild) {
+        String mode = str(bomChild.get("投料方式"));
+        return mode.contains("倒冲") ? "按定额倒冲" : "不倒冲";
+    }
+
+    /** 材料行身份：材料编码 + 领料工序（同一材料可挂多道工序，各自一行）。 */
+    private static String materialProcessKey(Map<String, Object> row) {
+        return str(row.get("材料编码")) + "|" + str(row.get("领料工序"));
+    }
+
+    /**
+     * 领料申请单不允许手工领倒冲料：倒冲料由报工自动扣账，再手工领一次会重复扣料。
+     *
+     * <p>判定看来源加工单的材料明细（材料倒冲方式含"倒冲"且不是"不倒冲"）。
+     */
+    @SuppressWarnings("unchecked")
+    void assertNoBackflushReqItems(Map<String, Object> detail) {
+        if (!(detail.get("items") instanceof List<?> items)) return;
+        Map<String, java.util.Set<String>> backflushByMo = new HashMap<>();
+        for (Object o : items) {
+            if (!(o instanceof Map<?, ?> raw)) continue;
+            Map<String, Object> item = castRow(raw);
+            String moNo = str(item.get("加工单号"));
+            String code = str(item.get("材料编码"));
+            if (moNo.isEmpty() || code.isEmpty()) continue;
+            java.util.Set<String> codes = backflushByMo.get(moNo);
+            if (codes == null) {
+                codes = new java.util.HashSet<>();
+                FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                        .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, moNo));
+                if (mo != null) {
+                    Map<String, Object> d = parseData(mo.getDetailData());
+                    if (d.get("materials") instanceof List<?> mats) {
+                        for (Object m : mats) {
+                            if (!(m instanceof Map<?, ?> mr)) continue;
+                            Map<String, Object> row = castRow(mr);
+                            String mode = str(row.get("材料倒冲方式"));
+                            if (mode.contains("倒冲") && !mode.contains("不倒冲")) codes.add(str(row.get("材料编码")));
+                        }
+                    }
+                }
+                backflushByMo.put(moNo, codes);
+            }
+            if (codes.contains(code)) {
+                throw new IllegalStateException(String.format(
+                        "%s 是加工单 %s 的倒冲料（报工时自动扣账），不能手工领料", code, moNo));
+            }
+        }
+    }
+
+    /**
+     * 领料申请单：剔除数量为 0 的明细行。
+     *
+     * <p>选单时会把加工单材料明细整页带过来，其中计划数量为 0 的行（不需要领用）
+     * 会让校验报「第 N 行执行数量必须大于 0」，整张单存不下。
+     */
+    @SuppressWarnings("unchecked")
+    void dropZeroQuantityReqItems(Map<String, Object> detail) {
+        if (!(detail.get("items") instanceof List<?> raw)) return;
+        List<Map<String, Object>> kept = new ArrayList<>();
+        for (Object o : raw) {
+            if (!(o instanceof Map<?, ?> row)) continue;
+            Map<String, Object> item = castRow(row);
+            if (num(item.get("数量")) > 0) kept.add(item);
+        }
+        detail.put("items", kept);
+    }
+
+    /**
+     * 加工单保存前的产成品校验与补全：类别不合规直接拒绝，适用BOM 为空则按产品解析。
+     */
+    @SuppressWarnings("unchecked")
+    void normalizeManuProducts(Map<String, Object> detail) {
+        if (!(detail.get("products") instanceof List<?> list)) return;
+        List<Map<String, Object>> products = new ArrayList<>();
+        for (Object o : list) {
+            if (o instanceof Map<?, ?> raw) products.add(castRow(raw));
+        }
+        assertProductCategories(products);
+        for (Map<String, Object> row : products) {
+            if (!str(row.get("适用BOM")).isEmpty()) continue;
+            String bomNo = defaultBomNoOf(str(row.get("产品编码")));
+            if (!bomNo.isEmpty()) row.put("适用BOM", bomNo);
+        }
+        syncMaterialQuantities(detail, products);
+    }
+
+    /**
+     * 材料数量跟着产成品数量走（保存时自动同步，不用再点按钮）。
+     *
+     * <p>只更新 BOM 展开得出的那几行数量（定额/需用/损耗/计划）；
+     * 人工额外加的材料行原样保留，不会被清掉。
+     */
+    @SuppressWarnings("unchecked")
+    private void syncMaterialQuantities(Map<String, Object> detail, List<Map<String, Object>> products) {
+        if (!(detail.get("materials") instanceof List<?> rawMaterials)) return;
+        List<Map<String, Object>> desired = materialsForProducts(products);
+        if (desired.isEmpty()) return;                       // 产品都没配 BOM：保持原样
+        // 键 = 材料编码 + 领料工序：同一材料挂多道工序是多行，不能按材料合并
+        Map<String, Map<String, Object>> want = new LinkedHashMap<>();
+        for (Map<String, Object> row : desired) {
+            want.put(materialProcessKey(row), row);
+        }
+        List<Map<String, Object>> materials = new ArrayList<>();
+        for (Object o : rawMaterials) {
+            if (!(o instanceof Map<?, ?> raw)) continue;
+            Map<String, Object> row = castRow(raw);
+            Map<String, Object> target = want.remove(materialProcessKey(row));
+            if (target == null && str(row.get("领料工序")).isEmpty()) {
+                // 老数据没有工序：按材料匹配，顺手把工序补上，避免多出一行重复材料
+                for (String key : new ArrayList<>(want.keySet())) {
+                    if (key.startsWith(str(row.get("材料编码")) + "|")) {
+                        target = want.remove(key);
+                        break;
+                    }
+                }
+            }
+            if (target != null) {
+                row.put("定额需用数量", target.get("定额需用数量"));
+                row.put("损耗率%", target.get("损耗率%"));
+                row.put("需用数量", target.get("需用数量"));
+                row.put("损耗数量", target.get("损耗数量"));
+                row.put("计划数量", target.get("计划数量"));
+                row.put("定额生产数量", target.get("定额生产数量"));
+                row.put("子件BOM", target.get("子件BOM"));
+                if (str(row.get("领料工序")).isEmpty()) row.put("领料工序", target.get("领料工序"));
+            }
+            materials.add(row);
+        }
+        // BOM 里有、材料明细里还没有的，补上整行
+        materials.addAll(want.values());
+        detail.put("materials", materials);
+    }
+
+    /**
+     * 该产品默认物料清单的单号（没有返回空串）。
+     *
+     * <p>加工单生成时曾把「适用BOM」写死成 BOM-001，导致所有产品都挂到第一张 BOM 上；
+     * 这里按产品自己的父件关系解析，找不到就留空，由界面提示「请选择」。
+     */
+    String defaultBomNoOf(String productCode) {
+        FormData bom = defaultBomOf(productCode);
+        return bom == null ? "" : bom.getFormNo();
+    }
+
+    /**
+     * 产成品明细只能是「产成品 / 半成品」。
+     *
+     * <p>原材料、辅助材料、包装物应当走材料明细，混进产成品会导致 BOM 展开、
+     * 齐套、报工全部错位（实操里确实有人把切削液填成产成品）。
+     */
+    void assertProductCategories(List<Map<String, Object>> products) {
+        if (products == null || products.isEmpty()) return;
+        Map<String, String> categories = invCategoryIndex();
+        for (Map<String, Object> row : products) {
+            String code = str(row.get("产品编码"));
+            if (code.isEmpty()) continue;
+            String name = str(row.get("产品名称"));
+            String category = categories.getOrDefault(code, "");
+            if (category.isEmpty()) continue; // 存货档案缺失不拦，避免历史数据保存不了
+            if ("产成品".equals(category) || "半成品".equals(category)) continue;
+            String shown = name.isEmpty() ? code : name + "（" + code + "）";
+            throw new IllegalStateException(String.format(
+                    "产成品明细只能填产成品或半成品：%s 属于「%s」，请改填到材料明细", shown, category));
+        }
+    }
+
+    /**
+     * 该产品的首道工序名称（BOM 表头 工艺路线编码 → 路线第一道工序）。
+     *
+     * <p>BOM 子件没指定领料工序时，材料算在首道工序上，不会出现「没有工序」的行。
+     */
+    private String firstProcessOf(String productCode) {
+        FormData bom = defaultBomOf(productCode);
+        String routeCode = bom == null ? "" : str(parseData(bom.getData()).get("工艺路线编码"));
+        if (routeCode.isEmpty()) return "下料";
+        List<Map<String, Object>> rows = routeRowsOf(routeCode);
+        if (rows.isEmpty()) return "下料";
+        for (Map<String, Object> row : rows) {
+            String name = str(row.get("工序名称"));
+            if (!name.isEmpty()) return name;
+        }
+        return "下料";
+    }
+
+    /** 存货编码 → 所属类别（取存货面板明细）。 */
+    private Map<String, String> invCategoryIndex() {
+        Map<String, String> out = new HashMap<>();
+        for (FormData inv : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "INV"))) {
+            if (!EFFECTIVE_STATUSES.contains(inv.getStatus()) && !"启用".equals(inv.getStatus())) continue;
+            Map<String, Object> detail = parseData(inv.getDetailData());
+            String fallback = str(parseData(inv.getData()).get("类别"));
+            if (!(detail.get("items") instanceof List<?> items)) continue;
+            for (Object o : items) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> row = castRow(raw);
+                String code = str(row.get("存货编码"));
+                if (code.isEmpty()) continue;
+                String category = str(row.get("所属类别"));
+                out.put(code, category.isEmpty() ? fallback : category);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * 按产成品明细展开材料需求：材料计划数量 = 定额数量 ÷ 生产数量 × 产品数量 × (1+损耗率)。
+     *
+     * <p>定额是按 BOM 的「生产数量」这个基准给的（基准 10 件定额 25kg → 单件 2.5kg），
+     * 以前直接乘产品数量会放大 10 倍。同一材料出现在多个产品下时合并成一行。
+     */
+    List<Map<String, Object>> materialsForProducts(List<Map<String, Object>> products) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        if (products == null || products.isEmpty()) return out;
+        // 合并键 = 材料编码 + 领料工序：同一材料挂多道工序时保留多行，各行额度独立
+        Map<String, Integer> rowOfMaterial = new HashMap<>();
+        for (Map<String, Object> product : products) {
+            String productCode = str(product.get("产品编码"));
+            if (productCode.isEmpty()) continue;
+            double productQty = num(product.get("数量"));
+            FormData bom = defaultBomOf(productCode);
+            if (bom == null) continue;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> bomDetail = parseData(bom.getDetailData());
+            if (!(bomDetail.get("children") instanceof List<?> children)) continue;
+            for (Object o : children) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> child = castRow(raw);
+                String materialCode = str(child.get("子件编码"));
+                if (materialCode.isEmpty()) continue;
+                double quota = num(child.get("定额数量"));
+                double needQty = PlanAnalyzeService.unitUsage(BigDecimal.valueOf(quota), BigDecimal.valueOf(num(child.get("生产数量"))))
+                        .multiply(BigDecimal.valueOf(productQty)).doubleValue();
+                double lossQty = needQty * num(child.get("损耗率%")) / 100.0;
+                String processCode = str(child.get("领料工序编码"));
+                String processName = str(child.get("领料工序"));
+                if (processName.isEmpty() && !processCode.isEmpty()) processName = processNameOf(processCode);
+                if (processName.isEmpty()) processName = firstProcessOf(productCode);
+                if (processCode.isEmpty() && !processName.isEmpty()) processCode = processCodeOf(processName);
+                String mergeKey = materialCode + "|" + processName;
+                Integer exist = rowOfMaterial.get(mergeKey);
+                if (exist != null) {
+                    Map<String, Object> row = out.get(exist);
+                    double mergedNeed = num(row.get("需用数量")) + needQty;
+                    double mergedLoss = num(row.get("损耗数量")) + lossQty;
+                    row.put("需用数量", round2(mergedNeed));
+                    row.put("损耗数量", round2(mergedLoss));
+                    row.put("计划数量", round2(mergedNeed + mergedLoss));
+                    continue;
+                }
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("材料编码", materialCode);
+                row.put("材料名称", child.getOrDefault("子件名称", ""));
+                row.put("规格型号", child.getOrDefault("规格型号", ""));
+                row.put("计量单位", child.getOrDefault("子件计量单位", "kg"));
+                row.put("定额需用数量", PlanAnalyzeService.unitUsage(BigDecimal.valueOf(quota), BigDecimal.valueOf(num(child.get("生产数量")))).doubleValue());
+                row.put("损耗率%", num(child.get("损耗率%")));
+                row.put("子件BOM", productCode);
+                String warehouse = stockTxnService == null ? null
+                        : stockTxnService.warehouseOfItem(materialCode, str(child.get("子件名称")));
+                row.put("预出仓库", warehouse == null || warehouse.isBlank() ? "原料仓" : warehouse);
+                row.put("材料倒冲方式", backflushModeOf(child));
+                row.put("领料工序", processName);
+                row.put("领料工序编码", processCode);
+                row.put("允许循环", false);
+                row.put("行中止", false);
+                row.put("定额生产数量", num(child.get("生产数量")));
+                row.put("需用数量", round2(needQty));
+                row.put("损耗数量", round2(lossQty));
+                row.put("计划数量", round2(needQty + lossQty));
+                row.put("累计领用数量", 0);
+                row.put("可用量", 0);
+                row.put("可用量说明", "");
+                row.put("现存量", 0);
+                row.put("现存量说明", "");
+                row.put("单重", 0);
+                row.put("总重", 0);
+                row.put("存货图片", "");
+                rowOfMaterial.put(mergeKey, out.size());
+                out.add(row);
+            }
+        }
+        return out;
+    }
+
+    /** 该产品的默认物料清单：优先 默认BOM=true，否则取第一张已审核的。 */
+    private FormData defaultBomOf(String productCode) {
+        if (productCode == null || productCode.isBlank()) return null;
+        FormData fallback = null;
+        for (FormData bom : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "BOM")
+                .orderByAsc(FormData::getId))) {
+            if (!EFFECTIVE_STATUSES.contains(bom.getStatus())) continue;
+            String parent = parentCodeOf(bom, productCode);
+            if (!productCode.equals(parent)) continue;
+            boolean isDefault = isDefaultBomOf(bom);
+            if (isDefault) return bom;
+            if (fallback == null) fallback = bom;
+        }
+        return fallback;
+    }
+
+    private boolean isDefaultBomOf(FormData bom) {
+        Map<String, Object> d = parseData(bom.getDetailData());
+        if (!(d.get("children") instanceof List<?> rows)) return false;
+        for (Object o : rows) {
+            if (o instanceof Map<?, ?> raw && Boolean.TRUE.equals(castRow(raw).get("默认BOM"))) return true;
+        }
+        return false;
+    }
+
+    /** 该产品 BOM 表头已配的路线编码（没配返回空串）。 */
+    private String bomRouteOf(String productCode) {
+        FormData bom = defaultBomOf(productCode);
+        if (bom == null) return "";
+        return str(parseData(bom.getData()).get("工艺路线编码"));
+    }
+
+    /** 路线名称：给 BOM 表头一并回填，列表里才看得懂。 */
+    private String routeNameOf(String routeCode) {
+        if (routeCode == null || routeCode.isBlank()) return "";
+        for (FormData route : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "ROUTE"))) {
+            if (!EFFECTIVE_STATUSES.contains(route.getStatus())) continue;
+            if (!routeCode.equals(str(parseData(route.getData()).get("工艺路线编码")))) continue;
+            return str(parseData(route.getData()).get("工艺路线名称"));
+        }
+        return "";
+    }
+
     /** BOM 明细里的父件编码（老 BOM 表头没有产品编码，只能从子件行反查）。 */
     private String parentCodeOf(FormData bom, String code) {
         Map<String, Object> d = parseData(bom.getDetailData());
@@ -5078,40 +6829,52 @@ public class PxService implements PanelRuntimeService {
      *
      * <p>工艺路线档案在 PDM（ROUTE），产品与路线的绑定配置在 BOM 表头「工艺路线编码」。
      */
+    /**
+     * 按产品逐条展开工序：一张加工单里有几个产品就展开几组工序。
+     *
+     * <p>此前只取 products.get(0)：多产品加工单只带出第一个产品的工艺路线，
+     * 排产时另外几个产品根本没有工序可排。现在每个产品各按自己的路线展开，
+     * 加工顺序在每个产品内部从 1 开始，工序行带产品编码/名称/规格，排产与派工都按产品分组。
+     */
     List<Map<String, Object>> resolveProcesses(List<Map<String, Object>> products, String workshop) {
         if (products == null || products.isEmpty()) return defaultProcesses(products, workshop);
-        String code = String.valueOf(products.get(0).getOrDefault("产品编码",
-                products.get(0).getOrDefault("存货编码", ""))).trim();
-        String routeCode = "";
-        if (!code.isEmpty()) {
-            for (FormData bom : formMapper.selectList(new LambdaQueryWrapper<FormData>()
-                    .eq(FormData::getPanelCode, "BOM"))) {
-                Map<String, Object> h = parseData(bom.getData());
-                String owner = str(h.getOrDefault("产品编码", ""));
-                if (owner.isEmpty()) owner = parentCodeOf(bom, code);
-                if (!code.equals(owner)) continue;
-                String rc = str(h.getOrDefault("工艺路线编码", ""));
-                if (!rc.isEmpty()) { routeCode = rc; break; }
-            }
-        }
-        if (routeCode.isEmpty()) return defaultProcesses(products, workshop);
-        List<Map<String, Object>> routeRows = routeRowsOf(routeCode);
-        if (routeRows.isEmpty()) return defaultProcesses(products, workshop);
-
-        routeRows.sort((a, b) -> Double.compare(num(a.get("加工顺序")), num(b.get("加工顺序"))));
-        Object qty = products.get(0).getOrDefault("数量", 0);
-        Object req = products.get(0).getOrDefault("需求令号", "");
-        Object fig = products.get(0).getOrDefault("图号", "");
         List<Map<String, Object>> out = new ArrayList<>();
         int seq = 0;
-        for (Map<String, Object> r : routeRows) {
-            seq++;
-            addDefaultProc(out, seq, str(r.get("工序编码")), str(r.get("工序名称")),
-                    str(r.getOrDefault("生产车间", workshop)), str(r.get("设备")),
-                    str(r.get("班组")), "", qty, num(r.getOrDefault("工价", r.get("计件单价"))),
-                    num(r.get("单位标准工时")), req, fig);
+        for (Map<String, Object> product : products) {
+            String code = str(product.getOrDefault("产品编码", product.getOrDefault("存货编码", "")));
+            String routeCode = code.isEmpty() ? "" : bomRouteOf(code);
+            List<Map<String, Object>> routeRows = routeCode.isEmpty()
+                    ? List.of() : routeRowsOf(routeCode);
+            Object qty = product.getOrDefault("数量", 0);
+            Object req = product.getOrDefault("需求令号", "");
+            Object fig = product.getOrDefault("图号", "");
+            if (routeRows.isEmpty()) {
+                // 该产品没路线：按默认 3 道工序兜底，仍然带产品信息
+                for (Map<String, Object> proc : defaultProcesses(List.of(product), workshop)) {
+                    proc.put("加工顺序", ++seq);
+                    proc.put("产品编码", code);
+                    proc.put("产品名称", str(product.get("产品名称")));
+                    proc.put("规格型号", str(product.get("规格型号")));
+                    out.add(proc);
+                }
+                continue;
+            }
+            routeRows.sort((a, b) -> Double.compare(num(a.get("加工顺序")), num(b.get("加工顺序"))));
+            for (Map<String, Object> r : routeRows) {
+                List<Map<String, Object>> one = new ArrayList<>();
+                addDefaultProc(one, ++seq, str(r.get("工序编码")), str(r.get("工序名称")),
+                        str(r.getOrDefault("生产车间", workshop)), str(r.get("设备")),
+                        str(r.get("班组")), "", qty, num(r.getOrDefault("工价", r.get("计件单价"))),
+                        num(r.get("单位标准工时")), req, fig);
+                Map<String, Object> row = one.get(0);
+                row.put("产品编码", code);
+                row.put("产品名称", str(product.get("产品名称")));
+                row.put("规格型号", str(product.get("规格型号")));
+                row.put("工序单位", str(product.getOrDefault("生产单位", "件")));
+                out.add(row);
+            }
         }
-        return out;
+        return out.isEmpty() ? defaultProcesses(products, workshop) : out;
     }
 
     private List<Map<String, Object>> defaultProcesses(List<Map<String, Object>> products, String workshop) {
@@ -5207,6 +6970,11 @@ public class PxService implements PanelRuntimeService {
             @SuppressWarnings("unchecked")
             Map<String, Object> detailMap = (Map<String, Object>) map;
             deriveInspectionDetail(panelCode, detailMap);
+            // 领料申请单：先剔掉「数量 0」的来源行，再走来源校验（否则第 3 行 0 数量会直接拦下整张单）
+            if ("MATERIAL_REQ".equals(panelCode)) {
+                dropZeroQuantityReqItems(detailMap);
+                assertNoBackflushReqItems(detailMap);
+            }
             // 采购发票行级来源：先归一来源键，再走通用来源校验（存在/已审核/防重复/防超量）
             if ("PU_INVOICE".equals(panelCode)) normalizeInvoiceRowSources(detailMap);
             validateSourceLinks(panelCode, no == null ? null : String.valueOf(no), detailMap);
@@ -5214,6 +6982,10 @@ public class PxService implements PanelRuntimeService {
             if ("PU_INVOICE".equals(panelCode)) {
                 deriveInvoiceHeader(detailMap, formData, no == null ? null : String.valueOf(no));
             }
+            // 加工单：产成品明细只收产成品/半成品，适用BOM 未填的按产品自动补齐
+            if ("MANU_ORDER".equals(panelCode)) normalizeManuProducts(detailMap);
+            // 成品报检：合格/不合格不能越过报检数量，草稿保存时就拦（不用等到提交审批）
+            if ("FINISH_INSPECT".equals(panelCode)) validateFinishInspectQuantities(firstDetailRows(detailMap));
         }
         String stateField = (String) fieldsOf(panelCode).get("stateFieldName");
         formData.remove("编号");
@@ -5241,6 +7013,17 @@ public class PxService implements PanelRuntimeService {
                     resetDispositionToPending(next);
                 }
             }
+            // 加工单草稿改号：勾了手工修改编码就把 form_no 一起改掉，避免单号与表单显示不一致
+            String retyped = textOf(formData.get("锭号")).trim();
+            if ("MANU_ORDER".equals(panelCode) && ManualDocNoRules.manualEdit(formData)
+                    && !retyped.isEmpty() && !retyped.equals(fd.getFormNo())) {
+                if (formMapper.selectCount(new LambdaQueryWrapper<FormData>()
+                        .eq(FormData::getPanelCode, panelCode)
+                        .eq(FormData::getFormNo, retyped)) > 0) {
+                    throw new IllegalStateException("生产加工单号已存在：" + retyped);
+                }
+                fd.setFormNo(retyped);
+            }
             fd.setData(toJson(formData));
             // 明细兜底：未传 detail（如列表页仅保存表头）时保留原明细，禁止用 null 覆盖清空
             fd.setDetailData(detail == null || "null".equals(String.valueOf(detail)) ? fd.getDetailData() : toJson(detail));
@@ -5260,7 +7043,12 @@ public class PxService implements PanelRuntimeService {
             } else if (isArchivePanel(panelCode)) {
                 newNo = archNo(panelCode);
             } else {
-                newNo = generateFormNo(panelCode, formData);
+                String generated = generateFormNo(panelCode, formData);
+                // 加工单手工编号：勾了「是否手工修改单据编码」就按填的用，不套编码规则，但必须唯一
+                newNo = ManualDocNoRules.resolve(panelCode, formData, textOf(formData.get("锭号")),
+                        generated, candidate -> formMapper.selectCount(new LambdaQueryWrapper<FormData>()
+                                .eq(FormData::getPanelCode, panelCode)
+                                .eq(FormData::getFormNo, candidate)) > 0);
             }
             fd.setFormNo(newNo);
             // 新建保存兜底（2026-08-20 定稿）：所有面板补 字段默认值 + 单据日期=当天 + 单据编号/锭号=form_no
@@ -5275,11 +7063,52 @@ public class PxService implements PanelRuntimeService {
             fd.setUpdateTime(LocalDateTime.now());
             formMapper.insert(fd);
         }
+        // 工艺路线保存后，按编码约定把它挂到对应产品的物料清单上。
+        // 工艺路线编码存在 BOM 表头，不在路线单据里；没有这一步，新建的路线
+        // 「谁也用不上」，计划分析仍会报该产品未配置工艺路线。
+        if ("ROUTE".equals(panelCode)) {
+            linkRouteToBom(textOf(formData.get("工艺路线编码")).trim());
+        }
         Map<String, Object> out = new HashMap<>();
         out.put("编号", fd.getFormNo());
         out.put("单据状态", fd.getStatus());
         out.put(stateField, fd.getStatus());
         return out;
+    }
+
+    /**
+     * 把工艺路线按编码约定挂到物料清单：{@code GY-<产品编码>} → 该产品（BOM 父件）的那张 BOM。
+     *
+     * <p>只在 BOM 还没填过工艺路线时写，绝不覆盖人工已有的选择；
+     * 编码不符合约定（如 GY-001）时什么也不做，保持既能自动也能手工。
+     */
+    private void linkRouteToBom(String routeCode) {
+        if (routeCode == null || !routeCode.startsWith("GY-") || routeCode.length() <= 3) return;
+        String productCode = routeCode.substring(3).trim();
+        if (productCode.isEmpty()) return;
+
+        List<FormData> boms = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "BOM"));
+        for (FormData bom : boms) {
+            Map<String, Object> head = parseData(bom.getData());
+            if (!textOf(head.get("工艺路线编码")).trim().isEmpty()) continue;
+            if (!bomHasParent(bom, productCode)) continue;
+            head.put("工艺路线编码", routeCode);
+            bom.setData(toJson(head));
+            bom.setUpdateTime(LocalDateTime.now());
+            formMapper.updateById(bom);
+        }
+    }
+
+    /** 这张 BOM 的明细里是否有以 {@code parentCode} 为父件的行。 */
+    private boolean bomHasParent(FormData bom, String parentCode) {
+        Object children = parseData(bom.getDetailData()).get("children");
+        if (!(children instanceof List<?> rows)) return false;
+        for (Object item : rows) {
+            if (!(item instanceof Map<?, ?> row)) continue;
+            if (parentCode.equals(textOf(row.get("父件编码")).trim())) return true;
+        }
+        return false;
     }
 
     /**
@@ -6112,7 +7941,8 @@ public class PxService implements PanelRuntimeService {
      * 工序汇报单、派工单选的是工序行，领料单选的是材料行——按来源行号取值必须落到对应页，
      * 否则行号对不上，会出现「计划 0、已报 0」这种对不上的校验结果。
      */
-    private List<Map<String, Object>> sourceRowsFor(FormData source, String targetPanel, String sourcePanel) {
+    // 包内可见：单元测试要校验「目标单据 → 来源哪一页明细」的映射
+    List<Map<String, Object>> sourceRowsFor(FormData source, String targetPanel, String sourcePanel) {
         Map<String, Object> detail = parseData(source.getDetailData());
         String key = detailKeyFor(targetPanel, sourcePanel);
         if (key != null && detail.get(key) instanceof List<?> list && !list.isEmpty()) {
@@ -6130,7 +7960,9 @@ public class PxService implements PanelRuntimeService {
         if ("MANU_ORDER".equals(sourcePanel)) {
             return switch (targetPanel) {
                 case "PROCESS_REPORT", "DISPATCH" -> "processes";
-                case "MATERIAL_OUT" -> "materials";
+                // 领料申请单/材料出库单都领「材料明细」；漏了 MATERIAL_REQ 会退化成取第一页（产成品），
+                // 于是拿产成品数量(2) 当可执行量去卡材料需求量(4.2)，报「来源明细超量」。
+                case "MATERIAL_OUT", "MATERIAL_REQ" -> "materials";
                 case "FINISH_IN" -> "products";
                 default -> null;
             };
@@ -6359,6 +8191,7 @@ public class PxService implements PanelRuntimeService {
                 }
             }
             if ("FINISH_INSPECT".equals(panelCode)) validateFinishInspectQuantities(rows);
+            if ("FIRST_INSPECT".equals(panelCode)) validateFirstInspectVerdict(rows);
             validateReportSampling(rows);
             // 完工报检必须与上游加工单对得上，否则会出现"还在生产中就已报检完成"
             validateReportAgainstUpstream(panelCode, document, rows);
@@ -6552,19 +8385,79 @@ public class PxService implements PanelRuntimeService {
      * @param processCount 工序数；无工序路线的老单不做此限制
      */
     private void requireFirstInspectApproved(String manuOrderNo, int processCount) {
-        for (FormData doc : formMapper.selectList(new LambdaQueryWrapper<FormData>()
-                .eq(FormData::getPanelCode, "FIRST_INSPECT"))) {
-            if ("作废".equals(doc.getStatus())) continue;
-            if (!manuOrderNo.equals(str(parseData(doc.getData()).get("加工单号")))) continue;
-            if (!"已审核".equals(doc.getStatus())) {
-                throw new IllegalStateException("首件报检单 " + doc.getFormNo() + " 状态为「" + doc.getStatus()
-                        + "」，首检通过后才能入库");
+        List<FormData> docs = firstInspectDocsOf(manuOrderNo);
+        Map<String, String> processes = processNamesOf(manuOrderNo);
+        if (processes.isEmpty()) {
+            // 老单没有工序明细：按「有首检单就必须审过」兜底
+            for (FormData doc : docs) {
+                if (!"已审核".equals(doc.getStatus())) {
+                    throw new IllegalStateException("首件报检单 " + doc.getFormNo() + " 状态为「" + doc.getStatus()
+                            + "」，首检通过后才能入库");
+                }
+            }
+            if (docs.isEmpty() && processCount > 0) {
+                throw new IllegalStateException("加工单 " + manuOrderNo + " 还没有首件报检单，请先完成首检再入库");
             }
             return;
         }
-        // 有工序路线却一张首检单都没有，同样不能入库（正常情况下末道完工会自动生成）
+        // 一工序一单：每道工序都要有已审核的首检单，缺哪道点哪道
+        for (Map.Entry<String, String> entry : processes.entrySet()) {
+            FormData doc = firstInspectOf(manuOrderNo, entry.getKey());
+            if (doc == null) {
+                throw new IllegalStateException("工序「" + entry.getValue()
+                        + "」还没有首件报检单，首检通过后才能入库");
+            }
+            if (!"已审核".equals(doc.getStatus())) {
+                throw new IllegalStateException("工序「" + entry.getValue() + "」的首件报检单 "
+                        + doc.getFormNo() + " 状态为「" + doc.getStatus() + "」，首检通过后才能入库");
+            }
+            if (!inspectionPassed(doc)) {
+                throw new IllegalStateException("工序「" + entry.getValue() + "」的首件报检单 "
+                        + doc.getFormNo() + " 判定「" + inspectionVerdict(doc) + "」，不能入库");
+            }
+        }
+    }
+
+    /** 加工单的工序清单：工序编码 → 工序名称（按明细顺序）。 */
+    private Map<String, String> processNamesOf(String manuOrderNo) {
+        Map<String, String> out = new LinkedHashMap<>();
+        if (manuOrderNo == null || manuOrderNo.isBlank()) return out;
+        FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, manuOrderNo));
+        if (mo == null) return out;
+        Map<String, Object> detail = parseData(mo.getDetailData());
+        if (detail.get("processes") instanceof List<?> procs) {
+            for (Object o : procs) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> row = castRow(raw);
+                String code = str(row.get("工序编码"));
+                if (code.isBlank()) continue;
+                out.putIfAbsent(code, str(row.get("工序名称")));
+            }
+        }
+        return out;
+    }
+
+    /**
+     * 完工检验放行：有工序路线的加工单，必须先审掉成品报检单才能入库。
+     *
+     * <p>成品报检 = 整单全面检验，是入库前的最后一道质量门；无工序路线的老单不做此限制。
+     *
+     * @param processCount 工序数
+     */
+    private void requireFinishInspectApproved(String manuOrderNo, int processCount) {
+        for (FormData doc : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "FINISH_INSPECT"))) {
+            if ("作废".equals(doc.getStatus())) continue;
+            if (!manuOrderNo.equals(str(parseData(doc.getData()).get("加工单号")))) continue;
+            if (!"已审核".equals(doc.getStatus())) {
+                throw new IllegalStateException("成品报检单 " + doc.getFormNo() + " 状态为「" + doc.getStatus()
+                        + "」，完工检验通过后才能产成品入库");
+            }
+            return;
+        }
         if (processCount > 0) {
-            throw new IllegalStateException("加工单 " + manuOrderNo + " 还没有首件报检单，请先完成首检再入库");
+            throw new IllegalStateException("加工单 " + manuOrderNo + " 还没有成品报检单，请先完成完工检验再入库");
         }
     }
 
@@ -6623,6 +8516,11 @@ public class PxService implements PanelRuntimeService {
         if (pg == null) throw new IllegalArgumentException("排产批次不存在：" + dispatchNo);
         if (!"已审核".equals(pg.getStatus())) {
             throw new IllegalStateException("排产批次未审批通过，不能领料：" + dispatchNo);
+        }
+        FormData blocking = blockingIssueOfBatch(dispatchNo);
+        if (blocking != null) {
+            throw new IllegalStateException("批次 " + dispatchNo + " 已有材料出库单 " + blocking.getFormNo()
+                    + "（" + blocking.getStatus() + "）：审批中或已审批通过不能重复领料，被驳回后可重新领料");
         }
         Map<String, Object> pgHead = parseData(pg.getData());
         Map<String, Object> pgDetail = parseData(pg.getDetailData());
@@ -6708,7 +8606,61 @@ public class PxService implements PanelRuntimeService {
 
         Map<String, Object> detailMap = new LinkedHashMap<>();
         detailMap.put("items", rows);
-        return insertGenerated("MATERIAL_OUT", "DISPATCH", dispatchNo, data, detailMap);
+        Map<String, Object> created = insertGenerated("MATERIAL_OUT", "DISPATCH", dispatchNo, data, detailMap);
+        String outNo = str(created.get("编号"));
+        if (!outNo.isEmpty()) submitIssueForApproval(outNo, created);
+        return created;
+    }
+
+    /**
+     * 现场领料生成的出库单也要走审批：生成后立即提交，单据以「审批中」进入待审批队列。
+     *
+     * <p>提交失败不留半张草稿——草稿状态下看板会误判成「可再领」，容易重复出库。
+     * 审批通过才落库存（stock_txn 在审核时写），驳回则退回草稿，可以重新领料。
+     */
+    void submitIssueForApproval(String outNo, Map<String, Object> created) {
+        try {
+            submitApproval("MATERIAL_OUT", new LinkedHashMap<>(Map.of("编号", outNo)));
+            created.put("单据状态", "审批中");
+        } catch (RuntimeException e) {
+            FormData draft = formOf("MATERIAL_OUT", outNo);
+            if (draft != null) formMapper.deleteById(draft.getId());
+            throw new IllegalStateException("材料出库单 " + outNo + " 提交审批失败：" + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 该排产批次上「审批中 / 已审核」的材料出库单（有就返回，没有返回 null）。
+     *
+     * <p>一张批次领料单锁住整个批次：审批中或已审批通过都不允许再领，避免同批重复出库；
+     * 被驳回的单据会退回草稿，那时可以重新领料。
+     */
+    private FormData blockingIssueOfBatch(String dispatchNo) {
+        if (dispatchNo == null || dispatchNo.isBlank()) return null;
+        for (FormData out : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MATERIAL_OUT"))) {
+            if (!"审批中".equals(out.getStatus()) && !"已审核".equals(out.getStatus())) continue;
+            if (!dispatchNo.equals(issueDispatchOf(out))) continue;
+            return out;
+        }
+        return null;
+    }
+
+    /** 材料出库单归属的排产批次：优先取明细行的「排产单号」，退回表头来源单号。 */
+    private String issueDispatchOf(FormData out) {
+        try {
+            Map<String, Object> detail = parseData(out.getDetailData());
+            if (detail.get("items") instanceof List<?> items) {
+                for (Object o : items) {
+                    if (!(o instanceof Map<?, ?> raw)) continue;
+                    String no = str(castRow(raw).get("排产单号"));
+                    if (!no.isBlank()) return no;
+                }
+            }
+            return str(parseData(out.getData()).get("来源单号"));
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     /**
@@ -6755,6 +8707,30 @@ public class PxService implements PanelRuntimeService {
             out.add(row);
         }
         return out;
+    }
+
+    /**
+     * 工序汇报单生效后的推进：批次累计汇报量、加工单完工进度、倒冲料补料。
+     *
+     * <p>报工不审批（建单即已审核）时也必须走这一套，否则加工单的「累计汇报套数」永远是 0，
+     * 后面成品报检会以「超过累计完工量」被挡下来。
+     */
+    private void afterProcessReportApproved(FormData report) {
+        if (report == null) return;
+        String moNo = str(parseData(report.getData()).get("加工单号"));
+        if (parseData(report.getDetailData()).get("items") instanceof List<?> lines) {
+            for (Object o : lines) {
+                if (!(o instanceof Map<?, ?> line)) continue;
+                String dispatchNo = str(line.get("排产单号"));
+                if (!dispatchNo.isEmpty()) syncDispatchReported(dispatchNo);
+            }
+        }
+        // 加工单产成品行的「累计汇报套数(工序单位)」在这里刷新：成品报检要拿它校验完工量
+        syncProgressFrom(report);
+        if (!moNo.isEmpty()) {
+            advanceCompletion(moNo);
+            backflushMaterials(moNo);
+        }
     }
 
     /**
@@ -6805,13 +8781,24 @@ public class PxService implements PanelRuntimeService {
      *
      * <p>首检只生成一次：以已有首检单（同加工单、未作废）为标记，避免每次报工都重复建单。
      */
+    /**
+     * 重算加工单完工进度（维护入口）：报工已存在但累计没推进时用一次就能补齐。
+     */
+    public Map<String, Object> syncCompletion(String manuOrderNo) {
+        if (manuOrderNo == null || manuOrderNo.isBlank()) throw new IllegalArgumentException("缺少加工单号");
+        syncProductionProgress(manuOrderNo);
+        advanceCompletion(manuOrderNo);
+        Map<String, Object> out = new LinkedHashMap<>(completionSummary(manuOrderNo));
+        return out;
+    }
+
     public void advanceCompletion(String manuOrderNo) {
         if (manuOrderNo == null || manuOrderNo.isBlank()) return;
         Map<String, Object> summary = completionSummary(manuOrderNo);
         if (summary.isEmpty() || summary.get("工序数") == null) return;
 
         boolean allDone = Boolean.TRUE.equals(summary.get("全部完成"));
-        boolean firstInspect = Boolean.TRUE.equals(summary.get("首检应触发"));
+        boolean firstInspect = Boolean.TRUE.equals(summary.get("首检应创建"));
         if (!allDone && !firstInspect) return;
 
         FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
@@ -6830,70 +8817,602 @@ public class PxService implements PanelRuntimeService {
             formMapper.updateById(mo);
         }
 
-        // 末道首次完成 → 首检（已存在则不重复生成）
-        if (firstInspect && !firstInspectExists(manuOrderNo)) {
+        // 兜底补建首检：有报工却还没有首检单的工序补一张（正常路径在报工生成时已建）
+        if (firstInspect) {
             try {
-                createFirstInspect(manuOrderNo, summary, head);
+                ensureFirstInspectsForProcesses("MANU_ORDER", manuOrderNo, head);
             } catch (Exception e) {
                 // 首检生成失败不能阻断报工审批，日志留痕交给人工补单
             }
         }
     }
 
-    private boolean firstInspectExists(String manuOrderNo) {
-        for (FormData doc : formMapper.selectList(new LambdaQueryWrapper<FormData>()
-                .eq(FormData::getPanelCode, "FIRST_INSPECT").notIn(FormData::getStatus, "作废"))) {
-            Map<String, Object> h;
+    /** 该加工单的全部有效首检单（未作废），一工序一单，按 id 升序。 */
+    private List<FormData> firstInspectDocsOf(String sourceNo) {
+        if (sourceNo == null || sourceNo.isBlank()) return new ArrayList<>();
+        return firstInspectDocsIn(formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "FIRST_INSPECT").notIn(FormData::getStatus, "作废")), sourceNo);
+    }
+
+    /** 从已取出的首检单里筛出某张加工单的（报工看板一次取全量，避免逐行查库）。 */
+    private List<FormData> firstInspectDocsIn(List<FormData> all, String sourceNo) {
+        List<FormData> out = new ArrayList<>();
+        if (all == null || sourceNo == null || sourceNo.isBlank()) return out;
+        for (FormData doc : all) {
+            // 面板条件已下推到 SQL，这里再判一次：调用方若复用了别的面板查询结果也不会串单
+            if (!"FIRST_INSPECT".equals(doc.getPanelCode())) continue;
+            if ("作废".equals(doc.getStatus())) continue;
+            String no;
             try {
-                h = parseData(doc.getData());
+                no = str(parseData(doc.getData()).get("加工单号"));
             } catch (Exception e) {
                 continue;
             }
-            if (manuOrderNo.equals(str(h.get("加工单号")))) return true;
+            if (sourceNo.equals(no)) out.add(doc);
+        }
+        out.sort((a, b) -> Long.compare(
+                a.getId() == null ? 0 : a.getId(), b.getId() == null ? 0 : b.getId()));
+        return out;
+    }
+
+    /**
+     * 某道工序的有效首检单（未作废）；没有返回 null。
+     *
+     * <p>一工序一单：明细只有一行。兼容改造前的旧单（一张单多行工序），旧单对它覆盖的
+     * 每道工序都算数，避免同一工序既有旧单又补出新单。
+     */
+    private FormData firstInspectOf(String sourceNo, String processCode) {
+        if (processCode == null || processCode.isBlank()) return null;
+        FormData hit = null;
+        for (FormData doc : firstInspectDocsOf(sourceNo)) {
+            if (!firstInspectProcessCodes(doc).contains(processCode)) continue;
+            hit = doc; // 升序取最后一张：返工后重新首检以最新单为准
+        }
+        return hit;
+    }
+
+    /** 首检单覆盖的工序编码：明细行的「工序编码」，表头兜底（旧单多行时有多值）。 */
+    private List<String> firstInspectProcessCodes(FormData doc) {
+        List<String> out = new ArrayList<>();
+        Map<String, Object> detail;
+        try {
+            detail = parseData(doc.getDetailData());
+        } catch (Exception e) {
+            return out;
+        }
+        if (detail.get("items") instanceof List<?> rows) {
+            for (Object o : rows) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                String code = str(castRow(raw).get("工序编码"));
+                if (!code.isBlank() && !out.contains(code)) out.add(code);
+            }
+        }
+        return out;
+    }
+
+    /** 首检单的判定结论（明细第一行的「检验判定」）：合格 / 不合格 / 让步接收。 */
+    private String inspectionVerdict(FormData doc) {
+        try {
+            Map<String, Object> detail = parseData(doc.getDetailData());
+            if (detail.get("items") instanceof List<?> rows && !rows.isEmpty()
+                    && rows.get(0) instanceof Map<?, ?> raw) {
+                return str(raw.get("检验判定"));
+            }
+        } catch (Exception ignored) {
+        }
+        return "";
+    }
+
+    /** 首检单的处置方式（返工/返修/让步接收/报废）：明细第一行的「处置方式」。 */
+    private String inspectionDisposition(FormData doc) {
+        return inspectionRowText(doc, "处置方式");
+    }
+
+    /** 处置数量：判不合格后按这个数量返工或报废。 */
+    private double inspectionDispositionQty(FormData doc) {
+        return num(inspectionRowText(doc, "处置数量"));
+    }
+
+    private String inspectionRowText(FormData doc, String key) {
+        try {
+            Map<String, Object> detail = parseData(doc.getDetailData());
+            if (detail.get("items") instanceof List<?> rows && !rows.isEmpty()
+                    && rows.get(0) instanceof Map<?, ?> raw) {
+                return str(raw.get(key));
+            }
+        } catch (Exception ignored) {
+        }
+        return "";
+    }
+
+    /**
+     * 首检放行：已审核，且判定不是「不合格」；判定不合格但处置选「让步接收」的也算放行
+     * （让步接收 = 明知不合格仍接受，留痕放行）；返工/返修/报废一律不放行。
+     */
+    private boolean inspectionPassed(FormData doc) {
+        if (doc == null || !"已审核".equals(doc.getStatus())) return false;
+        String verdict = inspectionVerdict(doc);
+        if (!"不合格".equals(verdict)) return true;
+        return "让步接收".equals(inspectionDisposition(doc));
+    }
+
+    /** 该加工单已判报废的数量，按产品编码汇总（首检判定不合格 + 处置=报废）。 */
+    private Map<String, Double> scrappedQtyByProduct(String manuOrderNo) {
+        Map<String, Double> out = new LinkedHashMap<>();
+        for (FormData doc : firstInspectDocsOf(manuOrderNo)) {
+            if (!"已审核".equals(doc.getStatus())) continue;
+            if (!"不合格".equals(inspectionVerdict(doc))) continue;
+            if (!"报废".equals(inspectionDisposition(doc))) continue;
+            double qty = inspectionDispositionQty(doc);
+            if (qty <= 0) continue;
+            String code = inspectionRowText(doc, "存货编码");
+            if (code.isBlank()) code = inspectionRowText(doc, "产品编码");
+            out.merge(code, qty, Double::sum);
+        }
+        return out;
+    }
+
+    /**
+     * 推式生单：生产加工单 → 返工 / 补投生产加工单。
+     *
+     * <p>数量口径只有一处：首检判定不合格且处置=报废的处置数量（{@link #scrappedQtyByProduct}）。
+     * 已经开过单的报废数量按「未作废的返工/补投单」抵扣，避免同一批报废件被反复开单。
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createReworkOrder(String panelCode, Map<String, Object> formData, String businessType) {
+        if (!"MANU_ORDER".equals(panelCode)) {
+            throw new IllegalStateException("仅生产加工单可生成返工/补投加工单，当前单据：" + panelCode);
+        }
+        Object no = formData == null ? null : formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        String sourceNo = String.valueOf(no);
+        FormData src = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, sourceNo));
+        if (src == null) throw new IllegalArgumentException("生产加工单不存在：" + sourceNo);
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> products = dm.get("products") instanceof List
+                ? (List<Map<String, Object>>) dm.get("products") : new ArrayList<>();
+        if (products.isEmpty()) throw new IllegalStateException("生产加工单无产成品明细：" + sourceNo);
+
+        Map<String, Double> scrap = scrappedQtyByProduct(sourceNo);
+        Map<String, Double> used = reworkQtyOf(sourceNo);
+        double total = 0;
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> p : products) {
+            String code = str(p.getOrDefault("产品编码", ""));
+            double qty = round2(scrap.getOrDefault(code, 0.0) - used.getOrDefault(code, 0.0));
+            if (qty <= 0) continue;
+            Map<String, Object> copy = new LinkedHashMap<>(p);
+            copy.put("数量", qty);
+            copy.put("累计入库数量", 0);
+            rows.add(copy);
+            total += qty;
+        }
+        if (total <= 0) {
+            throw new IllegalStateException("加工单 " + sourceNo + " 没有可" + businessType
+                    + "的数量：只有首检判定不合格且处置=报废的数量才能开返工/补投单"
+                    + (scrap.isEmpty() ? "（当前没有报废处置）" : "（报废数量已全部开过单）"));
+        }
+
+        List<Map<String, Object>> procs = new ArrayList<>();
+        if (dm.get("processes") instanceof List<?> rawProcs) {
+            for (Object o : rawProcs) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> proc = new LinkedHashMap<>(castRow(raw));
+                proc.put("计划数量", total);
+                procs.add(proc);
+            }
+        }
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("单据日期", LocalDate.now().toString());
+        data.put("生产车间", head.getOrDefault("生产车间", ""));
+        data.put("销售订单号", head.getOrDefault("销售订单号", ""));
+        data.put("客户", head.getOrDefault("客户", ""));
+        data.put("客户编码", head.getOrDefault("客户编码", ""));
+        data.put("测试程序", head.getOrDefault("测试程序", ""));
+        data.put("备注", businessType + "（源单 " + sourceNo + "，首检报废 " + round2(total) + " 件）");
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("products", rows);
+        if (!procs.isEmpty()) detail.put("processes", procs);
+        return insertGenerated("MANU_ORDER", "MANU_ORDER", sourceNo, data, detail);
+    }
+
+    /** 已开的返工/补投单（未作废）占用的报废数量，按产品编码汇总。 */
+    @SuppressWarnings("unchecked")
+    private Map<String, Double> reworkQtyOf(String sourceNo) {
+        Map<String, Double> out = new LinkedHashMap<>();
+        for (FormData doc : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER"))) {
+            if (!"MANU_ORDER".equals(doc.getPanelCode())) continue;
+            if ("作废".equals(doc.getStatus()) || "中止".equals(doc.getStatus())) continue;
+            Map<String, Object> head;
+            try {
+                head = parseData(doc.getData());
+            } catch (Exception e) {
+                continue;
+            }
+            if (!sourceNo.equals(str(head.get("来源单号")))) continue;
+            String remark = str(head.get("备注"));
+            if (!remark.startsWith("返工生产") && !remark.startsWith("补投生产")) continue;
+            Map<String, Object> dm = parseData(doc.getDetailData());
+            if (!(dm.get("products") instanceof List<?> rows)) continue;
+            for (Object o : rows) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> row = castRow(raw);
+                out.merge(str(row.get("产品编码")), num(row.get("数量")), Double::sum);
+            }
+        }
+        return out;
+    }
+
+    /** 报工前置：该加工单已有一张已审核的材料出库单（mes.production.require-material-issue 可关）。 */
+    private void requireMaterialIssued(String manuOrderNo) {
+        if (!requireMaterialIssue) return;
+        for (FormData doc : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MATERIAL_OUT").eq(FormData::getStatus, "已审核"))) {
+            if (!"MATERIAL_OUT".equals(doc.getPanelCode())) continue;
+            Map<String, Object> detail;
+            try {
+                detail = parseData(doc.getDetailData());
+            } catch (Exception e) {
+                continue;
+            }
+            if (!(detail.get("items") instanceof List<?> rows)) continue;
+            for (Object o : rows) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> row = castRow(raw);
+                if (manuOrderNo.equals(str(row.get("加工单号")))) return;
+            }
+        }
+        if (!hasManualIssueMaterial(manuOrderNo)) return; // 材料全是倒冲料：没有可人工领的料
+        throw new IllegalStateException("加工单 " + manuOrderNo
+                + " 还没有已审核的材料出库单：先由加工单生成领料申请单 → 材料出库单并审核，才能报工");
+    }
+
+    /**
+     * 排产批次「中止（释放未执行量）」：把还没报工的数量放回可排产量。
+     *
+     * <p>批次置为「中止」后，`planBoard` 不再把它算进已排产量，下道/本道可以按新产能重排；
+     * 已经报工的部分保留在汇报单里，不动账。
+     */
+    private Map<String, Object> releaseBatchRemain(String panelCode, Map<String, Object> formData) {
+        if (!"DISPATCH".equals(panelCode)) {
+            throw new IllegalStateException("仅排产批次支持「中止（释放未执行量）」，当前单据：" + panelCode);
+        }
+        Object no = formData == null ? null : formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData pg = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "DISPATCH").eq(FormData::getFormNo, String.valueOf(no)));
+        if (pg == null) throw new IllegalArgumentException("排产批次不存在：" + no);
+        if (!"已审核".equals(pg.getStatus())) {
+            throw new IllegalStateException("排产批次 " + no + " 状态为「" + pg.getStatus()
+                    + "」，只有已审核的批次可以中止释放");
+        }
+        Map<String, Object> detail = parseData(pg.getDetailData());
+        double planned = 0;
+        if (detail.get("items") instanceof List<?> items) {
+            for (Object o : items) {
+                if (o instanceof Map<?, ?> raw) planned += num(castRow(raw).get("派工数量"));
+            }
+        }
+        double reported = 0;
+        for (Map<String, Object> row : reportBatchBoard()) {
+            if (!String.valueOf(no).equals(str(row.get("排产单号")))) continue;
+            reported += num(row.get("已报数量"));
+            break;
+        }
+        double remain = round2(planned - reported);
+        if (remain <= 0.0001) {
+            throw new IllegalStateException("排产批次 " + no + " 已全部报工，没有可释放的数量");
+        }
+        pg.setStatus("中止");
+        pg.setUpdateTime(LocalDateTime.now());
+        formMapper.updateById(pg);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("编号", String.valueOf(no));
+        out.put("单据状态", "中止");
+        out.put("派工数量", round2(planned));
+        out.put("已报数量", round2(reported));
+        out.put("释放数量", remain);
+        return out;
+    }
+
+    /** 该加工单是否已按工序排过批次（排过就必须走批次报工）。 */
+    private boolean hasApprovedBatch(String manuOrderNo) {
+        for (FormData pg : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "DISPATCH"))) {
+            if (!"DISPATCH".equals(pg.getPanelCode())) continue;
+            if (!"已审核".equals(pg.getStatus())) continue;
+            try {
+                if (manuOrderNo.equals(str(parseData(pg.getData()).get("加工单号")))) return true;
+            } catch (Exception ignored) {
+            }
         }
         return false;
     }
 
-    /** 生成首件报检单（草稿）：末道工序 + 完成数量。 */
-    private void createFirstInspect(String manuOrderNo, Map<String, Object> summary, Map<String, Object> moHead) {
+    /** 某道工序已审核的排产批次（材料领用/出库按它分批）。首选工序编码匹配，老数据退到工序名称。 */
+    private String dispatchNoOfProcess(String manuOrderNo, String procCode, String procName) {
+        String byName = "";
+        for (FormData pg : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "DISPATCH").orderByDesc(FormData::getId))) {
+            if (!"DISPATCH".equals(pg.getPanelCode())) continue;
+            if (!"已审核".equals(pg.getStatus())) continue;
+            Map<String, Object> head;
+            Map<String, Object> detail;
+            try {
+                head = parseData(pg.getData());
+                detail = parseData(pg.getDetailData());
+            } catch (Exception e) {
+                continue;
+            }
+            if (!manuOrderNo.equals(str(head.get("加工单号")))) continue;
+            if (!(detail.get("items") instanceof List<?> items)) continue;
+            for (Object o : items) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> row = castRow(raw);
+                String code = str(row.get("工序编码"));
+                if (!procCode.isEmpty() && procCode.equals(code)) return pg.getFormNo();
+                if (byName.isEmpty() && !procName.isEmpty() && procName.equals(str(row.get("工序名称")))) {
+                    byName = pg.getFormNo();
+                }
+            }
+        }
+        return byName;
+    }
+
+    /** 该来源单据已生成的、未作废的材料出库单（返回「单号（状态）」便于提示）。 */
+    private String findExistingMaterialOut(String sourcePanel, String sourceNo) {
+        for (FormData doc : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MATERIAL_OUT"))) {
+            if (!"MATERIAL_OUT".equals(doc.getPanelCode())) continue;
+            if ("作废".equals(doc.getStatus()) || "中止".equals(doc.getStatus())) continue;
+            Map<String, Object> head;
+            try {
+                head = parseData(doc.getData());
+            } catch (Exception e) {
+                continue;
+            }
+            if (!sourceNo.equals(str(head.get("来源单号")))) continue;
+            if (!sourcePanel.equals(str(head.get("来源单据")))) continue;
+            return doc.getFormNo() + "（状态：" + doc.getStatus() + "）";
+        }
+        return null;
+    }
+
+    /** 该加工单是否还有需要人工领料的材料（倒冲料报工自动扣，不算）。 */
+    private boolean hasManualIssueMaterial(String manuOrderNo) {
+        FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, manuOrderNo));
+        if (mo == null) return false;
+        Map<String, Object> detail = parseData(mo.getDetailData());
+        if (!(detail.get("materials") instanceof List<?> materials)) return false;
+        for (Object o : materials) {
+            if (!(o instanceof Map<?, ?> raw)) continue;
+            Map<String, Object> m = castRow(raw);
+            if (isBackflushMode(str(m.get("材料倒冲方式"))) && !Boolean.TRUE.equals(m.get("不可倒冲"))) continue;
+            if (num(m.get("计划数量")) > 0) return true;
+        }
+        return false;
+    }
+
+    /**
+     * 报工前校验倒冲料库存：这次报工要倒冲的量必须扣得出来，否则拒绝报工
+     * （不然后续自动出库只能跳过，材料账挂着不扣）。
+     */
+    private void requireBackflushStock(String manuOrderNo, String processCode, double reportQty) {
         FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, manuOrderNo));
         if (mo == null) return;
         Map<String, Object> detail = parseData(mo.getDetailData());
-        Map<String, Object> product = detail.get("products") instanceof List<?> ps && !ps.isEmpty()
-                ? castRow((Map<?, ?>) ps.get(0)) : Map.of();
-        String lastCode = str(summary.get("末道工序编码"));
+        if (!(detail.get("materials") instanceof List<?> rawMaterials)) return;
+        List<Map<String, Object>> materials = new ArrayList<>();
+        for (Object o : rawMaterials) {
+            if (o instanceof Map<?, ?> raw) materials.add(new LinkedHashMap<>(castRow(raw)));
+        }
+        Map<String, Double> issued = issuedQtyByMaterial(manuOrderNo);
+        for (Map<String, Object> m : materials) {
+            m.put("累计领用数量", issued.getOrDefault(str(m.get("材料编码")), 0.0));
+        }
+        Map<String, Double> reported = reportedQtyByProcess(manuOrderNo);
+        double before = reported.getOrDefault(processCode, 0.0);
+        reported.put(processCode, before + reportQty);
+        List<Map<String, Object>> deltas = backflushDeltas(materials, reported);
+        for (Map<String, Object> delta : deltas) {
+            String code = str(delta.get("材料编码"));
+            String name = str(delta.get("材料名称"));
+            double qty = num(delta.get("数量"));
+            String target = str(delta.get("仓库")).isEmpty() ? "原料仓" : str(delta.get("仓库"));
+            String source = str(delta.get("源仓库")).isEmpty() ? target : str(delta.get("源仓库"));
+            double available = availableOf(code, name, target);
+            if (available + 0.000001 >= qty) continue;
+            if (!target.equals(source)) {
+                double gap = round2(qty - available);
+                if (availableOf(code, name, source) + 0.000001 >= gap) continue; // 可用调拨补上
+            }
+            throw new IllegalStateException("倒冲料 " + code + " " + name + " 在 " + target
+                    + " 库存不足（本次要倒冲 " + round2(qty) + "，可用 " + round2(available)
+                    + "），请先补料或改人工领料再报工");
+        }
+    }
+
+    /** 全部工序首检通过？否则点名是哪道工序卡住（成品报检的前置门）。 */
+    private void requireAllFirstInspectionsPassed(String manuOrderNo) {
+        Map<String, String> processes = processNamesOf(manuOrderNo);
+        for (Map.Entry<String, String> entry : processes.entrySet()) {
+            if (firstInspectPassedOf(manuOrderNo, entry.getKey()) != null) continue;
+            FormData latest = firstInspectOf(manuOrderNo, entry.getKey());
+            if (latest == null) {
+                throw new IllegalStateException("工序「" + entry.getValue()
+                        + "」还没有首件报检单，首检通过后才能生成成品报检单");
+            }
+            String reason = !"已审核".equals(latest.getStatus())
+                    ? "状态为「" + latest.getStatus() + "」"
+                    : "判定「" + inspectionVerdict(latest) + "」"
+                      + (inspectionDisposition(latest).isEmpty() ? "" : "（处置：" + inspectionDisposition(latest) + "）");
+            throw new IllegalStateException("工序「" + entry.getValue() + "」的首件报检单 "
+                    + latest.getFormNo() + " " + reason + "，首检通过后才能生成成品报检单");
+        }
+    }
+
+    /** 该工序已通过的（已审核且判定合格/让步接收）首检单。 */
+    private FormData firstInspectPassedOf(String sourceNo, String processCode) {
+        for (FormData doc : firstInspectDocsOf(sourceNo)) {
+            if (!firstInspectProcessCodes(doc).contains(processCode)) continue;
+            if (inspectionPassed(doc)) return doc;
+        }
+        return null;
+    }
+
+    /**
+     * 系统联动生成的单据（首检单、倒冲出库、补料调拨等）：不校验「新增」权限。
+     *
+     * <p>这类单据是报工/入库的副作用，由触发它的业务动作负责授权；要求操作工额外具备
+     * 目标面板的新增权限，会让车间报工直接报 403。
+     */
+    private Map<String, Object> insertGeneratedSystem(String targetPanel, String sourcePanel, String sourceNo,
+                                                      Map<String, Object> head, Map<String, Object> detail) {
+        validateSourceLinks(targetPanel, null, detail);
+        String newNo = generateFormNo(targetPanel, head);
+        fillNewDefaults(targetPanel, head, newNo);
+        FormData fd = new FormData();
+        fd.setPanelCode(targetPanel);
+        fd.setFormNo(newNo);
+        head.put("来源单据", sourcePanel);
+        head.put("来源单号", sourceNo);
+        fd.setData(toJson(head));
+        fd.setDetailData(toJson(detail));
+        fd.setStatus("草稿");
+        fd.setCreateBy(currentUserName());
+        fd.setCreateTime(LocalDateTime.now());
+        fd.setUpdateTime(LocalDateTime.now());
+        formMapper.insert(fd);
+        Map<String, Object> out = new HashMap<>();
+        out.put("单据状态", "草稿");
+        out.put("gotoPanel", targetPanel);
+        out.put("编号", newNo);
+        return out;
+    }
+
+    /** 首件数量：工序明细配了「首检数量」就按它，否则 1 件（行业常见 1~3 件，工艺可配）。 */
+    private double firstArticleQty(Map<String, Object> proc) {
+        double configured = num(proc.getOrDefault("首检数量", proc.getOrDefault("首件数量", 0)));
+        return configured > 0 ? configured : 1;
+    }
+
+    /**
+     * 为一道工序建首件报检单：一工序一单，报检数量 = 首件样本量。
+     *
+     * <p>首检是报工门：该工序首次报工就建单，审核通过后才能继续报工与转序。
+     */
+    private Map<String, Object> createFirstInspectForProcess(String moPanel, String moNo, Map<String, Object> moHead,
+                                                             Map<String, Object> product, Map<String, Object> proc,
+                                                             double qty, String reportNo, String sourceInspectNo) {
+        String code = str(proc.get("工序编码"));
+        if (code.isBlank()) return null;
+        FormData existing = firstInspectOf(moNo, code);
+        // 待审中的不重复建；已通过的也不重复建；只有「已审核且判定不合格」才允许开重新首检单
+        if (existing != null && (!"已审核".equals(existing.getStatus()) || inspectionPassed(existing))) return null;
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("单据日期", LocalDate.now().toString());
-        data.put("业务类型", "首件检验");
-        data.put("生产车间", moHead.getOrDefault("生产车间", ""));
-        data.put("加工单号", manuOrderNo);
-        data.put("来源单号", manuOrderNo);
+        data.put("业务类型", "首件报检");
+        data.put("生产车间", proc.getOrDefault("生产车间", moHead.getOrDefault("生产车间", "")));
+        data.put("加工单号", moNo);
+        data.put("来源单号", moNo);
+        if ("OUTSOURCE_ORDER".equals(moPanel)) {
+            data.put("委外供应商", moHead.getOrDefault("委外供应商", ""));
+        }
 
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("存货编码", product.getOrDefault("产品编码", ""));
         row.put("存货名称", product.getOrDefault("产品名称", ""));
         row.put("规格型号", product.getOrDefault("规格型号", ""));
-        row.put("工序编码", lastCode);
-        row.put("工序名称", "");
-        if (detail.get("processes") instanceof List<?> procs) {
+        row.put("BOM版本号", product.getOrDefault("BOM版本号", ""));
+        row.put("计量单位", product.getOrDefault("生产单位", product.getOrDefault("计量单位", "")));
+        row.put("加工单号", moNo);
+        row.put("工序汇报单号", reportNo == null || reportNo.isBlank()
+                ? processReportNoOf(moNo, code) : reportNo);
+        row.put("工序编码", code);
+        row.put("工序名称", proc.getOrDefault("工序名称", ""));
+        row.put("加工类型", "OUTSOURCE_ORDER".equals(moPanel) ? "委外加工" : "自制加工");
+        row.put("报检数量", round2(qty));
+        row.put("检验方式", "全检");
+        row.put("生产车间", proc.getOrDefault("生产车间", moHead.getOrDefault("生产车间", "")));
+        row.put("班组", proc.getOrDefault("班组", ""));
+        row.put("工人", proc.getOrDefault("工人", ""));
+        if (sourceInspectNo != null && !sourceInspectNo.isBlank()) {
+            row.put("原首检单号", sourceInspectNo);
+            row.put("备注", "重新首检（原单 " + sourceInspectNo + " 判定不合格），处置后重检");
+        } else {
+            row.put("备注", "首件检验（工序首件" + round2(qty) + "件），合格后才能批量报工");
+        }
+
+        return insertGeneratedSystem("FIRST_INSPECT", moPanel, moNo, data, Map.of("items", List.of(row)));
+    }
+
+    /** 加工单/委外加工单的工序清单：明细有 processes 用它，没有按产品工艺路线带出。 */
+    private List<Map<String, Object>> processRowsOf(Map<String, Object> detail, Map<String, Object> head) {
+        if (detail.get("processes") instanceof List<?> procs && !procs.isEmpty()) {
+            List<Map<String, Object>> out = new ArrayList<>();
             for (Object o : procs) {
-                if (!(o instanceof Map<?, ?> raw)) continue;
-                Map<String, Object> pr = castRow(raw);
-                if (lastCode.equals(str(pr.get("工序编码")))) {
-                    row.put("工序名称", pr.getOrDefault("工序名称", ""));
-                    break;
-                }
+                if (o instanceof Map<?, ?> raw) out.add(castRow(raw));
+            }
+            return out;
+        }
+        List<Map<String, Object>> products = new ArrayList<>();
+        if (detail.get("products") instanceof List<?> ps) {
+            for (Object o : ps) {
+                if (o instanceof Map<?, ?> raw) products.add(castRow(raw));
             }
         }
-        row.put("计量单位", product.getOrDefault("生产单位", ""));
-        row.put("报检数量", summary.getOrDefault("首检数量", 0));
-        row.put("备注", "末道工序完成，触发首检");
+        return resolveProcesses(products, str(head.getOrDefault("生产车间", "熔铸车间")));
+    }
 
-        Map<String, Object> detailMap = new LinkedHashMap<>();
-        detailMap.put("items", List.of(row));
-        insertGenerated("FIRST_INSPECT", "MANU_ORDER", manuOrderNo, data, detailMap);
+    /** 兜底：有报工、但还没有首检单的工序补一张首检单（委外按工艺路线工序补）。 */
+    private void ensureFirstInspectsForProcesses(String moPanel, String moNo, Map<String, Object> moHead) {
+        FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, moPanel).eq(FormData::getFormNo, moNo));
+        if (mo == null) return;
+        Map<String, Object> detail = parseData(mo.getDetailData());
+        List<Map<String, Object>> products = new ArrayList<>();
+        if (detail.get("products") instanceof List<?> ps) {
+            for (Object o : ps) {
+                if (o instanceof Map<?, ?> raw) products.add(castRow(raw));
+            }
+        }
+        Map<String, Object> product = products.isEmpty() ? Map.of() : products.get(0);
+        Map<String, Double> reported = reportedQtyByProcess(moNo);
+        for (Map<String, Object> proc : processRowsOf(detail, moHead)) {
+            String code = str(proc.get("工序编码"));
+            if (code.isBlank() || firstInspectOf(moNo, code) != null) continue;
+            double plan = num(proc.getOrDefault("计划数量", product.getOrDefault("数量", 0)));
+            double done = reported.getOrDefault(code, 0.0);
+            // 自制：只补已经报过工的工序（没开工就没首件可检）；
+            // 委外没有报工记录：单子已审核就按首件数量补，交给质检判定
+            double base = done > 0 ? done : ("OUTSOURCE_ORDER".equals(moPanel) ? plan : 0);
+            if (base <= 0) continue;
+            createFirstInspectForProcess(moPanel, moNo, moHead, product, proc,
+                    Math.min(firstArticleQty(proc), base), "", "");
+        }
+    }
+
+    /** 该加工单某道工序已生成的工序汇报单号；没有则空串。 */
+    private String processReportNoOf(String manuOrderNo, String processCode) {
+        if (processCode == null || processCode.isBlank()) return "";
+        for (FormData doc : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "PROCESS_REPORT"))) {
+            Map<String, Object> head = parseData(doc.getData());
+            Map<String, Object> detail = parseData(doc.getDetailData());
+            if (!(detail.get("items") instanceof List<?> rows) || rows.isEmpty()) continue;
+            if (!(rows.get(0) instanceof Map<?, ?> first)) continue;
+            Map<String, Object> row = castRow(first);
+            if (!manuOrderNo.equals(str(head.get("加工单号")))) continue;
+            if (!processCode.equals(str(row.get("工序编码")))) continue;
+            return doc.getFormNo();
+        }
+        return "";
     }
 
     /**
@@ -6913,9 +9432,18 @@ public class PxService implements PanelRuntimeService {
         out.put("全部完成", all);
         String lastCode = rows.isEmpty() ? "" : str(rows.get(rows.size() - 1).get("工序编码"));
         out.put("末道工序编码", lastCode);
-        // 末道完成 = 首批数量已走完所有工序 → 触发首检
+        // 末道完成 = 首批数量已走完所有工序 → 允许完工入库
         boolean lastDone = !rows.isEmpty() && Boolean.TRUE.equals(rows.get(rows.size() - 1).get("是否完成"));
         out.put("首检应触发", lastDone);
+        // 首检一工序一单：任意工序只要报过工，就有该工序的首检单要补（不再等末道完工）
+        boolean anyReported = false;
+        for (Map<String, Object> r : rows) {
+            if (num(r.get("累计报工")) > 0) {
+                anyReported = true;
+                break;
+            }
+        }
+        out.put("首检应创建", anyReported);
         if (lastDone) {
             out.put("首检数量", rows.get(rows.size() - 1).get("累计报工"));
         }
@@ -6965,9 +9493,22 @@ public class PxService implements PanelRuntimeService {
 
         // 已审核领料：按 (排产单号, 材料) 汇总
         Map<String, Double> issued = new LinkedHashMap<>();
+        // 批次领料单状态：审批中/已审核锁住整批；驳回（草稿且最新审批是 REJECT）可重领
+        Map<String, FormData> issueDocOfBatch = new LinkedHashMap<>();
+        Map<String, String> lastApprovalOf = new LinkedHashMap<>();
+        for (FormApproval rec : approvalMapper.selectList(new LambdaQueryWrapper<FormApproval>()
+                .eq(FormApproval::getPanelCode, "MATERIAL_OUT").orderByAsc(FormApproval::getId))) {
+            lastApprovalOf.put(rec.getFormNo(), rec.getAction());
+        }
         for (FormData out : formMapper.selectList(new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, "MATERIAL_OUT"))) {
-            if (!"已审核".equals(out.getStatus())) continue;
+            String st = out.getStatus();
+            if (!"草稿".equals(st) && !"审批中".equals(st) && !"已审核".equals(st)) continue;
+            String batchNo = issueDispatchOf(out);
+            if (batchNo.isBlank()) continue;
+            FormData kept = issueDocOfBatch.get(batchNo);
+            if (kept == null || issueRank(st) > issueRank(kept.getStatus())) issueDocOfBatch.put(batchNo, out);
+            if (!"已审核".equals(st)) continue;
             Map<String, Object> d;
             try {
                 d = parseData(out.getDetailData());
@@ -7016,6 +9557,10 @@ public class PxService implements PanelRuntimeService {
                     double batchNeed = round2(needByMaterial.get(code) * ratio);
                     if (batchNeed <= 0) continue;
                     double done = round2(issued.getOrDefault(pg.getFormNo() + "\n" + code, 0.0));
+                    FormData issueDoc = issueDocOfBatch.get(pg.getFormNo());
+                    String issueState = issueStateOf(issueDoc, lastApprovalOf);
+                    boolean canIssue = round2(batchNeed - done) > 0
+                            && (issueState.isEmpty() || "已驳回".equals(issueState));
                     Map<String, Object> row = new LinkedHashMap<>();
                     row.put("排产单号", pg.getFormNo());
                     row.put("加工单号", manuOrderNo);
@@ -7028,12 +9573,35 @@ public class PxService implements PanelRuntimeService {
                     row.put("批次需用量", batchNeed);
                     row.put("已领数量", done);
                     row.put("剩余可领", Math.max(0, round2(batchNeed - done)));
-                    row.put("可否领料", round2(batchNeed - done) > 0);
+                    row.put("出库单号", issueDoc == null ? "" : issueDoc.getFormNo());
+                    row.put("出库状态", issueState);
+                    row.put("可否领料", canIssue);
                     out.add(row);
                 }
             }
         }
         return out;
+    }
+
+    /** 批次领料单状态文案：待审批 / 已审批 / 已驳回（草稿且最新审批是驳回）/ 草稿。 */
+    private String issueStateOf(FormData issueDoc, Map<String, String> lastApprovalOf) {
+        if (issueDoc == null) return "";
+        switch (issueDoc.getStatus()) {
+            case "审批中": return "待审批";
+            case "已审核": return "已审批";
+            case "草稿":
+                return "REJECT".equals(lastApprovalOf.get(issueDoc.getFormNo())) ? "已驳回" : "草稿";
+            default: return "";
+        }
+    }
+
+    private int issueRank(String status) {
+        switch (status == null ? "" : status) {
+            case "已审核": return 3;
+            case "审批中": return 2;
+            case "草稿": return 1;
+            default: return 0;
+        }
     }
 
     /** 按批次领料校验（不排除自身时传 null）。 */
@@ -7188,6 +9756,37 @@ public class PxService implements PanelRuntimeService {
     }
 
     /**
+     * 计划分析 → 生成请购单（草稿）。
+     *
+     * <p>只把「外购 + 缺料」的物料行落成 PU_REQ：自制件缺料要靠排产自己做，
+     * 库存够的行没有采购理由。数量以服务端重算的分析结果为准，不信前端传值。
+     */
+    @Override
+    public Map<String, Object> planAnalyzePurchaseReq(String salesOrderNo, List<String> codes) {
+        if (planAnalyzeQueryService == null) {
+            throw new UnsupportedOperationException("计划分析服务未装配");
+        }
+        PlanAnalyzeQueryService.PurchaseReqPlan plan =
+                planAnalyzeQueryService.purchaseReqPlan(salesOrderNo, codes);
+        if (plan.rows().isEmpty()) {
+            throw new IllegalArgumentException("该订单没有需要请购的外购缺料物料");
+        }
+
+        Map<String, Object> head = new HashMap<>();
+        head.put("单据日期", LocalDate.now().toString());
+        head.put("需求日期", plan.dueDate() == null || plan.dueDate().isBlank()
+                ? LocalDate.now().toString() : plan.dueDate());
+        head.put("请购人", currentUserName());
+        head.put("客户", plan.customer());
+        head.put("备注", "由计划分析生成（销售订单 " + plan.salesOrderNo() + "）");
+
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", plan.rows());
+        return insertGenerated("PU_REQ", "PLAN_ANALYSIS",
+                plan.salesOrderNo(), head, detail);
+    }
+
+    /**
      * 工单排产数据：按加工单 × 工序给出「可排产量」，并列出已有批次。
      *
      * <p>可排产量（已拍板规则）：
@@ -7206,9 +9805,22 @@ public class PxService implements PanelRuntimeService {
         Map<String, Object> detail = parseData(mo.getDetailData());
         if (!(detail.get("processes") instanceof List<?> procs) || procs.isEmpty()) return List.of();
 
-        Map<String, Object> product = detail.get("products") instanceof List<?> ps && !ps.isEmpty()
-                ? castRow((Map<?, ?>) ps.get(0)) : Map.of();
-        double orderQty = num(product.get("数量"));
+        // 加工单可能有多个产品，各有各的工艺路线：数量、工序都按产品分组
+        Map<String, Double> productQty = new LinkedHashMap<>();
+        Map<String, Map<String, Object>> productOf = new LinkedHashMap<>();
+        if (detail.get("products") instanceof List<?> ps) {
+            for (Object o : ps) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> p = castRow(raw);
+                String pcode = str(p.get("产品编码"));
+                if (pcode.isEmpty()) continue;
+                productOf.put(pcode, p);
+                productQty.merge(pcode, num(p.get("数量")), Double::sum);
+            }
+        }
+        // 单产品的老单据里工序/报工/派工行可能没写产品编码，统一挂到唯一那个产品上
+        String soleProduct = productOf.size() == 1 ? productOf.keySet().iterator().next() : "";
+        String firstProduct = productOf.isEmpty() ? "" : productOf.keySet().iterator().next();
 
         // 已审核报工的合格数量：加工单 + 工序
         Map<String, Double> qualified = new LinkedHashMap<>();
@@ -7227,7 +9839,10 @@ public class PxService implements PanelRuntimeService {
             if (!(d.get("items") instanceof List<?> items)) continue;
             for (Object o : items) {
                 if (!(o instanceof Map<?, ?> line)) continue;
-                qualified.merge(str(line.get("工序编码")), num(line.get("合格数量")), Double::sum);
+                String lineProduct = str(line.get("产品编码"));
+                if (lineProduct.isEmpty()) lineProduct = soleProduct;
+                qualified.merge(lineProduct + "|" + str(line.get("工序编码")),
+                        num(line.get("合格数量")), Double::sum);
             }
         }
 
@@ -7252,7 +9867,10 @@ public class PxService implements PanelRuntimeService {
                 Map<String, Object> line = castRow(raw);
                 String code = str(line.get("工序编码"));
                 if (code.isEmpty()) continue;
-                planned.merge(code, num(line.get("派工数量")), Double::sum);
+                String lineProduct = str(line.get("产品编码"));
+                if (lineProduct.isEmpty()) lineProduct = soleProduct;
+                String key = lineProduct + "|" + code;
+                planned.merge(key, num(line.get("派工数量")), Double::sum);
                 Map<String, Object> b = new LinkedHashMap<>();
                 b.put("排产单号", pg.getFormNo());
                 b.put("数量", num(line.get("派工数量")));
@@ -7261,7 +9879,7 @@ public class PxService implements PanelRuntimeService {
                 b.put("预开工日", line.getOrDefault("预开工日", ""));
                 b.put("预完工日", line.getOrDefault("预完工日", ""));
                 b.put("状态", line.getOrDefault("派工加工状态", ""));
-                batches.computeIfAbsent(code, k -> new ArrayList<>()).add(b);
+                batches.computeIfAbsent(key, k -> new ArrayList<>()).add(b);
             }
         }
 
@@ -7274,37 +9892,57 @@ public class PxService implements PanelRuntimeService {
                 num(a.containsKey("加工顺序") ? a.get("加工顺序") : a.get("工艺序号")),
                 num(b.containsKey("加工顺序") ? b.get("加工顺序") : b.get("工艺序号"))));
 
-        double prevQualified = -1; // 第一道用加工单数量
-        int seq = 0;
+        // 按产品分组后，每个产品内部按加工顺序排：第一道用该产品数量，后续用上道合格量
+        Map<String, List<Map<String, Object>>> byProduct = new LinkedHashMap<>();
         for (Map<String, Object> proc : ordered) {
-            seq++;
-            String code = str(proc.get("工序编码"));
-            double planQty = num(proc.get("计划数量"));
-            double plannedQty = round2(planned.getOrDefault(code, 0.0));
-            double base = seq == 1 ? orderQty : Math.max(0, prevQualified);
-            double available = round2(base - plannedQty);
-            if (available < 0) available = 0;
+            String pcode = str(proc.get("产品编码"));
+            if (pcode.isEmpty()) pcode = soleProduct.isEmpty() ? firstProduct : soleProduct;
+            byProduct.computeIfAbsent(pcode, k -> new ArrayList<>()).add(proc);
+        }
+        for (Map.Entry<String, List<Map<String, Object>>> entry : byProduct.entrySet()) {
+            String pcode = entry.getKey();
+            Map<String, Object> product = productOf.getOrDefault(pcode, Map.of());
+            double orderQty = productQty.getOrDefault(pcode, 0.0);
+            double prevQualified = orderQty;
+            int seq = 0;
+            for (Map<String, Object> proc : entry.getValue()) {
+                seq++;
+                String code = str(proc.get("工序编码"));
+                String key = pcode + "|" + code;
+                double planQty = num(proc.get("计划数量"));
+                double plannedQty = round2(planned.getOrDefault(key, 0.0));
+                // 第 1 道的基准量：工序行自己绑了产品 → 该产品数量；老单据/导入数据工序行没绑产品
+                // 且加工单有多个产品时，工序不针对单个产品，基准量取工序自己的计划数量（否则会拿
+                // 第一个产品的数量去比整单合计计划，看板上就会出现「计划 340 / 可排 300」）。
+                double firstBase = orderQty;
+                if (seq == 1 && str(proc.get("产品编码")).isEmpty() && productOf.size() > 1) {
+                    firstBase = planQty > 0 ? planQty : orderQty;
+                }
+                double base = seq == 1 ? firstBase : Math.max(0, prevQualified);
+                double available = round2(base - plannedQty);
+                if (available < 0) available = 0;
 
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("加工单号", manuOrderNo);
-            row.put("生产车间", head.getOrDefault("生产车间", ""));
-            row.put("客户", head.getOrDefault("客户", ""));
-            row.put("产品编码", product.getOrDefault("产品编码", ""));
-            row.put("产品名称", product.getOrDefault("产品名称", ""));
-            row.put("规格型号", product.getOrDefault("规格型号", ""));
-            row.put("工序顺序", seq);
-            row.put("工序编码", code);
-            row.put("工序名称", proc.getOrDefault("工序名称", ""));
-            row.put("工序单位", proc.getOrDefault("工序单位", proc.getOrDefault("计量单位", "")));
-            row.put("加工单数量", orderQty);
-            row.put("计划数量", planQty);
-            row.put("上道合格量", seq == 1 ? orderQty : Math.max(0, prevQualified));
-            row.put("已排产量", plannedQty);
-            row.put("可排产量", available);
-            row.put("批次", batches.getOrDefault(code, List.of()));
-            row.put("可否排产", available > 0);
-            out.add(row);
-            prevQualified = qualified.getOrDefault(code, 0.0);
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("加工单号", manuOrderNo);
+                row.put("生产车间", head.getOrDefault("生产车间", ""));
+                row.put("客户", head.getOrDefault("客户", ""));
+                row.put("产品编码", pcode);
+                row.put("产品名称", product.getOrDefault("产品名称", proc.getOrDefault("产品名称", "")));
+                row.put("规格型号", product.getOrDefault("规格型号", proc.getOrDefault("规格型号", "")));
+                row.put("工序顺序", seq);
+                row.put("工序编码", code);
+                row.put("工序名称", proc.getOrDefault("工序名称", ""));
+                row.put("工序单位", proc.getOrDefault("工序单位", proc.getOrDefault("计量单位", "")));
+                row.put("加工单数量", orderQty);
+                row.put("计划数量", planQty);
+                row.put("上道合格量", base);
+                row.put("已排产量", plannedQty);
+                row.put("可排产量", available);
+                row.put("批次", batches.getOrDefault(key, List.of()));
+                row.put("可否排产", available > 0);
+                out.add(row);
+                prevQualified = qualified.getOrDefault(key, 0.0);
+            }
         }
         return out;
     }
@@ -7378,11 +10016,49 @@ public class PxService implements PanelRuntimeService {
 
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("items", List.of(row));
-        return insertGenerated("PROCESS_REPORT", "DISPATCH", dispatchNo, data, detail);
+        Map<String, Object> res = insertGenerated("PROCESS_REPORT", "DISPATCH", dispatchNo, data, detail);
+        // 按批次报工同样不审批：汇报单生成即已审核，完工进度立刻生效
+        String reportNo = str(res.get("编号"));
+        if (!reportNo.isEmpty()) {
+            markAudited("PROCESS_REPORT", reportNo);
+            res.put("单据状态", "已审核");
+            // 首件门跟着批次报工走：该工序还没有已通过的首检单 → 报工后自动开一张，
+            // 首检单未审核前不允许继续报满（与加工单报工同一条规则）
+            ensureFirstInspectForBatchReport(moNo, procCode, str(line.get("工序名称")), qty, reportNo);
+        }
+        return res;
+    }
+
+    /** 批次报工的首件联动：没有未审/已通过的首检单就建一张；已通过则不再建。 */
+    private void ensureFirstInspectForBatchReport(String moNo, String procCode, String procName,
+                                                  double qty, String reportNo) {
+        if (moNo.isEmpty() || procCode.isEmpty()) return;
+        FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, moNo));
+        if (mo == null) return;
+        Map<String, Object> detail = parseData(mo.getDetailData());
+        Map<String, Object> proc = null;
+        if (detail.get("processes") instanceof List<?> procs) {
+            for (Object o : procs) {
+                if (!(o instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> row = castRow(raw);
+                if (procCode.equals(str(row.get("工序编码")))) {
+                    proc = row;
+                    break;
+                }
+            }
+        }
+        if (proc == null) return;
+        Map<String, Object> product = Map.of();
+        if (detail.get("products") instanceof List<?> products && !products.isEmpty()) {
+            product = castRow((Map<?, ?>) products.get(0));
+        }
+        createFirstInspectForProcess("MANU_ORDER", moNo, parseData(mo.getData()), product, proc,
+                Math.min(firstArticleQty(proc), qty), reportNo, "");
     }
 
     /**
-     * 按排产批次报工的看板：只列「已审核」的排产批次，带批次数量/已报/剩余。
+     * 按排产批次报工的看板：只列「已审核」的排产批次，带批次数量/已报/剩余与首检状态。
      *
      * <p>强制先排产：没有已审核批次就不能报工。
      */
@@ -7408,6 +10084,10 @@ public class PxService implements PanelRuntimeService {
         }
 
         List<Map<String, Object>> out = new ArrayList<>();
+        // 首检单一次取全量：逐行查库会随批次数变成 N+1
+        List<FormData> allInspects = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "FIRST_INSPECT").notIn(FormData::getStatus, "作废"));
+        Map<String, List<FormData>> inspectsByMo = new HashMap<>();
         for (FormData pg : formMapper.selectList(new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, "DISPATCH").orderByDesc(FormData::getId))) {
             if (!"已审核".equals(pg.getStatus())) continue;  // 排产必须先审批
@@ -7453,9 +10133,68 @@ public class PxService implements PanelRuntimeService {
                 row.put("批次数量", batchQty);
                 row.put("已报数量", done);
                 row.put("剩余数量", Math.max(0, remain));
-                row.put("可否报工", remain > 0);
-                row.put("不可报工原因", remain <= 0 ? "批次已报满" : "");
+                // 首件在前、报工在后：一工序一单，同工序的后续批次共用这张首检单
+                String procCode = str(row.get("工序编码"));
+                List<FormData> inspects = inspectsByMo.computeIfAbsent(moNo,
+                        no -> firstInspectDocsIn(allInspects, no));
+                FormData passed = null;
+                FormData latest = null;
+                for (FormData doc : inspects) {
+                    if (!firstInspectProcessCodes(doc).contains(procCode)) continue;
+                    long id = doc.getId() == null ? 0 : doc.getId();
+                    long latestId = latest == null || latest.getId() == null ? -1 : latest.getId();
+                    if (id >= latestId) latest = doc;
+                    if (inspectionPassed(doc)) passed = doc;
+                }
+                boolean inspectOk = passed != null;
+                String inspectNo = passed != null ? passed.getFormNo()
+                        : latest == null ? "" : latest.getFormNo();
+                String inspectState = inspectOk ? "已通过"
+                        : latest == null ? "未建单"
+                        : !"已审核".equals(latest.getStatus()) ? "待审批"
+                        : "不合格";
+                row.put("首检状态", inspectState);
+                row.put("首检单号", inspectNo);
+                row.put("首检是否通过", inspectOk);
+                if (remain <= 0) {
+                    row.put("可否报工", false);
+                    row.put("不可报工原因", "批次已报满");
+                } else if (!inspectOk) {
+                    row.put("可否报工", false);
+                    row.put("不可报工原因", firstInspectBlockReason(
+                            str(row.get("工序名称")), inspectState, inspectNo));
+                } else {
+                    row.put("可否报工", true);
+                    row.put("不可报工原因", "");
+                }
                 out.add(row);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * 排产批次看板的「未开工」列：已下发加工单里**还没排产**的工序（可排产量 &gt; 0）。
+     *
+     * <p>口径来自 {@link #planBoard(String)}：可排产量 = 上道合格量 − 已审核排产量。
+     * 已完工的加工单不再列（没有可排的活），中止批次释放出来的量会重新出现在这里。
+     */
+    public List<Map<String, Object>> pendingPlanBoard() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (FormData mo : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER").orderByDesc(FormData::getId))) {
+            if (!"已审核".equals(mo.getStatus()) && !"生产中".equals(mo.getStatus())) continue;
+            List<Map<String, Object>> rows;
+            try {
+                rows = planBoard(mo.getFormNo());
+            } catch (Exception e) {
+                continue;  // 单张单算不出来不影响整块看板
+            }
+            for (Map<String, Object> row : rows) {
+                if (num(row.get("可排产量")) <= 0) continue;
+                Map<String, Object> r = new LinkedHashMap<>(row);
+                r.remove("批次");
+                out.add(r);
             }
         }
         return out;
@@ -7476,6 +10215,15 @@ public class PxService implements PanelRuntimeService {
         for (Map<String, Object> row : reportBatchBoard()) {
             if (!dispatchNo.equals(str(row.get("排产单号")))) continue;
             double remain = num(row.get("剩余数量"));
+            if (remain <= 0) {
+                throw new IllegalStateException("批次 " + dispatchNo + " 已报满，不能再报工");
+            }
+            // 首件在前、报工在后：首检没过（未建单/待审/不合格）一律不许报工
+            if (!Boolean.TRUE.equals(row.get("首检是否通过"))) {
+                String reason = str(row.get("不可报工原因"));
+                throw new IllegalStateException(reason.isBlank()
+                        ? "该工序首件未检验，先做首件检验再报工" : reason);
+            }
             if (qty > remain + 1e-6) {
                 throw new IllegalStateException("批次 " + dispatchNo + " 剩余 " + trimNum(remain)
                         + "，本次报工 " + trimNum(qty) + "（合格 " + trimNum(qualified)
@@ -7486,23 +10234,346 @@ public class PxService implements PanelRuntimeService {
         throw new IllegalStateException("排产批次 " + dispatchNo + " 不存在或未审批通过（必须先排产再报工）");
     }
 
+    /** 首检未过时的拦截文案：看板、报工工作台、报工接口共用一套说法。 */
+    private String firstInspectBlockReason(String procName, String state, String docNo) {
+        String p = procName == null || procName.isBlank() ? "该工序" : "工序「" + procName + "」";
+        return switch (state == null ? "" : state) {
+            case "未建单" -> p + "还没有首件报检单：先做首件检验，合格后才能报工";
+            case "待审批" -> p + "的首件报检单 " + docNo + " 还没审核通过：首检合格后才能报工";
+            case "不合格" -> p + "的首件报检单 " + docNo + " 判定不合格：按处置（返工/返修/让步接收/报废）处理重检后才能报工";
+            default -> p + "首件未检验：先做首件检验，合格后才能报工";
+        };
+    }
+
     /**
-     * 建排产批次：一张派工单只放一个批次（单行），审批后即占用额度。
+     * 从报工工作台补建某个排产批次所属工序的首件报检单（首件在前、报工在后）。
+     *
+     * <p>一工序一单：该工序已有待审或已通过的首检单时不再建，直接返回原单号；
+     * 只有「已审核且判定不合格」的才开重新首检单（带原单号）。
+     */
+    public Map<String, Object> createFirstInspectByBatch(String dispatchNo) {
+        if (dispatchNo == null || dispatchNo.isBlank()) throw new IllegalArgumentException("缺少排产单号");
+        Map<String, Object> target = null;
+        for (Map<String, Object> row : reportBatchBoard()) {
+            if (dispatchNo.equals(str(row.get("排产单号")))) {
+                target = row;
+                break;
+            }
+        }
+        if (target == null) {
+            throw new IllegalStateException("排产批次 " + dispatchNo + " 不存在或未审批通过（必须先排产）");
+        }
+        String moNo = str(target.get("加工单号"));
+        String procCode = str(target.get("工序编码"));
+        if (moNo.isEmpty() || procCode.isEmpty()) {
+            throw new IllegalStateException("批次 " + dispatchNo + " 缺少加工单号或工序编码");
+        }
+        // 已通过 / 待审批：不重复建单，直接把现有单号交回去（看板行里已算好，不再查一遍）
+        String inspectState = str(target.get("首检状态"));
+        String inspectNo = str(target.get("首检单号"));
+        if (!inspectNo.isEmpty() && !"不合格".equals(inspectState)) {
+            Map<String, Object> out = new LinkedHashMap<>();
+            out.put("编号", inspectNo);
+            out.put("首检状态", inspectState);
+            out.put("已存在", true);
+            return out;
+        }
+        FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, moNo));
+        if (mo == null) throw new IllegalStateException("加工单 " + moNo + " 不存在");
+        Map<String, Object> head = parseData(mo.getData());
+        Map<String, Object> detail = parseData(mo.getDetailData());
+        List<Map<String, Object>> products = new ArrayList<>();
+        if (detail.get("products") instanceof List<?> ps) {
+            for (Object o : ps) {
+                if (o instanceof Map<?, ?> raw) products.add(castRow(raw));
+            }
+        }
+        Map<String, Object> proc = null;
+        for (Map<String, Object> row : processRowsOf(detail, head)) {
+            if (procCode.equals(str(row.get("工序编码")))) {
+                proc = row;
+                break;
+            }
+        }
+        if (proc == null) {
+            throw new IllegalStateException("加工单 " + moNo + " 的工序路线里没有工序 " + procCode);
+        }
+        double remain = num(target.get("剩余数量"));
+        double base = remain > 0 ? remain : num(target.get("批次数量"));
+        double qty = Math.min(firstArticleQty(proc), base > 0 ? base : firstArticleQty(proc));
+        Map<String, Object> created = createFirstInspectForProcess("MANU_ORDER", moNo, head,
+                products.isEmpty() ? Map.of() : products.get(0), proc, qty, "", inspectNo);
+        if (created == null) {
+            throw new IllegalStateException("工序「" + str(proc.get("工序名称"))
+                    + "」的首件报检单没有生成，请检查工序路线");
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("编号", str(created.get("编号")));
+        out.put("单据状态", str(created.get("单据状态")));
+        out.put("已存在", false);
+        return out;
+    }
+
+    /**
+     * 一键排产：把当前「可排产量 &gt; 0」的工序全部排成批次，并自动走到已审核。
+     *
+     * <p>只排当前能排的：下道工序要等上道报工合格后才解锁，所以一次点击通常排到每件产品的
+     * 首道工序；等报工后可以再点一次继续往后排。班组/设备/计划日期留空，取工序档案里的默认值。
+     *
+     * @param productCode 只排指定产品；空串表示整张加工单
+     */
+    public Map<String, Object> planAll(String manuOrderNo, String productCode) {
+        if (manuOrderNo == null || manuOrderNo.isBlank()) throw new IllegalArgumentException("缺少加工单号");
+        String only = productCode == null ? "" : productCode.trim();
+        List<String> created = new ArrayList<>();
+        List<String> failed = new ArrayList<>();
+        for (Map<String, Object> row : planBoard(manuOrderNo)) {
+            String pcode = str(row.get("产品编码"));
+            if (!only.isEmpty() && !only.equals(pcode)) continue;
+            double available = num(row.get("可排产量"));
+            if (available <= 0) continue;
+            String pname = str(row.get("产品名称"));
+            String opName = str(row.get("工序名称"));
+            try {
+                Map<String, Object> res = planBatch(manuOrderNo, pcode, str(row.get("工序编码")),
+                        available, "", "", "", "");
+                String no = str(res.get("编号"));
+                if (!no.isEmpty()) {
+                    created.add(no);
+                }
+            } catch (Exception e) {
+                failed.add(pcode + " " + pname + " · " + opName + "：" + e.getMessage());
+            }
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("已排产", created);
+        out.put("失败", failed);
+        out.put("排产数量", created.size());
+        return out;
+    }
+
+    /**
+     * 销售订单排产看板：一行一个订单行，给出订单数量、该行已排数量、可排数量与预计加工单号。
+     *
+     * <p>可排数量按行计算（订单行数量 − 该行已生成加工单占用）。老加工单没有「销售订单行号」
+     * 时按产品编码认占用，并优先记到还有余量的行上，避免同一产品多行时卡死第二行。
+     */
+    public List<Map<String, Object>> saleOrderPlanBoard(String saleOrderNo) {
+        FormData so = saleOrderFormData(saleOrderNo);
+        Map<String, Object> head = parseData(so.getData());
+        List<Map<String, Object>> items = saleOrderItems(so);
+        double[] occupied = occupiedQtyByLine(saleOrderNo, items);
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (int i = 0; i < items.size(); i++) {
+            Map<String, Object> it = items.get(i);
+            int lineNo = SaleOrderPlanRules.lineNoOf(i);
+            String code = str(it.get("存货编码"));
+            double orderQty = num(it.get("数量"));
+            double done = i < occupied.length ? occupied[i] : 0;
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("行号", lineNo);
+            row.put("存货编码", code);
+            row.put("存货名称", it.getOrDefault("存货名称", ""));
+            row.put("规格型号", it.getOrDefault("规格型号", ""));
+            row.put("销售单位", it.getOrDefault("销售单位", ""));
+            row.put("订单数量", orderQty);
+            row.put("已排数量", round2(done));
+            row.put("可排数量", SaleOrderPlanRules.plannable(orderQty, done));
+            row.put("客户", head.getOrDefault("客户", ""));
+            row.put("加工单号", SaleOrderPlanRules.manuOrderNo(saleOrderNo, lineNo));
+            // 工艺路线与工序数：排产前先让人看清这批要做几道工序
+            List<Map<String, Object>> procs = resolveProcesses(List.of(it), "熔铸车间");
+            row.put("工序数", procs.size());
+            out.add(row);
+        }
+        return out;
+    }
+
+    /**
+     * 销售订单排产：按订单行生成生产加工单（单号 = 销售订单号-行号），并直接把首道工序排成批次。
+     *
+     * <p>排产不审批：加工单与批次生成即「已审核」，可以直接领料、报工。下道工序仍要等上道
+     * 报工合格，回到排产页点「一键排产」继续。
+     *
+     * @param lines 勾选的订单行：[{行号, 数量}]；数量省略表示按可排数量全排。空表示整单每行全排
+     */
+    public Map<String, Object> planFromSalesOrder(String saleOrderNo, List<Map<String, Object>> lines) {
+        if (saleOrderNo == null || saleOrderNo.isBlank()) throw new IllegalArgumentException("缺少销售订单号");
+        FormData so = saleOrderFormData(saleOrderNo);
+        if (!"已审核".equals(so.getStatus())) {
+            throw new IllegalStateException("销售订单 " + saleOrderNo + " 状态为「" + so.getStatus()
+                    + "」，只有已审核的销售订单可以排产");
+        }
+        List<Map<String, Object>> items = saleOrderItems(so);
+        if (items.isEmpty()) throw new IllegalStateException("销售订单没有产品明细：" + saleOrderNo);
+        double[] occupied = occupiedQtyByLine(saleOrderNo, items);
+
+        List<Map<String, Object>> targets = lines == null ? List.of() : lines;
+        List<Integer> pending = new ArrayList<>();
+        if (targets.isEmpty()) {
+            for (int i = 0; i < items.size(); i++) {
+                if (SaleOrderPlanRules.plannable(num(items.get(i).get("数量")), occupied[i]) > 0) pending.add(i);
+            }
+        } else {
+            for (Map<String, Object> line : targets) {
+                Integer lineNo = planLineNoOf(line);
+                if (lineNo == null) continue;
+                if (lineNo < 1 || lineNo > items.size()) {
+                    throw new IllegalStateException("销售订单没有第 " + lineNo + " 行");
+                }
+                pending.add(lineNo - 1);
+            }
+        }
+        if (pending.isEmpty()) throw new IllegalStateException("没有可排产的订单行（都已排满）");
+
+        List<Map<String, Object>> created = new ArrayList<>();
+        List<String> failed = new ArrayList<>();
+        for (int index : pending) {
+            Map<String, Object> item = items.get(index);
+            int lineNo = SaleOrderPlanRules.lineNoOf(index);
+            String code = str(item.get("存货编码"));
+            String name = str(item.get("存货名称"));
+            double orderQty = num(item.get("数量"));
+            double plannable = SaleOrderPlanRules.plannable(orderQty, occupied[index]);
+            double qty = plannable;
+            for (Map<String, Object> line : targets) {
+                Integer targetLine = planLineNoOf(line);
+                if (targetLine == null || targetLine != lineNo) continue;
+                if (line.get("数量") != null) qty = num(line.get("数量"));
+            }
+            try {
+                SaleOrderPlanRules.requireWithin(qty, plannable, code + " " + name, orderQty);
+                String moNo = SaleOrderPlanRules.manuOrderNo(saleOrderNo, lineNo);
+                Map<String, Object> param = new LinkedHashMap<>();
+                param.put("行号", lineNo);
+                param.put("数量", qty);
+                param.put("加工单号", moNo);
+                createMoFromSo("SO_ORDER", Map.of("编号", saleOrderNo), param);
+                // 首道工序直接建批次（不审批）；下道等报工后再排
+                Map<String, Object> planRes = planAll(moNo, code);
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("行号", lineNo);
+                row.put("加工单号", moNo);
+                row.put("产品编码", code);
+                row.put("产品名称", name);
+                row.put("数量", round2(qty));
+                row.put("批次", planRes.get("已排产"));
+                Object planFailed = planRes.get("失败");
+                if (planFailed instanceof List<?> list && !list.isEmpty()) row.put("排产失败", list);
+                created.add(row);
+            } catch (Exception e) {
+                failed.add("第 " + lineNo + " 行 " + code + " " + name + "：" + e.getMessage());
+            }
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("加工单", created);
+        out.put("失败", failed);
+        out.put("生成数量", created.size());
+        return out;
+    }
+
+    /** 销售订单单据（不存在即报错） */
+    private FormData saleOrderFormData(String saleOrderNo) {
+        FormData so = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "SO_ORDER")
+                .eq(FormData::getFormNo, String.valueOf(saleOrderNo)));
+        if (so == null) throw new IllegalArgumentException("销售订单不存在：" + saleOrderNo);
+        return so;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> saleOrderItems(FormData so) {
+        Map<String, Object> detail = parseData(so.getDetailData());
+        Object items = detail.get("items");
+        if (!(items instanceof List<?> list)) return new ArrayList<>();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Object o : list) {
+            if (o instanceof Map<?, ?> raw) out.add(castRow(raw));
+        }
+        return out;
+    }
+
+    /**
+     * 每个订单行已被加工单占用的数量。
+     *
+     * <p>带「销售订单行号」的加工单精确占用该行；老加工单没有行号时按产品编码占，
+     * 且优先记到还有余量的行，保证同一产品多行时后一行仍可排。
+     */
+    private double[] occupiedQtyByLine(String saleOrderNo, List<Map<String, Object>> items) {
+        double[] occupied = new double[items.size()];
+        List<FormData> orders = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER")
+                .notIn(FormData::getStatus, "已中止", "作废")
+                .orderByAsc(FormData::getId));
+        for (FormData order : orders) {
+            Map<String, Object> head;
+            Map<String, Object> detail;
+            try {
+                head = parseData(order.getData());
+                detail = parseData(order.getDetailData());
+            } catch (Exception e) {
+                continue;
+            }
+            if (!saleOrderNo.equals(str(head.get("销售订单号")))) continue;
+            List<Map<String, Object>> products = new ArrayList<>();
+            if (detail.get("products") instanceof List<?> list) {
+                for (Object o : list) {
+                    if (o instanceof Map<?, ?> raw) products.add(castRow(raw));
+                }
+            }
+            String lineField = str(head.get(SaleOrderPlanRules.LINE_FIELD));
+            for (Map<String, Object> p : products) {
+                String code = str(p.get("产品编码"));
+                double qty = num(p.get("数量"));
+                int target = -1;
+                if (!lineField.isEmpty()) {
+                    int lineNo = (int) Math.round(num(lineField));
+                    if (lineNo >= 1 && lineNo <= items.size()
+                            && code.equals(str(items.get(lineNo - 1).get("存货编码")))) {
+                        target = lineNo - 1;
+                    }
+                }
+                if (target < 0) {
+                    // 老数据：按产品编码占，优先占还有余量的行
+                    for (int i = 0; i < items.size(); i++) {
+                        if (!code.equals(str(items.get(i).get("存货编码")))) continue;
+                        if (occupied[i] + 1e-6 >= num(items.get(i).get("数量"))) continue;
+                        target = i;
+                        break;
+                    }
+                }
+                if (target >= 0) occupied[target] += qty;
+            }
+        }
+        return occupied;
+    }
+
+    /**
+     * 建排产批次：一张派工单只放一个批次（单行），生成即已审核并占用额度。
      *
      * <p>一个工序可以建多个批次（分批排产），每批可指定不同班组/设备（允许跨班组、跨设备）。
      */
-    public Map<String, Object> planBatch(String manuOrderNo, String processCode, double quantity,
-                                         String team, String equipment, String planStart, String planEnd) {
+    public Map<String, Object> planBatch(String manuOrderNo, String productCode, String processCode,
+                                         double quantity, String team, String equipment,
+                                         String planStart, String planEnd) {
         if (manuOrderNo == null || manuOrderNo.isBlank()) throw new IllegalArgumentException("缺少加工单号");
         if (processCode == null || processCode.isBlank()) throw new IllegalArgumentException("缺少工序编码");
-        validatePlanQuantity(manuOrderNo, processCode, quantity);
+        validatePlanQuantity(manuOrderNo, productCode, processCode, quantity);
 
         Map<String, Object> procRow = null;
         Map<String, Object> boardRow = null;
         for (Map<String, Object> r : planBoard(manuOrderNo)) {
-            if (processCode.equals(str(r.get("工序编码")))) { boardRow = r; break; }
+            if (!processCode.equals(str(r.get("工序编码")))) continue;
+            if (!productCode.isEmpty() && !productCode.equals(str(r.get("产品编码")))) continue;
+            boardRow = r;
+            break;
         }
-        if (boardRow == null) throw new IllegalStateException("加工单 " + manuOrderNo + " 没有工序 " + processCode);
+        if (boardRow == null) {
+            throw new IllegalStateException("加工单 " + manuOrderNo + " 没有产品 " + productCode
+                    + " 的工序 " + processCode);
+        }
+        productCode = str(boardRow.get("产品编码"));
 
         FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
                 .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, manuOrderNo));
@@ -7516,10 +10587,16 @@ public class PxService implements PanelRuntimeService {
             for (Object o : procs) {
                 if (!(o instanceof Map<?, ?> raw)) continue;
                 Map<String, Object> r = castRow(raw);
-                if (processCode.equals(str(r.get("工序编码")))) { procRow = r; break; }
+                if (!processCode.equals(str(r.get("工序编码")))) continue;
+                if (!productCode.isEmpty() && !productCode.equals(str(r.get("产品编码")))) continue;
+                procRow = r;
+                break;
             }
         }
-        if (procRow == null) throw new IllegalStateException("加工单 " + manuOrderNo + " 没有工序 " + processCode);
+        if (procRow == null) {
+            throw new IllegalStateException("加工单 " + manuOrderNo + " 没有产品 " + productCode
+                    + " 的工序 " + processCode);
+        }
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("单据日期", LocalDate.now().toString());
@@ -7531,6 +10608,7 @@ public class PxService implements PanelRuntimeService {
         data.put("预完工日", planEnd == null ? "" : planEnd);
 
         Map<String, Object> row = new LinkedHashMap<>();
+        row.put("产品编码", productCode);
         row.put("工序编码", processCode);
         row.put("工序名称", procRow.getOrDefault("工序名称", ""));
         row.put("产品名称", boardRow.getOrDefault("产品名称", ""));
@@ -7552,14 +10630,40 @@ public class PxService implements PanelRuntimeService {
 
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("items", List.of(row));
-        return insertGenerated("DISPATCH", "MANU_ORDER", manuOrderNo, data, detail);
+        // 第一道工序一排产就把开工日期写上（表头只读，由系统回填）
+        fillStartDateIfEmpty(mo, planStart);
+        Map<String, Object> res = insertGenerated("DISPATCH", "MANU_ORDER", manuOrderNo, data, detail);
+        // 排产不审批：批次生成即已审核，报工/领料直接可用（审批只保留给需要人工复核的单据）
+        String dispatchNo = str(res.get("编号"));
+        if (!dispatchNo.isEmpty()) {
+            markAudited("DISPATCH", dispatchNo);
+            res.put("单据状态", "已审核");
+        }
+        return res;
+    }
+
+    /** 免审批单据：直接把单据状态置为已审核（不走审批记录）。 */
+    private void markAudited(String panelCode, String formNo) {
+        FormData doc = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, panelCode)
+                .eq(FormData::getFormNo, formNo));
+        if (doc == null) return;
+        doc.setStatus("已审核");
+        doc.setUpdateTime(LocalDateTime.now());
+        doc.setAuditBy(currentUserName());
+        doc.setAuditTime(LocalDateTime.now());
+        formMapper.updateById(doc);
+        // 报工免审批：审核通过该做的推进一个不能少（否则加工单累计完工量一直是 0）
+        if ("PROCESS_REPORT".equals(panelCode)) afterProcessReportApproved(doc);
     }
 
     /** 排产数量校验：不得超过可排产量。 */
-    public void validatePlanQuantity(String manuOrderNo, String processCode, double quantity) {
+    public void validatePlanQuantity(String manuOrderNo, String productCode, String processCode,
+                                     double quantity) {
         if (quantity <= 0) throw new IllegalArgumentException("排产数量必须大于 0");
         for (Map<String, Object> row : planBoard(manuOrderNo)) {
             if (!processCode.equals(str(row.get("工序编码")))) continue;
+            if (!productCode.isEmpty() && !productCode.equals(str(row.get("产品编码")))) continue;
             double available = num(row.get("可排产量"));
             if (quantity > available + 1e-6) {
                 throw new IllegalStateException("工序「" + row.get("工序名称") + "」可排产 " + trimNum(available)
@@ -7570,6 +10674,53 @@ public class PxService implements PanelRuntimeService {
             return;
         }
         throw new IllegalStateException("加工单 " + manuOrderNo + " 没有工序 " + processCode);
+    }
+
+    /**
+     * 工序汇报选单看板：一张加工单一行，带每道工序的计划/已报/未报与可否报工。
+     *
+     * <p>选单弹窗靠它把话说清楚：已经报了两道工序的单要能看出还剩哪道、为什么点不了；
+     * 还没开工的工序标「待生产」，不能越序报。可报工的判定就是「本道未报满 + 前道都报满」。
+     */
+    public List<Map<String, Object>> processReportPickBoard() {
+        List<FormData> orders = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER")
+                .in(FormData::getStatus, List.of("已审核", "生产中"))
+                .orderByDesc(FormData::getId));
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (FormData mo : orders) {
+            Map<String, Object> head = parseData(mo.getData());
+            Map<String, Object> detail = parseData(mo.getDetailData());
+            Map<String, Object> product = detail.get("products") instanceof List<?> ps && !ps.isEmpty()
+                    ? castRow((Map<?, ?>) ps.get(0)) : Map.of();
+            List<Map<String, Object>> procs = processCompletion(mo.getFormNo());
+            if (procs.isEmpty()) continue;
+            boolean prevDone = true;
+            int doneCount = 0;
+            for (Map<String, Object> row : procs) {
+                boolean done = Boolean.TRUE.equals(row.get("是否完成"));
+                double remain = num(row.get("未报数量"));
+                if (done) doneCount++;
+                boolean canReport = !done && remain > 0 && prevDone;
+                row.put("可否报工", canReport);
+                row.put("不可报原因", done ? "已报满" : (prevDone ? "" : "前道工序还没报完"));
+                prevDone = prevDone && done;
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("加工单号", mo.getFormNo());
+            row.put("单据状态", mo.getStatus());
+            row.put("客户", head.getOrDefault("客户", ""));
+            row.put("产品编码", product.getOrDefault("产品编码", ""));
+            row.put("产品名称", product.getOrDefault("产品名称", ""));
+            row.put("规格型号", product.getOrDefault("规格型号", ""));
+            row.put("加工单数量", num(product.get("数量")));
+            row.put("工序数", procs.size());
+            row.put("已完成工序数", doneCount);
+            row.put("全部完成", doneCount == procs.size());
+            row.put("processes", procs);
+            out.add(row);
+        }
+        return out;
     }
 
     /**
@@ -7782,7 +10933,14 @@ public class PxService implements PanelRuntimeService {
 
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("items", List.of(row));
-        return insertGenerated("PROCESS_REPORT", "MANU_ORDER", manuOrderNo, data, detail);
+        Map<String, Object> res = insertGenerated("PROCESS_REPORT", "MANU_ORDER", manuOrderNo, data, detail);
+        // 报工不审批：汇报单生成即已审核，直接计完工
+        String reportNo = str(res.get("编号"));
+        if (!reportNo.isEmpty()) {
+            markAudited("PROCESS_REPORT", reportNo);
+            res.put("单据状态", "已审核");
+        }
+        return res;
     }
 
     /**
@@ -8654,18 +11812,7 @@ public class PxService implements PanelRuntimeService {
         refreshSourceExecution(fd);
         syncProgressFrom(fd);
         // 报工通过后推进完工：全部工序完成 → 加工单完工；末道首次完成 → 触发首检
-        if ("PROCESS_REPORT".equals(panelCode)) {
-            String moNo = str(parseData(fd.getData()).get("加工单号"));
-            // 同步批次的累计汇报量与状态
-            if (parseData(fd.getDetailData()).get("items") instanceof List<?> lines) {
-                for (Object o : lines) {
-                    if (!(o instanceof Map<?, ?> line)) continue;
-                    String dispatchNo = str(line.get("排产单号"));
-                    if (!dispatchNo.isEmpty()) syncDispatchReported(dispatchNo);
-                }
-            }
-            if (!moNo.isEmpty()) advanceCompletion(moNo);
-        }
+        if ("PROCESS_REPORT".equals(panelCode)) afterProcessReportApproved(fd);
         Map<String, Object> out = new HashMap<>();
         out.put("编号", fd.getFormNo());
         out.put("单据状态", "已审核");
@@ -8700,6 +11847,37 @@ public class PxService implements PanelRuntimeService {
         }
     }
 
+    /** 首件报检：判定必须由质检员填（合格/不合格/让步接收），不预置默认值。 */
+    private void validateFirstInspectVerdict(List<Map<String, Object>> rows) {
+        for (int index = 0; index < rows.size(); index++) {
+            String verdict = textOf(rows.get(index).get("检验判定")).trim();
+            if (verdict.isEmpty()) {
+                throw new IllegalStateException("第 " + (index + 1)
+                        + " 行还没填「检验判定」（合格/不合格/让步接收），质检员判定后才能提交");
+            }
+            if (!Set.of("合格", "不合格", "让步接收").contains(verdict)) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行检验判定「" + verdict
+                        + "」不合法，只能是 合格/不合格/让步接收");
+            }
+            // 判不合格必须写清怎么处置，否则这批货没人知道该返工、让步还是报废
+            if (!"不合格".equals(verdict)) continue;
+            String disposition = textOf(rows.get(index).get("处置方式")).trim();
+            if (disposition.isEmpty()) {
+                throw new IllegalStateException("第 " + (index + 1)
+                        + " 行判定不合格，必须选「处置方式」（返工/返修/让步接收/报废）");
+            }
+            if (!Set.of("返工", "返修", "让步接收", "报废").contains(disposition)) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行处置方式「" + disposition
+                        + "」不合法，只能是 返工/返修/让步接收/报废");
+            }
+            double disposeQty = num(rows.get(index).get("处置数量"));
+            if (!"让步接收".equals(disposition) && disposeQty <= 0) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行处置为「" + disposition
+                        + "」时必须填「处置数量」");
+            }
+        }
+    }
+
     /** 成品报检：已出检验结果时，合格+不合格必须等于报检数量；待检允许为 0。 */
     private void validateFinishInspectQuantities(List<Map<String, Object>> rows) {
         for (int index = 0; index < rows.size(); index++) {
@@ -8713,6 +11891,10 @@ public class PxService implements PanelRuntimeService {
             }
             if (qualified > reported + 0.000001 || unqualified > reported + 0.000001) {
                 throw new IllegalStateException("第 " + (index + 1) + " 行合格/不合格数量不能超过报检数量");
+            }
+            // 合计也不能超过报检数量：报检 10 却填合格 8 + 不合格 5 同样不成立
+            if (qualified + unqualified > reported + 0.000001) {
+                throw new IllegalStateException("第 " + (index + 1) + " 行合格数量 + 不合格数量不能超过报检数量");
             }
             if (!result.isEmpty() && !"待检".equals(result)
                     && Math.abs(qualified + unqualified - reported) > 0.000001) {
@@ -8756,12 +11938,48 @@ public class PxService implements PanelRuntimeService {
      * {@link #validateProcessInspectAgainstReport}，不能拿加工单的成品累计量当上限——
      * 两者口径不同（加工单按成品套数汇总，工序报检按单道工序件数），混用会误拦。
      */
-    private void validateReportAgainstUpstream(String panelCode, FormData document,
+    /** 该工序的首件样本量（工序「首检数量」，缺省 1 件），按加工单路线取。 */
+    private double firstArticleQtyOf(String manuOrderNo, String processCode) {
+        FormData mo = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "MANU_ORDER").eq(FormData::getFormNo, manuOrderNo));
+        if (mo == null) return 1;
+        Map<String, Object> head = parseData(mo.getData());
+        for (Map<String, Object> row : processRowsOf(parseData(mo.getDetailData()), head)) {
+            if (processCode.equals(str(row.get("工序编码")))) return firstArticleQty(row);
+        }
+        return 1;
+    }
+
+    void validateReportAgainstUpstream(String panelCode, FormData document,
                                                List<Map<String, Object>> rows) {
         if (!Set.of("FINISH_INSPECT", "FIRST_INSPECT").contains(panelCode)) return;
         Map<String, Object> head = parseData(document.getData());
         String moNo = pickText(head, "加工单号", "生产加工单号", "来源单号");
         if (moNo.isBlank()) return;
+
+        // 首件一工序一单：上限是这道工序自己的累计报工量，不能拿成品完工套数比。
+        // 否则第一道工序刚报完首件、末道还是 0，首检单一审核就被「累计完工量 0」拦死。
+        if ("FIRST_INSPECT".equals(panelCode)) {
+            Map<String, Double> byProcess = reportedQtyByProcess(moNo);
+            for (Map<String, Object> row : rows) {
+                String procCode = pickText(row, "工序编码");
+                if (procCode.isBlank()) continue; // 改造前的老单没有工序行，退回成品口径
+                double reported = byProcess.getOrDefault(procCode, 0.0);
+                // 首检是报工前置：该工序还没报工是正常状态（首件要先生出来才能报工），
+                // 此时上限退回首件样本量（工序「首检数量」，缺省 1）；
+                // 已经有报工的是返工重检，仍按累计报工量封顶，防止检出超过已做出来的量。
+                boolean firstArticle = reported <= 0.000001;
+                double cap = firstArticle ? firstArticleQtyOf(moNo, procCode) : reported;
+                double qty = num(row.get("报检数量"));
+                if (qty > cap + 0.000001) {
+                    throw new IllegalStateException("工序「" + pickText(row, "工序名称") + "」报检数量 "
+                            + trimNumber(qty) + (firstArticle
+                            ? " 超过首件样本量 " + trimNumber(cap) + "（工序「首检数量」），首件最多检这么多"
+                            : " 超过该工序累计报工量 " + trimNumber(cap) + "，请先完成报工再报检"));
+                }
+            }
+            return;
+        }
 
         // 用 selectList 按面板过滤：selectOne 已被上层用来取当前单据，避免串用
         FormData mo = null;
@@ -9015,12 +12233,26 @@ public class PxService implements PanelRuntimeService {
     @Override
     public Map<String, Object> traceProcess(String docNo) {
         ProcessTraceService.TraceResult result = processTraceQueryService == null
-                ? new ProcessTraceService.TraceResult(List.of(), "", "", "", "追踪服务不可用")
+                ? new ProcessTraceService.TraceResult(List.of(), List.of(), List.of(), "", "", "", "追踪服务不可用")
                 : processTraceQueryService.trace(docNo);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("单号", docNo == null ? "" : docNo.trim());
-        out.put("环节数", result.steps().size());
+        out.put("环节数", result.route().size());
+        int present = (int) result.route().stream().filter(ProcessTraceService.RouteNode::present).count();
+        out.put("已完成数", present);
+        out.put("待生成数", result.route().size() - present);
+        out.put("是否生产路线", result.route().stream()
+                .anyMatch(n -> "MANU_ORDER".equals(n.panelCode())));
         out.put("当前环节", result.currentDocNo());
+        // 加工单号：工单排产是多批次工作台，前端点击排产环节要按加工单跳转
+        String manuOrderNo = "";
+        for (ProcessTraceService.RouteNode node : result.route()) {
+            if ("MANU_ORDER".equals(node.panelCode()) && !node.docNo().isBlank()) {
+                manuOrderNo = node.docNo();
+                break;
+            }
+        }
+        out.put("加工单号", manuOrderNo);
         out.put("卡点单号", result.stalledDocNo());
         out.put("卡点原因", result.stalledReason());
         out.put("提示", result.message());
@@ -9030,6 +12262,7 @@ public class PxService implements PanelRuntimeService {
             row.put("序号", step.seq());
             row.put("面板编码", step.panelCode());
             row.put("环节", step.panelName());
+            row.put("工序名称", step.processName());
             row.put("单号", step.docNo());
             row.put("单据状态", step.status());
             row.put("阶段", step.state());
@@ -9037,7 +12270,50 @@ public class PxService implements PanelRuntimeService {
             steps.add(row);
         }
         out.put("steps", steps);
+        // 标准路线：固定的环节序列，没发生的环节 present=false，前端显示为「待生成」
+        List<Map<String, Object>> route = new ArrayList<>();
+        for (ProcessTraceService.RouteNode node : result.route()) {
+            route.add(routeRow(node, result.stalledDocNo()));
+        }
+        out.put("route", route);
+        // 并行排产线：一个订单行一条，各自到自己的加工单与后续单据
+        List<Map<String, Object>> lanes = new ArrayList<>();
+        for (ProcessTraceService.Lane lane : result.lanes()) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("线号", lane.key());
+            row.put("加工单号", lane.moNo());
+            row.put("产品编码", lane.productCode());
+            row.put("产品名称", lane.productName());
+            row.put("排产单号", lane.sopNo());
+            List<Map<String, Object>> laneNodes = new ArrayList<>();
+            for (ProcessTraceService.RouteNode node : lane.nodes()) {
+                laneNodes.add(routeRow(node, result.stalledDocNo()));
+            }
+            row.put("nodes", laneNodes);
+            lanes.add(row);
+        }
+        out.put("lanes", lanes);
         return out;
+    }
+
+    /** 路线节点转前端行；分支（如首件检验单）挂在节点下的 branches 里。 */
+    private Map<String, Object> routeRow(ProcessTraceService.RouteNode node, String stalledDocNo) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("序号", node.seq());
+        row.put("面板编码", node.panelCode());
+        row.put("环节", node.panelName());
+        row.put("工序名称", node.processName());
+        row.put("单号", node.docNo());
+        row.put("单据状态", node.status());
+        row.put("阶段", node.state());
+        row.put("是否已发生", node.present());
+        row.put("是否卡点", !node.docNo().isBlank() && node.docNo().equals(stalledDocNo));
+        List<Map<String, Object>> branches = new ArrayList<>();
+        for (ProcessTraceService.RouteNode branch : node.branches()) {
+            branches.add(routeRow(branch, stalledDocNo));
+        }
+        row.put("branches", branches);
+        return row;
     }
 
     private void delete(String panelCode, String code) {
@@ -9122,11 +12398,20 @@ public class PxService implements PanelRuntimeService {
     /** 销售出库固定从成品仓发货（与 createSaleOutFromSo 写入的仓库一致）。 */
     private static final String SALE_OUT_WAREHOUSE = "成品仓";
 
-    /** 启用审批流的面板（与前端 APPROVAL_PANELS 一致）：单据日期/单据编号不在新建时预填，提交审核时自动填写 */
+    /**
+     * 启用审批流的面板（与前端 APPROVAL_PANELS 一致）：单据日期/单据编号不在新建时预填，提交审核时自动填写。
+     *
+     * <p>DISPATCH（排产批次）与 PROCESS_REPORT（工序汇报单）2026-11-11 起不再审批：
+     * 排产是生产准备、报工是现场记录，生成即已审核，不再走「提交审批 → 审批通过」两步。
+     *
+     * <p>FIRST_INSPECT（首件报检单）2026-11-11 收进审批面板：与成品报检同口径，质检判定要留
+     * 提交人/审批人分离的痕迹，能驳回；判定为「不合格」时该工序继续锁死。
+     */
     private static final Set<String> APPROVAL_PANELS = Set.of(
             "SO_ORDER", "PURCHASE_IN", "FINISH_IN", "OTHER_IN", "SALE_OUT", "MATERIAL_OUT", "OTHER_OUT",
-            "MANU_ORDER", "PROCESS_REPORT", "INIT_AP", "INIT_AR", "INIT_BALANCE", "BOM", "ROUTE", "PU_REQ",
-            "ARRIVAL_IN", "DISPATCH", "FINISH_INSPECT", "INSPECTION", "PROCESS_INSPECTION", "MATERIAL_REQ", "PICK_ORDER",
+            "MANU_ORDER", "INIT_AP", "INIT_AR", "INIT_BALANCE", "BOM", "ROUTE", "PU_REQ",
+            "ARRIVAL_IN", "FINISH_INSPECT", "FIRST_INSPECT", "INSPECTION", "PROCESS_INSPECTION",
+            "MATERIAL_REQ", "PICK_ORDER",
             "PU_ORDER", "SALE_INV", "PURCHASE_RETURN",
             "TRANSFER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_IN", "OUTSOURCE_FEE",
             "QUOTE_ORDER", "SALE_INVOICE", "EXPENSE", "SALE_COST_ALLOC", "PU_INVOICE", "PU_COST_ALLOC",

@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -93,7 +94,9 @@ class PxServiceIssueActionTest {
         lenient().when(formMapper.selectList(any())).thenReturn(List.of());
         lenient().when(panelMapper.selectOne(any())).thenReturn(config("MATERIAL_OUT"));
 
-        service.issueByBatch("PG-1", "CL001", 80, "王强", "");
+        PxService spied = org.mockito.Mockito.spy(service);
+        org.mockito.Mockito.doNothing().when(spied).submitIssueForApproval(anyString(), any());
+        spied.issueByBatch("PG-1", "CL001", 80, "王强", "");
 
         ArgumentCaptor<FormData> captor = ArgumentCaptor.forClass(FormData.class);
         verify(formMapper).insert(captor.capture());

@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -98,6 +101,7 @@ class PxServiceBatchIssueDocTest {
         PxService spied = spy(service);
         doNothing().when(spied).validateBatchIssue(anyString(), anyString(), anyString(), anyDouble(), any());
         doNothing().when(spied).validateMaterialIssue(any(), any());
+        doNothing().when(spied).submitIssueForApproval(anyString(), any());
         when(panelMapper.selectOne(any())).thenReturn(config("MATERIAL_OUT"));
         when(formMapper.selectOne(any())).thenReturn(batch(), mo());
         when(formMapper.selectCount(any())).thenReturn(0L);
@@ -122,10 +126,62 @@ class PxServiceBatchIssueDocTest {
         assertEquals("王强", first.get("领料人"));
         Map<?, ?> second = (Map<?, ?>) rows.get(1);
         assertEquals("CL004", second.get("材料编码"));
-        assertEquals("辅料仓", second.get("仓库"), "每种材料按自己的预出仓库出库");
+        assertEquals("辅料仓", second.get("仓库"), "每种材料按自己的预出库仓出库");
 
         Map<?, ?> head = json.readValue(inserted.getData(), Map.class);
         assertEquals("王强", head.get("领用人"));
         assertEquals("PG-1", first.get("排产单号"), "每行都挂到该排产批次");
+    }
+
+    /** 同一批次已经有「审批中」的出库单：不许再领，避免同批重复出库。 */
+    @Test
+    void issueRejectedWhilePreviousIssueIsPending() throws Exception {
+        when(formMapper.selectOne(any())).thenReturn(batch());
+        FormData pending = doc("MATERIAL_OUT", "CL-1", "审批中",
+                Map.of("单据编号", "CL-1", "来源单号", "PG-1"),
+                Map.of("items", List.of(Map.of("材料编码", "CL001", "数量", 1, "排产单号", "PG-1"))));
+        when(formMapper.selectList(any())).thenReturn(List.of(pending));
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> service.issueBatch("PG-1", List.of(Map.of("材料编码", "CL001", "数量", 1)), "王强", ""));
+        assertTrue(e.getMessage().contains("CL-1"), e.getMessage());
+        assertTrue(e.getMessage().contains("审批中"), e.getMessage());
+    }
+
+    /** 上一张被驳回（退回草稿）：允许重新领料。 */
+    @Test
+    void issueAllowedAfterPreviousIssueRejected() throws Exception {
+        PxService spied = spy(service);
+        doNothing().when(spied).validateBatchIssue(anyString(), anyString(), anyString(), anyDouble(), any());
+        doNothing().when(spied).validateMaterialIssue(any(), any());
+        doNothing().when(spied).submitIssueForApproval(anyString(), any());
+        when(panelMapper.selectOne(any())).thenReturn(config("MATERIAL_OUT"));
+        FormData rejected = doc("MATERIAL_OUT", "CL-1", "草稿",
+                Map.of("单据编号", "CL-1", "来源单号", "PG-1"),
+                Map.of("items", List.of(Map.of("材料编码", "CL001", "数量", 1, "排产单号", "PG-1"))));
+        when(formMapper.selectOne(any())).thenReturn(batch(), mo());
+        when(formMapper.selectCount(any())).thenReturn(0L);
+        when(formMapper.selectList(any())).thenReturn(List.of(rejected));
+
+        spied.issueBatch("PG-1", List.of(Map.of("材料编码", "CL001", "数量", 1)), "王强", "");
+        verify(formMapper).insert(any(FormData.class));
+    }
+
+    /** 领料看板带出批次领料单状态：审批中 → 「待审批」，并锁住该批次的领料按钮。 */
+    @Test
+    void issueBoardMarksPendingBatchAndBlocksIssue() throws Exception {
+        FormData pending = doc("MATERIAL_OUT", "CL-1", "审批中",
+                Map.of("单据编号", "CL-1", "来源单号", "PG-1"),
+                Map.of("items", List.of(Map.of("加工单号", "MO-1", "材料编码", "CL001",
+                        "数量", 0, "排产单号", "PG-1"))));
+        when(formMapper.selectOne(any())).thenReturn(mo());
+        when(formMapper.selectList(any())).thenReturn(List.of(pending), List.of(batch()));
+
+        List<Map<String, Object>> rows = service.materialIssueBoard("MO-1");
+        assertFalse(rows.isEmpty());
+        Map<String, Object> first = rows.get(0);
+        assertEquals("CL-1", first.get("出库单号"));
+        assertEquals("待审批", first.get("出库状态"));
+        assertEquals(false, first.get("可否领料"), "审批中的批次不能再领");
     }
 }

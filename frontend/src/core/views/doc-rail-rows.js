@@ -44,6 +44,33 @@ const PANEL_MIDDLE_FIELDS = {
   FINISH_INSPECT: '加工单号',
 }
 
+/**
+ * 侧栏第二业务列：在第一中间列（往来单位等）之外再补一列，
+ * 让一屏能看清「谁的单 / 什么进度」，而不是只有一个客户名。
+ */
+const PANEL_SECOND_FIELDS = {
+  SO_ORDER: '业务员',
+  QUOTE_ORDER: '业务员',
+  SALE_INV: '经手人',
+  SALE_OUT: '业务员',
+  PU_ORDER: '经手人',
+  ARRIVAL_IN: '仓库',
+  PURCHASE_IN: '仓库',
+  PURCHASE_RETURN: '仓库',
+  MANU_ORDER: '生产车间',
+  MATERIAL_REQ: '生产车间',
+  MATERIAL_OUT: '仓库',
+  FINISH_IN: '仓库',
+  DISPATCH: '生产车间',
+  INSPECTION: '检验员',
+}
+
+/** 未登记面板的第二列兜底顺序 */
+const SECOND_FALLBACK_KEYS = [
+  '业务员', '经手人', '采购员', '领用人', '检验员',
+  '仓库', '生产车间', '业务类型', '加工单号', '部门',
+]
+
 /** 按候选键取第一个非空值（行键是中文，不同面板的叫法不同） */
 export function pick(row, keys) {
   for (const key of keys) {
@@ -102,19 +129,69 @@ function partnerColumnOf(rows) {
 }
 
 /**
+ * 一工序一单的面板：中间列放什么。
+ * 工序汇报单看产品，首件报检查看它挂在哪张加工单上（同一加工单会有多张首检单）。
+ */
+const PER_PROCESS_PANELS = {
+  PROCESS_REPORT: { middle: '产品名称' },
+  FIRST_INSPECT: { middle: '加工单号' },
+}
+
+/**
  * 面板列定义：单号 | 日期 | 中间列（0 或 1）| 审核状态。
  * kind 决定对齐和渲染方式：no=等宽单号、date=日期、text=普通文本、tag=状态标签。
  */
 export function railColumnsOf(panelCode, rows) {
-  const field = PANEL_MIDDLE_FIELDS[String(panelCode || '')]
+  const code = String(panelCode || '')
+  // 一工序一单的面板：侧栏要能直接看出「哪张加工单、哪道工序」
+  const perProcess = PER_PROCESS_PANELS[code]
+  if (perProcess) {
+    return [
+      { key: 'no', label: '单号', kind: 'no', align: 'left', keys: NO_KEYS },
+      { key: 'date', label: '日期', kind: 'date', align: 'left', keys: DATE_KEYS },
+      middleColumn(perProcess.middle),
+      {
+        key: 'process',
+        label: '工序',
+        kind: 'text',
+        align: 'left',
+        derive: (row) => {
+          const items = row?.detail?.items
+          if (!Array.isArray(items) || !items.length) return ''
+          const first = items[0] || {}
+          return String(first['工序名称'] || first['工序编码'] || '')
+        },
+      },
+      { key: 'status', label: '审核状态', kind: 'tag', align: 'center', keys: STATUS_KEYS },
+    ]
+  }
+  const field = PANEL_MIDDLE_FIELDS[code]
   const middle = field ? middleColumn(field) : partnerColumnOf(rows)
+  const second = secondColumnOf(code, rows, middle)
   return [
     { key: 'no', label: '单号', kind: 'no', align: 'left', keys: NO_KEYS },
     { key: 'date', label: '日期', kind: 'date', align: 'left', keys: DATE_KEYS },
     ...(middle ? [middle] : []),
+    ...(second ? [second] : []),
     { key: 'status', label: '审核状态', kind: 'tag', align: 'center', keys: STATUS_KEYS },
   ]
 }
+
+/**
+ * 第二业务列：优先用面板登记字段，取不到值就按兜底顺序挑本页有数据的那一列；
+ * 与第一中间列重复或全空则不加，避免出现一列「-」。
+ */
+function secondColumnOf(panelCode, rows, middle) {
+  const list = Array.isArray(rows) ? rows : []
+  const registered = PANEL_SECOND_FIELDS[panelCode]
+  const candidates = [registered, ...SECOND_FALLBACK_KEYS].filter(Boolean)
+  for (const label of candidates) {
+    if (middle && middle.label === label) continue
+    if (list.some((row) => row && String(row[label] ?? '').trim() !== '')) return middleColumn(label)
+  }
+  return null
+}
+
 
 /** 一格的值：列自带 keys（或 derive）时按列取，绝不按列下标猜 */
 export function railCellOf(row, column) {

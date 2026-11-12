@@ -16,6 +16,36 @@
       >
         <template #default="{ row }">{{ cellText(c, row) }}</template>
       </el-table-column>
+      <el-table-column v-if="config?.detailKey" type="expand" width="40">
+        <template #default="{ row }">
+          <div class="sel-lines">
+            <div v-for="g in groupsOf(row)" :key="g.key" class="sel-group">
+              <div class="sel-group-head">
+                <el-checkbox
+                  :model-value="groupChecked(row, g)"
+                  :indeterminate="groupIndeterminate(row, g)"
+                  @change="(v) => toggleGroup(row, g, v)"
+                >{{ g.label }}</el-checkbox>
+                <span class="sel-group-sum">{{ g.count }} {{ tt('行') }} · {{ tt('计划') }} {{ g.total }}</span>
+              </div>
+              <div v-for="item in g.lines" :key="item.idx" class="sel-line">
+                <el-checkbox
+                  :model-value="isPicked(row, item.idx)"
+                  :disabled="item.available <= 0"
+                  @change="() => toggleLine(row, item.idx)"
+                />
+                <span class="sel-line-code">{{ item.line['材料编码'] || item.line['工序编码'] || '' }}</span>
+                <span class="sel-line-name">{{ item.line['材料名称'] || item.line['工序名称'] || '' }}</span>
+                <span class="sel-line-qty">{{ lineQty(item.line) }}</span>
+                <span v-if="item.backflush" class="sel-line-tag">{{ tt('倒冲') }}</span>
+                <span v-else class="sel-line-avail" :class="{ zero: item.available <= 0 }">
+                  {{ tt('可领') }} {{ item.available }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column :label="tt('明细行')" min-width="220">
         <template #default="{ row }">
           <span class="sel-item">{{ itemsText(row) }}</span>
@@ -46,6 +76,7 @@ import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { usePanelRuntime } from '@core/panel-runtime'
 import { tt } from '@/i18n'
+import { groupByProcess, isBackflush, lineQty, pickedIndexes, toggled } from '@core/select-lines'
 
 const engine = usePanelRuntime()
 
@@ -65,6 +96,61 @@ const selRows = ref([])
 const generating = ref(false)
 
 const columns = computed(() => props.config?.columns || [])
+
+/** 每张来源单据的明细勾选状态：单据编号 → boolean[]（默认全选） */
+const picked = ref({})
+
+function docKey(row) {
+  return String(row?.['编号'] || row?.['单据编号'] || '')
+}
+
+function pickedOf(row) {
+  const key = docKey(row)
+  const count = detailRowsOf(row).length
+  if (!Array.isArray(picked.value[key])) {
+    // 倒冲料默认不勾：它由报工自动扣账，手工领会重复扣料
+    const initial = detailRowsOf(row).map((line) => !isBackflush(line))
+    picked.value = { ...picked.value, [key]: initial }
+  }
+  return picked.value[key]
+}
+
+function isPicked(row, idx) {
+  return pickedOf(row)[idx] !== false
+}
+
+function groupsOf(row) {
+  return groupByProcess(detailRowsOf(row))
+}
+
+function groupChecked(row, group) {
+  const state = pickedOf(row)
+  return group.lines.every((l) => state[l.idx] !== false)
+}
+
+function groupIndeterminate(row, group) {
+  const state = pickedOf(row)
+  const on = group.lines.filter((l) => state[l.idx] !== false).length
+  return on > 0 && on < group.lines.length
+}
+
+function toggleLine(row, idx) {
+  const key = docKey(row)
+  const next = [...pickedOf(row)]
+  next[idx] = next[idx] === false
+  picked.value = { ...picked.value, [key]: next }
+}
+
+function toggleGroup(row, group, on) {
+  const key = docKey(row)
+  const next = toggled(pickedOf(row), group.lines.map((l) => l.idx), on)
+  picked.value = { ...picked.value, [key]: next }
+}
+
+/** 勾选状态变化后清掉缓存，避免翻页后沿用旧单号的状态 */
+function resetPicked() {
+  picked.value = {}
+}
 const generateLabel = computed(() => props.config?.generateLabel || (props.config?.generateButton ? '生单' : '确定'))
 
 function close() {
@@ -131,6 +217,7 @@ async function load(p) {
     })
     rows.value = res.list || []
     total.value = res.totalSize || 0
+    resetPicked()
   } catch (e) {
     ElMessage.error(engine.errMsg(e) || tt('来源单据加载失败'))
   } finally {
@@ -166,7 +253,11 @@ async function generate() {
       const srcDetail = r.detail || {}
       const srcKey = cfg.detailKey || Object.keys(srcDetail)[0] || 'items'
       const srcArr = Array.isArray(srcDetail[srcKey]) ? srcDetail[srcKey] : []
-      const items = srcArr.map((row) => {
+      const pickedLineNo = new Set(pickedIndexes(pickedOf(r), srcArr.length))
+      const items = srcArr
+        .map((row, idx) => ({ row, idx }))
+        .filter(({ idx }) => pickedLineNo.has(idx))
+        .map(({ row }) => {
         const o = {}
         for (const m of cfg.detailMap || []) o[m.to] = row[m.from]
         const sourceNo = r['编号'] || r['单据编号'] || r['锭号'] || ''
@@ -211,6 +302,64 @@ async function generate() {
 </script>
 
 <style scoped>
+/* 展开行：按工序分组的可勾选明细 */
+.sel-lines {
+  padding: 4px 8px 6px 40px;
+}
+.sel-group + .sel-group {
+  margin-top: 6px;
+}
+.sel-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #111827;
+}
+.sel-group-sum {
+  font-weight: 400;
+  color: #6b7280;
+  font-size: 12px;
+}
+.sel-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 24px;
+  font-size: 12px;
+  color: #374151;
+  line-height: 24px;
+}
+.sel-line-code {
+  width: 84px;
+  color: #111827;
+}
+.sel-line-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sel-line-qty {
+  width: 76px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.sel-line-avail {
+  width: 92px;
+  text-align: right;
+  color: #16a34a;
+  font-variant-numeric: tabular-nums;
+}
+.sel-line-tag {
+  width: 92px;
+  text-align: right;
+  color: #b45309;
+}
+.sel-line-avail.zero {
+  color: #9ca3af;
+}
 .sel-tip {
   color: #666;
   font-size: 12px;

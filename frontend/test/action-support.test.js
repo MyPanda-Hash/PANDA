@@ -50,11 +50,15 @@ test('「导入发票」是前端整单导入动作，与明细导入「导入�
   )
 })
 
-test('选单类动作只在面板配了来源时才算支持', () => {
+test('选单类动作只在面板配了来源时才算支持；专用弹窗动作不依赖来源', () => {
   assert.equal(isActionSupported('选单'), false)
   assert.equal(isActionSupported('选单', { hasSelect: true }), true)
-  assert.equal(isActionSupported('选销售订单', { hasSelect: true }), true)
-  assert.equal(isSelectAction('选销售订单'), true)
+  // 选销售订单 / 选生产加工单走专用弹窗（代码分支），面板没配 selectConfig 也要显示
+  assert.equal(isActionSupported('选销售订单'), true)
+  assert.equal(isActionSupported('选生产加工单'), true)
+  assert.equal(isSelectAction('选销售订单'), false)
+  assert.equal(isSelectAction('选生产加工单'), false)
+  assert.equal(isSelectAction('选委外加工单'), true)
   assert.equal(isSelectAction('保存'), false)
 })
 

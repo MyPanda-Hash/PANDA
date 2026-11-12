@@ -6,7 +6,7 @@
         <div class="invoice-title">
           <span class="no">{{ isEdit ? (form['单据编号'] || form['锭号'] || form['编号'] || '') : tt('（新增）') }}</span>
           <el-tag v-if="form['单据状态']" size="small" :type="statusTag(form['单据状态'])">{{ tt(form['单据状态']) }}</el-tag>
-          <span v-if="isApproved" class="approved-stamp">{{ tt('已审批') }}</span>
+          <span v-if="formStamp" class="approved-stamp" :class="formStamp.tone">{{ tt(formStamp.text) }}</span>
         </div>
         <div class="invoice-actions">
           <el-button type="primary" :disabled="isDisabled('保存')" @click="onButton('保存')">{{ tt('保存') }}</el-button>
@@ -50,7 +50,9 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item v-for="a in dropOf(g)" :key="a" :command="a" :disabled="isDisabled(a)">
+                <!-- 纯菜单组：主按钮只负责展开，菜单里必须列出组内全部动作（含第一个），
+                     否则第一个动作永远点不到（选单组里「选生产加工单」就这样被藏掉） -->
+                <el-dropdown-item v-for="a in (g.actions || [])" :key="a" :command="a" :disabled="isDisabled(a)">
                   <span class="act-name">{{ tt(a) }}</span><span v-if="SHORTCUTS[a]" class="act-sc">{{ SHORTCUTS[a] }}</span>
                 </el-dropdown-item>
               </el-dropdown-menu>
@@ -88,7 +90,7 @@
           <span class="no">{{ isEdit ? (form['单据编号'] || form['锭号'] || form['编号'] || '') : tt('（新增）') }}</span>
           <el-tag v-if="form['单据状态']" size="small" :type="statusTag(form['单据状态'])">{{ tt(form['单据状态']) }}</el-tag>
         </div>
-        <div v-if="isApproved" class="approved-stamp">{{ tt('已审批') }}</div>
+        <div v-if="formStamp" class="approved-stamp" :class="formStamp.tone">{{ tt(formStamp.text) }}</div>
       </div>
 
       <!-- 表头（3 列；配置 formSections 时按「基本信息 / 发票信息」分段） -->
@@ -96,7 +98,7 @@
         <template v-for="section in sectionedMeta" :key="section.title || 'all'">
           <div v-if="section.title" class="form-section-title">{{ tt(section.title) }}</div>
           <div v-for="r in section.fields" :key="r.code" class="field">
-          <label :title="tt(r.name)">{{ tt(r.name) }}<span v-if="r.isNotNull" class="req">*</span></label>
+          <label :title="tt(r.label || r.name)">{{ tt(r.label || r.name) }}<span v-if="r.isNotNull" class="req">*</span></label>
           <el-input v-if="isText(r)" v-model="form[r.code]" :disabled="!editable || fieldLocked(r)" :placeholder="tt(r.name)" />
           <el-input-number
             v-else-if="isNumber(r)"
@@ -107,22 +109,42 @@
           />
           <!-- 参照字段：点击弹窗拉取基础档案面板数据，勾选导入（开发约束十一-1） -->
           <!-- 双模：参照数据 ≤20 行下拉直选，>20 行弹窗搜索定位（数据量跨越阈值自动切换） -->
-          <el-select
-            v-else-if="isRefSelect(r)"
-            v-model="form[r.code]"
-            clearable
-            filterable
-            remote
-            :disabled="!editable || fieldLocked(r)"
-            :remote-method="(kw) => loadRefOptions(r, kw)"
-            :loading="refSelectData[refFieldKey(r)]?.loading"
-            :placeholder="tt('输入搜索')"
-            style="width: 100%"
-            @change="(v) => onRefSelectChange(r, v)"
-            @focus="checkRefMode(r)"
-          >
-            <el-option v-for="o in refSelectData[refFieldKey(r)]?.options || []" :key="o.value" :label="tt(o.label)" :value="o.value" />
-          </el-select>
+          <div v-else-if="isRefSelect(r)" class="ref-field">
+            <el-select
+              v-model="form[r.code]"
+              clearable
+              filterable
+              remote
+              :disabled="!editable || fieldLocked(r)"
+              :remote-method="(kw) => loadRefOptions(r, kw)"
+              :placeholder="tt('输入搜索')"
+              style="width: 100%"
+              popper-class="ref-paged-popper"
+              @change="(v) => onRefSelectChange(r, v)"
+              @focus="checkRefMode(r)"
+            >
+              <el-option
+                v-for="o in refPageOf(refFieldKey(r)).list"
+                :key="o.value"
+                :label="tt(o.label)"
+                :value="o.value"
+              />
+              <template v-if="refPageOf(refFieldKey(r)).pages > 1" #footer>
+                <div class="ref-pager">
+                  <span class="ref-pager-info">{{ refPageOf(refFieldKey(r)).page }}/{{ refPageOf(refFieldKey(r)).pages }}</span>
+                  <el-button link size="small" :disabled="refPageOf(refFieldKey(r)).page <= 1" @click.stop="turnRefPage(refFieldKey(r), -1)">{{ tt('上一页') }}</el-button>
+                  <el-button link size="small" :disabled="refPageOf(refFieldKey(r)).page >= refPageOf(refFieldKey(r)).pages" @click.stop="turnRefPage(refFieldKey(r), 1)">{{ tt('下一页') }}</el-button>
+                </div>
+              </template>
+            </el-select>
+            <!-- 参照来源是档案面板：给一个直接打开该档案的入口，别让用户自己找菜单 -->
+            <el-icon
+              v-if="r.refPanel"
+              class="ref-jump"
+              :title="tt('打开来源档案') + ' · ' + r.refPanel"
+              @click.stop="openRefPanel(r)"
+            ><TopRight /></el-icon>
+          </div>
           <div v-else-if="isRef(r)" class="ref-ctl">
             <el-input
               :model-value="refText(r, form[r.code])"
@@ -130,8 +152,18 @@
               :disabled="!editable || fieldLocked(r)"
               :placeholder="isEdit ? '' : tt('点击选择')"
               @click="openRefPick(r)"
-            />
-            <el-button v-if="editable && !fieldLocked(r)" class="ref-btn" size="small" :icon="Search" @click="openRefPick(r)" />
+            >
+              <!-- 搜索图标放输入框内：按钮独立成框会让底部基线比其它字段高出一截 -->
+              <template v-if="editable && !fieldLocked(r)" #suffix>
+                <el-icon class="ref-suffix" :title="tt('打开参照')" @click.stop="openRefPick(r)"><Search /></el-icon>
+                <el-icon
+                  v-if="r.refPanel"
+                  class="ref-suffix ref-jump-inline"
+                  :title="tt('打开来源档案') + ' · ' + r.refPanel"
+                  @click.stop="openRefPanel(r)"
+                ><TopRight /></el-icon>
+              </template>
+            </el-input>
           </div>
           <el-select v-else-if="isSelect(r)" v-model="form[r.code]" :disabled="!editable || fieldLocked(r)" filterable clearable allow-create style="width: 100%">
             <el-option v-for="o in r.options || []" :key="o" :label="tt(o.label ?? o)" :value="o.value ?? o" />
@@ -233,6 +265,34 @@
                       <span class="ref-cell" :class="{ disabled: !detailRefEnabled(dr) }" @click="openDetailRef(dr, row, tab, 'click')">{{ drRefText(dr, row) }}</span>
                       <span v-if="hasSubBom(row[dr.dataName])" class="mat-star" :title="tt('该材料有下级子件 BOM，点击行查看')">*</span>
                     </span>
+                    <!-- 双模：档案行数 ≤20 时直接下拉选，不必再点开弹窗 -->
+                    <el-select
+                      v-else-if="isRefSelect(dr)"
+                      :model-value="row[dr.dataName]"
+                      clearable
+                      filterable
+                      remote
+                      :disabled="!editable || detailCellLocked(dr)"
+                      :remote-method="(kw) => loadRefOptions(dr, kw)"
+                      :placeholder="tt('请选择')"
+                      style="width: 100%"
+                      @change="(v) => onDetailRefSelectChange(dr, v, row, tab)"
+                      @focus="checkRefMode(dr)"
+                    >
+                      <el-option
+                        v-for="o in refPageOf(refFieldKey(dr)).list"
+                        :key="o.value"
+                        :label="tt(o.label)"
+                        :value="o.value"
+                      />
+                      <template v-if="refPageOf(refFieldKey(dr)).pages > 1" #footer>
+                        <div class="ref-pager">
+                          <span class="ref-pager-info">{{ refPageOf(refFieldKey(dr)).page }}/{{ refPageOf(refFieldKey(dr)).pages }}</span>
+                          <el-button link size="small" :disabled="refPageOf(refFieldKey(dr)).page <= 1" @click.stop="turnRefPage(refFieldKey(dr), -1)">{{ tt('上一页') }}</el-button>
+                          <el-button link size="small" :disabled="refPageOf(refFieldKey(dr)).page >= refPageOf(refFieldKey(dr)).pages" @click.stop="turnRefPage(refFieldKey(dr), 1)">{{ tt('下一页') }}</el-button>
+                        </div>
+                      </template>
+                    </el-select>
                     <span
                       v-else
                       class="ref-cell"
@@ -276,7 +336,7 @@
               </el-table-column>
               <el-table-column v-if="editable" :label="tt('操作')" width="50" align="center" fixed="right">
                 <template #default="{ $index }">
-                  <el-icon class="del" @click="detailData[tab.key].splice($index, 1)"><Delete /></el-icon>
+                  <el-icon class="del" @click="removeDetailRow(tab, $index)"><Delete /></el-icon>
                 </template>
               </el-table-column>
             </el-table>
@@ -326,7 +386,10 @@
       </div>
 
       <!-- 拉式选单（配置驱动：selectConfig 定义来源面板/列/字段映射，对齐 T+ 选单前提：已生效且未中止） -->
-      <el-dialog v-model="selectVisible" :title="tt(selectCrg?.title || '选单')" width="920px" append-to-body>
+      <!-- 工序汇报单选单：按加工单逐道工序报工（通用选单会把整单工序一起带进来） -->
+    <ProcessReportPickDialog v-model="processPickVisible" @generated="onProcessReported" />
+
+    <el-dialog v-model="selectVisible" :title="tt(selectCrg?.title || '选单')" width="920px" append-to-body>
         <div class="sel-tip">{{ selectCrg?.tip || tt('选择来源单据，明细将带入当前单据') }}</div>
         <el-table
           :data="selectList"
@@ -401,11 +464,12 @@ const emit = defineEmits(['saved'])
 import { useTabsStore } from '@/stores/tabs'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Back, Plus, Delete, ArrowDown, Search } from '@element-plus/icons-vue'
+import { Back, Plus, Delete, ArrowDown, Search, TopRight } from '@element-plus/icons-vue'
 import { usePanelRuntime } from '@core/panel-runtime'
+import { clampInspectionQty } from '@core/inspection-qty.js'
 import { ensureScanFillAction, ensureSelectAction, hasSelectConfig, isApprovalGroup, isCatchAllGroup, primaryActionOf, approvalSecondaryOf } from '@core/button-groups'
 import { INVOICE_IMPORT_ACTION, INVOICE_LINE_ACTION, filterSupportedActions } from '@core/action-support'
-import { isDocApproved } from '@core/doc-status'
+import { isDocApproved, docStatusStamp } from '@core/doc-status'
 import { hasUnqualifiedTab, syncUnqualifiedRow } from '@core/inspection-unqualified.js'
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
@@ -413,6 +477,7 @@ import RefPickDialog from './RefPickDialog.vue'
 import RouteFlowPickDialog from './RouteFlowPickDialog.vue'
 import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
 import SelectVoucherDialog from './SelectVoucherDialog.vue'
+import ProcessReportPickDialog from './ProcessReportPickDialog.vue'
 import ProducePreviewDialog from './ProducePreviewDialog.vue'
 import SaleOutPreviewDialog from './SaleOutPreviewDialog.vue'
 import FinishInPreviewDialog from './FinishInPreviewDialog.vue'
@@ -529,6 +594,8 @@ function onInvoiceSourceConfirm(selected) {
 
 // ---------- 拉式选单（配置驱动：selectConfig 定义来源面板/列/字段映射） ----------
 const selectVisible = ref(false)
+// 工序汇报选单：按加工单逐道工序报工
+const processPickVisible = ref(false)
 const selectList = ref([])
 const selectLoading = ref(false)
 const selectRows = ref([])
@@ -651,8 +718,10 @@ function confirmSelect() {
   applyCalc()
 }
 const status = computed(() => form['单据状态'] || '草稿')
-// 已审批印章（直接审核/审批流通用判据，见 core/doc-status）：标题区右侧斜置绿章
+// 已审批印章（直接审核/审批流通用判据，见 core/doc-status）：标题区右侧斜置章
 const isApproved = computed(() => isEdit.value && isDocApproved(form))
+// 印章文字跟随单据状态：已审批 → 生产中 → 已完工
+const formStamp = computed(() => (isEdit.value ? docStatusStamp(form) : null))
 // 单据=草稿可编辑；基础档案（存货/部门等）状态为 启用/停用 同样可编辑（增行/改字段/保存）
 const editable = computed(() => !isEdit.value || status.value === '草稿' || status.value === '启用' || status.value === '停用')
 
@@ -731,7 +800,7 @@ function priceLocked(fieldName) {
 
 /** 明细单元格锁定：computed 派生列 + price 权限 */
 function detailCellLocked(dr) {
-  return !!dr.computed || priceLocked(dr.dataName)
+  return !!dr.computed || !!dr.readonly || priceLocked(dr.dataName)
 }
 
 function isDisabled(action) {
@@ -822,6 +891,24 @@ function isBool(r) {
 }
 function isSelect(r) {
   return r.dataType === '下拉框' || r.dataType === '参照'
+}
+
+// ---------- 参照来源面板：直接打开档案 ----------
+/**
+ * 打开参照来源的档案面板（新浏览器标签，不打断当前单据编辑）。
+ * 有值时带关键字定位，没值就进列表。
+ */
+function openRefPanel(field) {
+  const panel = field?.refPanel
+  if (!panel) return
+  const value = String(form[field.code] ?? '').trim()
+  const path = `/panelx/list/${panel}`
+  const params = new URLSearchParams()
+  if (value) params.set('keyword', value)
+  // 带上来源页：档案页据此显示「返回」，跳过去还能一键回来
+  const here = location.hash.replace(/^#/, '') || route.fullPath
+  params.set('from', here)
+  window.open(`${location.origin}${location.pathname}#${path}?${params.toString()}`, '_blank')
 }
 
 // ---------- 参照字段弹窗选择（开发约束十一-1：能对应基础档案的字段弹窗拉取勾选导入） ----------
@@ -917,6 +1004,7 @@ async function onRefConfirm(rows) {
         rillRow(nr, rows[i])
       }
     }
+    if (tab) renumberSequence(tab)
     if (tab?.key === 'products' && r.dataName === '产品编码') {
       for (const selected of rows) loadBomFor(selected[refField])
     }
@@ -949,6 +1037,8 @@ async function checkRefMode(r) {
   const key = refFieldKey(r)
   if (refModeMap[key]) return refModeMap[key]
   refModeMap[key] = 'dialog' // 默认弹窗，异步判定后可能切下拉
+  // 面板声明了 refDialog（如产品的编码+名称要一起看）就一直用弹窗，不退化成下拉
+  if (r.refDialog || r.ref?.dialog) return refModeMap[key]
   if (!refMultiOf(r)) {
     try {
       const count = await engine.refRowCount(r)
@@ -962,15 +1052,46 @@ async function checkRefMode(r) {
   return refModeMap[key]
 }
 
+/**
+ * 预热参照字段形态：加载后并行判定每个参照是下拉还是弹窗，
+ * 避免第一次点输入框时异步判定完成、控件从输入框切成下拉，画面抽一下。
+ */
+async function warmRefModes() {
+  const fields = [
+    ...(visibleMeta.value || []),
+    ...(tabs.value || []).flatMap((tab) => tab.fields || []),
+  ].filter((field) => field && (field.refPanel || field.ref?.panel))
+  await Promise.all(fields.map((field) => checkRefMode(field).catch(() => null)))
+}
+
+// ---------- 参照下拉分页：一屏只渲染一页，底部给翻页按钮 ----------
+const REF_PAGE_SIZE = 6
+const refPageMap = reactive({})
+
+function refPageOf(key) {
+  const list = refSelectData[key]?.options || []
+  const pages = Math.max(1, Math.ceil(list.length / REF_PAGE_SIZE))
+  const page = Math.min(Math.max(1, refPageMap[key] || 1), pages)
+  return { list: list.slice((page - 1) * REF_PAGE_SIZE, page * REF_PAGE_SIZE), page, pages }
+}
+
+function turnRefPage(key, delta) {
+  const { page, pages } = refPageOf(key)
+  refPageMap[key] = Math.min(pages, Math.max(1, page + delta))
+}
+
 // 远程搜索选项加载（300ms 防抖）
 function loadRefOptions(r, keyword) {
   const key = refFieldKey(r)
   if (!refSelectData[key]) refSelectData[key] = reactive({ options: [], loading: false })
+  // 没输入关键字且已预加载：直接用缓存，避免每次展开都重新取数导致下拉闪
+  if (!keyword && refSelectData[key].options.length) return
   clearTimeout(refSelectTimers[key])
   refSelectTimers[key] = setTimeout(async () => {
     refSelectData[key].loading = true
     try {
       refSelectData[key].options = await engine.refSelectOptions(r, keyword)
+    refPageMap[key] = 1
     } catch (e) {
       refSelectData[key].options = []
     } finally {
@@ -980,8 +1101,8 @@ function loadRefOptions(r, keyword) {
 }
 
 function isRefSelect(r) {
-  // refDialog: route-flow 这类要看流程/图的选择器强制走弹窗，不能退化成下拉（下拉只能看编码名称）
-  if ((r.refDialog || r.ref?.dialog) === 'route-flow') return false
+  // refDialog 的选择器强制走弹窗：下拉只显示单字段，看不到编码+名称的对应关系
+  if (r.refDialog || r.ref?.dialog) return false
   return isRef(r) && !refMultiOf(r) && refModeMap[refFieldKey(r)] === 'select'
 }
 
@@ -990,6 +1111,14 @@ function onRefSelectChange(r, value) {
   const opt = (refSelectData[refFieldKey(r)]?.options || []).find((o) => o.value === value)
   if (!opt?.row) return
   refPick.value = { field: r, kind: 'header', code: r.code, mode: 'header' }
+  onRefConfirm([opt.row])
+}
+
+/** 明细行参照下拉：与弹窗共用 onRefConfirm，refMap 带出其它列 */
+function onDetailRefSelectChange(dr, value, row, tab) {
+  const opt = (refSelectData[refFieldKey(dr)]?.options || []).find((o) => o.value === value)
+  if (!opt?.row) return
+  refPick.value = { field: dr, kind: 'detail', row, tab, mode: 'detail' }
   onRefConfirm([opt.row])
 }
 
@@ -1112,6 +1241,26 @@ function tabHint(tab) {
   return ''
 }
 
+/**
+ * 顺序列（工序顺序）永远等于行位置：第一行就是第一道工序，增删行后自动重排。
+ * 用户不用也不能手填，避免顺序和数据脱节。
+ */
+function renumberSequence(tab) {
+  if (!tab) return
+  const seqField = (tab.fields || []).find((f) => f.dataName === '工序顺序')
+  if (!seqField) return
+  const rows = detailData[tab.key]
+  if (!Array.isArray(rows)) return
+  rows.forEach((row, i) => { row['工序顺序'] = i + 1 })
+}
+
+/** 删除明细行：删完立即重排顺序列 */
+function removeDetailRow(tab, index) {
+  if (!Array.isArray(detailData[tab.key])) return
+  detailData[tab.key].splice(index, 1)
+  renumberSequence(tab)
+}
+
 function addDetailRow(tab) {
   const rows = detailData[tab.key] || (detailData[tab.key] = [])
   const row = {}
@@ -1124,6 +1273,7 @@ function addDetailRow(tab) {
   // 材料明细：新增行自动归属当前选中的产成品（子件BOM=产品编码），保证联动过滤精确
   if (tab.key === 'materials' && selectedProduct.value) row['子件BOM'] = selectedProduct.value
   rows.push(row)
+  renumberSequence(tab)
   return row
 }
 
@@ -1190,8 +1340,13 @@ function applyCalc(data = detailData) {
     const rows = data[tab.key] || []
     for (const row of rows) {
       if (tab.key === 'processes') {
-        row['工序行码'] = `GX${String(num(row['加工顺序']) || rows.indexOf(row) + 1).padStart(3, '0')}`
+        // 工序顺序 = 行位置：第一行永远是第一道工序，增删/导入后自动重排
+        const seq = rows.indexOf(row) + 1
+        if (row['工序顺序'] !== seq) row['工序顺序'] = seq
+        row['工序行码'] = `GX${String(num(row['加工顺序']) || seq).padStart(3, '0')}`
       }
+      // 检验类明细：合格/不合格不能越过报检数量（报检 10 却填合格 11、不合格 -1 这种直接压回去）
+      clampInspectionQty(row)
       const vars = { ...row, 产品数量: productQty(data) }
       for (const rule of tab.calc || []) {
         let v
@@ -1373,6 +1528,34 @@ function ensureFormDict() {
 }
 watch(() => localeStore.current, ensureFormDict)
 
+/**
+ * 新增表单带入值。
+ *
+ * <p>只写面板 dataSchema 里定义过的表头字段：prefill 是外部传来的跳转参数，
+ * 不能凭空往单据里塞面板没有定义的键（否则保存时把脏键写进 JSON）。
+ * 编辑态忽略：编辑已有单据时以库里的值为准。
+ */
+function applyPrefill(panelConfig) {
+  if (isEdit.value) return
+  const raw = route.query.prefill
+  if (!raw) return
+  let incoming
+  try {
+    incoming = JSON.parse(String(raw))
+  } catch {
+    return
+  }
+  if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) return
+  const headerFields = new Set(
+    (panelConfig?.dataSchema?.fields || []).map((f) => f && f.dataName).filter(Boolean),
+  )
+  for (const [key, value] of Object.entries(incoming)) {
+    if (!headerFields.has(key)) continue
+    if (value === null || value === undefined || value === '') continue
+    form[key] = value
+  }
+}
+
 async function load() {
   loading.value = true
   invoicePickVisible.value = false
@@ -1392,10 +1575,19 @@ async function load() {
     Object.assign(form, payload.data || {})
     meta.value = payload.meta || []
     detailDef.value = payload.detail || null
+    // 老数据 / 新建单据：顺序列按行位置补齐（工序顺序 = 第几道工序）
+    for (const t of detailDef.value?.tabs || []) renumberSequence(t)
     // 参照字段双模检查（≤20 行下拉 / >20 行弹窗，按数据量动态切换）
     for (const rf of (meta.value || []).filter(isRef)) checkRefMode(rf)
+    for (const t of detailDef.value?.tabs || []) {
+      for (const f of t.fields || []) if (isRef(f)) checkRefMode(f)
+    }
     const panelConfig = await configPromise
     const panelMetadata = panelConfig?.metadata || payload.metadata || {}
+    // 新增表单带入值：?prefill=<encodeURIComponent(JSON)>
+    // 空白新增数据只含「有默认值」的字段，所以不能按 form 现有键判断，
+    // 要按面板 dataSchema 里的表头字段清单校验，避免写进面板没定义的键。
+    applyPrefill(panelConfig)
     formSections.value = Array.isArray(panelMetadata.formSections) ? panelMetadata.formSections : []
     formSummary.value = panelMetadata.formSummary || null
     detailAliases.value = panelMetadata.detailColumnAliases || {}
@@ -1418,6 +1610,8 @@ async function load() {
       if (!subActive[t.key]) subActive[t.key] = 'detail'
     }
     applyCalc()
+    // 参照字段形态先判定好：首屏就定下拉/弹窗，点输入框时不再切成另一种控件
+    warmRefModes()
     // 产成品→材料联动：默认不选中（点击产成品明细行才过滤材料明细），加载后重置
     selectedProduct.value = null
     selectedBomCodes.value = []
@@ -1571,6 +1765,12 @@ async function onButton(action) {
     impFields.value = (tab.fields || []).filter((f) => !f.hidden)
     impLabel.value = tab.label || '明细'
     impVisible.value = true
+    return
+  }
+  // 工序汇报单的选单一律走专用弹窗（工具栏点「选单」和点「选生产加工单」是同一个入口，
+  // 通用选单只会把整张加工单的工序一起带进来）
+  if (panelCode.value === 'PROCESS_REPORT' && (action === '选单' || action.startsWith('选'))) {
+    processPickVisible.value = true
     return
   }
   // 拉式选单（配置驱动：selectConfig.generateButton 存在 → 新弹窗直接生单；否则旧带入流程）
@@ -1920,6 +2120,40 @@ watch(() => [panelCode.value, code.value], () => {
 </script>
 
 <style scoped>
+/* 参照下拉固定高度：一页 6 条，加载前后高度一致，不闪 */
+:global(.ref-paged-popper .el-select-dropdown__list) {
+  min-height: 200px;
+}
+
+/* 参照下拉分页条：一屏一页，底部翻页 */
+.ref-pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 8px;
+  border-top: 1px solid #f0f0f0;
+  background: #fff;
+}
+.ref-pager-info {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 参照字段 + 打开来源档案的小跳转；只占右侧 18px，不影响输入框宽度 */
+.ref-field { position: relative; display: flex; align-items: center; }
+.ref-field :deep(.el-select) { flex: 1 1 auto; }
+.ref-jump {
+  position: absolute;
+  right: 26px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+.ref-jump:hover { color: #1677ff; }
+.ref-jump-inline { margin-left: 4px; }
+
 .card {
   background: var(--t-card-bg);
   border-radius: 6px;
@@ -2010,7 +2244,7 @@ watch(() => [panelCode.value, code.value], () => {
   align-items: center;
   gap: 10px;
 }
-/* 已审批印章：标题行右侧斜置绿章（与 PanelxList 明细块印章同款） */
+/* 印章：标题行右侧斜置（与 PanelxList 明细块印章同款），颜色随单据状态走 */
 .approved-stamp {
   position: absolute;
   right: 16px;
@@ -2025,6 +2259,21 @@ watch(() => [panelCode.value, code.value], () => {
   font-weight: 700;
   background: rgba(240, 253, 244, 0.92);
   pointer-events: none;
+}
+.approved-stamp.doing {
+  color: #b45309;
+  border-color: #b45309;
+  background: rgba(255, 251, 235, 0.94);
+}
+.approved-stamp.done {
+  color: #0d5bd3;
+  border-color: #0d5bd3;
+  background: rgba(239, 246, 255, 0.94);
+}
+.approved-stamp.stop {
+  color: #6b7280;
+  border-color: #6b7280;
+  background: rgba(249, 250, 251, 0.94);
   letter-spacing: 3px;
   box-shadow: 0 1px 3px rgba(22, 163, 74, 0.25);
 }
@@ -2193,8 +2442,13 @@ watch(() => [panelCode.value, code.value], () => {
 .ref-ctl .el-input {
   flex: 1;
 }
-.ref-btn {
-  flex-shrink: 0;
+.ref-suffix {
+  color: var(--t-text-3, rgba(0, 0, 0, 0.25));
+  cursor: pointer;
+  transition: color 0.12s ease;
+}
+.ref-suffix:hover {
+  color: var(--t-primary, #116a5b);
 }
 .ref-cell {
   display: inline-flex;

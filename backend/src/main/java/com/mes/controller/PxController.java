@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -251,6 +252,12 @@ public class PxController {
         return ApiResult.ok(service.reportBatchBoard());
     }
 
+    /** 排产批次看板的「未开工」列：已下发加工单里还没排产的工序。 */
+    @GetMapping("/pendingPlanBoard")
+    public ApiResult<List<Map<String, Object>>> pendingPlanBoard() {
+        return ApiResult.ok(service.pendingPlanBoard());
+    }
+
     /** 按排产批次报工：合格 + 不合格 = 报工数量。 */
     @PostMapping("/reportByBatch")
     public ApiResult<Map<String, Object>> reportByBatch(@RequestBody Map<String, Object> body) {
@@ -258,6 +265,13 @@ public class PxController {
         double qualified = parseDouble(body.get("合格数量"), "合格数量");
         double rejected = parseDouble(body.get("不合格数量"), "不合格数量");
         return ApiResult.ok(service.reportByBatch(dispatchNo, qualified, rejected));
+    }
+
+    /** 首件在前、报工在后：给某个排产批次所属工序补建首件报检单（一工序一单，已存在则返回原单）。 */
+    @PostMapping("/firstInspectByBatch")
+    public ApiResult<Map<String, Object>> firstInspectByBatch(@RequestBody Map<String, Object> body) {
+        return ApiResult.ok(service.createFirstInspectByBatch(
+                String.valueOf(body.getOrDefault("排产单号", ""))));
     }
 
     private double parseDouble(Object raw, String label) {
@@ -270,11 +284,23 @@ public class PxController {
     }
 
     /**
+     * 一键排产：把当前可排产量 > 0 的工序全部排成批次并审批通过。
+     * 可传 productCode 只排某一件产品。
+     */
+    @PostMapping("/planAll")
+    public ApiResult<Map<String, Object>> planAll(@RequestBody Map<String, Object> body) {
+        String moNo = String.valueOf(body.getOrDefault("manuOrderNo", ""));
+        String productCode = String.valueOf(body.getOrDefault("产品编码", ""));
+        return ApiResult.ok(service.planAll(moNo, productCode));
+    }
+
+    /**
      * 建排产批次：一个工序分一批，可跨班组/设备。
      */
     @PostMapping("/planBatch")
     public ApiResult<Map<String, Object>> planBatch(@RequestBody Map<String, Object> body) {
         String moNo = String.valueOf(body.getOrDefault("manuOrderNo", ""));
+        String prodCode = String.valueOf(body.getOrDefault("产品编码", ""));
         String procCode = String.valueOf(body.getOrDefault("工序编码", ""));
         double qty;
         try {
@@ -282,7 +308,7 @@ public class PxController {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("排产数量必须是数字");
         }
-        return ApiResult.ok(service.planBatch(moNo, procCode, qty,
+        return ApiResult.ok(service.planBatch(moNo, prodCode, procCode, qty,
                 String.valueOf(body.getOrDefault("班组", "")),
                 String.valueOf(body.getOrDefault("设备", "")),
                 String.valueOf(body.getOrDefault("预开工日", "")),
@@ -295,6 +321,106 @@ public class PxController {
     @GetMapping("/planBoard")
     public ApiResult<List<Map<String, Object>>> planBoard(@RequestParam("manuOrderNo") String manuOrderNo) {
         return ApiResult.ok(service.planBoard(manuOrderNo));
+    }
+
+    /**
+     * 重算加工单完工进度（报工已存在但累计没推进时的维护入口）。
+     */
+    @PostMapping("/syncCompletion")
+    public ApiResult<Map<String, Object>> syncCompletion(@RequestBody Map<String, Object> body) {
+        return ApiResult.ok(service.syncCompletion(String.valueOf(body.getOrDefault("加工单号", ""))));
+    }
+
+    /**
+     * 成品报检候选：已报完全部工序、且还没生成过成品报检单的加工单。
+     */
+    @GetMapping("/finishInspectCandidates")
+    public ApiResult<List<Map<String, Object>>> finishInspectCandidates() {
+        return ApiResult.ok(service.finishInspectCandidates());
+    }
+
+    /**
+     * 成品报检单生成：按加工单生成（单号 = 加工单号-JY），生成即草稿。
+     */
+    @PostMapping("/finishInspectFromMo")
+    public ApiResult<Map<String, Object>> finishInspectFromMo(@RequestBody Map<String, Object> body) {
+        String moNo = String.valueOf(body.getOrDefault("加工单号", ""));
+        return ApiResult.ok(service.createFinishInspectFromMo(moNo));
+    }
+
+    /**
+     * 工序汇报选单看板：加工单 + 每道工序的计划/已报/未报与可否报工。
+     */
+    @GetMapping("/processReportPickBoard")
+    public ApiResult<List<Map<String, Object>>> processReportPickBoard() {
+        return ApiResult.ok(service.processReportPickBoard());
+    }
+
+    /**
+     * 销售订单排产看板：一行一个订单行，含订单数量、已排、可排与预计加工单号。
+     */
+    @GetMapping("/saleOrderPlanBoard")
+    public ApiResult<List<Map<String, Object>>> saleOrderPlanBoard(@RequestParam("saleOrderNo") String saleOrderNo) {
+        return ApiResult.ok(service.saleOrderPlanBoard(saleOrderNo));
+    }
+
+    /**
+     * 销售订单排产：按订单行生成生产加工单（单号 = 销售订单号-行号），生成即已审核。
+     * body.lines = [{行号, 数量}]，省略行表示整单每行全排。
+     */
+    @SuppressWarnings("unchecked")
+    @PostMapping("/planFromSalesOrder")
+    public ApiResult<Map<String, Object>> planFromSalesOrder(@RequestBody Map<String, Object> body) {
+        String soNo = String.valueOf(body.getOrDefault("销售订单号", ""));
+        List<Map<String, Object>> lines = body.get("lines") instanceof List<?> list
+                ? (List<Map<String, Object>>) list : new ArrayList<>();
+        return ApiResult.ok(service.planFromSalesOrder(soNo, lines));
+    }
+
+    /**
+     * 计划分析可选的销售订单：已审核且还有未排产数量。
+     * 计划分析面板的选单下拉数据源。
+     */
+    @GetMapping("/planAnalyzeCandidates")
+    public ApiResult<List<Map<String, Object>>> planAnalyzeCandidates(Authentication auth) {
+        requireVisible(auth, "SO_ORDER");
+        return ApiResult.ok(service.planAnalyzeCandidates());
+    }
+
+    /**
+     * 计划分析：一张销售订单的成品 / 物料缺口 / 工艺路线 / 风险 / 结论。
+     *
+     * <p>body: { salesOrderNo }。替代主生产计划、物料需求运算、齐套分析、
+     * 采购需求分析四个横向汇总面板的单据级分析入口。
+     */
+    @PostMapping("/planAnalyze")
+    public ApiResult<Map<String, Object>> planAnalyze(Authentication auth,
+                                                      @RequestBody Map<String, Object> body) {
+        requireVisible(auth, "SO_ORDER");
+        String salesOrderNo = String.valueOf(body.getOrDefault("salesOrderNo", "")).trim();
+        return ApiResult.ok(service.planAnalyze(salesOrderNo));
+    }
+
+    /**
+     * 计划分析 → 生成请购单（草稿）：外购件缺料行落成 PU_REQ。
+     *
+     * <p>body: { salesOrderNo, codes?: string[] }。codes 为空表示全部可请购行。
+     */
+    @PostMapping("/planAnalyzePurchaseReq")
+    public ApiResult<Map<String, Object>> planAnalyzePurchaseReq(Authentication auth,
+                                                                 @RequestBody Map<String, Object> body) {
+        requireVisible(auth, "SO_ORDER");
+        String salesOrderNo = String.valueOf(body.getOrDefault("salesOrderNo", "")).trim();
+        List<String> codes = new java.util.ArrayList<>();
+        Object raw = body.get("codes");
+        if (raw instanceof List<?> list) {
+            for (Object item : list) {
+                if (item == null) continue;
+                String code = String.valueOf(item).trim();
+                if (!code.isEmpty()) codes.add(code);
+            }
+        }
+        return ApiResult.ok(service.planAnalyzePurchaseReq(salesOrderNo, codes));
     }
 
     /**
@@ -359,6 +485,28 @@ public class PxController {
     }
 
     /** 面板自助加字段：登记一条元数据，读取出口合并进面板配置（服务端校验字段名/类型/重名 + 「修改」权限） */
+    /**
+     * 字段布局：表头 + 明细字段的顺序 / 列宽 / 显隐（字段管理弹窗初始化）。
+     */
+    @GetMapping("/fieldLayout")
+    public ApiResult<List<Map<String, Object>>> fieldLayout(@RequestParam("panelCode") String panelCode) {
+        return ApiResult.ok(service.fieldLayout(panelCode));
+    }
+
+    /**
+     * 保存字段布局：全公司共用（owner=''），需要该面板的「调整」权限。
+     */
+    @PostMapping("/saveFieldLayout")
+    public ApiResult<Void> saveFieldLayout(@RequestBody Map<String, Object> body, Authentication auth) {
+        String panelCode = String.valueOf(body.getOrDefault("panelCode", ""));
+        String userName = auth == null ? "" : auth.getName();
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> rows = body.get("rows") instanceof List<?> list
+                ? (List<Map<String, Object>>) list : new ArrayList<>();
+        service.saveFieldLayout(panelCode, userName, rows);
+        return ApiResult.ok(null);
+    }
+
     @PostMapping("/addCustomField")
     public ApiResult<Map<String, Object>> addCustomField(@RequestBody Map<String, Object> body) {
         String panelCode = String.valueOf(body.getOrDefault("panelCode", ""));

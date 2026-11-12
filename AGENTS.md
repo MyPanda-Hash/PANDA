@@ -28,6 +28,7 @@
 | 后端 Java/SQL | `node tools/verify-project.mjs`（含 JDK 探测与 Maven 打包） |
 | 通用面板边界 | `node tools/architecture-audit.mjs` |
 | 面板配置 | 列表、表单、参照、选单、审批、导入、窄屏和无数据状态 |
+| 自定义页面/看板 | `node tools/entry-audit.mjs`（入口清单与路由一致、站内跳转无死链） |
 | 跨端 / 部署 | `node tools/verify-project.mjs`，再 `git diff --check` |
 
 本机实测（2026-10-22）：Node 24.19、JDK 25、项目内 Maven 3.9.9 可用；`mysql` 客户端不在 PATH，需要连库时先确认命令是否可用，或用 Node 脚本走 API。
@@ -60,6 +61,7 @@
 ## 界面与交互门禁
 
 - 密集、安静、可扫描的制造业工作界面；文案用中性业务语言，无 Emoji、卡通提示、装饰动画、无意义渐变。
+- **改面板要改全部入口**：动手前先在 [面板入口清单](docs/frontend/面板入口清单.md) 找到该页面的所有入口（菜单、列表/表单按钮、业务总览节点、页内弹窗、地址直链），逐个改完并逐个验证；新增入口补登记。同一份业务数据在多处渲染时共用组件，禁止两处各写一套表头。改完跑 `node tools/entry-audit.mjs`。
 - 显示层中文走 `tt()`，数据键（`buttonName`/`dataName`/状态存储值）永不翻译；已审批判定统一用 `core/doc-status.js` 的 `isDocApproved()`，不各处手写状态集合。
 - 禁用按钮同时阻止事件和请求；页签身份是 `path + query`，切换/恢复不丢单据号。
 - 数量、单价、金额右对齐，日期/编号列宽完整可读；图标按钮给 tooltip；空状态、失败、权限不足用中性文案。
@@ -67,7 +69,7 @@
 
 ## 权限与审批
 
-- 11 项动作在 `frontend/src/business/permissions.js`：view / query / add / edit / delete / export / print / audit / price / review / adjust；角色-面板按动作授权，按钮经映射表校验，admin 全权。
+- 12 项动作在 `frontend/src/business/permissions.js`：view / query / add / **generate** / edit / delete / export / print / audit / price / review / adjust；角色-面板按动作授权，按钮经映射表校验，admin 全权。**「生成XX」生单按钮走独立 generate 权限**（不再共用 add）：能生下游单据 ≠ 能在本面板新建单据。
 - 改用户、角色、审批、删除逻辑时，同时验证未授权路径。
 - 选单是拉式（`selectConfig`/`selectConfigs`，来源须已审核），生单是推式（后端按钮动作落库后返回 `gotoPanel` + 新编号）。
 

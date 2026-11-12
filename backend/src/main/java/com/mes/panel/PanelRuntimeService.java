@@ -22,6 +22,16 @@ public interface PanelRuntimeService {
      * 面板自助加字段（登记元数据，读取出口合并；不动表结构）。默认不支持。
      * body: { scope: header|detail, tabKey, dataName, dataType, options, fieldWidth, isRequired, inGrid }
      */
+    /** 字段布局：表头 + 明细字段的顺序/列宽/显隐。默认返回空表。 */
+    default List<Map<String, Object>> fieldLayout(String panelCode) {
+        return List.of();
+    }
+
+    /** 保存字段布局（全公司共用，需「调整」权限）。 */
+    default void saveFieldLayout(String panelCode, String userName, List<Map<String, Object>> rows) {
+        throw new UnsupportedOperationException("字段布局保存未实现");
+    }
+
     default Map<String, Object> addCustomField(String panelCode, Map<String, Object> body) {
         throw new UnsupportedOperationException("addCustomField is not supported by this runtime");
     }
@@ -95,15 +105,61 @@ public interface PanelRuntimeService {
         return List.of();
     }
 
+    /** 排产批次看板的「未开工」列：还没排产的工序（可排产量 &gt; 0）。默认空表。 */
+    default List<Map<String, Object>> pendingPlanBoard() {
+        return List.of();
+    }
+
     /** 按排产批次报工：生成只含该批次一行的汇报单。 */
     default Map<String, Object> reportByBatch(String dispatchNo, double qualified, double rejected) {
         throw new UnsupportedOperationException("按批次报工未实现");
     }
 
-    /** 建排产批次：一个工序分一批。 */
-    default Map<String, Object> planBatch(String manuOrderNo, String processCode, double quantity,
-                                          String team, String equipment, String planStart, String planEnd) {
+    /** 首件在前、报工在后：给批次所属工序补建首件报检单（一工序一单）。 */
+    default Map<String, Object> createFirstInspectByBatch(String dispatchNo) {
+        throw new UnsupportedOperationException("批次补建首检单未实现");
+    }
+
+    /** 建排产批次：一个产品的某道工序分一批（多产品加工单必须带产品编码）。 */
+    default Map<String, Object> planBatch(String manuOrderNo, String productCode, String processCode,
+                                          double quantity, String team, String equipment,
+                                          String planStart, String planEnd) {
         throw new UnsupportedOperationException("排产未实现");
+    }
+
+    /** 一键排产：把当前可排的工序全部排成批次并审批通过。 */
+    default Map<String, Object> planAll(String manuOrderNo, String productCode) {
+        throw new UnsupportedOperationException("一键排产未实现");
+    }
+
+    /** 重算加工单完工进度（维护入口）。 */
+    default Map<String, Object> syncCompletion(String manuOrderNo) {
+        throw new UnsupportedOperationException("完工进度重算未实现");
+    }
+
+    /** 成品报检候选：报完全部工序、且还没生成过成品报检单的加工单。默认返回空表。 */
+    default List<Map<String, Object>> finishInspectCandidates() {
+        return List.of();
+    }
+
+    /** 按加工单生成成品报检单（单号 = 加工单号-JY）。 */
+    default Map<String, Object> createFinishInspectFromMo(String manuOrderNo) {
+        throw new UnsupportedOperationException("成品报检单生成未实现");
+    }
+
+    /** 工序汇报选单看板：加工单 + 每道工序报工进度。默认返回空表。 */
+    default List<Map<String, Object>> processReportPickBoard() {
+        return List.of();
+    }
+
+    /** 销售订单排产看板：一行一个订单行，带订单数量/已排/可排。默认返回空表。 */
+    default List<Map<String, Object>> saleOrderPlanBoard(String saleOrderNo) {
+        return List.of();
+    }
+
+    /** 销售订单排产：按订单行生成生产加工单，生成即已审核。 */
+    default Map<String, Object> planFromSalesOrder(String saleOrderNo, List<Map<String, Object>> lines) {
+        throw new UnsupportedOperationException("销售订单排产未实现");
     }
 
     /** 工单排产：按工序给可排产量与已有批次。默认返回空表。 */
@@ -119,6 +175,30 @@ public interface PanelRuntimeService {
     /** 开票工作台：以销货单为行，带发票号与状态。默认返回空表。 */
     default List<Map<String, Object>> invoiceWorkbench() {
         return List.of();
+    }
+
+    /**
+     * 计划分析可选的销售订单：已审核且还有未排产数量。
+     * 默认返回空表。
+     */
+    default List<Map<String, Object>> planAnalyzeCandidates() {
+        return List.of();
+    }
+
+    /**
+     * 计划分析：一张销售订单的成品/物料/工艺/风险全链路结论。默认不支持。
+     * 契约见 PlanAnalyzeQueryService#analyze。
+     */
+    default Map<String, Object> planAnalyze(String salesOrderNo) {
+        throw new UnsupportedOperationException("planAnalyze is not supported by this runtime");
+    }
+
+    /**
+     * 计划分析 → 生成请购单（草稿）：把外购件缺料行落成 PU_REQ。
+     * codes 为空表示全部可请购行。默认不支持。
+     */
+    default Map<String, Object> planAnalyzePurchaseReq(String salesOrderNo, List<String> codes) {
+        throw new UnsupportedOperationException("planAnalyzePurchaseReq is not supported by this runtime");
     }
 
     /** 开票方（销售方）信息：销售发票打印用。默认返回空表。 */

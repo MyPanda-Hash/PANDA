@@ -9,16 +9,21 @@ import com.mes.panel.PanelActionRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -276,5 +281,30 @@ class PxServiceProductionProgressTest {
         service.syncProductionProgress("MO-7");
 
         assertEquals("已完工", mo.getStatus());
+    }
+
+    /**
+     * 第一道工序一排产就回填开工日期（只读字段，由系统写；已有值不覆盖）。
+     */
+    @Test
+    void firstPlanBatchFillsStartDate() throws Exception {
+        FormData mo = doc("MANU_ORDER", "MO-PLAN-1", "已审核",
+                new HashMap<>(Map.of("单据编号", "MO-PLAN-1")),
+                new HashMap<>(Map.of("processes", List.of())));
+
+        assertTrue(service.fillStartDateIfEmpty(mo, "2026-11-10"));
+        Map<?, ?> head = json.readValue(mo.getData(), Map.class);
+        assertEquals("2026-11-10", head.get("开工日期"), "排产首个批次时用批次预开工日回填");
+    }
+
+    @Test
+    void startDateIsNotOverwritten() throws Exception {
+        FormData mo = doc("MANU_ORDER", "MO-PLAN-2", "生产中",
+                new HashMap<>(Map.of("单据编号", "MO-PLAN-2", "开工日期", "2026-11-01")),
+                new HashMap<>(Map.of("processes", List.of())));
+
+        assertFalse(service.fillStartDateIfEmpty(mo, "2026-11-10"), "已有开工日期不再改");
+        Map<?, ?> head = json.readValue(mo.getData(), Map.class);
+        assertEquals("2026-11-01", head.get("开工日期"));
     }
 }

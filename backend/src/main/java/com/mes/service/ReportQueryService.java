@@ -35,9 +35,6 @@ public class ReportQueryService {
     private final ObjectMapper json;
     private final StockBalanceService stockBalanceService;
     private final AccountingService accountingService;
-    private final MpsQueryService mpsQueryService;
-    private final MrpQueryService mrpQueryService;
-    private final KitQueryService kitQueryService;
     private final PickQueryService pickQueryService;
     private final SpcQueryService spcQueryService;
     private final FinanceStatementQueryService financeStatementQueryService;
@@ -46,9 +43,6 @@ public class ReportQueryService {
     public ReportQueryService(FormDataMapper formMapper, ObjectMapper json,
                               StockBalanceService stockBalanceService,
                               AccountingService accountingService,
-                              MpsQueryService mpsQueryService,
-                              MrpQueryService mrpQueryService,
-                              KitQueryService kitQueryService,
                               PickQueryService pickQueryService,
                               SpcQueryService spcQueryService,
                               FinanceStatementQueryService financeStatementQueryService) {
@@ -56,9 +50,6 @@ public class ReportQueryService {
         this.json = json;
         this.stockBalanceService = stockBalanceService;
         this.accountingService = accountingService;
-        this.mpsQueryService = mpsQueryService;
-        this.mrpQueryService = mrpQueryService;
-        this.kitQueryService = kitQueryService;
         this.pickQueryService = pickQueryService;
         this.spcQueryService = spcQueryService;
         this.financeStatementQueryService = financeStatementQueryService;
@@ -66,7 +57,7 @@ public class ReportQueryService {
 
     /** 简化构造：无账务/库存/计划服务时报表回退到实时聚合。 */
     public ReportQueryService(FormDataMapper formMapper, ObjectMapper json) {
-        this(formMapper, json, null, null, null, null, null, null, null, null);
+        this(formMapper, json, null, null, null, null, null);
     }
 
     public Map<String, Object> query(String panelCode, String keyword, Map<String, Object> condition,
@@ -162,9 +153,6 @@ public class ReportQueryService {
             case "ACCOUNTING_ENTRY" -> accountingService == null
                     ? List.of() : accountingService.accountDetail(null);
             case "ACCOUNT" -> accountingAccounts();
-            case "MPS_PLAN" -> mpsQueryService == null ? List.of() : mpsQueryService.planRows();
-            case "MRP_RESULT" -> mrpQueryService == null ? List.of() : mrpQueryService.run();
-            case "KIT_ANALYSIS" -> kitQueryService == null ? List.of() : kitQueryService.analyze();
             case "PICK_WORKBENCH" -> pickQueryService == null ? List.of() : pickQueryService.workbench();
             case "SPC_CONTROL" -> spcQueryService == null ? List.of() : spcQueryService.controlCharts();
             case "SETTLE_CUSTOMER" -> financeStatementQueryService == null
@@ -503,25 +491,134 @@ public class ReportQueryService {
      * 库存状况表：读 stock_balance 余额表（唯一权威口径）。
      * 余额表为空时回退到 form_data 实时聚合，保证老库升级后报表仍可用。
      */
+    /** 仓库档案摘要（基础设置 → 仓库）。 */
+    public record WarehouseInfo(String code, String name, String category) {}
+
+    /** 存货档案摘要（存货面板）：类别与最新成本。 */
+    public record ItemInfo(String category, BigDecimal latestCost) {}
+
     private List<Map<String, Object>> stockStatus() {
         List<StockBalance> balances = stockBalanceService == null ? List.of() : stockBalanceService.list();
-        if (!balances.isEmpty()) return fromBalances(balances);
-        return stockStatusFromMovements();
+        if (balances.isEmpty()) return stockStatusFromMovements();
+        return stockStatusRows(balances, warehouseIndex(), itemIndex());
     }
 
-    private List<Map<String, Object>> fromBalances(List<StockBalance> balances) {
-        Map<String, String> warehouseCodes = warehouseCodes();
-        List<Map<String, Object>> out = new ArrayList<>();
+    /**
+     * 库存状况行：按「仓库类别 → 仓库 → 存货类别 → 存货」组织，一行一个存货。
+     *
+     * <p>口径（2026-11-09 定稿）：
+     * <ul>
+     *   <li>数量 = 现存量，**负数按 0 展示**（历史出库多于入库时不显示负库存）；</li>
+     *   <li>单价 = 存货档案「最新成本」，台账均价只在档案缺失时兜底；</li>
+     *   <li>金额 = 数量 × 单价，保证行内三个数字能对上。</li>
+     * </ul>
+     * 同仓库同存货的多个批次/库位合并为一行，避免同一物料散成好几行。
+     */
+    List<Map<String, Object>> stockStatusRows(List<StockBalance> balances,
+                                              Map<String, WarehouseInfo> warehouses,
+                                              Map<String, ItemInfo> items) {
+        Map<String, StockBalance> merged = new LinkedHashMap<>();
         for (StockBalance balance : balances) {
             String warehouse = text(balance.getWarehouse());
-            BigDecimal qty = balance.getQuantity() == null ? BigDecimal.ZERO : balance.getQuantity();
-            BigDecimal amount = balance.getAmount() == null ? BigDecimal.ZERO : balance.getAmount();
+            String code = text(balance.getItemCode());
+            String identity = code.isEmpty() ? "#" + text(balance.getItemName()) : code;
+            String key = warehouse + "|" + identity;
+            StockBalance target = merged.get(key);
+            if (target == null) {
+                target = balance;
+                merged.put(key, target);
+                continue;
+            }
+            target.setQuantity(nz(target.getQuantity()).add(nz(balance.getQuantity())));
+            target.setAmount(nz(target.getAmount()).add(nz(balance.getAmount())));
+        }
+
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (StockBalance balance : merged.values()) {
+            String warehouse = text(balance.getWarehouse());
+            WarehouseInfo info = warehouses == null ? null : warehouses.get(warehouse);
+            String code = text(balance.getItemCode());
+            ItemInfo item = items == null ? null : items.get(code);
+
+            BigDecimal qty = nz(balance.getQuantity());
+            if (qty.signum() < 0) qty = BigDecimal.ZERO;
+            BigDecimal cost = item == null ? null : item.latestCost();
+            BigDecimal price = cost != null && cost.signum() > 0
+                    ? cost
+                    : divide(nz(balance.getAmount()), qty);
+            BigDecimal amount = qty.multiply(price).setScale(2, RoundingMode.HALF_UP);
+
             out.add(row(
-                    "仓库编码", warehouseCodes.getOrDefault(warehouse, ""), "仓库", warehouse,
-                    "库位", text(balance.getLocation()), "批次号", text(balance.getBatchNo()),
-                    "存货编码", text(balance.getItemCode()), "存货", text(balance.getItemName()),
-                    "规格型号", text(balance.getSpec()), "主计量", text(balance.getUnit()),
-                    "现存量(主)", qty, "结存金额", amount, "结存单价(主)", divide(amount, qty)));
+                    "仓库类别", info == null ? warehouse : text(info.category()).isEmpty()
+                            ? warehouse : info.category(),
+                    "仓库编码", info == null ? "" : text(info.code()),
+                    "仓库", warehouse,
+                    "存货类别", item == null ? "" : text(item.category()),
+                    "存货编码", code,
+                    "存货", text(balance.getItemName()),
+                    "规格型号", text(balance.getSpec()),
+                    "主计量", text(balance.getUnit()),
+                    "数量", qty,
+                    "单价", price,
+                    "金额", amount));
+        }
+        out.sort(Comparator
+                .comparing((Map<String, Object> r) -> warehouseRank(text(r.get("仓库类别"))))
+                .thenComparing(r -> text(r.get("仓库")))
+                .thenComparing(r -> categoryRank(text(r.get("存货类别"))))
+                .thenComparing(r -> text(r.get("存货编码"))));
+        return out;
+    }
+
+    /** 仓库类别展示顺序：原料 → 辅料 → 半成品 → 成品 → 不良品 → 其它。 */
+    private static int warehouseRank(String category) {
+        return switch (category) {
+            case "原料仓" -> 0;
+            case "辅料仓" -> 1;
+            case "半成品仓" -> 2;
+            case "成品仓" -> 3;
+            case "不良品仓" -> 4;
+            case "委外仓" -> 5;
+            default -> 6;
+        };
+    }
+
+    /** 存货类别展示顺序：原材料 → 辅助材料 → 半成品 → 产成品 → 包装物 → 其它。 */
+    private static int categoryRank(String category) {
+        return switch (category) {
+            case "原材料" -> 0;
+            case "辅助材料" -> 1;
+            case "半成品" -> 2;
+            case "产成品" -> 3;
+            case "包装物" -> 4;
+            default -> 5;
+        };
+    }
+
+    /** 仓库档案：仓库名称 → 编码/类别（基础设置 → 仓库）。 */
+    private Map<String, WarehouseInfo> warehouseIndex() {
+        Map<String, WarehouseInfo> out = new LinkedHashMap<>();
+        for (Doc doc : docs("WH")) {
+            for (Map<String, Object> store : detailRows(doc, "stores")) {
+                String name = firstText(store, "仓库名称");
+                if (name.isEmpty()) continue;
+                out.put(name, new WarehouseInfo(firstText(store, "仓库编码"), name,
+                        firstText(store, "仓库类别")));
+            }
+        }
+        return out;
+    }
+
+    /** 存货档案：存货编码 → 类别/最新成本（存货面板）。 */
+    private Map<String, ItemInfo> itemIndex() {
+        Map<String, ItemInfo> out = new LinkedHashMap<>();
+        for (Doc doc : docs("INV")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String code = firstText(item, "存货编码");
+                if (code.isEmpty()) continue;
+                out.put(code, new ItemInfo(firstText(item, "所属类别"),
+                        number(first(item, Map.of(), "最新成本"))));
+            }
         }
         return out;
     }
@@ -1700,6 +1797,10 @@ public class ReportQueryService {
             if (!value.isEmpty()) return value;
         }
         return "";
+    }
+
+    private static BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 
     private BigDecimal number(Object value) {

@@ -586,7 +586,8 @@ const desk = computed(() => app.deskSettings)
 
 const QUICK_DEFS = [
   { key: 'newOrder', title: '新建加工单', path: '/panelx/form/MANU_ORDER' },
-  { key: 'quickReport', title: '快速报工', path: '/prod/shop/procReport' },
+  // 快速报工落到工序报工看板（按排产批次报工）；原先写的 /prod/shop/procReport 没有对应路由，点了掉 404
+  { key: 'quickReport', title: '快速报工', path: '/mes/processReport' },
   { key: 'board', title: '生产看板', path: '/prod/manufacture/board' },
 ]
 const quickEntries = computed(() => QUICK_DEFS.filter((q) => desk.value.quick.includes(q.key)))

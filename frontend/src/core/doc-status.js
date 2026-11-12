@@ -15,3 +15,19 @@ export function isDocApproved(row) {
   // 没有单据状态可判时（历史数据）才退回表头审批状态
   return ['已审批', '已通过'].includes(row['审批状态'])
 }
+
+/**
+ * 明细区块左上角的印章。
+ *
+ * <p>以前固定写「已审批」，单据已经进入生产流转了印章还停在审批那一刻。
+ * 现在文字跟单据状态走：已审核→已审批；生产中→生产中；已完工→已完工；
+ * 已关闭/已中止照原样显示。色调区分「审批通过 / 进行中 / 完工 / 终止」四态。
+ */
+export function docStatusStamp(row) {
+  if (!isDocApproved(row)) return null
+  const status = row['单据状态']
+  if (status === '生产中') return { text: '生产中', tone: 'doing' }
+  if (status === '已完工') return { text: '已完工', tone: 'done' }
+  if (status === '已关闭' || status === '已中止') return { text: status, tone: 'stop' }
+  return { text: '已审批', tone: 'ok' }
+}

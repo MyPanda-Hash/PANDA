@@ -33,6 +33,22 @@
       </button>
     </div>
 
+    <!-- 表头筛选：跟着单据栏走，不占主区高度（成品报检单按「入库单」状态筛） -->
+    <div v-if="filters.length" class="dr-filters">
+      <div v-for="f in filters" :key="'df-' + f.dataName" class="dr-filter">
+        <span class="dr-filter-label">{{ tt(f.label || f.dataName) }}</span>
+        <el-select
+          :model-value="filterValues[f.dataName] || ''"
+          clearable
+          size="small"
+          :placeholder="tt(f.placeholder || '全部')"
+          @update:model-value="(v) => $emit('update-filter', { dataName: f.dataName, value: v || '' })"
+        >
+          <el-option v-for="o in f.options" :key="o" :label="tt(o)" :value="o" />
+        </el-select>
+      </div>
+    </div>
+
     <div class="dr-list" v-loading="loading">
       <table class="dr-table">
         <colgroup>
@@ -109,6 +125,10 @@ import { railColumnsOf, railPageCount, railRowsOf } from './doc-rail-rows.js'
 const props = defineProps({
   /** 当前页单据行（与主列表同一份数据，不额外请求） */
   rows: { type: Array, default: () => [] },
+  /** 表头筛选：[{dataName, label, placeholder, options}]，值走 emit('update-filter') */
+  filters: { type: Array, default: () => [] },
+  /** 当前筛选值：{ [dataName]: value } */
+  filterValues: { type: Object, default: () => ({}) },
   /** 列定义：[{label, kind, align, keys}]，由挂载方按面板挑主要表头字段 */
   columns: { type: Array, default: () => [] },
   /** 当前单据编号（高亮行） */
@@ -121,7 +141,7 @@ const props = defineProps({
   collapsed: { type: Boolean, default: false },
   loading: { type: Boolean, default: false },
 })
-const emit = defineEmits(['select', 'page', 'search', 'toggle', 'create'])
+const emit = defineEmits(['update-filter', 'select', 'page', 'search', 'toggle', 'create'])
 
 /** 本页内的关键字（本地过滤，不影响后端条件） */
 const kw = ref('')
@@ -150,12 +170,19 @@ function clearSearch() {
 }
 
 // ---- 拖动调宽：只改本栏宽度，不写 localStorage（每次进页面按默认宽度） ----
-const MIN_WIDTH = 280
+// 展开时直接铺到最大宽度：单据栏默认收起，点开就是「要翻单据」的意图，
+// 420 那种半宽仍会把单号/状态挤成截断；拖拽只在展开后用来收窄。
+const MIN_WIDTH = 340
 const MAX_WIDTH = 560
-const DEFAULT_WIDTH = 380
+const DEFAULT_WIDTH = 420
 const width = ref(DEFAULT_WIDTH)
 const railEl = ref(null)
 let dragging = false
+
+// 从「收起」点开时直接给最大宽度（不用再拖一下）；展开后再拖拽收窄仍然有效
+watch(() => props.collapsed, (collapsed) => {
+  if (!collapsed) width.value = MAX_WIDTH
+})
 
 function onDragMove(e) {
   if (!dragging) return
@@ -299,17 +326,42 @@ onBeforeUnmount(stopDrag)
   overflow-x: hidden;
 }
 
-/* 表头列式：table-layout fixed 保证列宽稳定，单元格省略号截断（悬停 title 看全值）。
-   列宽：单号 34% / 日期 23% / 状态 18% / 中间列吃掉剩余（一列 25%）。
-   380 宽下单号约 113px、日期约 71px，常见单号（CG-2026-11-0401）与日期完整可读 */
+/* 表头列式：table-layout fixed 保证列宽稳定。
+   列宽：单号 32% / 日期 18% / 状态 16% / 业务列分剩余 34%。
+   业务列（客户、供应商、车间…）不截断：允许折行显示全称，
+   单号/日期/状态仍单行省略——这三列值长度稳定，截断不会丢信息。 */
+/* 单据栏里的筛选排：一行一个，栏窄也能读 */
+.dr-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 8px 8px;
+  border-bottom: 1px solid var(--t-border-light, #f0f0f0);
+}
+.dr-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dr-filter-label {
+  flex: none;
+  font-size: 12px;
+  color: var(--t-text-2, #5d6c67);
+  white-space: nowrap;
+}
+.dr-filter :deep(.el-select) {
+  flex: 1;
+  min-width: 0;
+}
+
 .dr-table {
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
 }
-.dr-col-no { width: 34%; }
-.dr-col-date { width: 23%; }
-.dr-col-tag { width: 18%; }
+.dr-col-no { width: 30%; }
+.dr-col-date { width: 16%; }
+.dr-col-tag { width: 20%; }
 
 .dr-th {
   position: sticky;
@@ -334,6 +386,7 @@ onBeforeUnmount(stopDrag)
   border-bottom: 1px solid var(--t-border-light, #f0f0f0);
   cursor: pointer;
 }
+/* 业务列折行时行高跟着长，不裁字 */
 .dr-tr:hover {
   background: var(--el-fill-color-lighter, rgba(0, 0, 0, 0.02));
 }
@@ -366,6 +419,13 @@ onBeforeUnmount(stopDrag)
 }
 .dr-td.k-text {
   color: var(--t-text-2, rgba(0, 0, 0, 0.65));
+  /* 客户/供应商/车间这类名称要显示全：允许折行，不再省略号截断 */
+  white-space: normal;
+  word-break: break-word;
+  line-height: 16px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  vertical-align: middle;
 }
 .dr-tr.on .dr-td.k-no {
   font-weight: 500;

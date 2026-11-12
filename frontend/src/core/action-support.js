@@ -34,6 +34,9 @@ export const FRONTEND_ACTIONS = new Set([
   '删除', '删除单据', '刷新',
   '查询', '查找', '恢复', '导入',
   '预览', '扫描填单', '表格调整', '字段管理', '打印发票', '排产',
+  // 专用选单弹窗（不走 selectConfig，见 PanelxList 的分支）：
+  // 加工单选销售订单 → 排产工作台；工序汇报选生产加工单 → 逐道报工；成品报检选生产加工单 → 报检候选
+  '选销售订单', '选生产加工单',
   '审核', '弃审',
   INVOICE_LINE_ACTION,
   INVOICE_IMPORT_ACTION,
@@ -43,10 +46,14 @@ export const FRONTEND_ACTIONS = new Set([
 export const BACKEND_ACTIONS = new Set([
   '刷新', '新增流程', '保存', '保存新增', '保存为草稿', '提交', '删除',
   '审核', '弃审', '关闭', '手工完工', '中止', '整单中止', '取消中止',
-  '齐套检查', '选工艺路线',
+  '齐套检查', '选工艺路线', '按产成品重算材料',
   '生成生产加工单', '生成工序汇报单（自制汇报）', '生成请购单',
   '生成采购订单', '生成到货单', '生成采购入库单',
   '生成产成品入库单', '生成检验单', '生成材料出库单',
+  '生成领料申请单', '生成成品报检单',
+  '生成返工生产加工单（按累计报废入库数量）', '生成补投生产加工单（按累计报废入库数量）',
+  '倒冲差异调整',
+  '中止（释放未执行量）',
   '生成调拨单', '生成调拨单(分单)', '生成委外发料单', '生成委外发料单(分单)',
   '生成委外入库单', '生成委外加工费用单',
   '生成销售订单', '生成销售订单(普通销售)',
@@ -74,8 +81,10 @@ export const REPORT_ACTIONS = new Set(['导出', '打印', '发送邮件', '退�
 /** 选单类动作（选单 / 选销售订单…）：需要面板配了 selectConfig 才有来源 */
 export function isSelectAction(action) {
   if (typeof action !== 'string' || action === '') return false
-  // 「选工艺路线」是加工单按路线带出工序的后端动作，不是选单来源，别被「选」字前缀误判
+  // 「选工艺路线」是加工单按路线带出工序的后端动作，不是选单来源，别被「选」字前缀误判；
+  // 「选销售订单 / 选生产加工单」是专用弹窗动作，由代码分支处理，不依赖面板 selectConfig。
   if (action === '选工艺路线') return false
+  if (action === '选销售订单' || action === '选生产加工单') return false
   if (action === INVOICE_LINE_ACTION) return false
   return action === '选单' || action.startsWith('选')
 }

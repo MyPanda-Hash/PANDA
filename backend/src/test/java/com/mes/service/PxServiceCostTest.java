@@ -138,6 +138,7 @@ class PxServiceCostTest {
         PxService spied = spy(service);
         doNothing().when(spied).validateBatchIssue(anyString(), anyString(), anyString(), anyDouble(), any());
         doNothing().when(spied).validateMaterialIssue(any(), any());
+        doNothing().when(spied).submitIssueForApproval(anyString(), any());
         when(panelMapper.selectOne(any())).thenReturn(config("MATERIAL_OUT"));
         when(formMapper.selectOne(any())).thenReturn(batch, mo);
         when(formMapper.selectCount(any())).thenReturn(0L);

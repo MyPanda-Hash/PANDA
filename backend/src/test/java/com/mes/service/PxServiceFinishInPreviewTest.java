@@ -210,4 +210,26 @@ class PxServiceFinishInPreviewTest {
         verify(formMapper).insert(captor.capture());
         return captor.getValue();
     }
+
+    /** 加工单完工后仍然可以分批入库（完工不等于全部入库）。 */
+    @Test
+    void receivingAllowedWhenOrderAlreadyFinished() throws Exception {
+        PxService spied = spy(service);
+        doReturn(null).when(spied).findOpenFinishIn(anyString());
+        when(panelMapper.selectOne(any())).thenReturn(config("FINISH_IN"));
+        FormData finished = document("MANU_ORDER", "MO-9", "已完工",
+                Map.of("单据编号", "MO-9", "生产车间", "熔铸车间"),
+                Map.of("products", List.of(Map.of("产品编码", "CP001", "产品名称", "铝棒 Φ80",
+                        "生产单位", "件", "数量", 100, "累计入库数量", 40))));
+        when(formMapper.selectOne(any())).thenReturn(finished);
+        when(formMapper.selectCount(any())).thenReturn(0L);
+
+        spied.callButton("MANU_ORDER", "生成产成品入库单", Map.of("编号", "MO-9"), Map.of());
+
+        FormData target = captureInserted();
+        Map<?, ?> detail = json.readValue(target.getDetailData(), Map.class);
+        Map<?, ?> row = (Map<?, ?>) ((List<?>) detail.get("items")).get(0);
+        assertEquals(60.0, ((Number) row.get("实收数量")).doubleValue(), 0.001,
+                "完工后剩余 60 仍可入库");
+    }
 }

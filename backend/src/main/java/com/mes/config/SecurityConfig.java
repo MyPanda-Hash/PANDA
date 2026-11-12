@@ -44,6 +44,9 @@ public class SecurityConfig {
                     .requestMatchers("/api/auth/login").permitAll()
                     // 登录页加载工厂下拉需要（未登录时调用）
                     .requestMatchers("/api/base/factory/list").permitAll()
+                    // 开放审批接口：不放行给匿名用户，而是放行给 X-Open-Api-Token 门禁
+                    // （见 OpenApiGuard：令牌 + IP 白名单 + 限流，且只读）
+                    .requestMatchers(HttpMethod.GET, "/api/open/approvals/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .anyRequest().authenticated())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

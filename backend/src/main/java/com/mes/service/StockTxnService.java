@@ -135,6 +135,9 @@ public class StockTxnService {
     /** 把一张单据的表头与明细折算成事务行；非库存面板返回空列表。 */
     public List<Txn> buildTxns(String panelCode, String formNo, Map<String, Object> head,
                                Map<String, Object> detail) {
+        // 调拨是双仓语义：一条明细要出两条事务（调出仓 OUT + 调入仓 IN），
+        // 否则调拨单审核后库存根本不移动，线边仓补料等于没补。
+        if ("TRANSFER".equals(panelCode)) return buildTransferTxns(formNo, head, detail);
         String direction = directionOf(panelCode);
         if (direction == null) return List.of();
         List<Txn> out = new ArrayList<>();
@@ -158,6 +161,33 @@ public class StockTxnService {
                     text(first(row, "库位", "货位")),
                     text(first(row, "批次号", "批号")),
                     quantity.abs(), price, amount.abs(), bizDate));
+        }
+        return out;
+    }
+
+    /** 调拨单：每行产出「调出仓 OUT」+「调入仓 IN」两条方向相反的事务。 */
+    private List<Txn> buildTransferTxns(String formNo, Map<String, Object> head, Map<String, Object> detail) {
+        String fromWarehouse = text(first(head, "调出仓库"));
+        String toWarehouse = text(first(head, "调入仓库"));
+        if (fromWarehouse.isBlank() || toWarehouse.isBlank()) return List.of();
+        LocalDate bizDate = date(first(head, "单据日期"));
+        List<Txn> out = new ArrayList<>();
+        for (Map<String, Object> row : allDetailRows(detail)) {
+            String itemCode = text(first(row, "存货编码", "产品编码", "材料编码"));
+            String itemName = text(first(row, "存货名称", "产品名称", "材料名称", "存货"));
+            BigDecimal quantity = number(first(row, "实收数量", "数量", "入库数量", "出库数量"));
+            if (quantity.signum() == 0) continue;
+            BigDecimal price = number(first(row, "成本价", "单价", "主单价"));
+            BigDecimal amount = number(first(row, "成本金额", "金额"));
+            if (amount.signum() == 0 && price.signum() != 0) amount = quantity.multiply(price);
+            String spec = text(first(row, "规格型号", "材料规格"));
+            String unit = text(first(row, "计量单位", "主单位", "生产单位"));
+            String location = text(first(row, "库位", "货位"));
+            String batch = text(first(row, "批次号", "批号"));
+            out.add(new Txn("TRANSFER", formNo, out.size() + 1, "OUT", itemCode, itemName, spec, unit,
+                    fromWarehouse, location, batch, quantity.abs(), price, amount.abs(), bizDate));
+            out.add(new Txn("TRANSFER", formNo, out.size() + 1, "IN", itemCode, itemName, spec, unit,
+                    toWarehouse, location, batch, quantity.abs(), price, amount.abs(), bizDate));
         }
         return out;
     }

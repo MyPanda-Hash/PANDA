@@ -73,6 +73,7 @@ watch(() => props.active, (on) => { if (!on) opened.value = false })
 .cfh-main {
   display: flex;
   align-items: center;
+  justify-content: center;   /* 列头统一居中：全局规则管到 .cell，flex 容器里的内容要自己居中 */
   gap: 4px;
   min-width: 0;
 }

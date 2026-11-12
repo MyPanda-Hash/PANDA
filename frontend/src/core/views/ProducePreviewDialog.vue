@@ -11,17 +11,20 @@
     @open="load"
   >
     <div class="pp-tip">
-      {{ tt('现存量取自成品仓。建议生产数量 = 需求 − 现存量 − 已下单生产数量，只勾选需要投产的行。') }}
+      {{ tt('现存量取自成品仓。库存够也可以预生产：勾选行后填生产数量，上限 = 需求 − 已下单生产数量（预生产也不超过订单量）。') }}
     </div>
 
     <div v-if="!loading && rows.length" class="pp-sum">
       <span v-if="shortageCount" class="pp-warn">
         {{ shortageCount }} {{ tt('行库存不足') }}
       </span>
-      <span v-else class="pp-ok">{{ tt('全部有货，无需投产') }}</span>
+      <span v-else class="pp-ok">{{ tt('全部有货，仍可按订单预生产') }}</span>
       <span class="pp-total">
         {{ tt('本次投产') }} {{ pickedCount }} {{ tt('行，合计') }} {{ pickedQty }} {{ tt('件') }}
       </span>
+      <el-button size="small" :disabled="!canFillAll" @click="fillAll">
+        {{ tt('按订单数量投产') }}
+      </el-button>
     </div>
 
     <el-table
@@ -48,11 +51,15 @@
       <el-table-column :label="tt('已下单生产')" width="100" align="right">
         <template #default="{ row }">{{ fmt(row['已下单生产数量']) }}</template>
       </el-table-column>
+      <el-table-column :label="tt('可投产上限')" width="100" align="right">
+        <template #default="{ row }">{{ fmt(row['可生产上限']) }}</template>
+      </el-table-column>
       <el-table-column :label="tt('生产数量')" width="120" align="right">
         <template #default="{ row }">
           <el-input-number
             v-model="row['生产数量']"
             :min="0"
+            :max="Number(row['可生产上限']) || 0"
             :controls="false"
             :disabled="!isPicked(row)"
             size="small"
@@ -113,6 +120,19 @@ function isPicked(row) {
   return picked.value.includes(row)
 }
 
+/** 还有可投产数量的行才允许「按订单数量投产」 */
+const canFillAll = computed(() => rows.value.some((r) => (Number(r['可生产上限']) || 0) > 0))
+
+/** 一键按「可投产上限」填满并勾选：库存够时预生产走这条路 */
+function fillAll() {
+  for (const row of rows.value) {
+    const cap = Number(row['可生产上限']) || 0
+    if (cap <= 0) continue
+    row['生产数量'] = cap
+    tableRef.value?.toggleRowSelection(row, true)
+  }
+}
+
 function onSel(sel) {
   picked.value = sel
 }
@@ -134,7 +154,7 @@ async function load() {
       if (Number(row['生产数量']) > 0) tableRef.value?.toggleRowSelection(row, true)
     }
     if (!shortageCount.value && rows.value.length) {
-      ElMessage.info(tt('成品仓库存已覆盖全部需求，无需投产；如需预生产请直接新增生产加工单'))
+      ElMessage.info(tt('成品仓库存已覆盖全部需求，仍可按订单预生产'))
     }
   } catch (e) {
     ElMessage.error(engine.errMsg(e) || tt('生单预览加载失败'))

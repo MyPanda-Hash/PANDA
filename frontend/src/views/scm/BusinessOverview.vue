@@ -29,24 +29,34 @@
       </div>
     </header>
 
-    <!-- 追踪状态条：选中一张单据后，显示当前卡在哪个环节 -->
+    <!-- 追踪状态条：选中一张单据后，显示标准路线走到哪一步、还缺哪些环节 -->
     <div v-if="tracked" class="bo-track-bar" :class="{ stalled: traceInfo['卡点单号'] }">
       <div class="bo-track-main">
         <AntIcon :name="traceInfo['卡点单号'] ? 'clock-circle' : 'check-circle'" :size="16" class="bo-track-icon" />
         <span class="bo-track-doc">{{ traceInfo['单号'] }}</span>
         <span class="bo-track-sep">·</span>
+        <span class="bo-track-route" :title="traceInfo['是否生产路线'] ? tt('该单没有足够库存，需要生产加工') : tt('该单库存够发货，直接出库')">
+          {{ traceInfo['是否生产路线'] ? tt('生产路线') : tt('直接出库') }}
+        </span>
+        <span class="bo-track-sep">·</span>
         <span class="bo-track-count">{{ traceInfo['环节数'] }} {{ tt('个环节') }}</span>
+        <span class="bo-track-sep">·</span>
+        <span class="bo-track-count">{{ tt('已完成') }} {{ traceInfo['已完成数'] ?? 0 }}</span>
+        <template v-if="traceInfo['待生成数']">
+          <span class="bo-track-sep">·</span>
+          <span class="bo-track-count">{{ tt('待生成') }} {{ traceInfo['待生成数'] }}</span>
+        </template>
         <span class="bo-track-sep">·</span>
         <span v-if="traceInfo['卡点单号']" class="bo-track-msg">
           {{ tt('卡在') }} <b>{{ traceInfo['卡点单号'] }}</b> — {{ traceInfo['卡点原因'] }}
         </span>
-        <span v-else class="bo-track-msg done">{{ tt('全流程已完成') }}</span>
+        <span v-else-if="!traceInfo['待生成数']" class="bo-track-msg done">{{ tt('全流程已完成') }}</span>
       </div>
       <div class="bo-track-legend">
         <span class="lg"><i class="lg-dot done"></i>{{ tt('已完成') }}</span>
         <span class="lg"><i class="lg-dot doing"></i>{{ tt('进行中') }}</span>
         <span class="lg"><i class="lg-dot stalled"></i>{{ tt('卡点') }}</span>
-        <span class="lg"><i class="lg-dot none"></i>{{ tt('无关环节') }}</span>
+        <span class="lg"><i class="lg-dot none"></i>{{ tt('待生成') }}</span>
       </div>
     </div>
 
@@ -67,32 +77,60 @@
       </button>
     </div>
 
-    <!-- 经过的单据路线：按业务顺序列出全链路，当前卡点高亮 -->
+    <!-- 单据流程路线：标准路线固定，已发生的带单号，未发生的显示「待生成」 -->
     <div v-if="tracked && traceSteps.length" class="bo-route">
       <div class="bo-route-head">
         <AntIcon name="node-index" :size="14" class="bo-route-icon" />
-        <span class="bo-route-title">{{ tt('经过的单据路线') }}</span>
-        <span class="bo-route-count">{{ traceSteps.length }}{{ tt('张') }}</span>
+        <span class="bo-route-title">{{ tt('单据流程路线') }}</span>
+        <span class="bo-route-count">
+          {{ skeletonSteps }} {{ tt('步标准流程') }} · {{ traceSteps.length }} {{ tt('个环节') }}
+          · {{ tt('已完成') }} {{ traceInfo['已完成数'] ?? 0 }}
+          <template v-if="branchCount"> · {{ branchCount }} {{ tt('个检验分支') }}</template>
+        </span>
       </div>
-      <div class="bo-route-track">
-        <template v-for="(s, i) in traceSteps" :key="s['单号']">
-          <button
-            class="bo-route-node"
-            :class="[stepKind(s), { stalled: s['是否卡点'] }]"
-            type="button"
-            :title="s['环节'] + ' ' + s['单号']"
-            @click="openDoc(s['面板编码'], s['单号'], s['环节'] + '-' + s['单号'])"
-          >
-            <AntIcon
-              :name="s['阶段'] === '完成' ? 'check-circle' : (s['是否卡点'] ? 'clock-circle' : 'file-text')"
-              :size="13"
-              class="bo-route-ic"
-            />
-            <span class="bo-route-label">{{ tt(s['环节']) }}</span>
-            <span class="bo-route-no">{{ s['单号'] }}</span>
-            <span class="bo-route-status">{{ tt(s['单据状态']) }}</span>
-          </button>
+      <!-- 并行排产线：一个销售订单行一条线，各走各的排产与加工单 -->
+      <div v-if="traceLanes.length" class="bo-lanes">
+        <div class="bo-lane-head">
+          <RouteNodeCard :node="routeHead" @open="openRouteDoc" @open-branch="openBranch" />
+          <span class="bo-lane-head-hint">{{ traceLanes.length }} {{ tt('条排产线（按销售订单行并行）') }}</span>
+        </div>
+        <div class="bo-lane-list">
+          <div v-for="lane in traceLanes" :key="lane['线号']" class="bo-lane">
+            <span class="bo-lane-tag">
+              {{ tt('线') }} {{ lane['线号'].replace('L', '') }}
+              <span class="bo-lane-no">{{ lane['加工单号'] }}</span>
+            </span>
+            <div class="bo-lane-track">
+              <template v-for="(n, i) in lane.nodes" :key="lane['线号'] + '-' + n['面板编码'] + '-' + i">
+                <RouteNodeCard :node="n" @open="(node) => openRouteDoc(node, lane['加工单号'])" @open-branch="openBranch" />
+                <span v-if="i < lane.nodes.length - 1" class="bo-route-arrow" :class="stepKind(lane.nodes[i + 1])">
+                  <i v-if="edgeProcessLabel(n, lane.nodes[i + 1])" class="bo-arrow-label">
+                    {{ tt(edgeProcessLabel(n, lane.nodes[i + 1])) }}
+                  </i>
+                  <AntIcon name="arrow-right" :size="14" />
+                </span>
+              </template>
+            </div>
+          </div>
+        </div>
+        <div v-if="routeTail.length" class="bo-lane-track bo-lane-tail">
+          <template v-for="(n, i) in routeTail" :key="'tail-' + n['面板编码'] + '-' + i">
+            <RouteNodeCard :node="n" @open="openRouteDoc" @open-branch="openBranch" />
+            <span v-if="i < routeTail.length - 1" class="bo-route-arrow" :class="stepKind(routeTail[i + 1])">
+              <AntIcon name="arrow-right" :size="14" />
+            </span>
+          </template>
+        </div>
+      </div>
+
+      <!-- 没有排产线（直接出库 / 还没排产）：沿用单行路线 -->
+      <div v-else class="bo-route-track">
+        <template v-for="(s, i) in traceSteps" :key="s['面板编码'] + '-' + (s['单号'] || s['工序名称'] || i)">
+          <RouteNodeCard :node="s" @open="openRouteDoc" @open-branch="openBranch" />
           <span v-if="i < traceSteps.length - 1" class="bo-route-arrow" :class="stepKind(traceSteps[i + 1])">
+            <i v-if="edgeProcessLabel(s, traceSteps[i + 1])" class="bo-arrow-label">
+              {{ tt(edgeProcessLabel(s, traceSteps[i + 1])) }}
+            </i>
             <AntIcon name="arrow-right" :size="14" />
           </span>
         </template>
@@ -127,7 +165,7 @@
             <span>{{ tt(cur.name) }} · {{ tt('业务流程图') }}</span>
           </div>
           <div class="bo-panel-meta">
-            <span class="bo-meta-item">{{ (cur.nodes || []).length }} {{ tt('环节') }}</span>
+            <span class="bo-meta-item">{{ (cur.nodes || []).filter((n) => !n.monitor).length }} {{ tt('环节') }}</span>
             <span class="bo-meta-sep">·</span>
             <span class="bo-meta-item">{{ (cur.edges || []).length }} {{ tt('条流转') }}</span>
             <span class="bo-meta-sep">·</span>
@@ -155,7 +193,12 @@
                 class="fn-card"
                 :class="[
                   'state-' + (nodeProps.data.state || 'none'),
-                  { dim: nodeProps.data.dim, stalled: nodeProps.data.stalled, 'no-perm': !canOpenPanel(nodeProps.data.code) },
+                  {
+                    dim: nodeProps.data.dim,
+                    stalled: nodeProps.data.stalled,
+                    'no-perm': !canOpenPanel(nodeProps.data.code),
+                    'is-monitor': nodeProps.data.monitor,
+                  },
                 ]"
               >
                 <!-- 连线锚点：Vue Flow 需要节点里有 Handle 才能把边接到卡片边缘；
@@ -216,7 +259,7 @@
               :class="{ 'no-perm': !canOpenPanel(d.code) }"
               :title="canOpenPanel(d.code) ? '' : tt('无权限访问')"
               type="button"
-              @click="openPanel(d.code, d.label)"
+              @click="openPanel(d.code, d.label, d.permCode)"
             >
               <AntIcon name="file-text" :size="13" class="bo-item-icon" />
               <span class="bo-item-label">{{ tt(d.label) }}</span>
@@ -238,7 +281,7 @@
               :class="{ 'no-perm': !canOpenPanel(d.code) }"
               :title="canOpenPanel(d.code) ? '' : tt('无权限访问')"
               type="button"
-              @click="openPanel(d.code, d.label)"
+              @click="openPanel(d.code, d.label, d.permCode)"
             >
               <AntIcon name="database" :size="13" class="bo-item-icon" />
               <span class="bo-item-label">{{ tt(d.label) }}</span>
@@ -260,7 +303,7 @@
               :class="{ 'no-perm': !canOpenPanel(d.code) }"
               :title="canOpenPanel(d.code) ? '' : tt('无权限访问')"
               type="button"
-              @click="openPanel(d.code, d.label)"
+              @click="openPanel(d.code, d.label, d.permCode)"
             >
               <AntIcon name="bar-chart" :size="13" class="bo-item-icon" />
               <span class="bo-item-label">{{ tt(d.label) }}</span>
@@ -335,6 +378,7 @@ import { useUserStore } from '@/stores/user'
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
 import AntIcon from '@/business/components/AntIcon.vue'
+import RouteNodeCard from './components/RouteNodeCard.vue'
 import { traceProcess, queryFormDataList } from '@/business/engine'
 
 const router = useRouter()
@@ -358,7 +402,8 @@ const PANEL_ICONS = {
   PURCHASE_RETURN: 'rollback', PU_INVOICE: 'file-text',
   RECEIPT_PAYABLE: 'money-collect',
   // 生产
-  MANU_ORDER: 'tool', PLAN: 'calendar', PROCESS_REPORT: 'profile', MATERIAL_REQ: 'form',
+  MANU_ORDER: 'tool', PLAN: 'calendar', PROCESS_REPORT: 'profile',
+  MATERIAL_ISSUE: 'form', MATERIAL_REQ: 'form',
   MATERIAL_OUT: 'export', FINISH_IN: 'file-done', FINISH_INSPECT: 'file-search',
   TRANSFER: 'swap', PICK_ORDER: 'container', OUTSOURCE_ORDER: 'deployment-unit',
   OUTSOURCE_ISSUE: 'export', OUTSOURCE_IN: 'import', OUTSOURCE_FEE: 'money-collect',
@@ -371,7 +416,7 @@ const PANEL_ICONS = {
   FIRST_INSPECT: 'file-search', PROCESS_INSPECT_APPLY: 'file-add',
   DISPATCH: 'team', SPC_CONTROL: 'line-chart',
   // 计划
-  MPS_PLAN: 'schedule', MRP_RESULT: 'branches', KIT_ANALYSIS: 'apartment',
+  PLAN_ANALYSIS: 'dashboard',
   // 财务
   RECEIPT: 'money-collect', RECEIPT_PAYABLE: 'money-collect',
   SETTLE_CUSTOMER: 'account-book', SETTLE_SUPPLIER: 'account-book',
@@ -423,27 +468,23 @@ const modules = [
   },
   {
     code: 'plan', name: '计划管理', icon: 'schedule', color: '#13a8a8',
-    /** 计划：销售需求 → 主生产计划 → 物料需求运算 → 采购需求 / 齐套分析 */
+    /** 计划：销售需求 → 计划分析（排产前全链路）→ 采购需求分析（排产后请购） */
     nodes: [
       { code: 'SO_ORDER', label: '销售订单' },
-      { code: 'MPS_PLAN', label: '主生产计划' },
-      { code: 'MRP_RESULT', label: '物料需求运算' },
+      // 计划分析不是面板，落点是专属页面；权限按销售订单判
+      { code: 'PLAN_ANALYSIS', label: '计划分析', permCode: 'SO_ORDER' },
       { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' },
-      { code: 'KIT_ANALYSIS', label: '齐套分析' },
     ],
     edges: [
-      { from: 'SO_ORDER', to: 'MPS_PLAN', label: '需求' },
-      { from: 'MPS_PLAN', to: 'MRP_RESULT', label: '运算' },
-      { from: 'MRP_RESULT', to: 'PU_REQ_ANALYSIS', label: '生成采购需求' },
-      { from: 'MRP_RESULT', to: 'KIT_ANALYSIS', label: '齐套检查' },
+      { from: 'SO_ORDER', to: 'PLAN_ANALYSIS', label: '排产前分析' },
+      { from: 'PLAN_ANALYSIS', to: 'PU_REQ_ANALYSIS', label: '排产后采购需求' },
     ],
     pos: {
-      SO_ORDER: [320, 0], MPS_PLAN: [320, 160], MRP_RESULT: [320, 320],
-      PU_REQ_ANALYSIS: [80, 480], KIT_ANALYSIS: [560, 480],
+      SO_ORDER: [320, 0], PLAN_ANALYSIS: [320, 160], PU_REQ_ANALYSIS: [320, 320],
     },
     docs: [
-      { code: 'MPS_PLAN', label: '主生产计划' }, { code: 'MRP_RESULT', label: '物料需求运算结果' },
-      { code: 'KIT_ANALYSIS', label: '齐套分析' }, { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' },
+      { code: 'PLAN_ANALYSIS', label: '计划分析', permCode: 'SO_ORDER' },
+      { code: 'PU_REQ_ANALYSIS', label: '采购需求分析' },
     ],
     archives: [
       { code: 'INV', label: '存货' }, { code: 'BOM', label: '物料清单' }, { code: 'WH', label: '仓库' },
@@ -453,44 +494,50 @@ const modules = [
   {
     code: 'prod', name: '生产管理', icon: 'tool', color: '#1677ff',
     /** 生产主流程把质量链条画进来：领料 → 报工 → 报检 → 检验 → 首件/成品报检 → 入库 */
+    /**
+     * 生产主流程（2026-11-12 按批次报工定稿）：
+     * 销售订单 → 工单排产 → 生产加工单 →（按工序排批次）排产批次 → 按批次报工 → 工序汇报
+     * → 首件报检（首件合格才能报满）→ 全部工序报满 → 成品报检 → 检验合格入库。
+     * 领料同样按批次：加工单 →（生产领料：按批次直接生成材料出库单并提交审批）→ 材料出库单。
+     * 现场领料不走领料申请单；领料申请单仍保留，用于先申请后出库的审批场景。
+     * 排产在加工单之前：按销售订单行排产生成加工单（单号 = 订单号-行号），生成即已审核；
+     * 派工单是排产的批次输出，不再单独审批。检验只有首件检验（每道工序一次，分支）与完工检验（成品报检，入库前置）。
+     */
     nodes: [
       { code: 'SO_ORDER', label: '销售订单' },
-      { code: 'MANU_ORDER', label: '生产加工单' },
       { code: 'PLAN', label: '工单排产' },
-      { code: 'MATERIAL_REQ', label: '领料申请单' },
-      { code: 'MATERIAL_OUT', label: '材料出库单' },
-      { code: 'TRANSFER', label: '调拨单' },
+      { code: 'MANU_ORDER', label: '生产加工单' },
+      // 数据监控节点：派工单是排产批次的数据载体，不需要人在这上面操作，所以不进环节计数
+      { code: 'DISPATCH', label: '排产批次', monitor: true },
+      { code: 'MATERIAL_ISSUE', label: '生产领料', permCode: 'MATERIAL_OUT' },
       { code: 'PROCESS_REPORT', label: '工序汇报单' },
-      { code: 'PROCESS_INSPECT_APPLY', label: '工序报检单' },
-      { code: 'PROCESS_INSPECTION', label: '生产过程检验单' },
+      { code: 'MATERIAL_OUT', label: '材料出库单' },
       { code: 'FIRST_INSPECT', label: '首件报检单' },
       { code: 'FINISH_INSPECT', label: '成品报检单' },
       { code: 'FINISH_IN', label: '产成品入库单' },
     ],
     edges: [
-      { from: 'SO_ORDER', to: 'MANU_ORDER', label: '生单' },
-      { from: 'MANU_ORDER', to: 'PLAN', label: '排产' },
-      { from: 'PLAN', to: 'MATERIAL_REQ', label: '按批次领料' },
-      { from: 'PLAN', to: 'PROCESS_REPORT', label: '按批次报工' },
-      { from: 'MATERIAL_REQ', to: 'MATERIAL_OUT', label: '出库' },
-      { from: 'MATERIAL_REQ', to: 'TRANSFER', label: '调拨' },
-      { from: 'MANU_ORDER', to: 'PROCESS_REPORT', label: '报工' },
-      { from: 'PROCESS_REPORT', to: 'PROCESS_INSPECT_APPLY', label: '报检' },
-      { from: 'PROCESS_INSPECT_APPLY', to: 'PROCESS_INSPECTION', label: '检验' },
-      { from: 'MANU_ORDER', to: 'FIRST_INSPECT', label: '首件' },
-      { from: 'MANU_ORDER', to: 'FINISH_INSPECT', label: '完工报检' },
-      { from: 'FIRST_INSPECT', to: 'FINISH_IN', label: '合格入库' },
-      { from: 'FINISH_INSPECT', to: 'FINISH_IN', label: '合格入库' },
+      { from: 'SO_ORDER', to: 'PLAN', label: '按订单行排产' },
+      { from: 'PLAN', to: 'MANU_ORDER', label: '生成加工单' },
+      { from: 'MANU_ORDER', to: 'DISPATCH', label: '按工序排批次', monitor: true },
+      { from: 'MANU_ORDER', to: 'MATERIAL_ISSUE', label: '按批次领料' },
+      { from: 'DISPATCH', to: 'PROCESS_REPORT', label: '按批次报工', monitor: true },
+      { from: 'MATERIAL_ISSUE', to: 'MATERIAL_OUT', label: '生成出库单·审批通过' },
+      { from: 'PROCESS_REPORT', to: 'FIRST_INSPECT', label: '首件检验' },
+      { from: 'PROCESS_REPORT', to: 'FINISH_INSPECT', label: '全部工序报满' },
+      { from: 'FINISH_INSPECT', to: 'FINISH_IN', label: '检验合格入库' },
     ],
-    /** 分层布局：每条边都是上一层 → 下一层，避免同层连线被画成 U 形 */
+    /** 分层布局：每条边都是上一层 → 下一层，节点之间留足间距，避免重叠和出画布 */
     pos: {
-      SO_ORDER: [430, 0], MANU_ORDER: [430, 150], PLAN: [430, 300],
-      MATERIAL_REQ: [40, 450], PROCESS_REPORT: [300, 450], FIRST_INSPECT: [560, 310], FINISH_INSPECT: [820, 310],
-      MATERIAL_OUT: [40, 470], TRANSFER: [180, 470], PROCESS_INSPECT_APPLY: [300, 470], FINISH_IN: [690, 470],
-      PROCESS_INSPECTION: [300, 630],
+      SO_ORDER: [430, 0], PLAN: [430, 130], MANU_ORDER: [430, 260],
+      DISPATCH: [150, 390], MATERIAL_ISSUE: [720, 390],
+      PROCESS_REPORT: [150, 520], MATERIAL_OUT: [720, 520],
+      FIRST_INSPECT: [60, 650], FINISH_INSPECT: [400, 650],
+      FINISH_IN: [230, 780],
     },
     docs: [
-      { code: 'MANU_ORDER', label: '生产加工单' }, { code: 'DISPATCH', label: '工序派工单' },
+      { code: 'MANU_ORDER', label: '生产加工单' }, { code: 'PLAN', label: '工单排产' },
+      { code: 'DISPATCH', label: '工序派工单' },
       { code: 'PROCESS_REPORT', label: '工序汇报单' }, { code: 'PROCESS_INSPECT_APPLY', label: '工序报检单' },
       { code: 'PROCESS_INSPECTION', label: '生产过程检验单' }, { code: 'FIRST_INSPECT', label: '首件报检单' },
       { code: 'FINISH_INSPECT', label: '成品报检单' },
@@ -969,7 +1016,7 @@ const visibleReports = computed(() => (cur.value?.reports || []).filter((d) => h
 const trackedNo = ref('')
 const tracked = computed(() => !!trackedNo.value)
 /** 追踪结果原文（来自 /api/px/trace）。 */
-const traceInfo = ref({ 单号: '', 环节数: 0, 卡点单号: '', 卡点原因: '', steps: [] })
+const traceInfo = ref({ 单号: '', 环节数: 0, 已完成数: 0, 待生成数: 0, 卡点单号: '', 卡点原因: '', steps: [], route: [] })
 /** 变更触发器：结果变化后重建图。 */
 const traceKey = ref(0)
 
@@ -990,14 +1037,29 @@ const traceHits = computed(() => {
 
 function clearTrace() {
   trackedNo.value = ''
-  traceInfo.value = { 单号: '', 环节数: 0, 卡点单号: '', 卡点原因: '', steps: [] }
+  traceInfo.value = { 单号: '', 环节数: 0, 已完成数: 0, 待生成数: 0, 卡点单号: '', 卡点原因: '', steps: [], route: [] }
   traceKey.value++
+}
+
+/**
+ * 流程图节点 ↔ 追踪面板：排产环节在工作台（PLAN）完成，落地单据是工序派工单（DISPATCH）。
+ * 节点上没有 PLAN 的单据，命中要顺着别名找，否则「工单排产」永远亮不起来。
+ */
+const NODE_PANEL_ALIAS = { PLAN: ['DISPATCH'], MATERIAL_ISSUE: ['MATERIAL_REQ'] }
+
+/** 某节点在追踪结果里命中的单据（含别名面板；带回真实面板编码，点开时按真实面板走）。 */
+function hitsOf(code) {
+  const out = (traceHits.value[code] || []).map((hit) => ({ ...hit, panelCode: code }))
+  for (const alias of NODE_PANEL_ALIAS[code] || []) {
+    out.push(...(traceHits.value[alias] || []).map((hit) => ({ ...hit, panelCode: alias })))
+  }
+  return out
 }
 
 /** 某模块里有多少个环节命中追踪结果（用于在导航上打标记）。 */
 function moduleHitCount(module) {
   if (!tracked.value) return 0
-  return (module.nodes || []).filter((n) => (traceHits.value[n.code] || []).length).length
+  return (module.nodes || []).filter((n) => hitsOf(n.code).length).length
 }
 
 /** 追踪命中的模块列表：一个单据可能跨多个模块（如销售订单 → 委外加工单）。 */
@@ -1006,8 +1068,87 @@ const hitModules = computed(() => {
   return modules.filter((m) => moduleHitCount(m) > 0)
 })
 
-/** 按业务顺序排列的追踪环节（后端已按业务序列排好），用于渲染"经过的单据路线"。 */
-const traceSteps = computed(() => traceInfo.value.steps || [])
+/**
+ * 单据流程路线：后端返回的标准路线（固定环节序列，含还没发生的环节）。
+ * 老版本接口没有 route 时回退到实际单据步骤，保证页面不空。
+ */
+const traceLanes = computed(() => traceInfo.value.lanes || [])
+/** 并行线的共同头：销售订单 */
+const routeHead = computed(() => traceSteps.value.find((s) => s['面板编码'] === 'SO_ORDER')
+  || { 面板编码: 'SO_ORDER', 环节: '销售订单', 单号: '', 阶段: '待开始', 是否已发生: false, branches: [] })
+/** 并行线的共同尾：出库、销货、发票 */
+const routeTail = computed(() => traceSteps.value.filter((s) =>
+  ['SALE_OUT', 'SALE_INV', 'SALE_INVOICE'].includes(s['面板编码'])))
+
+const traceSteps = computed(() => {
+  const route = traceInfo.value.route
+  return (route && route.length ? route : traceInfo.value.steps) || []
+})
+
+/**
+ * 标准路线的「步数」：按面板去重后的环节数（工序派工/工序汇报按工序展开，
+ * 面板数仍是 1），用来对照 11 步骨架与实际展开的节点数。
+ */
+const skeletonSteps = computed(() => {
+  const seen = new Set()
+  let n = 0
+  for (const s of traceSteps.value) {
+    const code = s['面板编码']
+    if (!code || seen.has(code)) continue
+    seen.add(code)
+    n += 1
+  }
+  return n
+})
+
+/** 分支总数（首件检验单）：只统计展开后的分支，不进主干步数。 */
+const branchCount = computed(() => {
+  let n = 0
+  for (const s of traceSteps.value) n += (s['branches'] || []).length
+  return n
+})
+
+/**
+ * 箭头上的过程名：有些环节是「动作」不是「单据」，不给它画节点框，只标在流转箭头上。
+ * 目前只有一段——生产加工单 --生产领料--> 材料出库单（现场领料直接出库，不再有领料申请单节点）。
+ */
+const EDGE_PROCESS_LABELS = { 'MANU_ORDER>MATERIAL_OUT': '生产领料' }
+
+function edgeProcessLabel(from, to) {
+  if (!from || !to) return ''
+  return EDGE_PROCESS_LABELS[(from['面板编码'] || '') + '>' + (to['面板编码'] || '')] || ''
+}
+
+/** 环节名 + 工序名：工序汇报单要显示是哪道工序，追踪才看得懂。 */
+function routeLabel(s) {
+  const base = tt(s['环节'])
+  return s['工序名称'] ? base + ' · ' + s['工序名称'] : base
+}
+
+/** 分支单据不在主干上，但同样可以点开。 */
+function openBranch(b) {
+  if (b['是否已发生'] === false) return
+  openDoc(b['面板编码'], b['单号'], tt(b['环节']) + '-' + b['单号'])
+}
+
+/** 工单排产工作台：排产不是单据页，按加工单号进 /mes/plan。 */
+function openPlan(moNo) {
+  const path = CUSTOM_PAGES.PLAN
+  const query = { from: route.path }
+  if (moNo) query.code = moNo
+  router.push({ path, query })
+  tabs.open({ path, title: moNo ? tt('工单排产') + '-' + moNo : tt('工单排产'), query })
+}
+
+/** 待生成的环节没有单据可打开；排产环节进工作台，其余进单据页。 */
+function openRouteDoc(s, moNo) {
+  if (s['是否已发生'] === false) return
+  if (s['面板编码'] === 'DISPATCH') {
+    openPlan(moNo || traceInfo.value['加工单号'] || '')
+    return
+  }
+  openDoc(s['面板编码'], s['单号'], routeLabel(s) + '-' + s['单号'])
+}
 
 /** 环节状态 → CSS 类。 */
 function stepKind(s) {
@@ -1024,7 +1165,7 @@ async function applyTrace(docNo) {
   try {
     const info = await traceProcess(docNo)
     trackedNo.value = docNo
-    traceInfo.value = info || { 单号: docNo, 环节数: 0, 卡点单号: '', 卡点原因: '', steps: [] }
+    traceInfo.value = info || { 单号: docNo, 环节数: 0, 已完成数: 0, 待生成数: 0, 卡点单号: '', 卡点原因: '', steps: [], route: [] }
     traceKey.value++
     if (!info || !(info.steps || []).length) {
       ElMessage.warning(tt('该单号没有追踪到关联单据'))
@@ -1228,7 +1369,7 @@ function buildFlow() {
 
   nodes.value = (m.nodes || []).map((n) => {
     const p = layout[n.code] || { x: 0, y: 0 }
-    const hitList = hits[n.code] || []
+    const hitList = hitsOf(n.code)
     const firstHit = hitList[0]
     // 没有任何追踪结果时，所有节点都是中性态；有追踪时，未命中节点压暗
     const state = !tracked.value
@@ -1246,6 +1387,8 @@ function buildFlow() {
       data: {
         code: n.code,
         label: n.label,
+        monitor: !!n.monitor,
+        permCode: n.permCode || '',
         icon: iconOf(n.code),
         // 追踪态：未命中的环节压暗，命中的正常；无追踪时才用文字筛选压暗
         dim: tracked.value
@@ -1273,6 +1416,7 @@ function buildFlow() {
       id: 'e' + i + '-' + e.from + '-' + e.to,
       source: e.from,
       target: e.to,
+      class: e.monitor ? 'bo-edge-monitor' : '',
       // 正交连线：制造业流程图用直角折线比贝塞尔曲线更易读
       type: 'smoothstep',
       pathOptions: { borderRadius: 6, offset: Number(e.offset) || 8 },
@@ -1339,13 +1483,18 @@ function canOpenPanel(panelCode) {
   return !!user.isAdmin || (Array.isArray(user.visiblePanels) && user.visiblePanels.includes(panelCode))
 }
 
-/** 流程图节点 / 右侧相关单据统一入口：无权限时提示并留在当前页，不跳转、不开页签。 */
-function openPanel(panelCode, title) {
-  if (!canOpenPanel(panelCode)) {
+/**
+ * 流程图节点 / 右侧相关单据统一入口：无权限时提示并留在当前页，不跳转、不开页签。
+ *
+ * @param permCode 权限判定用的面板编码；计划分析这类专属页面没有自己的面板，借上游面板的权限
+ */
+function openPanel(panelCode, title, permCode) {
+  const perm = permCode || panelCode
+  if (!canOpenPanel(perm)) {
     ElMessage.warning(tt('无权限访问该面板') + '：' + tt(title || panelCode))
     return
   }
-  go('/panelx/list/' + panelCode, title)
+  go(pathOf(panelCode), title)
 }
 
 /**
@@ -1355,6 +1504,8 @@ function openPanel(panelCode, title) {
 const CUSTOM_PAGES = {
   SALE_INVOICE: '/scm/invoiceWorkbench',
   PLAN: '/mes/plan',
+  PLAN_ANALYSIS: '/mes/planAnalysis',
+  MATERIAL_ISSUE: '/mes/materialIssue',
 }
 
 /** 面板默认落点：有专属页面就去专属页面，否则走通用列表页。 */
@@ -1369,6 +1520,11 @@ function pathOf(panelCode) {
  */
 function openDoc(panelCode, docNo, title) {
   if (!panelCode) return
+  // 工单排产是工作台不是单据面板：任何入口都进 /mes/plan，并按加工单号定位
+  if (panelCode === 'PLAN') {
+    openPlan(traceInfo.value['加工单号'] || '')
+    return
+  }
   // 专属页面目前不支持按单据号定位，带 docNo 时仍走通用列表页
   const useCustom = !docNo && !!CUSTOM_PAGES[panelCode]
   if (!useCustom && !canOpenPanel(panelCode)) {
@@ -1384,12 +1540,13 @@ function openDoc(panelCode, docNo, title) {
 
 function onNodeClick({ node }) {
   // 追踪态下打开命中的具体单据；有多张时打开第一张
-  const hit = (traceHits.value[node.data.code] || [])[0]
+  const hit = hitsOf(node.data.code)[0]
   if (tracked.value && hit && hit.docNo) {
-    openDoc(node.data.code, hit.docNo, node.data.label + '-' + hit.docNo)
+    // 别名节点（生产领料 ← 领料申请单）要用命中单据的真实面板打开，否则会落到不存在的面板
+    openDoc(hit.panelCode || node.data.code, hit.docNo, node.data.label + '-' + hit.docNo)
     return
   }
-  openPanel(node.data.code, node.data.label)
+  openPanel(node.data.code, node.data.label, node.data.permCode)
 }
 
 function go(path, title) {
@@ -1545,7 +1702,8 @@ function go(path, title) {
   background: #fff;
   border: 1px solid #d9d9d9;
   border-radius: 6px;
-  overflow: hidden;
+  /* 追踪路线出现后画布可用高度变小，内容比卡片高时让卡片自己滚，不裁掉下面的节点 */
+  overflow-y: auto;
 }
 
 .bo-panel-head {
@@ -1592,7 +1750,8 @@ function go(path, title) {
 }
 
 .bo-canvas {
-  flex: 1;
+  /* 高度由 canvasH 内联给出（按节点最大纵坐标算），父级滚动，避免底部节点被裁 */
+  flex: 0 0 auto;
   min-height: 420px;
   background: #fafafa;
   overflow: hidden;
@@ -1816,6 +1975,17 @@ function go(path, title) {
   font-variant-numeric: tabular-nums;
 }
 
+/* 路线类型：生产路线 / 直接出库 */
+.bo-track-route {
+  padding: 1px 8px;
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 12px;
+  line-height: 18px;
+  color: rgba(0, 0, 0, 0.65);
+}
+
 .bo-track-msg {
   color: rgba(0, 0, 0, 0.65);
 }
@@ -1823,6 +1993,7 @@ function go(path, title) {
 .bo-track-msg.done {
   color: #52c41a;
 }
+
 
 .bo-track-legend {
   display: flex;
@@ -1973,107 +2144,101 @@ function go(path, title) {
 
 .bo-route-track {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 4px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding-bottom: 6px;
 }
 
-.bo-route-node {
+/* 并行排产线：一个订单行一行，各自横向展开 */
+.bo-lanes {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  min-width: 152px;
-  padding: 6px 10px;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  background: #fff;
-  text-align: left;
-  cursor: pointer;
-  font-family: inherit;
-  flex: 0 0 auto;
-  transition: border-color 0.15s, background 0.15s;
+  gap: 8px;
+  padding-bottom: 6px;
 }
 
-.bo-route-node:hover {
-  border-color: #1677ff;
-  background: #fafcff;
+.bo-lane-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.bo-route-ic {
+.bo-lane-head-hint {
+  font-size: 12px;
+  line-height: 20px;
   color: rgba(0, 0, 0, 0.45);
 }
 
-.bo-route-label {
-  font-size: 12px;
-  line-height: 18px;
-  color: rgba(0, 0, 0, 0.88);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.bo-lane-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 12px;
+  border-left: 1px dashed #d9d9d9;
 }
 
-.bo-route-no {
-  font-size: 12px;
-  line-height: 17px;
-  font-family: Consolas, "Courier New", monospace;
-  color: rgba(0, 0, 0, 0.65);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.bo-lane {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.bo-route-status {
+.bo-lane-tag {
+  flex: 0 0 auto;
+  min-width: 96px;
+  padding: 2px 6px;
+  border: 1px solid #e6f4ff;
+  border-radius: 4px;
+  background: #f7fbff;
   font-size: 11px;
   line-height: 16px;
-  color: rgba(0, 0, 0, 0.45);
-}
-
-/* 已完成 */
-.bo-route-node.kind-done {
-  border-color: #95de64;
-  background: #f6ffed;
-}
-
-.bo-route-node.kind-done .bo-route-ic {
-  color: #52c41a;
-}
-
-/* 进行中 / 卡点 */
-.bo-route-node.kind-doing {
-  border-color: #1677ff;
-  background: #f0f7ff;
-}
-
-.bo-route-node.kind-doing .bo-route-ic {
   color: #1677ff;
+  font-variant-numeric: tabular-nums;
 }
 
-.bo-route-node.stalled {
-  border-color: #faad14;
-  background: #fffbe6;
+.bo-lane-no {
+  display: block;
+  font-family: Consolas, "Courier New", monospace;
+  color: rgba(0, 0, 0, 0.55);
 }
 
-.bo-route-node.stalled .bo-route-ic {
-  color: #faad14;
+.bo-lane-track {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 2px;
 }
 
-.bo-route-node.stalled .bo-route-status {
-  color: #d48806;
+/* 出货段：所有排产线汇合后共用 */
+.bo-lane-tail {
+  padding-top: 6px;
+  border-top: 1px dashed #f0f0f0;
 }
 
-.bo-route-node.kind-aborted {
-  border-color: #ffa39e;
-  background: #fff1f0;
-}
-
-.bo-route-node.kind-aborted .bo-route-ic {
-  color: #ff4d4f;
+/* 箭头上的过程名：灰底小字，压在箭头正上方，不抢节点的注意力 */
+.bo-arrow-label {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--t-card-bg, #fff);
+  font-size: 10px;
+  font-style: normal;
+  line-height: 14px;
+  color: var(--t-text-3, #8b9893);
+  white-space: nowrap;
 }
 
 .bo-route-arrow {
   flex: 0 0 auto;
+  position: relative;
   display: flex;
+  /* 与主干卡片垂直居中，分支在下面不影响箭头位置 */
+  margin-top: 34px;
   color: rgba(0, 0, 0, 0.25);
 }
 
@@ -2083,6 +2248,10 @@ function go(path, title) {
 
 .bo-route-arrow.kind-doing {
   color: #1677ff;
+}
+
+.bo-route-arrow.kind-pending {
+  color: rgba(0, 0, 0, 0.15);
 }
 
 /* ---------- 选单弹窗 ---------- */
@@ -2411,5 +2580,27 @@ function go(path, title) {
   .bo-sec {
     flex: 1 1 auto;
   }
+}
+</style>
+
+<style scoped>
+.fn-card.is-monitor {
+  border-style: dashed;
+  border-color: #d9d9d9;
+  background: #fafafa;
+  min-width: 110px;
+  padding: 6px 10px;
+  opacity: 0.9;
+}
+.fn-card.is-monitor::after {
+  content: '监控';
+  display: block;
+  font-size: 10px;
+  line-height: 14px;
+  color: #a6a6a6;
+}
+.bo-edge-monitor :deep(.vue-flow__edge-path) {
+  stroke-dasharray: 4 3;
+  stroke: #d9d9d9 !important;
 }
 </style>

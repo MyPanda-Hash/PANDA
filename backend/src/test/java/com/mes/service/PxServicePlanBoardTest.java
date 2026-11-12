@@ -186,7 +186,34 @@ class PxServicePlanBoardTest {
         when(formMapper.selectOne(any())).thenReturn(mo(100));
         when(formMapper.selectList(any())).thenReturn(List.of(), List.of());
         IllegalStateException e = assertThrows(IllegalStateException.class,
-                () -> service.validatePlanQuantity("MO-1", "PX001", 120));
+                () -> service.validatePlanQuantity("MO-1", "CP001", "PX001", 120));
         assertTrue(e.getMessage().contains("可排产"), e.getMessage());
+    }
+
+    /**
+     * 老单据/导入数据：工序行没绑产品、加工单却有多个产品。
+     *
+     * <p>这时工序是整单一套（计划数量 = 各产品合计），可排量必须按工序计划量算，
+     * 不能拿第一个产品的数量去比合计计划量——否则看板上会出现「计划 340 / 可排 300」。
+     */
+    @Test
+    void legacyMultiProductProcessUsesItsOwnPlanQuantity() throws Exception {
+        FormData legacy = doc("MANU_ORDER", "MO-1", "已审核",
+                Map.of("单据编号", "MO-1", "生产车间", "精整车间"),
+                Map.of(
+                        "products", List.of(
+                                Map.of("产品编码", "CP003", "产品名称", "散热片", "数量", 300),
+                                Map.of("产品编码", "CP004", "产品名称", "减速箱体", "数量", 40)),
+                        "processes", List.of(
+                                Map.of("工序编码", "PX001", "工序名称", "下料",
+                                        "加工顺序", 1, "计划数量", 340, "工序单位", "件"))));
+        when(formMapper.selectOne(any())).thenReturn(legacy);
+        when(formMapper.selectList(any())).thenReturn(List.of(), List.of());
+
+        List<Map<String, Object>> board = service.planBoard("MO-1");
+        assertEquals(1, board.size());
+        assertEquals(340.0, ((Number) board.get(0).get("计划数量")).doubleValue(), 0.001);
+        assertEquals(340.0, ((Number) board.get(0).get("可排产量")).doubleValue(), 0.001,
+                "工序行没绑产品时按工序计划量放行，计划与可排必须一致");
     }
 }

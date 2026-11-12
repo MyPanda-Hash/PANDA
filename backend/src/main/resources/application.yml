@@ -35,6 +35,9 @@ mes:
   # false=由「销售开票」工作台手动勾选销货单开票。
   invoice:
     auto-issue: "${MES_INVOICE_AUTO_ISSUE:false}"
+  production:
+    # 报工前是否要求该加工单已有已审核材料出库单（防止用"黑料"生产、材料账对不上）
+    require-material-issue: "${MES_REQUIRE_MATERIAL_ISSUE:true}"
   company:
     name: "${MES_COMPANY_NAME:智造方寸（未配置企业全称）}"
     tax-no: "${MES_COMPANY_TAX_NO:—}"
@@ -53,6 +56,14 @@ mes:
     requests-per-minute: "${ALIBABA_CLOUD_OCR_REQUESTS_PER_MINUTE:10}"
     max-concurrent: "${ALIBABA_CLOUD_OCR_MAX_CONCURRENT:4}"
   # 2026-09-01 阶段 A：机器翻译（默认与 OCR 共用一套阿里云凭证；未配置凭证时接口回退中文原文）
+  # 开放接口：供 AI 助手只读轮询待审批单据。默认关闭，令牌必须走环境变量；
+  # 只注册 GET，字段白名单见 OpenApprovalService.PENDING_FIELDS。
+  open-api:
+    enabled: "${MES_OPEN_API_ENABLED:false}"
+    token: "${MES_OPEN_API_TOKEN:}"
+    allowed-ips: "${MES_OPEN_API_ALLOWED_IPS:127.0.0.1,::1}"
+    rate-limit-per-minute: "${MES_OPEN_API_RATE_LIMIT:120}"
+
   mt:
     access-key-id: "${ALIBABA_CLOUD_ACCESS_KEY_ID:}"
     access-key-secret: "${ALIBABA_CLOUD_ACCESS_KEY_SECRET:}"

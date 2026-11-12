@@ -1,9 +1,10 @@
-// 11 项权限动作（与后端 RoleService.PERMISSION_ACTIONS 对齐；顺序即权限矩阵列序）
+// 12 项权限动作（与后端 RoleService.PERMISSION_ACTIONS 对齐；顺序即权限矩阵列序）
 // review/adjust 为预留权限位：当前无对应按钮，矩阵中置灰展示
 export const PERM_ACTIONS = [
   { code: 'view', name: '查看' },
   { code: 'query', name: '查询' },
   { code: 'add', name: '新增' },
+  { code: 'generate', name: '生成' },
   { code: 'edit', name: '修改' },
   { code: 'delete', name: '删除' },
   { code: 'export', name: '导出' },
@@ -15,7 +16,7 @@ export const PERM_ACTIONS = [
 ]
 
 // 按钮名 → 权限码（与后端 PxService.ACTION_BUTTONS 对齐；未列出的按钮不受权限控制）
-// 「生成XX」生单按钮统一按 add 控制（后端 permOfButton 同口径）
+// 「生成XX」生单按钮按独立的 generate 控制（后端 permOfButton 同口径）
 const BUTTON_PERM_MAP = {
   查找: 'query', 查询: 'query', 刷新: 'query',
   新增: 'add', 新增流程: 'add', 引入常用单据: 'add', 选单: 'add', 扫描填单: 'add',
@@ -31,7 +32,7 @@ const BUTTON_PERM_MAP = {
 export function permOfAction(action) {
   if (typeof action !== 'string') return null
   if (BUTTON_PERM_MAP[action]) return BUTTON_PERM_MAP[action]
-  if (action.startsWith('生成')) return 'add'
+  if (action.startsWith('生成')) return 'generate'
   return null
 }
 

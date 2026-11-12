@@ -167,4 +167,25 @@ class StockTxnServiceTest {
         assertEquals(0, new BigDecimal("300").compareTo(svc.averageCostOf("CP004", "减速箱体 A", "成品仓")));
         assertEquals(0, BigDecimal.ZERO.compareTo(svc.averageCostOf("NOT-EXIST", "", null)));
     }
+
+    /** 调拨单是双仓语义：一条明细同时产生「调出仓出库」和「调入仓入库」两条事务。 */
+    @Test
+    void transferProducesBothDirections() {
+        Map<String, Object> head = Map.of("单据编号", "DB-001", "调出仓库", "原料仓",
+                "调入仓库", "线边仓A", "单据日期", "2026-11-12");
+        Map<String, Object> detail = Map.of("items", List.of(
+                Map.of("存货编码", "CL002", "存货名称", "6061铝锭", "计量单位", "kg", "数量", 5)));
+
+        List<StockTxnService.Txn> txns = service.buildTxns("TRANSFER", "DB-001", head, detail);
+
+        assertEquals(2, txns.size(), "调拨要点两条：调出 + 调入");
+        StockTxnService.Txn out = txns.get(0);
+        StockTxnService.Txn in = txns.get(1);
+        assertEquals("OUT", out.direction());
+        assertEquals("原料仓", out.warehouse());
+        assertEquals("IN", in.direction());
+        assertEquals("线边仓A", in.warehouse());
+        assertEquals(0, new BigDecimal("5").compareTo(out.quantity()));
+        assertEquals(0, new BigDecimal("5").compareTo(in.quantity()));
+    }
 }

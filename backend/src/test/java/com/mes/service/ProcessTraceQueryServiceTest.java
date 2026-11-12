@@ -1,10 +1,11 @@
 package com.mes.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mes.entity.FormData;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -18,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ProcessTraceQueryServiceTest {
 
     private final ProcessTraceQueryService service =
-            new ProcessTraceQueryService(null, new ObjectMapper(), new ProcessTraceService());
+            new ProcessTraceQueryService(null, new ProcessTraceService(), null);
 
     private FormData doc(String panel, String no, String status, String head, String detail) {
         FormData fd = new FormData();
@@ -143,5 +144,44 @@ class ProcessTraceQueryServiceTest {
                 "{\"单据编号\":\"GCJ-001\",\"来源单号\":\"GB-001\"}", "{}");
 
         assertTrue(service.linksOf(fd).contains("GB-001"));
+    }
+
+    // ---------- 有存货直发 / 无存货生产：决定标准路线 ----------
+
+    /** 库存够整单：直接发货，不必下生产加工单。 */
+    @Test
+    void orderCoveredByStockShipsDirectly() {
+        FormData so = doc("SO_ORDER", "SO-001", "已审核", "{}",
+                "{\"items\":[{\"存货编码\":\"CP001\",\"数量\":10}]}");
+
+        assertFalse(ProcessTraceQueryService.needsProduction(so,
+                Map.of("CP001", new BigDecimal("10"))));
+    }
+
+    /** 库存不足（没有这条库存记录）：必须走生产。 */
+    @Test
+    void orderWithoutStockNeedsProduction() {
+        FormData so = doc("SO_ORDER", "SO-001", "已审核", "{}",
+                "{\"items\":[{\"存货编码\":\"CP003\",\"数量\":2}]}");
+
+        assertTrue(ProcessTraceQueryService.needsProduction(so, Map.of()));
+    }
+
+    /** 多行里只要有一行缺货，整单要走生产。 */
+    @Test
+    void partiallyCoveredOrderNeedsProduction() {
+        FormData so = doc("SO_ORDER", "SO-001", "已审核", "{}",
+                "{\"items\":[{\"存货编码\":\"CP001\",\"数量\":10},{\"存货编码\":\"CP002\",\"数量\":5}]}");
+
+        assertTrue(ProcessTraceQueryService.needsProduction(so,
+                Map.of("CP001", new BigDecimal("10"), "CP002", new BigDecimal("4"))));
+    }
+
+    /** 没有明细行时按需要生产处理，避免把未知情况显示成「不用生产」。 */
+    @Test
+    void orderWithoutLinesDefaultsToProduction() {
+        FormData so = doc("SO_ORDER", "SO-001", "已审核", "{}", "{}");
+
+        assertTrue(ProcessTraceQueryService.needsProduction(so, Map.of()));
     }
 }

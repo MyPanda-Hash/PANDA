@@ -25,13 +25,17 @@ const routes = [
       { path: 'scm/businessOverview', component: () => import('@/views/scm/BusinessOverview.vue'), meta: { title: '业务总览', code: 'businessOverview' } },
       { path: 'scm/invoiceWorkbench', component: () => import('@/views/scm/InvoiceWorkbench.vue'), meta: { title: '销售开票', code: 'invoiceWorkbench' } },
       { path: 'mes/productionBoard', component: () => import('@/views/mes/ProductionBoard.vue'), meta: { title: '生产进度看板', code: 'productionBoard' } },
+      { path: 'mes/dispatchBoard', component: () => import('@/views/mes/DispatchBoard.vue'), meta: { title: '排产批次看板', code: 'dispatchBoard' } },
       { path: 'mes/processReport', component: () => import('@/views/mes/ProcessReportBoard.vue'), meta: { title: '工序报工', code: 'processReport' } },
       { path: 'mes/plan', component: () => import('@/views/mes/PlanBoard.vue'), meta: { title: '工单排产', code: 'plan' } },
+      { path: 'mes/planAnalysis', component: () => import('@/views/mes/PlanAnalysisBoard.vue'), meta: { title: '计划分析', code: 'planAnalysis' } },
       { path: 'mes/materialIssue', component: () => import('@/views/mes/MaterialIssueBoard.vue'), meta: { title: '生产领料', code: 'materialIssue' } },
       // 销售发票打印页（增值税发票版式）：不放在面板容器里，独立全屏渲染便于打印
       { path: 'print/invoice', component: () => import('@/views/print/InvoicePrint.vue'), meta: { title: '销售发票打印' } },
       { path: 'scm/mobileWarehouse', component: () => import('@/views/scm/MobileWarehouse.vue'), meta: { title: '移动仓管', code: 'mobileWarehouse' } },
       { path: 'scm/serialNumber', component: () => import('@/views/scm/SerialNumber.vue'), meta: { title: '序列号管理', code: 'serialNumber' } },
+      // 排产批次（派工单）不再用面板展示：所有列表入口统一落到只读看板
+      { path: 'panelx/list/DISPATCH', redirect: '/mes/dispatchBoard' },
       { path: 'panelx/list/:panelCode', component: PanelxList, meta: { title: '单据', operationName: '新增流程' } },
       { path: 'panelx/form/:panelCode', component: PanelxForm, meta: { title: '表单' } },
       ...flatMenus()

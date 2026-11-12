@@ -43,7 +43,7 @@ public class ReportPanelRegistry {
     /** 账务与计划类报表：数据源在 ReportQueryService，但与业务报表分开维护，避免污染 DEFINITIONS。 */
     private static final Set<String> ACCOUNTING_CODES =
             Set.of("ACCOUNT", "ACCOUNTING_ENTRY", "ACCOUNT_BALANCE", "ACCOUNT_DETAIL",
-                    "MPS_PLAN", "MRP_RESULT", "KIT_ANALYSIS", "PICK_WORKBENCH", "SPC_CONTROL",
+                    "PICK_WORKBENCH", "SPC_CONTROL",
                     "SETTLE_CUSTOMER", "SETTLE_SUPPLIER", "AGING_ANALYSIS");
 
     public static boolean isReport(String panelCode) {
@@ -56,7 +56,9 @@ public class ReportPanelRegistry {
 
     /** 声明了「只合计这些列」的报表；未声明的报表仍合计所有数值列。 */
     private static final Map<String, List<String>> SUMMARY_COLUMNS = Map.of(
-            "STOCK_LEDGER", List.of("收入金额", "发出金额"));
+            "STOCK_LEDGER", List.of("收入金额", "发出金额"),
+            // 库存状况表混计量单位（kg / 件 / 升）：只合计金额，数量相加没有业务意义
+            "STOCK_STATUS", List.of("金额"));
 
     public static Set<String> codes() {
         return DEFINITIONS.keySet();
@@ -282,9 +284,12 @@ public class ReportPanelRegistry {
         out.put("COST_MAINTAIN", d("COST_MAINTAIN", "成本手工维护",
                 c("单据类型", "单据编号", "单据日期", "仓库", "存货编码", "存货类别", "存货", "规格型号", "计量单位", "数量", "原成本", "调整后成本", "成本金额", "制单人", "单据状态"),
                 query("开始日期", "结束日期", "仓库", "存货", "单据类型")));
+        // 库存状况表：按「仓库类别 → 仓库 → 存货类别 → 存货」组织，数量不为负、单价取最新成本
         out.put("STOCK_STATUS", d("STOCK_STATUS", "库存状况表",
-                c("仓库编码", "仓库", "库位", "批次号", "存货编码", "存货", "规格型号", "主计量", "现存量(主)", "结存单价(主)", "结存金额"),
-                query("仓库", "库位", "批次号", "存货")));
+                c("仓库类别", "仓库编码", "仓库", "存货类别", "存货编码", "存货", "规格型号", "主计量", "数量", "单价", "金额"),
+                // 筛选统一走表格上方的筛选栏（分类 chips + 按仓库分组的下拉 + 字段筛选），
+                // 不再保留整排表头查询框，避免两套入口互相打架
+                query()));
 
         List<String> summaryColumns = c("仓库编码", "仓库", "存货编码", "存货", "规格型号", "主单位", "辅单位",
                 "期初数量", "期初平均单价", "期初金额", "本期入库数量", "入库平均单价", "本期入库金额",

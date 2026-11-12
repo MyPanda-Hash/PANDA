@@ -153,3 +153,55 @@ test('railRowsOf: 列式单元格与过滤使用同一份列定义（中间列�
   assert.equal(railRowsOf(rows, '王芳', cols)[0].index, 1)
   assert.equal(railRowsOf(rows, '已审核', cols)[0].index, 0)
 })
+
+
+// ---------- 侧栏补到 5 列 / 单文档面板列明细 ----------
+
+test('railColumnsOf: 单据侧栏补第二业务列，凑到 5 列', () => {
+  const rows = [{ 单据编号: 'SO-1', 单据日期: '2026-11-03', 客户: '华东铝业', 业务员: '张伟' }]
+  const cols = railColumnsOf('SO_ORDER', rows)
+  assert.deepEqual(cols.map((c) => c.label), ['单号', '日期', '客户', '业务员', '审核状态'])
+})
+
+test('railColumnsOf: 第二业务列全空时不加空列', () => {
+  const rows = [{ 单据编号: 'X-1', 单据日期: '2026-11-03', 客户: '华东铝业' }]
+  const cols = railColumnsOf('SO_ORDER', rows)
+  assert.deepEqual(cols.map((c) => c.label), ['单号', '日期', '客户', '审核状态'])
+})
+
+test('railColumnsOf: 第二业务列不与第一中间列重复', () => {
+  // PU_ORDER 的第一中间列是供应商；兜底候选里的「经手人」为空时不应再出现同一列
+  const rows = [{ 单据编号: 'PO-1', 单据日期: '2026-11-03', 供应商: '北方机械' }]
+  const cols = railColumnsOf('PU_ORDER', rows)
+  const labels = cols.map((c) => c.label)
+  assert.equal(new Set(labels).size, labels.length, '不应出现重复列名')
+})
+
+test('工序汇报单侧栏列出产品名称与工序（工序取明细第一行）', () => {
+  const rows = [{
+    单据日期: '2026-11-11',
+    单据编号: 'GX-20261111-003',
+    产品名称: '轴套 C',
+    客户: '华东热处理厂',
+    单据状态: '已审核',
+    detail: { items: [{ 工序名称: '抛光', 工序编码: 'PX010' }] },
+  }]
+  const cols = railColumnsOf('PROCESS_REPORT', rows)
+  assert.deepEqual(cols.map((c) => c.label), ['单号', '日期', '产品名称', '工序', '审核状态'])
+  assert.equal(railCellOf(rows[0], cols[2]), '轴套 C')
+  assert.equal(railCellOf(rows[0], cols[3]), '抛光')
+})
+
+test('首件报检单侧栏列出加工单号与工序（一工序一单）', () => {
+  const rows = [{
+    单据日期: '2026-11-11',
+    单据编号: 'SJ-20261111-002',
+    加工单号: 'SO-20261110-001-1',
+    单据状态: '草稿',
+    detail: { items: [{ 工序名称: '车削', 工序编码: 'PX002' }] },
+  }]
+  const cols = railColumnsOf('FIRST_INSPECT', rows)
+  assert.deepEqual(cols.map((c) => c.label), ['单号', '日期', '加工单号', '工序', '审核状态'])
+  assert.equal(railCellOf(rows[0], cols[2]), 'SO-20261110-001-1')
+  assert.equal(railCellOf(rows[0], cols[3]), '车削')
+})

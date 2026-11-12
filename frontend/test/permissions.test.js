@@ -10,5 +10,6 @@ test('maps purchase status actions to edit permission', () => {
 })
 
 test('maps generate purchase receipt to add permission', () => {
-  assert.equal(permOfAction('生成采购入库单'), 'add')
+  assert.equal(permOfAction('生成采购入库单'), 'generate')
+  assert.equal(permOfAction('生成领料申请单'), 'generate')
 })

@@ -2,6 +2,7 @@ import request from '@core/request'
 import { unwrap, errMsg } from '@core/panel-engine'
 import { buildRefIndex } from '@core/views/ref-carry'
 import { filterButtonGroups, priceFieldLocked } from './permissions'
+import { flattenArchiveRows } from './archive-rows.js'
 
 // 通用层函数继续对外导出（保持既有调用方兼容）
 export { unwrap, errMsg }
@@ -187,6 +188,24 @@ export async function queryRefRows(field, { keyword = '', pageSize = 200 } = {})
 }
 
 /**
+ * 基础档案行（班组、设备、工作中心等）：一行一个档案。
+ *
+ * <p>普通档案一行一张单据（`data` 就是档案字段）；设备这类是「单单据档案」，
+ * 全厂一张单，档案行在 `detail[页签]` 里。这里统一判定并展平，
+ * 调用方不再各自猜明细页签——先前排产的设备下拉按普通列表取，拿到的是单据头，永远是空的。
+ */
+export async function loadArchiveRows(panelCode, { pageSize = 500 } = {}) {
+  const res = await queryFormDataList({ panelCode, pageNo: 1, pageSize })
+  let config = null
+  try {
+    config = await getPanelConfig(panelCode)
+  } catch (e) {
+    /* 配置不可得时按普通档案处理 */
+  }
+  return flattenArchiveRows(res?.list || [], config)
+}
+
+/**
  * 参照面板可选数据行数（参照字段动态形态判定：≤20 行下拉直选，>20 行弹窗搜索定位）。
  * 与 queryRefRows 同口径：单单据面板/备选过滤的行集需前端展平后计数；
  * 其余按相同 condition（含「已审核」过滤）取 totalSize，保证计数与弹窗内行数一致。
@@ -286,6 +305,16 @@ export async function getPanelConfig(panelCode) {
  * 保存登录用户的表格列定制（阶段 C：顺序/显隐/别名）。columns 传空数组 = 恢复默认。
  * 引擎可选方法：core 渲染器通过 typeof 特性探测决定是否显示「表格调整」入口。
  */
+/** 字段布局：表头 + 明细字段的顺序/列宽/显隐（字段管理弹窗初始化）。 */
+export async function fieldLayout(panelCode) {
+  return unwrap(await request.get('/px/fieldLayout', { params: { panelCode, _t: Date.now() } }))
+}
+
+/** 保存字段布局（全公司共用，需要该面板的「调整」权限）。 */
+export async function saveFieldLayout({ panelCode, rows }) {
+  return unwrap(await request.post('/px/saveFieldLayout', { panelCode, rows }))
+}
+
 export async function saveColumnPrefs({ panelCode, columns }) {
   return unwrap(await request.post('/px/saveColumnPrefs', { panelCode, columns }))
 }
@@ -504,9 +533,19 @@ export async function reportBatchBoard() {
   return unwrap(await request.get('/px/reportBatchBoard'))
 }
 
+/** 排产批次看板的「未开工」列：已下发加工单里还没排产的工序（可排产量 > 0）。 */
+export async function pendingPlanBoard() {
+  return unwrap(await request.get('/px/pendingPlanBoard'))
+}
+
 /** 按排产批次报工：合格 + 不合格 = 报工数量。 */
 export async function reportByBatch(dispatchNo, qualified, rejected) {
   return unwrap(await request.post('/px/reportByBatch', { 排产单号: dispatchNo, 合格数量: qualified, 不合格数量: rejected }))
+}
+
+/** 首件在前、报工在后：给该批次所属工序补建首件报检单（一工序一单，已存在则返回原单号）。 */
+export async function firstInspectByBatch(dispatchNo) {
+  return unwrap(await request.post('/px/firstInspectByBatch', { 排产单号: dispatchNo }))
 }
 
 /** 工单排产：某加工单每道工序的可排产量与已有批次。 */
@@ -514,9 +553,24 @@ export async function planBoard(manuOrderNo) {
   return unwrap(await request.get('/px/planBoard', { params: { manuOrderNo } }))
 }
 
+/** 销售订单排产看板：一行一个订单行，带订单数量/已排/可排与预计加工单号。 */
+export async function saleOrderPlanBoard(saleOrderNo) {
+  return unwrap(await request.get('/px/saleOrderPlanBoard', { params: { saleOrderNo } }))
+}
+
+/** 销售订单排产：按订单行生成生产加工单（单号 = 销售订单号-行号），生成即已审核。 */
+export async function planFromSalesOrder(payload) {
+  return unwrap(await request.post('/px/planFromSalesOrder', payload))
+}
+
 /** 建排产批次（一张派工单 = 一个批次）。 */
 export async function planBatch(payload) {
   return unwrap(await request.post('/px/planBatch', payload))
+}
+
+/** 一键排产：把当前可排的工序全部排成批次（后端直接走到已审核） */
+export async function planAll(payload) {
+  return unwrap(await request.post('/px/planAll', payload))
 }
 
 /** 工序报工工作台：一行一道工序，带剩余量与可否报工。 */
@@ -525,6 +579,21 @@ export async function processReportBoard(manuOrderNo) {
 }
 
 /** 按工序报工：生成只含该工序一行的工序汇报单。 */
+/** 成品报检候选：已报完全部工序、且还没生成过成品报检单的加工单。 */
+export async function finishInspectCandidates() {
+  return unwrap(await request.get('/px/finishInspectCandidates'))
+}
+
+/** 按加工单生成成品报检单（单号 = 加工单号-JY）。 */
+export async function finishInspectFromMo(manuOrderNo) {
+  return unwrap(await request.post('/px/finishInspectFromMo', { 加工单号: manuOrderNo }))
+}
+
+/** 工序汇报选单看板：加工单 + 每道工序的计划/已报/未报与可否报工。 */
+export async function processReportPickBoard() {
+  return unwrap(await request.get('/px/processReportPickBoard'))
+}
+
 export async function reportProcess(manuOrderNo, processCode, quantity) {
   return unwrap(await request.post('/px/reportProcess', { 加工单号: manuOrderNo, 工序编码: processCode, 报工数量: quantity }))
 }
@@ -693,4 +762,19 @@ export const SHORTCUTS = {
   打印模板设置: 'Alt+,',
   导出: 'Alt+X',
   放弃: 'Alt+Z',
+}
+
+/** 计划分析可选的销售订单：已审核且还有未排产数量。 */
+export async function planAnalyzeCandidates() {
+  return unwrap(await request.get('/px/planAnalyzeCandidates'))
+}
+
+/** 计划分析：一张销售订单 → 成品 / 物料缺口 / 工艺路线 / 风险 / 结论。 */
+export async function planAnalyze(salesOrderNo) {
+  return unwrap(await request.post('/px/planAnalyze', { salesOrderNo }))
+}
+
+/** 计划分析 → 生成请购单（草稿）；codes 省略表示全部可请购行。 */
+export async function planAnalyzePurchaseReq(salesOrderNo, codes) {
+  return unwrap(await request.post('/px/planAnalyzePurchaseReq', { salesOrderNo, codes: codes || [] }))
 }

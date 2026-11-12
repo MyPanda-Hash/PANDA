@@ -9,7 +9,7 @@
   >
     <div class="fm-tip">
       {{ tt('在这里给本面板增删字段，保存后列表、表单直接可用；字段值存在单据 JSON 里，不动表结构、不用改代码。') }}
-      <span class="fm-tip-sub">{{ tt('停用字段只是不再显示，已录入的数据保留，重新加同名字段即恢复。') }}</span>
+      <span class="fm-tip-sub">{{ tt('停用字段只是不再显示，已录入的数据保留，重新加同名字段即恢复。顺序/列宽/显示改完点「保存布局」，全公司共用。') }}</span>
     </div>
 
     <div class="fm-bar">
@@ -25,7 +25,7 @@
       </span>
     </div>
 
-    <el-table :data="rows" size="small" border max-height="260" class="fm-table">
+    <el-table :data="displayRows" size="small" border max-height="300" class="fm-table">
       <el-table-column :label="tt('位置')" width="110">
         <template #default="{ row }">{{ row.scope === 'header' ? tt('表头') : tt(row.tabLabel || '明细') }}</template>
       </el-table-column>
@@ -44,6 +44,31 @@
       <el-table-column :label="tt('来源')" width="86" align="center">
         <template #default="{ row }">
           <span class="fm-src" :class="{ custom: row.custom }">{{ row.custom ? tt('自定义') : tt('内置') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column :label="tt('显示')" width="66" align="center">
+        <template #default="{ row }">
+          <el-switch v-model="row.显示" size="small" @change="markDirty" />
+        </template>
+      </el-table-column>
+      <el-table-column :label="tt('列宽')" width="96" align="center">
+        <template #default="{ row }">
+          <el-input-number
+            v-model="row.列宽"
+            :min="40"
+            :max="800"
+            :step="10"
+            :controls="false"
+            size="small"
+            style="width: 76px"
+            @change="markDirty"
+          />
+        </template>
+      </el-table-column>
+      <el-table-column :label="tt('顺序')" width="86" align="center">
+        <template #default="{ row, $index }">
+          <el-button link size="small" :disabled="$index === 0" :title="tt('上移')" @click="move(row, -1)">↑</el-button>
+          <el-button link size="small" :disabled="$index === displayRows.length - 1" :title="tt('下移')" @click="move(row, 1)">↓</el-button>
         </template>
       </el-table-column>
       <el-table-column :label="tt('操作')" width="72" align="center">
@@ -85,7 +110,9 @@
     </el-form>
 
     <template #footer>
+      <span class="fm-foot-hint">{{ tt('顺序/列宽/显示保存后全公司共用，需要「调整」权限') }}</span>
       <el-button @click="visible = false">{{ tt('关闭') }}</el-button>
+      <el-button :loading="savingLayout" :disabled="!layoutDirty" @click="saveLayout">{{ tt('保存布局') }}</el-button>
       <el-button type="primary" :loading="saving" :disabled="!canAdd" @click="add">{{ tt('添加字段') }}</el-button>
     </template>
   </el-dialog>
@@ -143,6 +170,73 @@ const rows = computed(() => {
   return allRows.value.filter((row) => row.scope === 'detail' && row.tabKey === scope)
 })
 
+/** 布局态：每个字段的 序号 / 列宽 / 显示（来自共用布局，改动后点保存布局才落库） */
+const layoutMap = ref({})
+const layoutDirty = ref(false)
+const savingLayout = ref(false)
+
+const displayRows = computed(() => rows.value.map((row) => {
+  const saved = layoutMap.value[row.dataName] || {}
+  return {
+    ...row,
+    序号: saved['序号'] ?? row.seq ?? 0,
+    列宽: saved['列宽'] ?? row.width ?? row.fieldWidth ?? undefined,
+    显示: saved['显示'] ?? true,
+  }
+}).sort((a, b) => Number(a.序号) - Number(b.序号)))
+
+function markDirty() {
+  layoutDirty.value = true
+}
+
+/** 上下移：在当前筛选视图内交换位置，序号整体重排（步长 10） */
+function move(row, delta) {
+  const list = displayRows.value
+  const idx = list.findIndex((r) => r.dataName === row.dataName)
+  const target = idx + delta
+  if (idx < 0 || target < 0 || target >= list.length) return
+  const moved = list.splice(idx, 1)[0]
+  list.splice(target, 0, moved)
+  list.forEach((r, i) => {
+    layoutMap.value[r.dataName] = { ...(layoutMap.value[r.dataName] || {}), 序号: (i + 1) * 10, 列宽: r.列宽, 显示: r.显示 }
+  })
+  layoutDirty.value = true
+}
+
+async function loadLayout() {
+  try {
+    const list = (await engine.fieldLayout(props.panelCode)) || []
+    const map = {}
+    for (const r of list) {
+      map[r['字段名']] = { 序号: r['序号'], 列宽: r['列宽'], 显示: r['显示'] }
+    }
+    layoutMap.value = map
+  } catch {
+    layoutMap.value = {}
+  }
+  layoutDirty.value = false
+}
+
+async function saveLayout() {
+  savingLayout.value = true
+  try {
+    const rowsPayload = displayRows.value.map((r, i) => ({
+      字段名: r.dataName,
+      序号: (i + 1) * 10,
+      列宽: r.列宽 ?? null,
+      显示: r.显示 !== false,
+    }))
+    await engine.saveFieldLayout({ panelCode: props.panelCode, rows: rowsPayload })
+    layoutDirty.value = false
+    ElMessage.success(tt('字段布局已保存（全公司共用）'))
+    emit('done')
+  } catch (e) {
+    ElMessage.error(engine.errMsg(e) || tt('保存布局失败'))
+  } finally {
+    savingLayout.value = false
+  }
+}
+
 const customCount = computed(() => allRows.value.filter((row) => row.custom).length)
 
 const canAdd = computed(() => !!String(form.dataName || '').trim() && !!form.scope)
@@ -160,6 +254,7 @@ function optionText(row) {
 }
 
 function reset() {
+  loadLayout()
   // 默认位置：当前面板第一个明细页签（最常见诉求是给明细加一列）
   form.scope = tabs.value[0]?.key || 'header'
   form.dataName = ''
@@ -219,6 +314,13 @@ async function retire(row) {
 </script>
 
 <style scoped>
+.fm-foot-hint {
+  float: left;
+  font-size: 12px;
+  line-height: 28px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
 .fm-tip {
   margin-bottom: 10px;
   font-size: 12px;
