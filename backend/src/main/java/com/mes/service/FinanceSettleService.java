@@ -23,8 +23,12 @@ public class FinanceSettleService {
     /**
      * 产生应付(AP)的面板：票到确认（2026-11-06）——采购发票审核才产生应付，
      * 采购入库只入库存、不再生成 AP，避免入库+发票双记。
+     *
+     * <p>委外同理：委外入库只落库存，加工费由「委外加工费用单」确认应付。
+     * 此前 OUTSOURCE_IN 也在应付集合里，一笔 65 元加工费在入库单和费用单各记一次，
+     * 应付翻倍（实测 WR-20261112-001 / WY-20261112-001）。
      */
-    private static final Set<String> PAYABLE_PANELS = Set.of("PU_INVOICE", "OUTSOURCE_IN", "OUTSOURCE_FEE");
+    private static final Set<String> PAYABLE_PANELS = Set.of("PU_INVOICE", "OUTSOURCE_FEE");
 
     /**
      * 产生应收(AR)的面板：只有销货单。
@@ -74,7 +78,7 @@ public class FinanceSettleService {
         if (type == null) return null;
         // AP_RETURN 也属应付侧，需按前缀判断而不是精确等于 AP
         String partner = type.startsWith("AP")
-                ? text(first(head, "供应商", "往来单位", "供应商名称"))
+                ? text(first(head, "供应商", "委外供应商", "往来单位", "供应商名称"))
                 : text(first(head, "客户", "往来单位", "客户名称"));
         BigDecimal amount = BigDecimal.ZERO;
         for (Map<String, Object> row : allDetailRows(detail)) {
@@ -131,9 +135,10 @@ public class FinanceSettleService {
                 .eq(FinanceVoucher::getSourceNo, formNo));
     }
 
-    /** 单行金额：优先取金额/含税金额/价税合计/销售金额，其次数量×单价。 */
+    /** 单行金额：优先取金额/含税金额/价税合计/销售金额/费用金额，其次数量×单价。 */
     private static BigDecimal rowAmount(Map<String, Object> row) {
-        BigDecimal amount = number(first(row, "含税金额", "价税合计", "销售金额", "金额", "成本金额", "实收金额"));
+        BigDecimal amount = number(first(row, "含税金额", "价税合计", "销售金额", "金额", "成本金额",
+                "实收金额", "费用金额"));
         if (amount.signum() != 0) return amount;
         BigDecimal qty = number(first(row, "实收数量", "数量"));
         BigDecimal price = number(first(row, "含税单价", "售价", "单价", "成本价"));

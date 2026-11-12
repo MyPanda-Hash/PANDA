@@ -46,6 +46,29 @@ class AccountingServiceTest {
         assertNull(service.templateOf("PURCHASE_IN"));
     }
 
+    /** 委外加工费：借 生产成本 / 贷 应付账款（应付与分录同口径，入库不记账避免双记）。 */
+    @Test
+    void outsourceFeeDebitsProductionCostCreditsPayable() {
+        List<AccountingService.Entry> entries = service.buildEntries(
+                "OUTSOURCE_FEE", "WY-001", bd("65"), "华东热处理厂", "委外加工费用");
+
+        assertEquals(2, entries.size());
+        assertEquals("5001", entries.get(0).accountCode());
+        assertEquals("生产成本", entries.get(0).accountName());
+        assertEquals("借", entries.get(0).direction());
+        assertEquals("2202", entries.get(1).accountCode());
+        assertEquals("应付账款", entries.get(1).accountName());
+        assertEquals("贷", entries.get(1).direction());
+        assertEquals(0, bd("65").compareTo(entries.get(1).amount()));
+    }
+
+    /** 委外入库只落库存，凭证由费用单出，否则加工费双记。 */
+    @Test
+    void outsourceInProducesNoEntries() {
+        assertTrue(service.buildEntries("OUTSOURCE_IN", "WR-001", bd("65"), "华东热处理厂", "委外入库").isEmpty());
+        assertNull(service.templateOf("OUTSOURCE_IN"));
+    }
+
     @Test
     void saleOutDebitsReceivableCreditsRevenue() {
         List<AccountingService.Entry> entries = service.buildEntries(

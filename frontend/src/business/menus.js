@@ -109,7 +109,8 @@ export const menuTree = [
           },
           {
             code: 'serial', title: '序列号', children: [
-              { code: 'serialNo', title: '序列号登记单', path: '/panelx/list/SERIAL_NO', panelCode: 'SERIAL_NO', operationName: '新增流程', icon: 'Tickets' },
+              { code: 'serialGuide', title: '序列号管理', path: '/scm/serialNumber', icon: 'QuestionCircle' },
+              { code: 'serialNo', title: '序列号登记单（补录/导入）', path: '/panelx/list/SERIAL_NO', panelCode: 'SERIAL_NO', operationName: '新增流程', icon: 'Tickets' },
               { code: 'serialStatus', title: '序列号状况表', path: '/panelx/list/SERIAL_STATUS', panelCode: 'SERIAL_STATUS', icon: 'DataAnalysis' },
               { code: 'serialTrace', title: '序列号跟踪表', path: '/panelx/list/SERIAL_TRACE', panelCode: 'SERIAL_TRACE', icon: 'Search' },
             ],
@@ -122,6 +123,7 @@ export const menuTree = [
         icon: 'Calendar',
         children: [
           { code: 'planAnalysis', title: '计划分析', path: '/mes/planAnalysis', icon: 'DataAnalysis' },
+          { code: 'mpsPlan', title: '主生产计划', path: '/mes/mps', icon: 'Calendar' },
           { code: 'puReqAnalysis2', title: '采购需求分析', path: '/panelx/list/PU_REQ_ANALYSIS', icon: 'DataAnalysis', panelCode: 'PU_REQ_ANALYSIS' },
         ],
       },
@@ -273,6 +275,7 @@ export const menuTree = [
         title: '仓内作业',
         icon: 'Box',
         children: [
+          { code: 'wmsWorkbench', title: '仓内作业', path: '/wms/workbench', icon: 'Box' },
           { code: 'pickWorkbench', title: '拣货工作台', path: '/panelx/list/PICK_WORKBENCH', icon: 'Box', panelCode: 'PICK_WORKBENCH' },
           { code: 'pickOrderWms', title: '配货单', path: '/panelx/list/PICK_ORDER', icon: 'Tickets', panelCode: 'PICK_ORDER', operationName: '新增流程' },
           { code: 'stockCheckWms', title: '库存盘点单', path: '/panelx/list/STOCK_CHECK', icon: 'Files', panelCode: 'STOCK_CHECK', operationName: '新增流程' },
@@ -410,6 +413,7 @@ export const menuTree = [
           { code: 'team', title: '班组', path: '/panelx/list/TEAM', icon: 'UserFilled', panelCode: 'TEAM' },
           { code: 'bom', title: '物料清单', path: '/panelx/list/BOM', icon: 'Files', panelCode: 'BOM' },
           { code: 'routing', title: '工艺路线', path: '/panelx/list/ROUTE', icon: 'Guide', panelCode: 'ROUTE' },
+          { code: 'engChange', title: '工程变更', path: '/pdm/engChange', icon: 'EditPen' },
           { code: 'process', title: '工序', path: '/panelx/list/OP', icon: 'SetUp', panelCode: 'OP' }
         ],
       },

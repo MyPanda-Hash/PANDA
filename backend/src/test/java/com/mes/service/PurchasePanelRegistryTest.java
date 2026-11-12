@@ -48,6 +48,7 @@ class PurchasePanelRegistryTest {
         List<?> actions = (List<?>) gen.get("actions");
         assertTrue(actions.contains("生成检验单"), "到货单必须能生成检验单");
         assertTrue(actions.contains("生成采购入库单"), "到货单必须能生成采购入库单");
+        assertTrue(actions.contains("生成委外入库单"), "委外回厂的到货单要能转委外入库");
     }
 
     @Test
@@ -57,6 +58,12 @@ class PurchasePanelRegistryTest {
         PurchasePanelRegistry.upgradeArrivalIn(config);
 
         List<Map<String, Object>> head = listOfMaps(map(config.get("dataSchema")).get("fields"));
+        Map<String, Object> sourceType = fieldOf(head, "来源类型");
+        assertEquals("下拉框", sourceType.get("dataType"));
+        assertEquals(List.of("采购", "委外"), sourceType.get("options"), "来源类型区分采购到货与委外回厂");
+        assertEquals("采购", sourceType.get("defaultValue"));
+        assertEquals(List.of("普通采购", "采购退货", "委外回厂"),
+                fieldOf(head, "业务类型").get("options"));
         Map<String, Object> orderNo = fieldOf(head, "采购订单号");
         assertEquals("文本", orderNo.get("dataType"));
         Map<String, Object> inspectState = fieldOf(head, "检验状态");

@@ -235,6 +235,25 @@ class PxServiceFirstInspectPerProcessTest {
         assertEquals("PX004", row.get("工序编码"));
     }
 
+    /**
+     * 门限：同一道工序只要有一张有效首检单（已审核且合格），后续再报工**不能再建第二张**。
+     * 一手一工一单是硬约束，重复建单会让追踪里一道工序挂出一串首检单。
+     */
+    @Test
+    void sameProcessNeverGetsSecondInspection() throws Exception {
+        when(panelMapper.selectOne(any())).thenReturn(config("PROCESS_REPORT"), config("FIRST_INSPECT"));
+        when(formMapper.selectOne(any())).thenReturn(mo());
+        when(formMapper.selectList(any())).thenReturn(List.of(
+                materialOut("已审核", 50),
+                report("PX002", "车削", 4, 4, 0),
+                firstInspect("PX002", "车削", "已审核", 1)));
+
+        service.callButton("MANU_ORDER", "生成工序汇报单（自制汇报）", Map.of("编号", "MO-1"), Map.of());
+
+        assertEquals(0, inserted("FIRST_INSPECT").size(),
+                "车削首检已通过，再报车削不该新建首检单");
+    }
+
     @Test
     void receivingRequiresEveryProcessInspectionApproved() throws Exception {
         lenient().when(panelMapper.selectOne(any())).thenReturn(config("FINISH_IN"));

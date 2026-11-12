@@ -84,6 +84,59 @@ class QualityPanelRegistryTest {
     }
 
     @Test
+    void inspectionOnlySelectsArrivalAndKeepsInboundOrReturn() {
+        // 检验单只从到货单来（来料 + 委外回厂都走到货单）；成品检验由成品报检单自己承载，
+        // 所以不要再挂「选成品报检单」「生成产成品入库单」「生成成品报检退回单」这些成品侧入口
+        Map<String, Object> config = new LinkedHashMap<>();
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("buttonGroups", new ArrayList<>(List.of(
+                new LinkedHashMap<>(Map.of("name", "生单", "actions", new ArrayList<>(List.of(
+                        "生成采购入库单", "生成产成品入库单", "生成委外入库单",
+                        "生成成品报检退回单（生产报检）", "生成成品报检退回单（委外报检）", "生成采购退货单")))),
+                new LinkedHashMap<>(Map.of("name", "选单", "actions", new ArrayList<>(List.of(
+                        "选到货单", "选成品报检单", "设置默认功能")))))));
+        metadata.put("panelButtons", new ArrayList<>(List.of(
+                new LinkedHashMap<>(Map.of("buttonName", "生成产成品入库单")),
+                new LinkedHashMap<>(Map.of("buttonName", "生成采购入库单")))));
+        config.put("metadata", metadata);
+        config.put("dataSchema", Map.of("type", "object", "fields", new ArrayList<>(List.of(
+                new LinkedHashMap<>(Map.of("dataName", "业务类型", "dataType", "下拉框",
+                        "options", new ArrayList<>(List.of("来料检验", "成品检验")))),
+                new LinkedHashMap<>(Map.of("dataName", "检验类别", "dataType", "下拉框",
+                        "options", new ArrayList<>(List.of("来料检验", "成品检验", "首件检验"))))))));
+        config.put("detail", Map.of("tabs", new ArrayList<>(List.of(Map.of(
+                "key", "items", "label", "明细", "fields", new ArrayList<>())))));
+        config.put("selectConfig", new LinkedHashMap<>(Map.of("source", "ARRIVAL_IN")));
+
+        QualityPanelRegistry.upgradeInspection(config);
+
+        Map<String, Object> selects = map(config.get("selectConfigs"));
+        assertEquals(List.of("选到货单"), new ArrayList<>(selects.keySet()), "检验单只选到货单");
+        Map<String, Object> 选单 = maps(map(config.get("metadata")).get("buttonGroups")).stream()
+                .filter(g -> "选单".equals(g.get("name"))).findFirst().orElseThrow();
+        assertFalse(((List<?>) 选单.get("actions")).contains("选成品报检单"),
+                "「选单」下拉里不能再出现选成品报检单");
+
+        Map<String, Object> generate = maps(map(config.get("metadata")).get("buttonGroups")).stream()
+                .filter(group -> "生单".equals(group.get("name"))).findFirst().orElseThrow();
+        List<?> actions = (List<?>) generate.get("actions");
+        assertTrue(actions.contains("生成采购入库单"));
+        assertTrue(actions.contains("生成委外入库单"), "委外回厂同样从到货单来，要能转委外入库");
+        assertTrue(actions.contains("生成采购退货单"), "判定退回时走采购退货单");
+        assertFalse(actions.contains("生成产成品入库单"), "检验单不做产成品入库");
+        assertFalse(actions.contains("生成成品报检退回单（生产报检）"));
+        assertFalse(actions.contains("生成成品报检退回单（委外报检）"));
+
+        List<Map<String, Object>> head = maps(map(config.get("dataSchema")).get("fields"));
+        Map<String, Object> bizType = head.stream()
+                .filter(f -> "业务类型".equals(f.get("dataName"))).findFirst().orElseThrow();
+        assertEquals(List.of("来料检验", "委外检验"), bizType.get("options"), "成品检验不在检验单业务类型里");
+        Map<String, Object> category = head.stream()
+                .filter(f -> "检验类别".equals(f.get("dataName"))).findFirst().orElseThrow();
+        assertEquals(List.of("来料检验", "委外检验"), category.get("options"));
+    }
+
+    @Test
     void upgradesArrivalSelectMappingForInspection() {
         Map<String, Object> legacy = new LinkedHashMap<>();
         legacy.put("source", "ARRIVAL_IN");
@@ -119,8 +172,8 @@ class QualityPanelRegistryTest {
         assertEquals("实收数量", select.get("sourceQuantityField"));
         assertEquals("报检数量", select.get("targetQuantityField"));
         assertEquals("生成检验单", select.get("generateButton"), "选到货单必须走后端生单而不是客户端拼行");
-        Map<String, Object> finishReport = map(selects.get("选成品报检单"));
-        assertEquals("生成检验单", finishReport.get("generateButton"));
+        assertFalse(selects.containsKey("选成品报检单"),
+                "成品检验由成品报检单自己承载，检验单只从到货单来");
     }
 
     @Test

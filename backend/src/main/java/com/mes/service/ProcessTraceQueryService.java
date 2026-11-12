@@ -31,7 +31,7 @@ public class ProcessTraceQueryService {
 
     /** 参与流程追踪的单据面板白名单。 */
     private static final Set<String> TRACE_PANELS = Set.of(
-            "QUOTE_ORDER", "SO_ORDER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_IN",
+            "QUOTE_ORDER", "SO_ORDER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_IN", "OUTSOURCE_FEE",
             "PU_REQ", "PU_ORDER", "ARRIVAL_IN", "INSPECTION", "PURCHASE_IN", "PURCHASE_RETURN",
             "MANU_ORDER", "DISPATCH", "PROCESS_REPORT", "MATERIAL_REQ", "TRANSFER", "MATERIAL_OUT",
             "FINISH_INSPECT", "FINISH_IN", "SALE_OUT", "SALE_INV", "SALE_INVOICE",

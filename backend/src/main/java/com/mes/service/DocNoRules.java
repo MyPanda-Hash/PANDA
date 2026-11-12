@@ -48,6 +48,7 @@ public final class DocNoRules {
         m.put("SALE_COST_ALLOC", "FT");  // 销售费用分摊单
         // 采购
         m.put("PU_REQ", "CG");           // 请购单
+        m.put("MPS_PLAN", "MPS");        // 主生产计划
         m.put("PU_ORDER", "PO");         // 采购订单
         m.put("ARRIVAL_IN", "DH");       // 到货单
         m.put("PURCHASE_IN", "RK");       // 采购入库单

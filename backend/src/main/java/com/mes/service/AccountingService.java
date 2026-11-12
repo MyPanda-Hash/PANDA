@@ -48,9 +48,15 @@ public class AccountingService {
         // 销售出库：只结转成本，借 主营业务成本 / 贷 库存商品
         m.put("SALE_OUT", new Template("销售出库成本", "SALE_OUT", "6401", "主营业务成本", "1405", "库存商品"));
         // 收款：借 银行存款 / 贷 应收账款
+        // 费用单：借 销售费用 / 贷 应付账款（费用发生即挂账；付款由付款单核销，
+        // 分摊单只做管理口径的分摊，不再记账，否则同一笔费用会被记两次）
+        m.put("EXPENSE", new Template("费用", "EXPENSE", "6601", "销售费用", "2202", "应付账款"));
         m.put("RECEIPT", new Template("收款", "RECEIPT", "1002", "银行存款", "1122", "应收账款"));
         // 付款：借 应付账款 / 贷 银行存款
         m.put("RECEIPT_PAYABLE", new Template("付款", "RECEIPT_PAYABLE", "2202", "应付账款", "1002", "银行存款"));
+        // 委外加工费：借 生产成本 / 贷 应付账款（与 AP 同一口径：费用单是应付来源，
+        // 委外入库只落库存不记账，避免加工费双记）
+        m.put("OUTSOURCE_FEE", new Template("委外加工费用", "OUTSOURCE_FEE", "5001", "生产成本", "2202", "应付账款"));
         // 采购退货：借 应付账款 / 贷 库存商品（冲销）
         m.put("PURCHASE_RETURN", new Template("采购退货", "PURCHASE_RETURN", "2202", "应付账款", "1405", "库存商品"));
         // 销售退货：借 主营业务收入 / 贷 应收账款（冲销）

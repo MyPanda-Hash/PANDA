@@ -108,7 +108,8 @@ public class ProcessTraceService {
         Map<String, Integer> m = new LinkedHashMap<>();
         int seq = 0;
         // 销售链
-        for (String code : List.of("QUOTE_ORDER", "SO_ORDER", "OUTSOURCE_ORDER")) {
+        for (String code : List.of("QUOTE_ORDER", "SO_ORDER", "OUTSOURCE_ORDER",
+                "OUTSOURCE_ISSUE", "OUTSOURCE_IN", "OUTSOURCE_FEE")) {
             m.put(code, seq++);
         }
         // 采购链
@@ -135,6 +136,9 @@ public class ProcessTraceService {
             Map.entry("QUOTE_ORDER", "报价单"),
             Map.entry("SO_ORDER", "销售订单"),
             Map.entry("OUTSOURCE_ORDER", "委外加工单"),
+            Map.entry("OUTSOURCE_ISSUE", "委外发料单"),
+            Map.entry("OUTSOURCE_IN", "委外入库单"),
+            Map.entry("OUTSOURCE_FEE", "委外加工费用单"),
             Map.entry("PU_REQ", "请购单"),
             Map.entry("PU_ORDER", "采购订单"),
             Map.entry("ARRIVAL_IN", "到货单"),
@@ -214,10 +218,20 @@ public class ProcessTraceService {
             steps.add(new Step(d.panelCode(), panelName(d.panelCode()), no, d.status(),
                     stateOf(d.status()), d.processCode(), d.processName(), 0));
         }
+        // 委外入口先确定「被追踪的是哪张委外加工单」，用于圈定追踪范围与首检分支
+        Doc seedDoc = byNo.get(seed);
+        String ooNo = seedDoc != null && String.valueOf(seedDoc.panelCode()).startsWith("OUTSOURCE")
+                ? outsourceRootNo(seed, byNo) : "";
+        boolean outsource = !ooNo.isEmpty();
+
         // 按业务顺序排，同顺序按单号稳定排序
         steps.sort(Comparator
                 .comparingInt((Step s) -> PANEL_ORDER.getOrDefault(s.panelCode(), 999))
                 .thenComparing(Step::docNo));
+        if (outsource) {
+            final String root = ooNo;
+            steps.removeIf(s -> !onOutsourceChain(s, root, byNo));
+        }
         List<Step> numbered = new ArrayList<>();
         for (int i = 0; i < steps.size(); i++) {
             Step s = steps.get(i);
@@ -229,8 +243,17 @@ public class ProcessTraceService {
         Stalled stalled = detectStalled(numbered);
         boolean production = needsProduction || numbered.stream()
                 .anyMatch(s -> "MANU_ORDER".equals(s.panelCode()));
-        List<RouteNode> route = buildRoute(numbered, byNo, seed, production);
-        List<Lane> lanes = buildLanes(numbered, byNo, production);
+        // 委外入口：从委外加工单或它的发料/入库/费用单进来，一律按委外路线铺。
+        // 同一张销售订单可能挂多张委外加工单（还有自制行），只跟被追踪那张加工单自己的链，
+        // 否则一次追踪会把兄弟单和它们的首检全部拉进来（实测 33 个环节）。
+        boolean purchase = !outsource && isPurchaseSeed(seedDoc) && numbered.stream()
+                .anyMatch(s -> "PU_ORDER".equals(s.panelCode()) || "PU_REQ".equals(s.panelCode()));
+        List<String> routeCodes = outsource ? OUTSOURCE_ROUTE
+                : purchase ? PURCHASE_ROUTE
+                : (production ? PRODUCTION_ROUTE : DIRECT_ROUTE);
+        List<RouteNode> route = buildRoute(numbered, byNo, seed, routeCodes,
+                outsource ? routeIndex(OUTSOURCE_ROUTE) : null, ooNo);
+        List<Lane> lanes = buildLanes(numbered, byNo, production && !outsource);
         return new TraceResult(numbered, route, lanes, stalled.docNo(), stalled.reason(), current,
                 numbered.size() + " 个环节");
     }
@@ -260,7 +283,88 @@ public class ProcessTraceService {
     private static final List<String> DIRECT_ROUTE = List.of(
             "SO_ORDER", "SALE_OUT", "SALE_INV", "SALE_INVOICE");
 
+    /**
+     * 采购路线：请购单（上游，有就显示）→ 采购订单 → 分批到货 → 到货检验 → 采购入库。
+     * 采购单追踪不该出现销售出库/销货/发票——那是销售订单那条线的事。
+     */
+    private static final List<String> PURCHASE_ROUTE = List.of(
+            "PU_REQ", "PU_ORDER", "ARRIVAL_IN", "INSPECTION", "PURCHASE_IN");
+
+    /** 分批单据：一次到货一张、到货检验一张；多张时收成一个节点 + 分叉，不排一长串同名卡片。 */
+    private static final Set<String> BATCH_PANELS = Set.of("ARRIVAL_IN", "INSPECTION");
+
+    /**
+     * 委外路线：销售订单（选单带出）→ 委外加工单 → 发料 → 回厂首检 → 委外入库 → 委外加工费用。
+     * 首件报检单在委外是按工艺路线一道工序一张（一工序一单），所以直接作为路线上的环节展开。
+     */
+    private static final List<String> OUTSOURCE_ROUTE = List.of(
+            "SO_ORDER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_IN", "OUTSOURCE_FEE");
+
+    /**
+     * 委外单追踪时剔除的自制线单据：同一张销售订单可能既有自制行也有委外行，
+     * 自制那条线（排产/加工单/领料/报工/成品报检/产成品入库）不属于委外链路，混进来会让人以为委外还要排产。
+     */
+    private static final Set<String> SELF_MADE_PANELS = Set.of(
+            "DISPATCH", "MANU_ORDER", "MATERIAL_REQ", "MATERIAL_OUT", "PROCESS_REPORT",
+            "PROCESS_INSPECT_APPLY", "PROCESS_INSPECTION", "FINISH_INSPECT", "FINISH_IN");
+
     private static final String PENDING = "待生成";
+
+    /** 采购入口：采购侧单据进来按采购路线铺。 */
+    private static boolean isPurchaseSeed(Doc seed) {
+        if (seed == null) return false;
+        return switch (String.valueOf(seed.panelCode())) {
+            case "PU_REQ", "PU_ORDER", "ARRIVAL_IN", "INSPECTION", "PURCHASE_IN", "PURCHASE_RETURN" -> true;
+            default -> false;
+        };
+    }
+
+    /** 委外入口：从发料/入库/费用单进来时，顺着来源找到它所属的委外加工单。 */
+    private static String outsourceRootNo(String seed, Map<String, Doc> byNo) {
+        Doc d = byNo.get(seed);
+        if (d == null) return "";
+        if ("OUTSOURCE_ORDER".equals(d.panelCode())) return seed;
+        for (String link : d.links()) {
+            Doc up = byNo.get(link);
+            if (up != null && "OUTSOURCE_ORDER".equals(up.panelCode())) return link;
+        }
+        // 兜底：拿第一张委外加工单，至少不让路线退化成生产模板
+        for (Doc other : byNo.values()) {
+            if ("OUTSOURCE_ORDER".equals(other.panelCode())) return other.docNo();
+        }
+        return "";
+    }
+
+    /** 该环节是否属于被追踪的那张委外加工单：销售订单（上游）、加工单本身、或来源单号指向它的单据。 */
+    private static boolean onOutsourceChain(Step s, String ooNo, Map<String, Doc> byNo) {
+        if (ooNo == null || ooNo.isBlank()) return true;
+        if ("SO_ORDER".equals(s.panelCode())) return true;
+        if ("OUTSOURCE_ORDER".equals(s.panelCode())) return ooNo.equals(s.docNo());
+        Doc d = byNo.get(s.docNo());
+        return d != null && d.links().contains(ooNo);
+    }
+
+    /** 委外回厂首检单：按工序挂在委外入库节点下（一工序一张）。 */
+    private static List<RouteNode> outsourceInspectBranches(List<Step> steps, Map<String, Doc> byNo,
+                                                            String ooNo, Set<String> used) {
+        List<RouteNode> out = new ArrayList<>();
+        for (Step s : steps) {
+            if (!"FIRST_INSPECT".equals(s.panelCode())) continue;
+            Doc d = byNo.get(s.docNo());
+            if (d == null || !d.links().contains(ooNo)) continue;
+            if (!used.add(s.docNo())) continue;
+            out.add(new RouteNode("FIRST_INSPECT", s.panelName(), s.processCode(), s.processName(),
+                    s.docNo(), s.status(), s.state(), true, 0, List.of()));
+        }
+        return out;
+    }
+
+    /** 路线模板的环节下标（委外路线排序用）。 */
+    private static Map<String, Integer> routeIndex(List<String> routeCodes) {
+        Map<String, Integer> m = new LinkedHashMap<>();
+        for (int i = 0; i < routeCodes.size(); i++) m.put(routeCodes.get(i), i);
+        return m;
+    }
 
     private static int orderOf(String panelCode) {
         return PANEL_ORDER.getOrDefault(panelCode, 999);
@@ -271,7 +375,8 @@ public class ProcessTraceService {
      * 模板之外的关联单据（调拨、过程检验等）仍按业务顺序插回去，不隐藏真实发生的单据。
      */
     private List<RouteNode> buildRoute(List<Step> steps, Map<String, Doc> byNo, String seedNo,
-                                       boolean production) {
+                                       List<String> routeCodes, Map<String, Integer> forcedOrder,
+                                       String outsourceNo) {
         Doc seed = byNo.get(seedNo);
         int seedOrder = seed == null ? 0 : orderOf(seed.panelCode());
 
@@ -317,7 +422,7 @@ public class ProcessTraceService {
         }
         Set<String> used = new LinkedHashSet<>();
         List<RouteNode> nodes = new ArrayList<>();
-        for (String code : production ? PRODUCTION_ROUTE : DIRECT_ROUTE) {
+        for (String code : routeCodes) {
             // 工序排产与工序汇报是一工序一张单：按加工单工序逐条展开
             if ("PROCESS_REPORT".equals(code) || "DISPATCH".equals(code)) {
                 nodes.addAll(processNodes(code, byPanel.getOrDefault(code, List.of()), processes,
@@ -329,11 +434,37 @@ public class ProcessTraceService {
             List<Step> hits = byPanel.getOrDefault(code, List.of());
             if (hits.isEmpty()) {
                 // 比入口单据更上游的环节不补：从加工单追踪时不该出现「待生成 销售订单」
-                if (seedOrder <= orderOf(code)) nodes.add(pendingNode(code, "", ""));
+                if (seedOrder <= orderOf(code)) {
+                    // 采购入库已经有了、却没有检验单 → 到货行免检直入，这一环写「免检直入」而不是「待生成」
+                    String status = "INSPECTION".equals(code)
+                            && !byPanel.getOrDefault("PURCHASE_IN", List.of()).isEmpty() ? "免检直入" : PENDING;
+                    nodes.add(pendingNode(code, "", "", status));
+                }
+                continue;
+            }
+            // 采购分批：多张到货单/检验单收成一个节点 + 分叉
+            if (BATCH_PANELS.contains(code) && hits.size() > 1) {
+                Step first = hits.get(0);
+                List<RouteNode> branches = new ArrayList<>();
+                for (int i = 1; i < hits.size(); i++) {
+                    branches.add(presentNode(hits.get(i)));
+                    used.add(hits.get(i).docNo());
+                }
+                RouteNode base = presentNode(first);
+                nodes.add(new RouteNode(base.panelCode(), base.panelName(), base.processCode(),
+                        base.processName(), base.docNo(), base.status(), base.state(), true, 0, branches));
+                used.add(first.docNo());
                 continue;
             }
             for (Step s : hits) {
-                nodes.add(presentNode(s));
+                // 委外：首件报检单（一工序一张）挂到委外入库节点下当分支，不再各占一格
+                List<RouteNode> branches = "OUTSOURCE_IN".equals(code) && !outsourceNo.isBlank()
+                        ? outsourceInspectBranches(steps, byNo, outsourceNo, used)
+                        : List.of();
+                RouteNode base = presentNode(s);
+                nodes.add(branches.isEmpty() ? base
+                        : new RouteNode(base.panelCode(), base.panelName(), base.processCode(),
+                        base.processName(), base.docNo(), base.status(), base.state(), true, 0, branches));
                 used.add(s.docNo());
             }
         }
@@ -342,8 +473,11 @@ public class ProcessTraceService {
             if ("MATERIAL_REQ".equals(s.panelCode())) continue;
             if (used.add(s.docNo())) nodes.add(presentNode(s));
         }
-        // 稳定排序：保留模板顺序，同时把额外单据插到正确的业务位置
-        nodes.sort(Comparator.comparingInt(n -> orderOf(n.panelCode())));
+        // 稳定排序：保留模板顺序，同时把额外单据插到正确的业务位置。
+        // 委外路线用模板下标（PANEL_ORDER 是生产链口径，会把首件报检排到入库之后）。
+        nodes.sort(Comparator.comparingInt((RouteNode n) -> forcedOrder == null
+                ? orderOf(n.panelCode())
+                : forcedOrder.getOrDefault(n.panelCode(), 100 + orderOf(n.panelCode()))));
         List<RouteNode> numbered = new ArrayList<>();
         for (int i = 0; i < nodes.size(); i++) {
             RouteNode n = nodes.get(i);
@@ -424,6 +558,8 @@ public class ProcessTraceService {
             Map<String, List<Step>> inspections = new LinkedHashMap<>();
             List<Step> inspectDocs = hitsOf(byPanel.getOrDefault(BRANCH_OF_REPORT, List.of()), byNo, moNos, moNo);
             for (Step s : inspectDocs) {
+                // 作废的首检单是历史痕迹（返工后重检会作废旧单），画在分支上只会让人以为有多张在跑
+                if ("作废".equals(s.status())) continue;
                 Doc doc = byNo.get(s.docNo());
                 if (doc == null) continue;
                 for (Process p : doc.processes()) {
@@ -499,15 +635,51 @@ public class ProcessTraceService {
         return lanes;
     }
 
-    /** 本加工单的单据（按加工单号归属过滤）。 */
+    /**
+     * 本加工单的单据（按加工单号归属过滤）。
+     *
+     * <p>这里不能用「解析不到就用当前加工单」的兜底：同一张销售订单可能既有自制行也有委外行，
+     * 委外的首件报检单指向的是委外加工单（不是 MANU_ORDER），兜底会把它算进每条自制线——
+     * 结果每道工序下面都挂着一串别的加工单的首检单（2026-11-12 实测：车削/钻孔/抛光各挂了 5 张）。
+     */
     private List<Step> hitsOf(List<Step> steps, Map<String, Doc> byNo, Set<String> moNos, String moNo) {
         List<Step> out = new ArrayList<>();
         for (Step s : steps) {
             Doc d = byNo.get(s.docNo());
             if (d == null) continue;
-            if (moNo.equals(moOf(d, byNo, moNos, moNo))) out.add(s);
+            String own = ownMoOf(d, byNo, moNos);
+            if (own.startsWith(FOREIGN_MO)) continue;      // 明确属于委外/别的链
+            if (!own.isEmpty()) {
+                if (own.equals(moNo)) out.add(s);
+                continue;
+            }
+            // 完全没有加工单引用：轨迹里只有一张加工单时才认它，多线时不猜
+            if (moNos.size() == 1) out.add(s);
         }
         return out;
+    }
+
+    /** {@link #ownMoOf} 的哨兵：该单据引用了另一条链的加工单（委外）。 */
+    private static final String FOREIGN_MO = "!";
+
+    /**
+     * 单据自己声明的加工单号：先按本次追踪到的加工单集合认，再看引用文档是不是加工单/委外加工单。
+     * 引用的是委外加工单时返回 {@code "!<单号>"}，表示它不属于自制线。
+     */
+    private static String ownMoOf(Doc doc, Map<String, Doc> byNo, Set<String> moNos) {
+        for (String link : doc.links()) {
+            if (moNos.contains(link)) return link;
+        }
+        for (String link : doc.links()) {
+            Doc ref = byNo.get(link);
+            if (ref == null) continue;
+            if ("MANU_ORDER".equals(ref.panelCode())) return link;
+            if ("OUTSOURCE_ORDER".equals(ref.panelCode())) return FOREIGN_MO + link;
+        }
+        for (String link : doc.links()) {
+            if (link.startsWith("MO-")) return link;
+        }
+        return "";
     }
 
     /**
@@ -677,8 +849,14 @@ public class ProcessTraceService {
     }
 
     private static RouteNode pendingNode(String panelCode, String processCode, String processName) {
+        return pendingNode(panelCode, processCode, processName, PENDING);
+    }
+
+    /** 待生成但状态要写别的字（如「免检直入」：这一环没有单据，但流程确实走过了）。 */
+    private static RouteNode pendingNode(String panelCode, String processCode, String processName,
+                                         String status) {
         return new RouteNode(panelCode, panelName(panelCode), processCode, processName, "",
-                "", PENDING, false, 0, List.of());
+                status, PENDING, false, 0, List.of());
     }
 
     /** 状态 → 阶段：已审核类算完成，审批中/草稿/生产中算进行中。 */

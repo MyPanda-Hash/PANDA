@@ -9,7 +9,7 @@
  * 1. FRONTEND_ACTIONS —— 前端自己处理的（弹窗、打印、导入、内联编辑等）
  * 2. BACKEND_ACTIONS  —— PxService.callButton 的 switch 分支，必须与 Java 保持一致
  *    （tools/action-support-audit.mjs 会解析 Java 源码比对，漂移即报错）
- * 3. EXTRA_ACTIONS    —— 通过 PanelActionHandler 扩展点注册的动作（当前只有「变更」）
+ * 3. EXTRA_ACTIONS    —— 通过 PanelActionHandler 扩展点注册的动作（当前有「变更」「执行分摊」）
  *
  * 报表专属动作（导出/打印/发送邮件/退出）只在 reportMode 下可用：
  * 列表页没有这些实现，点了会走 callButton → 后端也没有对应 case。
@@ -73,7 +73,7 @@ export const BACKEND_ACTIONS = new Set([
 ])
 
 /** PanelActionHandler 扩展点注册的动作 */
-export const EXTRA_ACTIONS = new Set(['变更'])
+export const EXTRA_ACTIONS = new Set(['变更', '执行分摊'])
 
 /** 只有报表面板才有的动作 */
 export const REPORT_ACTIONS = new Set(['导出', '打印', '发送邮件', '退出'])

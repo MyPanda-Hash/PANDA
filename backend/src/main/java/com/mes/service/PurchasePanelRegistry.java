@@ -39,6 +39,8 @@ public class PurchasePanelRegistry {
         ensureAction("PURCHASE_IN", "生单", "生成采购退货单");
         ensureAction("ARRIVAL_IN", "生单", "生成检验单");
         ensureAction("ARRIVAL_IN", "生单", "生成采购入库单");
+        // 委外回厂的到货单要能直接转委外入库（来源类型=委外的才允许，见 requireArrivalInboundTarget）
+        ensureAction("ARRIVAL_IN", "生单", "生成委外入库单");
         upgrade("PU_REQ", PurchasePanelRegistry::upgradePuReq);
         upgrade("PU_ORDER", PurchasePanelRegistry::upgradePuOrder);
         upgrade("ARRIVAL_IN", PurchasePanelRegistry::upgradeArrivalIn);
@@ -138,6 +140,9 @@ public class PurchasePanelRegistry {
         ensureHeadField(config, "采购订单号", "文本", null, "");
         ensureHeadField(config, "检验状态", "下拉框", List.of("未检", "部分检", "已检"), "未检");
         ensureHeadField(config, "数据来源", "文本", null, "");
+        // 来源类型：区分采购到货与委外回厂，决定后续只能生成哪种入库单
+        ensureHeadField(config, "来源类型", "下拉框", List.of("采购", "委外"), "采购");
+        ensureHeadField(config, "业务类型", "下拉框", List.of("普通采购", "采购退货", "委外回厂"), "普通采购");
         ensureDetailField(config, "检验数量", "小数", true, true);
         ensureDetailField(config, "合格数量", "小数", true, true);
         ensureDetailField(config, "不合格数量", "小数", true, true);

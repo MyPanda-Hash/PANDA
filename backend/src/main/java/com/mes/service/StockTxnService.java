@@ -26,9 +26,12 @@ public class StockTxnService {
     private static final Set<String> INBOUND_PANELS = Set.of(
             "PURCHASE_IN", "FINISH_IN", "OTHER_IN", "OUTSOURCE_IN", "INIT_BALANCE", "SALE_RETURN");
 
-    /** 出库方向的面板：审核后减少库存。采购退货是把货退回供应商，同样减少库存。 */
+    /**
+     * 出库方向的面板：审核后减少库存。采购退货是把货退回供应商，同样减少库存；
+     * 委外发料是把材料发给委外厂，也要出库——否则委外链只进不出，材料账永远不动。
+     */
     private static final Set<String> OUTBOUND_PANELS = Set.of(
-            "SALE_OUT", "MATERIAL_OUT", "OTHER_OUT", "PURCHASE_RETURN");
+            "SALE_OUT", "MATERIAL_OUT", "OTHER_OUT", "PURCHASE_RETURN", "OUTSOURCE_ISSUE");
 
     /** 一条库存事务（方向为正数，由方向决定加减）。 */
     public record Txn(String panelCode, String formNo, int rowNo, String direction,
@@ -124,6 +127,19 @@ public class StockTxnService {
         return averageCostOf(itemCode, itemName, null);
     }
 
+    /**
+     * 会落库存事务的面板：单方向出入库面板 + 调拨（自己一出一进，没有单一方向）。
+     * 调拨不走 directionOf，必须单独列进来：此前 post/reverse 用 directionOf 做闸门，
+     * 调拨单审核直接被判「非库存面板」返回 0，事务一条都没写，库存根本不移动。
+     */
+    private static final Set<String> TWO_WAY_PANELS = Set.of("TRANSFER", "LOCATION_ADJUST");
+
+    /** 该面板审核后是否落库存事务：单方向出入库 + 调拨/货位调整（一出一进） + 盘点（按盈亏）。 */
+    public boolean postsStock(String panelCode) {
+        return directionOf(panelCode) != null || TWO_WAY_PANELS.contains(panelCode)
+                || "STOCK_CHECK".equals(panelCode);
+    }
+
     /** 面板对应的出入库方向；非库存面板返回 null。 */
     public String directionOf(String panelCode) {
         if (panelCode == null) return null;
@@ -135,6 +151,10 @@ public class StockTxnService {
     /** 把一张单据的表头与明细折算成事务行；非库存面板返回空列表。 */
     public List<Txn> buildTxns(String panelCode, String formNo, Map<String, Object> head,
                                Map<String, Object> detail) {
+        // 盘点：按「盈亏数量」调账（盘盈 IN / 盘亏 OUT），审核即调账
+        if ("STOCK_CHECK".equals(panelCode)) return buildStockCheckTxns(formNo, head, detail);
+        // 货位调整：同一行出两条事务（原货位 OUT + 新货位 IN），数量不变只换货位
+        if ("LOCATION_ADJUST".equals(panelCode)) return buildLocationAdjustTxns(formNo, head, detail);
         // 调拨是双仓语义：一条明细要出两条事务（调出仓 OUT + 调入仓 IN），
         // 否则调拨单审核后库存根本不移动，线边仓补料等于没补。
         if ("TRANSFER".equals(panelCode)) return buildTransferTxns(formNo, head, detail);
@@ -193,12 +213,109 @@ public class StockTxnService {
     }
 
     /**
+     * 库存盘点单：一张单就是一次调账，审核即按「盈亏数量」落事务（盘盈 IN / 盘亏 OUT）。
+     * 明细里的 盈亏数量 由前端算好（实盘 − 账面）；历史/导入数据缺这一列时按实盘−账面兜底，
+     * 两者都为 0 才跳过。金额按当前结存均价折算，保证数量与金额同向变化。
+     */
+    private List<Txn> buildStockCheckTxns(String formNo, Map<String, Object> head, Map<String, Object> detail) {
+        String headWarehouse = text(first(head, "仓库"));
+        LocalDate bizDate = date(first(head, "单据日期"));
+        List<Txn> out = new ArrayList<>();
+        for (Map<String, Object> row : allDetailRows(detail)) {
+            String itemCode = text(first(row, "存货编码", "产品编码", "材料编码"));
+            String itemName = text(first(row, "存货名称", "产品名称", "材料名称", "存货"));
+            BigDecimal diff = number(first(row, "盈亏数量"));
+            if (diff.signum() == 0) {
+                diff = number(first(row, "实盘数量")).subtract(number(first(row, "账面数量")));
+            }
+            if (diff.signum() == 0) continue;
+            String warehouse = text(first(row, "仓库"));
+            if (warehouse.isBlank()) warehouse = headWarehouse;
+            String location = text(first(row, "库位", "货位"));
+            BigDecimal price = number(first(row, "成本价", "单价", "主单价"));
+            if (price.signum() == 0) {
+                BigDecimal avg = averageCostOf(itemCode, itemName, warehouse);
+                if (avg != null) price = avg;
+            }
+            BigDecimal quantity = diff.abs();
+            out.add(new Txn("STOCK_CHECK", formNo, out.size() + 1, diff.signum() > 0 ? "IN" : "OUT",
+                    itemCode, itemName,
+                    text(first(row, "规格型号", "材料规格")),
+                    text(first(row, "计量单位", "主单位", "生产单位")),
+                    warehouse, location, text(first(row, "批次号", "批号")),
+                    quantity, price, quantity.multiply(price), bizDate));
+        }
+        return out;
+    }
+
+    /**
+     * 货位调整单：同仓内换货位，数量不变。每行落两条事务——原货位 OUT、新货位 IN，
+     * 余额按「存货+仓库+库位+批次」聚合，两条事务正好把数量从旧货位挪到新货位。
+     * 原货位有值时先校验该货位可用量，避免手填错货位把库存扣成负数。
+     */
+    private List<Txn> buildLocationAdjustTxns(String formNo, Map<String, Object> head, Map<String, Object> detail) {
+        String headWarehouse = text(first(head, "仓库"));
+        LocalDate bizDate = date(first(head, "单据日期"));
+        List<Txn> out = new ArrayList<>();
+        for (Map<String, Object> row : allDetailRows(detail)) {
+            String itemCode = text(first(row, "存货编码", "产品编码", "材料编码"));
+            String itemName = text(first(row, "存货名称", "产品名称", "材料名称", "存货"));
+            BigDecimal quantity = number(first(row, "数量", "实收数量"));
+            if (quantity.signum() == 0) continue;
+            String warehouse = text(first(row, "仓库"));
+            if (warehouse.isBlank()) warehouse = headWarehouse;
+            String fromLocation = text(first(row, "原货位", "库位", "货位"));
+            String toLocation = text(first(row, "新货位"));
+            if (toLocation.isBlank() || fromLocation.equals(toLocation)) continue;
+            requireLocationStock(warehouse, fromLocation, itemCode, itemName, quantity);
+            String spec = text(first(row, "规格型号", "材料规格"));
+            String unit = text(first(row, "计量单位", "主单位", "生产单位"));
+            String batch = text(first(row, "批次号", "批号"));
+            BigDecimal price = number(first(row, "成本价", "单价", "主单价"));
+            if (price.signum() == 0) {
+                BigDecimal avg = averageCostOf(itemCode, itemName, warehouse);
+                if (avg != null) price = avg;
+            }
+            BigDecimal amount = quantity.abs().multiply(price);
+            out.add(new Txn("LOCATION_ADJUST", formNo, out.size() + 1, "OUT", itemCode, itemName, spec, unit,
+                    warehouse, fromLocation, batch, quantity.abs(), price, amount, bizDate));
+            out.add(new Txn("LOCATION_ADJUST", formNo, out.size() + 1, "IN", itemCode, itemName, spec, unit,
+                    warehouse, toLocation, batch, quantity.abs(), price, amount, bizDate));
+        }
+        return out;
+    }
+
+    /** 原货位可用量校验：空货位（未指定货位的历史库存）跳过，不拦历史单据。 */
+    private void requireLocationStock(String warehouse, String location, String itemCode,
+                                      String itemName, BigDecimal quantity) {
+        if (location.isBlank() || balanceService == null) return;
+        BigDecimal available = BigDecimal.ZERO;
+        for (StockBalance balance : balanceService.list()) {
+            if (!location.equals(nullToEmpty(balance.getLocation()))) continue;
+            if (!warehouse.equals(nullToEmpty(balance.getWarehouse()))) continue;
+            boolean codeMatch = !itemCode.isEmpty() && itemCode.equals(nullToEmpty(balance.getItemCode()));
+            boolean nameMatch = !itemName.isEmpty() && itemName.equals(nullToEmpty(balance.getItemName()));
+            if (!codeMatch && !nameMatch) continue;
+            available = available.add(balance.getQuantity());
+        }
+        if (available.compareTo(quantity) < 0) {
+            throw new IllegalStateException("原货位 " + location + " 上「" + itemName + "」只有 "
+                    + available.stripTrailingZeros().toPlainString() + "，不能调整 "
+                    + quantity.stripTrailingZeros().toPlainString());
+        }
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    /**
      * 审核后落账：先删除该单据的旧事务（支持弃审重审），再写入新事务，最后重算余额。
      * 余额表由全部事务聚合，因此每次重算都能自愈。
      */
     @Transactional
     public int post(String panelCode, String formNo, Map<String, Object> head, Map<String, Object> detail) {
-        if (directionOf(panelCode) == null) return 0;
+        if (!postsStock(panelCode)) return 0;
         txnMapper.delete(new LambdaQueryWrapper<StockTxn>()
                 .eq(StockTxn::getPanelCode, panelCode)
                 .eq(StockTxn::getFormNo, formNo));
@@ -211,7 +328,7 @@ public class StockTxnService {
     /** 弃审或删除时冲销该单据的事务。 */
     @Transactional
     public int reverse(String panelCode, String formNo) {
-        if (directionOf(panelCode) == null) return 0;
+        if (!postsStock(panelCode)) return 0;
         int removed = txnMapper.delete(new LambdaQueryWrapper<StockTxn>()
                 .eq(StockTxn::getPanelCode, panelCode)
                 .eq(StockTxn::getFormNo, formNo));

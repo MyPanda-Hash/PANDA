@@ -83,7 +83,7 @@
         <AntIcon name="node-index" :size="14" class="bo-route-icon" />
         <span class="bo-route-title">{{ tt('单据流程路线') }}</span>
         <span class="bo-route-count">
-          {{ skeletonSteps }} {{ tt('步标准流程') }} · {{ traceSteps.length }} {{ tt('个环节') }}
+          {{ skeletonSteps }} {{ tt('步标准流程') }} · {{ traceInfo['环节数'] ?? traceSteps.length }} {{ tt('个环节') }}
           · {{ tt('已完成') }} {{ traceInfo['已完成数'] ?? 0 }}
           <template v-if="branchCount"> · {{ branchCount }} {{ tt('个检验分支') }}</template>
         </span>
@@ -198,6 +198,9 @@
                     stalled: nodeProps.data.stalled,
                     'no-perm': !canOpenPanel(nodeProps.data.code),
                     'is-monitor': nodeProps.data.monitor,
+                    // 走审批流的面板给标识；追踪到「卡在未审批」时加流光
+                    'is-approval': nodeProps.data.approval,
+                    'stalled-approval': nodeProps.data.approvalStall,
                   },
                 ]"
               >
@@ -212,17 +215,34 @@
                 <Handle id="out-t" type="source" :position="Position.Top" class="fn-handle" />
                 <Handle id="in-b" type="target" :position="Position.Bottom" class="fn-handle" />
                 <Handle id="out-l-b" type="source" :position="Position.Left" style="top: 100%" class="fn-handle" />
+                <!-- 左侧中位出：左侧旁路（检验单 → 退货单）从行左侧留白绕下去 -->
+                <Handle id="out-l" type="source" :position="Position.Left" class="fn-handle" />
                 <Handle id="in-t-q" type="target" :position="Position.Top" style="left: 25%" class="fn-handle" />
                 <Handle id="out-b-r" type="source" :position="Position.Bottom" style="left: 75%" class="fn-handle" />
                 <Handle id="in-b-l" type="target" :position="Position.Bottom" style="left: 25%" class="fn-handle" />
+                <!-- 右边缘进：右侧旁路（采购订单预开票 → 采购发票）从空白带拐进来，不和同行的横向边抢锚点 -->
+                <Handle id="in-r" type="target" :position="Position.Right" class="fn-handle" />
                 <div class="fn-icon">
                   <AntIcon :name="nodeProps.data.icon" :size="18" />
                 </div>
                 <div class="fn-body">
                   <div class="fn-label">{{ tt(nodeProps.data.label) }}</div>
-                  <div class="fn-code" :title="nodeProps.data.docNo || nodeProps.data.code">
-                    <template v-if="nodeProps.data.docNo">{{ nodeProps.data.docNo }}</template>
-                    <template v-else>{{ nodeProps.data.code }}</template>
+                  <div class="fn-meta">
+                    <span class="fn-code" :title="nodeProps.data.docNo || nodeProps.data.code">
+                      <template v-if="nodeProps.data.docNo">{{ nodeProps.data.docNo }}</template>
+                      <template v-else>{{ nodeProps.data.code }}</template>
+                    </span>
+                    <!-- 审批标识：走审批流的面板才有；追踪到「草稿/审批中卡点」时变成未审批并流光 -->
+                    <span
+                      v-if="nodeProps.data.approval"
+                      class="fn-approval"
+                      :class="{ pending: nodeProps.data.approvalStall }"
+                      :title="nodeProps.data.approvalStall
+                        ? tt('卡在这里：单据未审批') + '（' + (nodeProps.data.docNo || '') + '）'
+                        : tt('该面板需要审批')"
+                    >
+                      {{ nodeProps.data.approvalStall ? tt('未审批') : tt('审批') }}
+                    </span>
                   </div>
                 </div>
                 <!-- 同一环节命中多张单据：显示 +N，避免误以为只有一张 -->
@@ -240,6 +260,11 @@
               </div>
             </template>
           </VueFlow>
+        </div>
+        <!-- 读法：画不出来的口径（勾稽、共用付款单）用一行说明补，不靠长连线去表达 -->
+        <div v-if="cur.note" class="bo-flow-note">
+          <span class="bo-flow-note-tag">{{ tt('读法') }}</span>
+          <span>{{ tt(cur.note) }}</span>
         </div>
       </section>
 
@@ -379,6 +404,8 @@ import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
 import AntIcon from '@/business/components/AntIcon.vue'
 import RouteNodeCard from './components/RouteNodeCard.vue'
+import { canvasHeightOf, defaultHandles, layoutNodes } from './flow-layout.js'
+import { isApprovalStall, requiresApproval } from '@/business/approval-panels'
 import { traceProcess, queryFormDataList } from '@/business/engine'
 
 const router = useRouter()
@@ -562,28 +589,40 @@ const modules = [
   },
   {
     code: 'outsource', name: '委外管理', icon: 'deployment-unit', color: '#13a8a8',
+    /**
+     * 委外三段（列模式，pos 写 [列, 行]）：
+     *   接单：销售订单 ——选单——→ 委外加工单（拉式：加工单选销售订单带入产品/材料，销售订单没有「生成委外加工单」按钮）
+     *   发料/结算：委外加工单 ——发料——→ 委外发料单；——结算——→ 委外加工费用单（按产成品明细委外单价×数量）
+     *   回厂：委外加工单 ——回厂首检——→ 首件报检单 ——首检通过——→ 委外入库单
+     * 入库那道门是真的：`PxService#requireOutsourceFirstInspects` 在点「生成委外入库单」时按工艺路线
+     * 补建工序首检单并拦一次，检完并审核通过才允许入库；有检验单时也可从检验单「生成委外入库单」。
+     */
+    layout: 'columns',
     nodes: [
       { code: 'SO_ORDER', label: '销售订单' },
       { code: 'OUTSOURCE_ORDER', label: '委外加工单' },
       { code: 'OUTSOURCE_ISSUE', label: '委外发料单' },
-      { code: 'OUTSOURCE_IN', label: '委外入库单' },
+      { code: 'FIRST_INSPECT', label: '首件报检单' },
       { code: 'OUTSOURCE_FEE', label: '委外加工费用单' },
+      { code: 'OUTSOURCE_IN', label: '委外入库单' },
     ],
     edges: [
-      { from: 'SO_ORDER', to: 'OUTSOURCE_ORDER' },
-      { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_ISSUE' },
-      { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_IN' },
-      { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_FEE' },
+      { from: 'SO_ORDER', to: 'OUTSOURCE_ORDER', label: '选销售订单' },
+      { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_ISSUE', label: '发料', offset: 28 },
+      { from: 'OUTSOURCE_ORDER', to: 'FIRST_INSPECT', label: '回厂首检', offset: 28 },
+      { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_FEE', label: '结算', offset: 28 },
+      { from: 'FIRST_INSPECT', to: 'OUTSOURCE_IN', label: '首检通过' },
     ],
     pos: {
-      SO_ORDER: [320, 60],
-      OUTSOURCE_ORDER: [320, 230],
-      OUTSOURCE_ISSUE: [20, 400], OUTSOURCE_IN: [320, 400], OUTSOURCE_FEE: [620, 400],
+      SO_ORDER: [1, 0], OUTSOURCE_ORDER: [1, 1],
+      OUTSOURCE_ISSUE: [0, 2], FIRST_INSPECT: [1, 2], OUTSOURCE_FEE: [2, 2],
+      OUTSOURCE_IN: [1, 3],
     },
+    note: '加工单选销售订单带入产品与材料；入库前系统按工艺路线补建工序首件报检单，审核通过才允许入库；加工费用单按产成品明细的委外单价×数量汇总。',
     docs: [
       { code: 'OUTSOURCE_ORDER', label: '委外加工单' }, { code: 'OUTSOURCE_ISSUE', label: '委外发料单' },
       { code: 'OUTSOURCE_IN', label: '委外入库单' }, { code: 'OUTSOURCE_FEE', label: '委外加工费用单' },
-      { code: 'SO_ORDER', label: '销售订单' }, { code: 'PU_REQ', label: '请购单' }, { code: 'PU_ORDER', label: '采购订单' },
+      { code: 'FIRST_INSPECT', label: '首件报检单' }, { code: 'SO_ORDER', label: '销售订单' },
     ],
     archives: [
       { code: 'INV', label: '存货' }, { code: 'UOM', label: '计量单位' }, { code: 'PARTNER', label: '往来单位' },
@@ -604,34 +643,55 @@ const modules = [
   },
   {
     code: 'sales', name: '销售管理', icon: 'shopping-cart', color: '#fa8c16',
+    /**
+     * 只画「直接销售出库」这一条闭环（库存现货直接发，不经过生产/委外）：
+     *   报价单 → 销售订单 → 销售出库单（扣库存）→ 销货单（确认应收）→ 销售发票 → 收款单（按客户核销应收）
+     * 三列分工：左列费用来源、中列销售主链、右列库存与退货，箭头一律从左往右 / 从上往下：
+     *   库存：销售出库单 出库扣减；销售退货单 退货回增（审核还冲减应收 AR_RETURN）
+     *   费用：费用单 ─↓生成分摊单→ 销售费用分摊单 ─→分摊到票→ 销售开票（费用由分摊单摊进发票/毛利）
+     * 退货单是手工建单（来源单号填原单），没有「生单」入口，所以不画从出库单到退货单的箭头。
+     * 直接销售不走产成品入库：FINISH_IN → 销货单 那条属于生产发货，不在这张图里。
+     */
+    layout: 'columns',
+    /* 左侧留白 104：与质检/移动仓管保持同一套列网格，旁路标签不会压到卡片 */
+    gutter: 104,
     nodes: [
+      // 主链（直接销售出库）
       { code: 'QUOTE_ORDER', label: '报价单' },
       { code: 'SO_ORDER', label: '销售订单' },
-      { code: 'SALE_INV', label: '销货单' },
       { code: 'SALE_OUT', label: '销售出库单' },
-      { code: 'SALE_RETURN', label: '销售退货单' },
+      { code: 'SALE_INV', label: '销货单' },
       { code: 'SALE_INVOICE', label: '销售开票' },
+      { code: 'RECEIPT', label: '收款单' },
+      // 库存与退货
+      { code: 'STOCK_STATUS', label: '库存结存' },
+      { code: 'SALE_RETURN', label: '销售退货单' },
+      // 费用
       { code: 'SALE_COST_ALLOC', label: '销售费用分摊单' },
       { code: 'EXPENSE', label: '费用单' },
     ],
-    /**
-     * 主链右流、支链下挂：每个节点只在自己那一列往下走，避免长距离回绕。
-     * 退货单挂在销售订单右侧下方（退货入库、冲减应收），审核只是动作不画成节点。
-     */
     edges: [
       { from: 'QUOTE_ORDER', to: 'SO_ORDER', label: '生单' },
-      { from: 'SO_ORDER', to: 'SALE_INV', label: '选单' },
-      { from: 'SALE_INV', to: 'SALE_INVOICE', label: '选单' },
       { from: 'SO_ORDER', to: 'SALE_OUT', label: '生单' },
-      { from: 'SO_ORDER', to: 'SALE_RETURN', label: '退货' },
-      { from: 'SALE_INVOICE', to: 'SALE_COST_ALLOC', label: '分摊' },
-      { from: 'EXPENSE', to: 'SALE_COST_ALLOC', label: '选单' },
+      { from: 'SALE_OUT', to: 'SALE_INV', label: '选单' },
+      { from: 'SALE_INV', to: 'SALE_INVOICE', label: '生单' },
+      // 收款：应收挂在销货单，收款单按客户核销（核对的是销货单产生的应收）
+      { from: 'SALE_INVOICE', to: 'RECEIPT', label: '收款核销' },
+      // 库存联动：出库扣减、退货回增
+      { from: 'SALE_OUT', to: 'STOCK_STATUS', label: '出库' },
+      { from: 'SALE_RETURN', to: 'STOCK_STATUS', label: '退货入库' },
+      // 费用闭环：费用单在左列，往下生分摊单，再向右分摊到发票（整条费用链从左往右读）
+      { from: 'EXPENSE', to: 'SALE_COST_ALLOC', label: '生成分摊单' },
+      { from: 'SALE_COST_ALLOC', to: 'SALE_INVOICE', label: '分摊到票' },
     ],
     pos: {
-      QUOTE_ORDER: [20, 40], SO_ORDER: [320, 40], SALE_INV: [620, 40], SALE_INVOICE: [920, 40],
-      SALE_OUT: [320, 240], SALE_RETURN: [620, 240], SALE_COST_ALLOC: [920, 240],
-      EXPENSE: [620, 440],
+      // 左列：费用来源；中列：销售主链；右列：库存与退货
+      EXPENSE: [0, 3], SALE_COST_ALLOC: [0, 4],
+      QUOTE_ORDER: [1, 0], SO_ORDER: [1, 1], SALE_OUT: [1, 2], SALE_INV: [1, 3],
+      SALE_INVOICE: [1, 4], RECEIPT: [1, 5],
+      STOCK_STATUS: [2, 2], SALE_RETURN: [2, 3],
     },
+    note: '闭环：报价 → 订单 → 出库（扣库存）→ 销货（确认应收）→ 开票 → 收款（按客户核销应收）；退货单手工建单，审核后库存回增并冲减应收；费用单生成销售费用分摊单，分摊到发票/客户后进销售毛利。',
     docs: [
       { code: 'QUOTE_ORDER', label: '报价单' }, { code: 'SO_ORDER', label: '销售订单' },
       { code: 'SALE_INV', label: '销货单' }, { code: 'SALE_OUT', label: '销售出库单' },
@@ -647,62 +707,55 @@ const modules = [
   {
     code: 'purchase', name: '采购管理', icon: 'shopping', color: '#52c41a',
     /**
-     * 采购主链：请购 → 采购订单 → 到货（收料通知）→ 检验（拣验货）→ 合格入库 / 不合格退回 → 发票 → 付款/退款。
-     * 采购发票两条来源：采购订单先票后货（收货后单票勾稽）、采购入库单先货后票；退货单开红字。
-     * 另有「直入」旁路：无收料/无质检时采购订单可直接生成采购入库单；同一订单行与到货链互斥。
-     * 付款与退款共用付款单（负数退款）；2026-11-04 移除 T+ 进货单。
+     * 采购主链一列到底：请购 → 采购订单 → 到货（收料通知）→ 检验（拣验货）→ 采购入库 → 采购发票 → 付款。
+     * 唯一的分知行是「采购入库单 | 采购退货单」：入库后库存退料，两单各自下推到发票。
+     * 左旁路：到货单免检行不走检验，直接入库（折线走卡片列左侧空白带）。
+     * 右旁路：采购订单预开票（先票后货），折线走右侧空白带从发票右边缘进入，货到后按入库行勾稽。
+     * 发票口径：入库后开蓝票（先货后票）、退货开红字冲减应付；勾稽是发票状态而非单据流转，
+     * 不画「发票 → 入库单」反向连线（会与开票箭头重叠），改在 note 里一行说明。
+     * 付款与退款共用付款单（正数付款、负数退款）；2026-11-04 移除 T+ 进货单。
      */
     nodes: [
-      { code: 'PU_REQ', label: '请购单（采购申请）' },
+      { code: 'PU_REQ', label: '请购单' },
       { code: 'PU_ORDER', label: '采购订单' },
-      { code: 'ARRIVAL_IN', label: '到货单（收料通知）' },
-      { code: 'INSPECTION', label: '检验单（拣验货）' },
+      { code: 'ARRIVAL_IN', label: '到货单' },
+      { code: 'INSPECTION', label: '检验单' },
       { code: 'PURCHASE_IN', label: '采购入库单' },
       { code: 'PURCHASE_RETURN', label: '采购退货单' },
-      { code: 'PU_INVOICE', label: '采购发票（入库/退货）' },
+      { code: 'PU_INVOICE', label: '采购发票' },
       { code: 'RECEIPT_PAYABLE', label: '付款单/退款单' },
     ],
     edges: [
       { from: 'PU_REQ', to: 'PU_ORDER', label: '确认申请' },
       { from: 'PU_ORDER', to: 'ARRIVAL_IN', label: '通知收料' },
-      // 零收料/零质检的捷径：左边缘底部出、顶部靠左进，折线走卡片列左侧空白带，不贴到货单边框
+      { from: 'ARRIVAL_IN', to: 'INSPECTION', label: '送检' },
+      // 免检直入：到货行免检/不送检时从到货单直接入库。左边缘出、顶部靠左进，
+      // offset 40 让折线停在卡片列左侧 40px 的空白带里，不压检验单边框。
       {
-        from: 'PU_ORDER', to: 'PURCHASE_IN', label: '直接入库',
+        from: 'ARRIVAL_IN', to: 'PURCHASE_IN', label: '免检直入', dashed: true, offset: 40,
         sourceHandle: 'out-l-b', targetHandle: 'in-t-q',
         sourcePosition: Position.Left, targetPosition: Position.Top,
       },
-      { from: 'ARRIVAL_IN', to: 'INSPECTION', label: '通知拣验' },
-      { from: 'INSPECTION', to: 'PURCHASE_IN', label: '拣验入库' },
-      { from: 'INSPECTION', to: 'PURCHASE_RETURN', label: '不合格退回' },
-      { from: 'PURCHASE_IN', to: 'PURCHASE_RETURN', label: '如需退货' },
-      // 先票后货：订单预开票，货到后从发票回到采购入库单完成单票勾稽。
+      // offset 28：56px 行距里折线的横向段正好走中间，两条分支不贴卡片边
+      { from: 'INSPECTION', to: 'PURCHASE_IN', label: '合格入库', offset: 28 },
+      { from: 'INSPECTION', to: 'PURCHASE_RETURN', label: '不合格退回', offset: 28 },
+      { from: 'PURCHASE_IN', to: 'PURCHASE_RETURN', label: '退货' },
+      { from: 'PURCHASE_IN', to: 'PU_INVOICE', label: '先货后票', offset: 28 },
+      { from: 'PURCHASE_RETURN', to: 'PU_INVOICE', label: '红字发票', offset: 28 },
+      // 先票后货：订单预开票，右侧空白带下到发票右边缘（退货单挡住 424 以内，offset 140 才够宽）
       {
-        from: 'PU_ORDER', to: 'PU_INVOICE', label: '先票后货', dashed: true,
-        sourceHandle: 'out', targetHandle: 'in-t-q',
-        sourcePosition: Position.Right, targetPosition: Position.Top,
+        from: 'PU_ORDER', to: 'PU_INVOICE', label: '先票后货', dashed: true, offset: 140,
+        sourceHandle: 'out', targetHandle: 'in-r',
+        sourcePosition: Position.Right, targetPosition: Position.Right,
       },
-      // 反向下沉到独立通道，避免和入库→发票的「先货后票」实线重合。
-      {
-        from: 'PU_INVOICE', to: 'PURCHASE_IN', label: '单票勾稽', dashed: true, offset: 44,
-        sourceHandle: 'out-b-r', targetHandle: 'in-b-l',
-        sourcePosition: Position.Bottom, targetPosition: Position.Bottom,
-      },
-      // 先货后票：从入库单底部绕到发票底部，避免横穿中间的退货单卡片。
-      {
-        from: 'PURCHASE_IN', to: 'PU_INVOICE', label: '先货后票（确认应付）',
-        sourceHandle: 'out-b-r', targetHandle: 'in-b-l',
-        sourcePosition: Position.Bottom, targetPosition: Position.Bottom,
-      },
-      { from: 'PURCHASE_RETURN', to: 'PU_INVOICE', label: '红字发票（确认应退）' },
-      // 当前系统付款与退款共用付款单：正数付款、负数退款。
-      { from: 'PU_INVOICE', to: 'RECEIPT_PAYABLE', label: '支付货款/收到退款' },
+      { from: 'PU_INVOICE', to: 'RECEIPT_PAYABLE', label: '付款/退款' },
     ],
     pos: {
-      PU_REQ: [440, 160], PU_ORDER: [440, 320],
-      ARRIVAL_IN: [240, 480], INSPECTION: [240, 640],
-      PURCHASE_IN: [120, 800], PURCHASE_RETURN: [380, 800],
-      PU_INVOICE: [720, 800], RECEIPT_PAYABLE: [960, 800],
+      PU_REQ: [200, 40], PU_ORDER: [200, 160], ARRIVAL_IN: [200, 280], INSPECTION: [200, 400],
+      PURCHASE_IN: [120, 520], PURCHASE_RETURN: [360, 520],
+      PU_INVOICE: [200, 640], RECEIPT_PAYABLE: [200, 760],
     },
+    note: '免检行从到货单直入，无收料时可由采购订单直接入库；先票后货的票先到，货到后按入库行勾稽；付款与退款共用付款单。',
     docs: [
       { code: 'PU_REQ', label: '请购单' }, { code: 'PU_ORDER', label: '采购订单' },
       { code: 'ARRIVAL_IN', label: '到货单' }, { code: 'INSPECTION', label: '来料检验单' },
@@ -778,29 +831,52 @@ const modules = [
   },
   {
     code: 'pda', name: '移动仓管', icon: 'idcard', color: '#13a8a8',
+    /**
+     * 移动仓管 = 仓库现场的移动作业，所有单据最后都动同一本账（库存结存）：
+     *   入库：采购入库 / 产成品入库 / 其他入库（扫码收料，加库存）
+     *   出库：销售出库 / 材料出库 / 其他出库（扫码拣货，减库存）
+     *   库内：调拨单（仓间移动，一出一进）、库存盘点单（按盈亏调账）
+     * 旧图把「采购入库 → 库存盘点 → 货位调整」连成一条线，语义不通：盘点不是入库的下游。
+     * 货位调整单只换货位（原货位出、新货位进），数量不变，和盘点挤一行会互相压标签，图上不画，
+     * 单据栏仍可进入。
+     */
     nodes: [
+      // 入库作业
       { code: 'PURCHASE_IN', label: '采购入库单' },
       { code: 'FINISH_IN', label: '产成品入库单' },
+      { code: 'OTHER_IN', label: '其他入库单' },
+      // 库内作业 + 结存
+      { code: 'TRANSFER', label: '调拨单' },
+      { code: 'STOCK_STATUS', label: '库存结存' },
+      { code: 'STOCK_CHECK', label: '库存盘点单' },
+      // 出库作业
       { code: 'SALE_OUT', label: '销售出库单' },
       { code: 'MATERIAL_OUT', label: '材料出库单' },
-      { code: 'TRANSFER', label: '调拨单' },
-      { code: 'STOCK_CHECK', label: '库存盘点单' },
-      { code: 'LOCATION_ADJUST', label: '货位调整单' },
+      { code: 'OTHER_OUT', label: '其他出库单' },
     ],
     edges: [
-      { from: 'PURCHASE_IN', to: 'STOCK_CHECK' },
-      { from: 'FINISH_IN', to: 'STOCK_CHECK' },
-      { from: 'STOCK_CHECK', to: 'LOCATION_ADJUST' },
-      { from: 'TRANSFER', to: 'LOCATION_ADJUST' },
+      { from: 'PURCHASE_IN', to: 'STOCK_STATUS', label: '入库' },
+      { from: 'FINISH_IN', to: 'STOCK_STATUS', label: '入库' },
+      { from: 'OTHER_IN', to: 'STOCK_STATUS', label: '入库' },
+      { from: 'STOCK_STATUS', to: 'SALE_OUT', label: '出库' },
+      { from: 'STOCK_STATUS', to: 'MATERIAL_OUT', label: '出库' },
+      { from: 'STOCK_STATUS', to: 'OTHER_OUT', label: '出库' },
+      // 仓间移动：一张单同时出调出仓、入调入仓，结存总量不变
+      { from: 'TRANSFER', to: 'STOCK_STATUS', label: '仓间移动' },
+      // 盘点取账面数，审核即按盈亏调账
+      { from: 'STOCK_STATUS', to: 'STOCK_CHECK', label: '账面实盘' },
     ],
     pos: {
-      PURCHASE_IN: [40, 60], FINISH_IN: [420, 60],
-      STOCK_CHECK: [420, 260], TRANSFER: [800, 260],
-      LOCATION_ADJUST: [800, 460], MATERIAL_OUT: [420, 460], SALE_OUT: [40, 460],
+      PURCHASE_IN: [40, 40], FINISH_IN: [420, 40], OTHER_IN: [800, 40],
+      TRANSFER: [40, 220], STOCK_STATUS: [420, 220], STOCK_CHECK: [800, 220],
+      SALE_OUT: [40, 400], MATERIAL_OUT: [420, 400], OTHER_OUT: [800, 400],
     },
+    note: '入库加、出库减，调拨只在仓库之间搬（一出一进、总量不变），盘点按盈亏调账；货位调整单只换货位不改数量，单据栏可进。',
     docs: [
       { code: 'PURCHASE_IN', label: '采购入库单' }, { code: 'FINISH_IN', label: '产成品入库单' },
+      { code: 'OTHER_IN', label: '其他入库单' },
       { code: 'SALE_OUT', label: '销售出库单' }, { code: 'MATERIAL_OUT', label: '材料出库单' },
+      { code: 'OTHER_OUT', label: '其他出库单' },
       { code: 'TRANSFER', label: '调拨单' }, { code: 'STOCK_CHECK', label: '库存盘点单' },
       { code: 'LOCATION_ADJUST', label: '货位调整单' },
     ],
@@ -812,89 +888,96 @@ const modules = [
   },
   {
     code: 'sn', name: '序列号管理', icon: 'node-index', color: '#597ef7',
+    /**
+     * 序列号跟着单据走：入库单据登记、出库单据核销，两张报表实时聚合（弃审自动回滚）。
+     * 序列号登记单只做历史补录/导入，不再走审批，也不再是唯一入口。
+     */
     nodes: [
       { code: 'INV', label: '存货(启用序列号)' },
+      { code: 'PURCHASE_IN', label: '采购入库单' },
       { code: 'SERIAL_NO', label: '序列号登记单' },
+      { code: 'SALE_OUT', label: '销售出库单' },
       { code: 'SERIAL_STATUS', label: '序列号状况表' },
       { code: 'SERIAL_TRACE', label: '序列号跟踪表' },
     ],
     edges: [
-      { from: 'INV', to: 'SERIAL_NO' },
-      { from: 'SERIAL_NO', to: 'SERIAL_STATUS' },
-      { from: 'SERIAL_NO', to: 'SERIAL_TRACE' },
+      { from: 'INV', to: 'PURCHASE_IN', label: '启用' },
+      { from: 'INV', to: 'SERIAL_NO', label: '补录' },
+      { from: 'PURCHASE_IN', to: 'SALE_OUT', label: '核销' },
+      { from: 'SALE_OUT', to: 'SERIAL_STATUS', label: '在库' },
+      { from: 'SALE_OUT', to: 'SERIAL_TRACE', label: '跟踪' },
     ],
     pos: {
-      INV: [40, 150], SERIAL_NO: [420, 150], SERIAL_STATUS: [800, 150],
-      SERIAL_TRACE: [420, 330],
+      INV: [0, 0],
+      PURCHASE_IN: [0, 120], SERIAL_NO: [300, 120],
+      SALE_OUT: [0, 240],
+      SERIAL_STATUS: [0, 360], SERIAL_TRACE: [300, 360],
     },
-    docs: [
-      { code: 'SERIAL_NO', label: '序列号登记单' }, { code: 'SERIAL_STATUS', label: '序列号状况表' },
-      { code: 'SERIAL_TRACE', label: '序列号跟踪表' },
-    ],
+    note: '入库单（采购/产成品/委外/其他）登记序列号、出库单（销售/材料/其他）按序列号核销，数量必须一一对应且同一存货全局唯一；状况表只看在库，跟踪表带出入库单号。',
     archives: [{ code: 'INV', label: '存货' }, { code: 'WH', label: '仓库' }],
     reports: [],
   },
   {
     code: 'qc', name: '质量管理', icon: 'safety-certificate', color: '#ff4d4f',
     /**
-     * 质检有两条独立入口链，画成上下两段：
-     * 上段 = 来料检验（采购到货 → 检验 → 入库）
-     * 下段 = 生产检验（加工单 → 成品/首件/工序报检 → 入库）
-     * 两段共用「来料/成品检验单」作为统一检验出口。
+     * 质量单据按三条链排（列模式，pos 写 [列, 行]）：
+     *   来料（左）到货单 → 来料/成品检验单 → 采购入库单；检验不合格从左侧留白绕到退货单
+     *   生产（中）生产加工单 → 首件报检单 →（放行）工序汇报单
+     *   完工（右）生产加工单 → 成品报检单 → 产成品入库单
+     * 关键顺序：**首检是报工前置**——首件报检单没审核通过，该工序任何批次都报不了工
+     * （`PxService#firstInspectBlockReason`：未建单/待审批/不合格都拒绝），
+     * 所以箭头是「首件报检单 → 工序汇报单」，不是报工生成首检。
+     * 只画在用的链：工序报检单 / 生产过程检验单 至今 0 张单（生单入口也没有人用），
+     * 首件报检单送检验单同样没用过，三条都从流程图里去掉（面板和菜单仍然保留）。
      */
+    layout: 'columns',
+    /* 左侧留白 104：旁路折线跑道在卡片左 76px，标签（居中在跑道与卡片之间）才不会压到卡片边框 */
+    gutter: 104,
     nodes: [
-      // 来料检验链
-      { code: 'PU_ORDER', label: '采购订单' },
+      // 来料链
       { code: 'ARRIVAL_IN', label: '到货单' },
       { code: 'INSPECTION', label: '来料/成品检验单' },
       { code: 'PURCHASE_IN', label: '采购入库单' },
       { code: 'PURCHASE_RETURN', label: '采购退货单' },
-      // 生产检验链
+      // 生产链
       { code: 'MANU_ORDER', label: '生产加工单' },
-      { code: 'FINISH_INSPECT', label: '成品报检单' },
       { code: 'FIRST_INSPECT', label: '首件报检单' },
       { code: 'PROCESS_REPORT', label: '工序汇报单' },
-      { code: 'PROCESS_INSPECT_APPLY', label: '工序报检单' },
-      { code: 'PROCESS_INSPECTION', label: '生产过程检验单' },
+      // 完工链
+      { code: 'FINISH_INSPECT', label: '成品报检单' },
       { code: 'FINISH_IN', label: '产成品入库单' },
     ],
     edges: [
-      // 采购来料链：到货 → 检验 → 入库 / 退货
-      { from: 'PU_ORDER', to: 'ARRIVAL_IN', label: '到货' },
       { from: 'ARRIVAL_IN', to: 'INSPECTION', label: '报检' },
       { from: 'INSPECTION', to: 'PURCHASE_IN', label: '合格入库' },
-      { from: 'INSPECTION', to: 'PURCHASE_RETURN', label: '不合格退回' },
-      // 生产检验链：加工单派生成品报检与首件报检，检验合格入成品库
-      { from: 'MANU_ORDER', to: 'FINISH_INSPECT', label: '报检' },
+      // 检验不合格：未入库直接退回，从左侧留白绕下去，不穿过采购入库单
+      {
+        from: 'INSPECTION', to: 'PURCHASE_RETURN', label: '不合格退回', offset: 76,
+        sourceHandle: 'out-l', targetHandle: 'in',
+        sourcePosition: Position.Left, targetPosition: Position.Left,
+      },
       { from: 'MANU_ORDER', to: 'FIRST_INSPECT', label: '首件' },
+      // 首检通过才放行报工（报工前置门，不是报工的副作用）
+      { from: 'FIRST_INSPECT', to: 'PROCESS_REPORT', label: '放行报工' },
+      // 全部工序报满才能报检成品；报检审核通过才产成品入库
+      {
+        from: 'MANU_ORDER', to: 'FINISH_INSPECT', label: '报检', offset: 28,
+        sourceHandle: 'out-b-r', targetHandle: 'in-t',
+        sourcePosition: Position.Bottom, targetPosition: Position.Top,
+      },
       { from: 'FINISH_INSPECT', to: 'FINISH_IN', label: '合格入库' },
-      { from: 'FIRST_INSPECT', to: 'FINISH_IN', label: '合格入库' },
-      // 工序链：报工 → 报检 → 过程检验
-      { from: 'PROCESS_REPORT', to: 'PROCESS_INSPECT_APPLY', label: '报检' },
-      { from: 'PROCESS_INSPECT_APPLY', to: 'PROCESS_INSPECTION', label: '检验' },
     ],
-    /**
-     * 布局按真实流向纵向分层，确保每条边都是"上一层 → 下一层"，
-     * 避免同层相连被画成 U 形绕行。三条独立链并列：
-     *   采购链  PU_ORDER → ARRIVAL_IN → INSPECTION → PURCHASE_IN / PURCHASE_RETURN
-     *   生产链  MANU_ORDER → FINISH_INSPECT / FIRST_INSPECT → FINISH_IN
-     *   工序链  PROCESS_REPORT → PROCESS_INSPECT_APPLY → PROCESS_INSPECTION
-     */
     pos: {
-      // 采购链（第1-3层）
-      PU_ORDER: [0, 0], ARRIVAL_IN: [220, 0],
-      INSPECTION: [220, 150],
-      PURCHASE_IN: [120, 300], PURCHASE_RETURN: [320, 300],
-      // 生产链（第1-3层，与采购链并列）
-      MANU_ORDER: [480, 0], FINISH_INSPECT: [460, 150], FIRST_INSPECT: [620, 150],
-      FINISH_IN: [540, 300],
-      // 工序链（第4层）
-      PROCESS_REPORT: [0, 460], PROCESS_INSPECT_APPLY: [220, 460], PROCESS_INSPECTION: [440, 460],
+      ARRIVAL_IN: [0, 0], INSPECTION: [0, 1], PURCHASE_IN: [0, 2], PURCHASE_RETURN: [0, 3],
+      MANU_ORDER: [1, 0], FIRST_INSPECT: [1, 1], PROCESS_REPORT: [1, 2],
+      FINISH_INSPECT: [2, 1], FINISH_IN: [2, 2],
     },
+    note: '先首检后报工：首件报检单审核通过，该工序才允许报工；成品报检单审核通过才能产成品入库；检验单按来源分流到采购入库或产成品入库。',
+    // 只列在用的单据：工序报检单、生产过程检验单 至今 0 张单，不再出现在本模块入口
+    // （面板与质量管理菜单 QM09 / QM16 保留，从菜单仍可进入）
     docs: [
       { code: 'INSPECTION', label: '来料/成品检验单' }, { code: 'ARRIVAL_IN', label: '到货单' },
       { code: 'FINISH_INSPECT', label: '成品报检单' }, { code: 'FIRST_INSPECT', label: '首件报检单' },
-      { code: 'PROCESS_INSPECT_APPLY', label: '工序报检单' }, { code: 'PROCESS_INSPECTION', label: '生产过程检验单' },
       { code: 'PURCHASE_IN', label: '采购入库单' }, { code: 'FINISH_IN', label: '产成品入库单' },
     ],
     archives: [
@@ -975,16 +1058,8 @@ watch(() => localeStore.current, async (locale) => {
   await localeStore.ensureDict(locale, keys)
 }, { immediate: true })
 
-// 画布高度按当前模块节点最大纵坐标自适应（卡片高 80 + 边距）
-const canvasH = computed(() => {
-  const m = cur.value
-  let maxY = 300
-  for (const n of m.nodes || []) {
-    const y = m.pos && m.pos[n.code] ? m.pos[n.code][1] : 0
-    if (y + 80 > maxY) maxY = y + 80
-  }
-  return maxY + 40
-})
+// 画布高度按「排完版」的最后一行算，不用原始 pos（手摆坐标会多出几百像素空白）
+const canvasH = computed(() => canvasHeightOf(layoutNodes(cur.value)))
 
 // ---------- 节点与侧栏筛选 ----------
 const nodeFilter = ref('')
@@ -1030,7 +1105,13 @@ const traceHits = computed(() => {
     const code = s['面板编码']
     if (!code) continue
     if (!out[code]) out[code] = []
-    out[code].push({ docNo: s['单号'], state: s['阶段'] || '待开始', isStalled: s['是否卡点'] })
+    out[code].push({
+      docNo: s['单号'],
+      state: s['阶段'] || '待开始',
+      isStalled: s['是否卡点'],
+      // 卡点的成因：单据停在草稿/审批中 → 卡在未审批（节点要流光提示）
+      unapprovedStall: isApprovalStall(s),
+    })
   }
   return out
 })
@@ -1262,62 +1343,10 @@ const { fitView } = useVueFlow()
 /** 画布尺寸就绪后再 fitView：VueFlow 在容器高度为 0 时会算出错误的比例。 */
 async function fitNow() {
   await nextTick()
-  requestAnimationFrame(() => fitView({ padding: 0.12, maxZoom: 1, minZoom: 0.75 }))
+  requestAnimationFrame(() => fitView({ padding: 0.03, maxZoom: 1, minZoom: 0.75 }))
 }
 
 const EDGE_COLOR = '#98a2b3'
-
-/**
- * 流程图布局：原始 pos 是按 1400px 画布手摆的坐标，直接放进本页会超出可视区，
- * 硬缩放又会把卡片压到互相重叠。所以只用 pos 的纵向先后关系（Y 归入同一行），
- * 横向改为行内等距布点，保证任何模块都放得下且不重叠。
- */
-const CARD_W = 176   // 与 .fn-card 宽度一致
-const CARD_H = 56    // 与 .fn-card 高度一致
-const GAP_X = 72
-const GAP_Y = 56
-/** 行吸附网格：原始 pos 的 Y 常以 120/170/250 这类手工值出现，按 60 取整才能把同层归到一行。 */
-const ROW_SNAP = 60
-
-/** 把一个模块的节点排成行列：返回 code → {x, y}。 */
-function layoutNodes(module) {
-  const raw = (module.nodes || []).map((n) => {
-    const p = module.pos && module.pos[n.code] ? module.pos[n.code] : [0, 0]
-    return { code: n.code, x: p[0], y: p[1] }
-  })
-  if (!raw.length) return {}
-
-  // 1) 按原 Y 吸附到网格后分行：同层节点归入同一行
-  const sorted = [...raw].sort((a, b) => a.y - b.y || a.x - b.x)
-  const rows = []
-  for (const item of sorted) {
-    const band = Math.round(item.y / ROW_SNAP)
-    const row = rows[rows.length - 1]
-    if (row && row.band === band) {
-      row.items.push(item)
-    } else {
-      rows.push({ band, items: [item] })
-    }
-  }
-
-  // 2) 行内按原 X 排序，等距铺开
-  const widest = Math.max(...rows.map((r) => r.items.length))
-  const rowWidth = widest * CARD_W + (widest - 1) * GAP_X
-  const out = {}
-  rows.forEach((row, ri) => {
-    row.items.sort((a, b) => a.x - b.x)
-    const count = row.items.length
-    const used = count * CARD_W + (count - 1) * GAP_X
-    const offset = (rowWidth - used) / 2
-    row.items.forEach((item, ci) => {
-      out[item.code] = {
-        x: Math.round(offset + ci * (CARD_W + GAP_X)),
-        y: Math.round(ri * (CARD_H + GAP_Y)),
-      }
-    })
-  })
-  return out
-}
 
 /**
  * 连线方向：按上下游相对位置挑锚点，让直角折线尽量走直线。
@@ -1337,26 +1366,17 @@ function edgeHandles(e, layout) {
   }
   const a = layout[e.from] || { x: 0, y: 0 }
   const b = layout[e.to] || { x: 0, y: 0 }
-  const dy = b.y - a.y
-  // 跨行就是竖直支链：从上往下走「下出上进」，从下往上走「上出下进」，
-  // 只有同一行才走「右出左进」。这样支链是直的，不再绕成 S 形长弯。
-  if (dy > 0) {
-    return {
-      sourceHandle: 'out-b',
-      targetHandle: 'in-t',
-      sourcePosition: Position.Bottom,
-      targetPosition: Position.Top,
-    }
+  // 方向规则集中在 flow-layout：跨行竖直、同行按左右选边（目标在左时左出右进）
+  const h = defaultHandles(a, b)
+  const position = {
+    bottom: Position.Bottom, top: Position.Top, left: Position.Left, right: Position.Right,
   }
-  if (dy < 0) {
-    return {
-      sourceHandle: 'out-t',
-      targetHandle: 'in-b',
-      sourcePosition: Position.Top,
-      targetPosition: Position.Bottom,
-    }
+  return {
+    sourceHandle: h.sourceHandle,
+    targetHandle: h.targetHandle,
+    sourcePosition: position[h.sourcePosition],
+    targetPosition: position[h.targetPosition],
   }
-  return { sourceHandle: 'out', targetHandle: 'in', sourcePosition: Position.Right, targetPosition: Position.Left }
 }
 
 function buildFlow() {
@@ -1389,6 +1409,9 @@ function buildFlow() {
         label: n.label,
         monitor: !!n.monitor,
         permCode: n.permCode || '',
+        // 审批面板标识 + 「卡在未审批」标记（只有追踪态才可能为真）
+        approval: requiresApproval(n.code),
+        approvalStall: hitList.some((h) => h.unapprovedStall),
         icon: iconOf(n.code),
         // 追踪态：未命中的环节压暗，命中的正常；无追踪时才用文字筛选压暗
         dim: tracked.value
@@ -1564,7 +1587,9 @@ function go(path, title) {
 .bo-page {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  /* 只能写 min-height：写 height:100% 时内容一超过视口高度，本级不撑开、
+     外层 .portal-content 的滚动高度就等于视口，于是整页被裁掉且滚不动（追踪 39 环节时必然触发） */
+  min-height: 100%;
   box-sizing: border-box;
   padding: 16px 24px 24px;
   gap: 16px;
@@ -1609,10 +1634,12 @@ function go(path, title) {
 
 /* ---------- 主体三栏 ---------- */
 .bo-body {
-  flex: 1;
+  /* 不再用 flex:1 + min-height:0 硬压：追踪路线长的时候图表会被压没。
+     内容高就撑开（页面滚动），内容矮就填满剩余高度 */
+  flex: 1 0 auto;
   display: flex;
   gap: 16px;
-  min-height: 0;
+  min-height: 520px;
 }
 
 /* 左：模块导航 */
@@ -1762,13 +1789,34 @@ function go(path, title) {
   height: 100%;
 }
 
+/* 读法说明：流程图下方一行，解释画不出成节点的口径（勾稽、共用单据） */
+.bo-flow-note {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 2px 10px;
+  font-size: 12px;
+  line-height: 20px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.bo-flow-note-tag {
+  flex: 0 0 auto;
+  padding: 0 6px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 11px;
+  line-height: 18px;
+}
+
 /* 流程图节点卡片：0 层边框，hover 才提边框色 */
 .fn-card {
   position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
-  /* 与 JS 的 CARD_W 保持一致：布局按 176 计算列宽，卡片超出就会压到相邻节点 */
+  /* 与 flow-layout.js 的 CARD_W 保持一致：布局按 176 计算列宽，卡片超出就会压到相邻节点 */
   width: 176px;
   padding: 8px 10px;
   box-sizing: border-box;
@@ -1832,6 +1880,77 @@ function go(path, title) {
   flex: 1;
 }
 
+/* 编号 + 审批标识同一行：编号占满剩余宽度，标识固定宽度不被挤掉 */
+.fn-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 审批标识：默认灰底小字，不抢注意力；追踪到卡在未审批时转琥珀色 */
+.fn-approval {
+  flex: 0 0 auto;
+  padding: 0 4px;
+  border: 1px solid var(--d-border-strong, #dce4e1);
+  border-radius: 3px;
+  font-size: 10px;
+  line-height: 14px;
+  color: var(--d-text-3, #8b9893);
+  white-space: nowrap;
+}
+
+.fn-approval.pending {
+  border-color: #ffd591;
+  background: #fffbe6;
+  color: #d46b08;
+}
+
+/* 卡在「未审批」的节点：琥珀色边框上走一道流光，动画只澄清状态，不做装饰 */
+.fn-card.stalled-approval {
+  border-color: #faad14;
+  background: #fffbe6;
+  overflow: hidden;
+}
+
+.fn-card.stalled-approval::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--fn-angle, 0deg),
+    rgba(250, 173, 20, 0) 0deg,
+    rgba(250, 173, 20, 0) 240deg,
+    rgba(250, 173, 20, 0.9) 310deg,
+    rgba(250, 173, 20, 0) 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: fn-approval-flow 2.4s linear infinite;
+  pointer-events: none;
+}
+
+@property --fn-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes fn-approval-flow {
+  to { --fn-angle: 360deg; }
+}
+
+/* 降低动效偏好：不转流光，只留静态琥珀边框 */
+@media (prefers-reduced-motion: reduce) {
+  .fn-card.stalled-approval::before {
+    animation: none;
+    background: none;
+  }
+}
+
 .fn-label {
   font-size: 14px;
   line-height: 22px;
@@ -1842,7 +1961,12 @@ function go(path, title) {
 }
 
 .fn-code {
-  font-size: 12px;
+  /* 与审批角标同一行：编号自己收缩出省略号，角标不被挤掉 */
+  flex: 1;
+  min-width: 0;
+  /* 11px：PROCESS_INSPECT_APPLY / PROCESS_INSPECTION 这类 18-19 字符的编码要能整串显示，
+     卡片正文宽 128px，12px 等宽字只能放 17 位，会被截成同样的 PROCESS_INSPEC… */
+  font-size: 11px;
   line-height: 18px;
   color: rgba(0, 0, 0, 0.45);
   font-family: Consolas, "Courier New", monospace;

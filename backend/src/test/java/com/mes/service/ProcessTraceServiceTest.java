@@ -336,6 +336,43 @@ class ProcessTraceServiceTest {
      * 并行排产线：一个订单行一条线，各走各的加工单；排产把该产品全部工序聚成一个节点，
      * 已排的工序带批次单号，后道还没开工的标「待生成」（一次排产，不是一道工序一个节点）。
      */
+    /**
+     * 首检单必须跟着自己的加工单：委外线的首检单不能串进自制线，作废单也不该画出来。
+     * 实测问题：一张销售订单同时有自制行和委外行时，每道工序下面挂了 5 张首件报检单。
+     */
+    @Test
+    void firstInspectBranchesStayWithOwnManufacturingOrder() {
+        ProcessTraceService.Doc mo = new ProcessTraceService.Doc("MANU_ORDER", "SO-1-1", "已审核",
+                List.of("SO-1"), "", "",
+                List.of(new ProcessTraceService.Process("PX001", "车削")));
+        ProcessTraceService.Doc batch = new ProcessTraceService.Doc("DISPATCH", "PG-1", "已审核",
+                List.of("SO-1-1"), "PX001", "车削", List.of());
+        ProcessTraceService.Doc report = new ProcessTraceService.Doc("PROCESS_REPORT", "GX-1", "已审核",
+                List.of("SO-1-1"), "PX001", "车削", List.of());
+        ProcessTraceService.Doc activeInspect = new ProcessTraceService.Doc("FIRST_INSPECT", "SJ-1", "已审核",
+                List.of("SO-1-1"), "", "", List.of(new ProcessTraceService.Process("PX001", "车削")));
+        ProcessTraceService.Doc voidInspect = new ProcessTraceService.Doc("FIRST_INSPECT", "SJ-OLD", "作废",
+                List.of("SO-1-1"), "", "", List.of(new ProcessTraceService.Process("PX001", "车削")));
+        ProcessTraceService.Doc outsourceOrder = new ProcessTraceService.Doc("OUTSOURCE_ORDER", "WW-1", "已审核",
+                List.of("SO-1"));
+        ProcessTraceService.Doc outsourceInspect = new ProcessTraceService.Doc("FIRST_INSPECT", "SJ-WW", "已审核",
+                List.of("WW-1"), "", "", List.of(new ProcessTraceService.Process("PX001", "车削")));
+
+        ProcessTraceService.TraceResult result = service.trace("SO-1", List.of(
+                doc("SO_ORDER", "SO-1", "已审核"), mo, batch, report,
+                activeInspect, voidInspect, outsourceOrder, outsourceInspect), true);
+
+        assertEquals(1, result.lanes().size());
+        ProcessTraceService.RouteNode reportNode = result.lanes().get(0).nodes().stream()
+                .filter(n -> "PROCESS_REPORT".equals(n.panelCode())).findFirst().orElseThrow();
+        List<ProcessTraceService.RouteNode> sub = reportNode.branches().get(0).branches();
+        List<String> inspects = sub.stream()
+                .filter(n -> "FIRST_INSPECT".equals(n.panelCode()))
+                .map(ProcessTraceService.RouteNode::docNo).toList();
+        assertEquals(List.of("SJ-1"), inspects,
+                "一道工序只该挂自己加工单、且未作废的那张首检单");
+    }
+
     @Test
     void lanesSplitByOrderLineAndPlanNodeHoldsAllProcesses() {
         ProcessTraceService.Doc mo1 = new ProcessTraceService.Doc("MANU_ORDER", "SO-1-1", "已审核",

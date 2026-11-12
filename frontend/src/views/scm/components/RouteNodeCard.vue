@@ -95,9 +95,12 @@ const title = computed(() => {
   return parts.filter(Boolean).join(' · ')
 })
 
-/** 分支名：工序汇报的分支就是那道工序，直接显示工序名称，比「工序汇报单 · 车削」短 */
+/**
+ * 分支名：按工序展开的分支（工序汇报、委外回厂首检）直接显示工序名称，
+ * 比「首件报检单」「首件报检单」三张同名分支好认。
+ */
 function branchLabel(b) {
-  if (b['面板编码'] === 'PROCESS_REPORT' && b['工序名称']) return b['工序名称']
+  if (b['工序名称']) return b['工序名称']
   return tt(b['环节'])
 }
 

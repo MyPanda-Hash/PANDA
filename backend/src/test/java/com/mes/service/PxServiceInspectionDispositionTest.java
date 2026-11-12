@@ -268,8 +268,8 @@ class PxServiceInspectionDispositionTest {
                 () -> service.callButton("INSPECTION", "生成采购入库单",
                         Map.of("编号", "JY-F001"), Map.of()));
 
-        assertTrue(error.getMessage().contains("不是来料检验"));
-        assertTrue(error.getMessage().contains("生成产成品入库单"));
+        assertTrue(error.getMessage().contains("不是由到货单生成"),
+                "成品检验单不能转采购入库——检验单只处理到货单来的来料/委外回厂");
     }
 
     @Test

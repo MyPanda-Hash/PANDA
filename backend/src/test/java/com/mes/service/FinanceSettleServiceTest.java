@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -104,6 +105,30 @@ class FinanceSettleServiceTest {
         FinanceSettleService.Settlement s = service.buildSettlement("PU_INVOICE", "PF-003", head, detail);
 
         assertEquals(0, new BigDecimal("10").compareTo(s.amount()));
+    }
+
+    @Test
+    void outsourceFeeCreatesPayableWithOutsourceSupplier() {
+        // 委外加工费用单：明细金额字段是「费用金额」，往来单位在表头「委外供应商」
+        Map<String, Object> head = Map.of("单据编号", "WY-001", "委外供应商", "华东热处理厂",
+                "委外加工单号", "WW-001");
+        Map<String, Object> detail = Map.of("items", List.of(
+                Map.of("产品名称", "轴套 C", "数量", 10, "委外单价", 6.5, "费用金额", 65)));
+
+        FinanceSettleService.Settlement s = service.buildSettlement("OUTSOURCE_FEE", "WY-001", head, detail);
+
+        assertNotNull(s, "委外加工费用单必须产生应付");
+        assertEquals("AP", s.type());
+        assertEquals("华东热处理厂", s.partner(), "应付要挂委外供应商，否则账龄与核销找不到往来单位");
+        assertEquals(0, new BigDecimal("65").compareTo(s.amount()));
+    }
+
+    @Test
+    void outsourceInDoesNotCreatePayable() {
+        // 票到确认口径：委外入库只落库存，加工费由「委外加工费用单」确认应付，
+        // 否则同一笔加工费在入库和费用单各记一次（实测 WR/WY 各 65 → 应付翻倍）
+        assertNull(service.typeOf("OUTSOURCE_IN"), "委外入库不挂应付，避免与费用单双记");
+        assertEquals("AP", service.typeOf("OUTSOURCE_FEE"));
     }
 
     @Test

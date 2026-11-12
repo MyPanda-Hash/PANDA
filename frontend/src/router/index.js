@@ -29,10 +29,13 @@ const routes = [
       { path: 'mes/processReport', component: () => import('@/views/mes/ProcessReportBoard.vue'), meta: { title: '工序报工', code: 'processReport' } },
       { path: 'mes/plan', component: () => import('@/views/mes/PlanBoard.vue'), meta: { title: '工单排产', code: 'plan' } },
       { path: 'mes/planAnalysis', component: () => import('@/views/mes/PlanAnalysisBoard.vue'), meta: { title: '计划分析', code: 'planAnalysis' } },
+      { path: 'mes/mps', component: () => import('@/views/mes/MpsBoard.vue'), meta: { title: '主生产计划', code: 'mps' } },
+      { path: 'pdm/engChange', component: () => import('@/views/pdm/EngChangeBoard.vue'), meta: { title: '工程变更', code: 'engChange' } },
       { path: 'mes/materialIssue', component: () => import('@/views/mes/MaterialIssueBoard.vue'), meta: { title: '生产领料', code: 'materialIssue' } },
       // 销售发票打印页（增值税发票版式）：不放在面板容器里，独立全屏渲染便于打印
       { path: 'print/invoice', component: () => import('@/views/print/InvoicePrint.vue'), meta: { title: '销售发票打印' } },
       { path: 'scm/mobileWarehouse', component: () => import('@/views/scm/MobileWarehouse.vue'), meta: { title: '移动仓管', code: 'mobileWarehouse' } },
+      { path: 'wms/workbench', component: () => import('@/views/wms/Workbench.vue'), meta: { title: '仓内作业', code: 'wmsWorkbench' } },
       { path: 'scm/serialNumber', component: () => import('@/views/scm/SerialNumber.vue'), meta: { title: '序列号管理', code: 'serialNumber' } },
       // 排产批次（派工单）不再用面板展示：所有列表入口统一落到只读看板
       { path: 'panelx/list/DISPATCH', redirect: '/mes/dispatchBoard' },

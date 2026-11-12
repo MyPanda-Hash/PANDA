@@ -15,6 +15,9 @@ import com.mes.panel.PanelActionContext;
 import com.mes.panel.PanelActionRegistry;
 import com.mes.panel.PanelRuntimeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -139,6 +142,28 @@ public class PxService implements PanelRuntimeService {
             Pattern.compile("[^\\s.%(/)]{1," + CUSTOM_FIELD_NAME_MAX + "}");
     /** 自定义字段缓存：加/停用后立即失效，不靠时间窗（否则刚加的字段要等一会儿才出现） */
     private final Map<String, List<Map<String, Object>>> customFieldCache = new ConcurrentHashMap<>();
+
+    /**
+     * 独立事务执行器：委外入库前的「工序首检」要给缺的工序补建首件报检单，补完再抛异常拦一次。
+     * 补建必须提交，不能跟着外层那次调用的回滚一起消失——否则每点一次「生成委外入库单」就重建一批、
+     * 又整体回滚，委外入库永远过不了这道门。单测（没有事务管理器）退化成直接执行。
+     */
+    @Autowired(required = false)
+    private PlatformTransactionManager transactionManager;
+
+    /** 序列号登记/核销校验：跟着单据明细走，弃审靠实时聚合回滚。 */
+    @Autowired(required = false)
+    private SerialNumberService serialNumberService;
+
+    private void inNewTransaction(Runnable body) {
+        if (transactionManager == null) {
+            body.run();
+            return;
+        }
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        template.executeWithoutResult(status -> body.run());
+    }
 
     @Autowired
     public PxService(PanelConfigMapper panelMapper, FormDataMapper formMapper,
@@ -1947,32 +1972,27 @@ public class PxService implements PanelRuntimeService {
                 .eq(FormData::getPanelCode, "SERIAL_NO")
                 .orderByDesc(FormData::getCreateTime));
         List<Map<String, Object>> flat = new ArrayList<>();
-        for (FormData fd : docs) {
-            Map<String, Object> head = parseData(fd.getData());
-            Map<String, Object> dm = parseData(fd.getDetailData());
-            Object items = dm.get("items");
-            if (!(items instanceof List)) continue;
-            String status = fd.getStatus() == null ? "" : fd.getStatus();
-            for (Object o : (List<?>) items) {
-                if (!(o instanceof Map)) continue;
-                Map<String, Object> row = new HashMap<>((Map<String, Object>) o);
-                row.put("登记单号", fd.getFormNo());
-                row.put("单据状态", status);
-                row.putIfAbsent("存货编码", head.getOrDefault("存货编码", ""));
-                row.putIfAbsent("存货", head.getOrDefault("存货", ""));
-                row.putIfAbsent("规格型号", head.getOrDefault("规格型号", ""));
-                row.putIfAbsent("计量单位", head.getOrDefault("计量单位", ""));
-                row.putIfAbsent("仓库", head.getOrDefault("仓库", ""));
-                row.putIfAbsent("入库单号", head.getOrDefault("入库单号", ""));
-                row.putIfAbsent("出库单号", head.getOrDefault("出库单号", ""));
+        if (serialNumberService != null) {
+            for (SerialNumberService.Serial sn : serialNumberService.all()) {
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("存货编码", sn.itemCode());
+                row.put("存货名称", sn.itemName());
+                row.put("规格型号", sn.spec());
+                row.put("计量单位", sn.unit());
+                row.put("序列号", sn.serialNo());
+                row.put("仓库", sn.warehouse());
+                row.put("状态", sn.status());
+                row.put("入库单号", sn.inDoc());
+                row.put("入库日期", sn.inDate());
+                row.put("出库单号", sn.outDoc());
+                row.put("出库日期", sn.outDate());
                 flat.add(row);
             }
         }
-        // 状况表：仅展示在库（未出库）序列号；跟踪表：全部（携带出入库追溯信息）
+        // 状况表只列在库；跟踪表列全部（带出入库去向）
         List<Map<String, Object>> rows = new ArrayList<>();
         for (Map<String, Object> row : flat) {
-            String snStatus = String.valueOf(row.getOrDefault("状态", "在库"));
-            if ("SERIAL_STATUS".equals(panelCode) && !"在库".equals(snStatus)) continue;
+            if ("SERIAL_STATUS".equals(panelCode) && !SerialNumberService.IN_STOCK.equals(row.get("状态"))) continue;
             boolean hit = true;
             if (condition != null) {
                 for (Map.Entry<String, Object> e : condition.entrySet()) {
@@ -2104,9 +2124,12 @@ public class PxService implements PanelRuntimeService {
                 return "INSPECTION".equals(panelCode)
                         ? createPurchaseReturnFromInspection(panelCode, formData)
                         : createPurchaseReturnFromPurchaseIn(panelCode, formData);
-            case "生成到货单":         // 推式生单：采购订单 → 到货单（收料通知）
+            case "生成到货单":         // 推式生单：采购订单/委外加工单 → 到货单（收料通知/委外回厂）
+                if ("OUTSOURCE_ORDER".equals(panelCode)) {
+                    return createArrivalFromOutsource(panelCode, formData);
+                }
                 if (!"PU_ORDER".equals(panelCode)) {
-                    throw new IllegalStateException("仅采购订单可生成到货单，当前单据：" + panelCode);
+                    throw new IllegalStateException("仅采购订单/委外加工单可生成到货单，当前单据：" + panelCode);
                 }
                 return createArrivalFromPo(panelCode, formData);
             case "齐套检查": {   // 按当前库存推算可开工数量，结果写回产成品「齐套数量(主)」
@@ -2136,7 +2159,11 @@ public class PxService implements PanelRuntimeService {
                 return createFinishInspectFromMo(panelCode, formData);
             }
             case "生成产成品入库单":   // 推式生单：生产加工单/成品报检单 → 产成品入库单
-                return "INSPECTION".equals(panelCode) || "PROCESS_INSPECTION".equals(panelCode)
+                if ("INSPECTION".equals(panelCode)) {
+                    // 检验单只管来料/委外回厂（都从到货单来）：合格转采购入库或委外入库，退回转采购退货
+                    throw new IllegalStateException("检验单不做产成品入库：成品入库走「成品报检单 → 生成产成品入库单」");
+                }
+                return "PROCESS_INSPECTION".equals(panelCode)
                         ? createInventoryInFromInspection(panelCode, formData, "FINISH_IN", buttonParam)
                         : createFinishInFromMo(finishInSourcePanel(panelCode, formData), finishInFormData(panelCode, formData), buttonParam);
             case "生成检验单":
@@ -2149,7 +2176,13 @@ public class PxService implements PanelRuntimeService {
             case "生成委外发料单":     // 推式生单：委外加工单/领料申请单 → 委外发料单
             case "生成委外发料单(分单)":
                 return createOutsourceIssue(panelCode, formData, buttonParam);
-            case "生成委外入库单":     // 推式生单：委外加工单 → 委外入库单
+            case "生成委外入库单":     // 推式生单：委外加工单/到货单(委外回厂)/检验单 → 委外入库单
+                if ("ARRIVAL_IN".equals(panelCode)) {
+                    FormData arr = formOf(panelCode, formData.get("编号"));
+                    requireApprovedPurchaseSource(arr, "生成委外入库单");
+                    requireArrivalInboundTarget(parseData(arr.getData()), "OUTSOURCE_IN", "生成委外入库单");
+                    return createOutsourceInFromArrival(arr, buttonParam);
+                }
                 return "INSPECTION".equals(panelCode) || "PROCESS_INSPECTION".equals(panelCode)
                         ? createInventoryInFromInspection(panelCode, formData, "OUTSOURCE_IN", buttonParam)
                         : createOutsourceInFromOrder(panelCode, formData, buttonParam);
@@ -2263,6 +2296,71 @@ public class PxService implements PanelRuntimeService {
             if (actual != null && !actual.isBlank()) return actual;
         }
         return fallback;
+    }
+
+    /**
+     * 发料行仓库的选取规则（发料/领料会真的出库，仓库错了就扣错仓）：
+     * 1. 显式预出仓且该仓有存量 → 用它（尊重业务填的仓）；
+     * 2. 否则退到该物料**实际有存量**的仓（实测 CL004 库存在辅料仓，发料行却落原料仓）；
+     * 3. 都取不到才用显式仓，再不行用兜底仓。
+     */
+    static String pickIssueWarehouse(String explicit, boolean explicitHasStock,
+                                     String stockWarehouse, String fallback) {
+        String want = explicit == null ? "" : explicit.trim();
+        if (!want.isEmpty() && explicitHasStock) return want;
+        String actual = stockWarehouse == null ? "" : stockWarehouse.trim();
+        if (!actual.isEmpty()) return actual;
+        return want.isEmpty() ? fallback : want;
+    }
+
+    /**
+     * 委外入库成本里的材料成本：多产成品时按数量占比分摊，保证分行合计等于材料总额。
+     */
+    static double apportionOutsourceMaterialCost(double materialCostTotal, double rowQty, double totalQty) {
+        if (materialCostTotal <= 0 || rowQty <= 0 || totalQty <= 0) return 0;
+        return round2(materialCostTotal * rowQty / totalQty);
+    }
+
+    /**
+     * 委外入库一行金额 = 分摊到的材料成本 + 该行加工费（委外单价 × 数量）。
+     * 只算加工费会把成品价值算低：材料已经发到委外厂，价值得跟着成品回库存。
+     */
+    static double outsourceInboundAmount(double materialCostTotal, double rowQty, double totalQty,
+                                         double unitProcessingPrice) {
+        return round2(apportionOutsourceMaterialCost(materialCostTotal, rowQty, totalQty)
+                + unitProcessingPrice * rowQty);
+    }
+
+    /** 委外加工单材料明细的成本合计：结存均价（优先按预出仓）× 计划用量。 */
+    private double outsourceMaterialCost(Map<String, Object> detail) {
+        if (stockTxnService == null || detail == null) return 0;
+        double total = 0;
+        Object mats = detail.get("materials");
+        if (!(mats instanceof List<?> rows)) return 0;
+        for (Object o : rows) {
+            if (!(o instanceof Map<?, ?> raw)) continue;
+            Map<String, Object> m = castRow(raw);
+            String code = str(m.get("材料编码"));
+            double qty = num(m.getOrDefault("计划数量", m.getOrDefault("需用数量", 0)));
+            if (code.isBlank() || qty <= 0) continue;
+            String wh = str(m.get("预出仓库"));
+            java.math.BigDecimal avg = wh.isBlank()
+                    ? stockTxnService.averageCostOf(code, str(m.get("材料名称")))
+                    : stockTxnService.averageCostOf(code, str(m.get("材料名称")), wh);
+            total += (avg == null ? 0 : avg.doubleValue()) * qty;
+        }
+        return total;
+    }
+
+    /** 按物料查实际仓库后套用 {@link #pickIssueWarehouse}。 */
+    private String issueWarehouseOf(Object explicit, Object itemCode, Object itemName) {
+        String want = textOf(explicit);
+        String code = textOf(itemCode);
+        String name = textOf(itemName);
+        boolean hasStock = !want.isEmpty() && stockTxnService != null
+                && stockTxnService.quantityOf(code, name, want).signum() > 0;
+        String actual = stockTxnService == null ? "" : textOf(stockTxnService.warehouseOfItem(code, name));
+        return pickIssueWarehouse(want, hasStock, actual, "原料仓");
     }
 
     /**
@@ -3262,8 +3360,8 @@ public class PxService implements PanelRuntimeService {
     /** 报检单 → 检验单。到货/成品/首件进入 QM15，工序报检进入生产过程检验。 */
     @SuppressWarnings("unchecked")
     private Map<String, Object> createInspectionFromReport(String panelCode, Map<String, Object> formData) {
-        if (!Set.of("ARRIVAL_IN", "FINISH_INSPECT", "FIRST_INSPECT", "PROCESS_INSPECT_APPLY").contains(panelCode)) {
-            throw new IllegalStateException("当前单据不能生成检验单：" + panelCode);
+        if (!Set.of("ARRIVAL_IN", "PROCESS_INSPECT_APPLY").contains(panelCode)) {
+            throw new IllegalStateException("检验单只由到货单生成（来料/委外回厂）；成品检验走成品报检单，当前单据：" + panelCode);
         }
         FormData source = formOf(panelCode, formData.get("编号"));
         if (!"已审核".equals(source.getStatus())) throw new IllegalStateException("仅已审核报检单可生成检验单");
@@ -3282,6 +3380,10 @@ public class PxService implements PanelRuntimeService {
         head.put("检验类别", head.get("业务类型"));
         copyFirst(sourceHead, head, "供应商编码", "供应商", "仓库", "生产车间", "加工单号", "部门", "项目", "经手人");
         head.put("来源单号", source.getFormNo());
+        // 来源类型跟随来源单据：委外回厂的检验单只能转委外入库，采购到货只能转采购入库
+        if ("ARRIVAL_IN".equals(panelCode)) {
+            head.put("来源类型", sourceHead.getOrDefault("来源类型", "采购"));
+        }
         // T+ QM15：来料带采购订单号，成品/委外带加工单号；检验部门默认取来源部门
         if ("ARRIVAL_IN".equals(panelCode)) {
             head.put("采购订单号", sourceHead.getOrDefault("采购订单号", ""));
@@ -3832,6 +3934,8 @@ public class PxService implements PanelRuntimeService {
         arrivalHead.put("到货日期", LocalDate.now().toString());
         arrivalHead.put("检验状态", "未检");
         arrivalHead.put("数据来源", "采购订单");
+        // 来源类型：决定后续只能生成采购入库单（委外回厂走 createArrivalFromOutsource）
+        arrivalHead.put("来源类型", "采购");
         List<Map<String, Object>> rows = new ArrayList<>();
         for (int index = 0; index < items.size(); index++) {
             Map<String, Object> it = items.get(index);
@@ -3896,6 +4000,7 @@ public class PxService implements PanelRuntimeService {
         FormData src = formOf(panelCode, no);
         requireApprovedPurchaseSource(src, "生成采购入库单");
         Map<String, Object> head = parseData(src.getData());
+        requireArrivalInboundTarget(head, "PURCHASE_IN", "生成采购入库单");
         List<Map<String, Object>> items = firstDetailRows(parseData(src.getDetailData()));
         if (items.isEmpty()) throw new IllegalStateException("到货单无明细：" + no);
         Set<Integer> inspectedLines = effectiveInspectionLines(panelCode, String.valueOf(no));
@@ -4534,7 +4639,7 @@ public class PxService implements PanelRuntimeService {
                     ? (List<Map<String, Object>>) dm.get("items") : new ArrayList<>();
             for (Map<String, Object> it : items) {
                 Map<String, Object> r = new HashMap<>();
-                r.put("仓库", stockWarehouseOf(it.get("仓库"),
+                r.put("仓库", stockWarehouseOf(it.get("预出仓库"),
                         it.getOrDefault("材料编码", it.getOrDefault("存货编码", "")),
                         it.getOrDefault("材料名称", it.getOrDefault("存货名称", "")), "原料仓"));
                 r.put("加工单号", it.getOrDefault("加工单号", ""));
@@ -4678,15 +4783,22 @@ public class PxService implements PanelRuntimeService {
                     ? (List<Map<String, Object>>) dm.get("materials") : new ArrayList<>();
             for (Map<String, Object> m : mats) {
                 Map<String, Object> r = new HashMap<>();
+                String wh = issueWarehouseOf(m.get("预出仓库"),
+                        m.getOrDefault("材料编码", ""), m.getOrDefault("材料名称", ""));
+                double qty = num(m.getOrDefault("计划数量", m.getOrDefault("需用数量", 0)));
+                // 出库成本按结存均价带出：发料单价若为 0，材料成本永远不进账，
+                // 而入库成本按「材料均价×用量 + 加工费」算，两边就对不上
+                double price = stockAvgPrice(String.valueOf(m.getOrDefault("材料编码", "")),
+                        String.valueOf(m.getOrDefault("材料名称", "")), wh);
+                if (price <= 0) price = num(m.getOrDefault("单价", 0));
                 r.put("材料编码", m.getOrDefault("材料编码", ""));
                 r.put("材料名称", m.getOrDefault("材料名称", ""));
                 r.put("规格型号", m.getOrDefault("规格型号", ""));
                 r.put("计量单位", m.getOrDefault("计量单位", "kg"));
-                r.put("数量", m.getOrDefault("计划数量", m.getOrDefault("需用数量", 0)));
-                r.put("单价", 0);
-                r.put("金额", 0);
-                r.put("仓库", stockWarehouseOf(m.get("预出仓库"),
-                        m.getOrDefault("材料编码", ""), m.getOrDefault("材料名称", ""), "原料仓"));
+                r.put("数量", qty);
+                r.put("单价", price);
+                r.put("金额", round2(qty * price));
+                r.put("仓库", wh);
                 rows.add(r);
             }
         } else {
@@ -4751,22 +4863,127 @@ public class PxService implements PanelRuntimeService {
         data.put("仓库", warehouseParam(buttonParam, "warehouse",
                 String.valueOf(head.getOrDefault("仓库", "原料仓"))));
         data.put("经手人", head.getOrDefault("经手人", ""));
+        // 入库成本 = 材料成本（发料材料结存均价 × 用量）+ 加工费（委外单价 × 数量）
+        double materialCost = outsourceMaterialCost(dm);
+        double totalQty = 0;
+        for (Map<String, Object> it : items) totalQty += num(it.getOrDefault("数量", 0));
         List<Map<String, Object>> rows = new ArrayList<>();
         for (Map<String, Object> it : items) {
+            double qty = num(it.getOrDefault("数量", 0));
+            double price = num(it.getOrDefault("委外单价", it.getOrDefault("单价", 0)));
+            double amount = outsourceInboundAmount(materialCost, qty, totalQty, price);
             Map<String, Object> r = new HashMap<>();
             r.put("产品编码", it.getOrDefault("产品编码", ""));
             r.put("产品名称", it.getOrDefault("产品名称", ""));
             r.put("规格型号", it.getOrDefault("规格型号", ""));
             r.put("计量单位", it.getOrDefault("计量单位", "件"));
-            r.put("实收数量", it.getOrDefault("数量", 0));
-            r.put("单价", it.getOrDefault("委外单价", it.getOrDefault("单价", 0)));
-            r.put("金额", it.getOrDefault("金额", 0));
+            r.put("实收数量", qty);
+            r.put("单价", qty == 0 ? 0 : round2(amount / qty));
+            r.put("金额", amount);
             r.put("现存量", it.getOrDefault("现存量", 0));
             rows.add(r);
         }
         Map<String, Object> detail = new HashMap<>();
         detail.put("items", rows);
         return insertGenerated("OUTSOURCE_IN", "OUTSOURCE_ORDER", String.valueOf(no), data, detail);
+    }
+
+    /**
+     * 推式生单：委外加工单 → 到货单（委外回厂收料）。
+     *
+     * <p>来源类型写「委外」：这张到货单后续只能生成委外入库单（检验单也跟随这个标识），
+     * 防止把委外回厂的货记成采购入库。
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createArrivalFromOutsource(String panelCode, Map<String, Object> formData) {
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        FormData src = formOf("OUTSOURCE_ORDER", no);
+        if (!"已审核".equals(src.getStatus())) {
+            throw new IllegalStateException("仅已审核委外加工单可生成到货单");
+        }
+        Map<String, Object> head = parseData(src.getData());
+        Map<String, Object> dm = parseData(src.getDetailData());
+        List<Map<String, Object>> products = dm.get("products") instanceof List
+                ? (List<Map<String, Object>>) dm.get("products") : new ArrayList<>();
+        if (products.isEmpty()) throw new IllegalStateException("委外加工单无产成品明细：" + no);
+        Map<String, Object> ah = new HashMap<>();
+        ah.put("单据日期", LocalDate.now().toString());
+        ah.put("业务类型", "委外回厂");
+        ah.put("来源类型", "委外");
+        ah.put("供应商编码", head.getOrDefault("委外供应商编码", ""));
+        ah.put("供应商", head.getOrDefault("委外供应商", ""));
+        ah.put("仓库", "成品仓");
+        ah.put("来源单号", String.valueOf(no));
+        ah.put("到货日期", LocalDate.now().toString());
+        ah.put("检验状态", "未检");
+        ah.put("数据来源", "委外加工单");
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> it : products) {
+            double qty = num(it.getOrDefault("数量", 0));
+            if (qty <= 0) continue;
+            Map<String, Object> r = new HashMap<>();
+            r.put("存货编码", it.getOrDefault("产品编码", ""));
+            r.put("存货名称", it.getOrDefault("产品名称", ""));
+            r.put("规格型号", it.getOrDefault("规格型号", ""));
+            r.put("仓库", "成品仓");
+            r.put("采购单位", it.getOrDefault("计量单位", "件"));
+            r.put("到货数量", qty);
+            r.put("到货拒收数量", 0);
+            r.put("实收数量", qty);
+            r.put("检验数量", 0);
+            r.put("合格数量", 0);
+            r.put("不合格数量", 0);
+            r.put("让步接收数量", 0);
+            r.put("报废数量", 0);
+            r.put("累计入库数量", 0);
+            r.put("累计退货数量", 0);
+            r.put("检验方式", "全检");
+            r.put("抽检比例%", 100);
+            r.put("单价", it.getOrDefault("委外单价", 0));
+            rows.add(r);
+        }
+        if (rows.isEmpty()) throw new IllegalStateException("委外加工单没有可到货的产成品：" + no);
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("ARRIVAL_IN", "OUTSOURCE_ORDER", String.valueOf(no), ah, detail);
+    }
+
+    /** 推式生单：到货单（委外回厂）→ 委外入库单。 */
+    private Map<String, Object> createOutsourceInFromArrival(FormData src, Map<String, Object> buttonParam) {
+        Map<String, Object> head = parseData(src.getData());
+        List<Map<String, Object>> items = firstDetailRows(parseData(src.getDetailData()));
+        if (items.isEmpty()) throw new IllegalStateException("到货单无明细：" + src.getFormNo());
+        Map<String, Object> ih = new HashMap<>();
+        ih.put("单据日期", LocalDate.now().toString());
+        ih.put("业务类型", "委外入库");
+        ih.put("委外供应商", textOf(head.getOrDefault("供应商", head.getOrDefault("委外供应商", ""))));
+        String ooNo = textOf(head.get("来源单号"));
+        ih.put("委外加工单号", "委外加工单".equals(textOf(head.get("数据来源"))) ? ooNo : "");
+        ih.put("到货单号", src.getFormNo());
+        ih.put("仓库", warehouseParam(buttonParam, "warehouse", "成品仓"));
+        ih.put("经手人", textOf(head.get("经手人")));
+        ih.put("数据来源", "到货单");
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> it : items) {
+            double qty = num(it.getOrDefault("实收数量", it.getOrDefault("到货数量", 0)));
+            if (qty <= 0) continue;
+            double price = num(it.getOrDefault("单价", 0));
+            Map<String, Object> r = new HashMap<>();
+            r.put("产品编码", it.getOrDefault("存货编码", ""));
+            r.put("产品名称", it.getOrDefault("存货名称", ""));
+            r.put("规格型号", it.getOrDefault("规格型号", ""));
+            r.put("计量单位", it.getOrDefault("采购单位", "件"));
+            r.put("实收数量", qty);
+            r.put("单价", price);
+            r.put("金额", round2(qty * price));
+            r.put("仓库", it.getOrDefault("仓库", ih.get("仓库")));
+            rows.add(r);
+        }
+        if (rows.isEmpty()) throw new IllegalStateException("到货单没有可入库的数量：" + src.getFormNo());
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("items", rows);
+        return insertGenerated("OUTSOURCE_IN", "ARRIVAL_IN", src.getFormNo(), ih, detail);
     }
 
     /**
@@ -4781,15 +4998,18 @@ public class PxService implements PanelRuntimeService {
         Map<String, Object> product = products.isEmpty() ? Map.of() : products.get(0);
         List<Map<String, Object>> procs = processRowsOf(detail, head);
         List<String> created = new ArrayList<>();
-        for (Map<String, Object> proc : procs) {
-            String code = str(proc.get("工序编码"));
-            if (code.isBlank() || firstInspectOf(ooNo, code) != null) continue;
-            double limit = num(proc.getOrDefault("计划数量", product.getOrDefault("数量", 0)));
-            if (limit <= 0) continue;
-            createFirstInspectForProcess("OUTSOURCE_ORDER", ooNo, head, product, proc,
-                    Math.min(firstArticleQty(proc), limit), "", "");
-            created.add(str(proc.getOrDefault("工序名称", code)));
-        }
+        // 独立事务：下面的 throw 会回滚本次调用，但补建的首检单必须留下来
+        inNewTransaction(() -> {
+            for (Map<String, Object> proc : procs) {
+                String code = str(proc.get("工序编码"));
+                if (code.isBlank() || firstInspectOf(ooNo, code) != null) continue;
+                double limit = num(proc.getOrDefault("计划数量", product.getOrDefault("数量", 0)));
+                if (limit <= 0) continue;
+                createFirstInspectForProcess("OUTSOURCE_ORDER", ooNo, head, product, proc,
+                        Math.min(firstArticleQty(proc), limit), "", "");
+                created.add(str(proc.getOrDefault("工序名称", code)));
+            }
+        });
         if (!created.isEmpty()) {
             throw new IllegalStateException("委外回厂按工序首检：已为委外加工单 " + ooNo + " 生成 "
                     + created.size() + " 张首件报检单（" + String.join("、", created)
@@ -7300,6 +7520,11 @@ public class PxService implements PanelRuntimeService {
             }
             validateSourceLinks(panelCode, fd.getFormNo(), parseData(fd.getDetailData()));
             if ("INSPECTION".equals(panelCode)) confirmInspectionDetail(fd);
+            // 序列号硬校验：必须在改状态之前跑（改完聚合会把本单算成已登记而自己撞自己）
+            if (serialNumberService != null) {
+                serialNumberService.validate(panelCode, fd.getFormNo(), parseData(fd.getData()),
+                        parseData(fd.getDetailData()));
+            }
             // 人工审核：审核人 = 当前登录人（不再硬编码 admin）
             String operator = currentUserName();
             fd.setStatus("已审核");
@@ -7466,7 +7691,8 @@ public class PxService implements PanelRuntimeService {
         if (isReturnInvoice(panelCode, head)) return;
         java.math.BigDecimal amount = java.math.BigDecimal.valueOf(settlementAmount(detail));
         if (amount.signum() == 0) return;
-        String partner = textOf(firstValue(head, "客户", "供应商", "往来单位"));
+        // 委外费用单把往来单位记在「委外供应商」，漏掉它分录就没有往来单位，账龄按供应商对不上
+        String partner = textOf(firstValue(head, "客户", "供应商", "委外供应商", "往来单位"));
         String summary = textOf(firstValue(head, "业务类型", "备注"));
         if ("SALE_INV".equals(panelCode)) {
             // 销货单：应收按含税，收入按不含税，销项税单独挂 222101
@@ -7588,7 +7814,9 @@ public class PxService implements PanelRuntimeService {
                 if (!(rowObject instanceof Map<?, ?> raw)) continue;
                 @SuppressWarnings("unchecked")
                 Map<String, Object> row = (Map<String, Object>) raw;
-                double amount = num(firstValue(row, "含税金额", "价税合计", "销售金额", "金额", "成本金额", "实收金额"));
+                // 费用金额：委外加工费用单的明细金额字段，漏了它凭证金额算成 0，只出 AP 不出分录
+                double amount = num(firstValue(row, "含税金额", "价税合计", "销售金额", "金额",
+                        "成本金额", "实收金额", "费用金额"));
                 if (amount == 0) {
                     amount = num(firstValue(row, "实收数量", "数量")) * num(firstValue(row, "含税单价", "售价", "单价", "成本价"));
                 }
@@ -8356,27 +8584,50 @@ public class PxService implements PanelRuntimeService {
      * 检验单入库目标守卫：来料检验（来源到货单）只能进采购入库，
      * 成品/委外检验只能进产成品/委外入库，避免同一张检验单串到错误的入库链。
      */
-    private static void requireInspectionInboundTarget(String panelCode, String targetPanel,
-                                                       Map<String, Object> head,
-                                                       List<Map<String, Object>> rows) {
+    /**
+     * 到货单的入库方向门禁：来源类型（采购 / 委外）决定只能生成哪种入库单。
+     *
+     * <p>采购到货 → 采购入库单；委外回厂 → 委外入库单。生错单会把采购货记成委外入库（反之亦然），
+     * 库存科目和应付都对不上，所以这里直接拦。老单据没有这个字段时按「采购」处理。
+     */
+    static void requireArrivalInboundTarget(Map<String, Object> head, String targetPanel, String action) {
+        String sourceType = textOf(head == null ? null : head.get("来源类型"));
+        boolean outsource = "委外".equals(sourceType);
+        String label = outsource ? "委外回厂到货单" : "采购到货单";
+        if ("PURCHASE_IN".equals(targetPanel) && outsource) {
+            throw new IllegalStateException(label + "不能生成采购入库单，请使用「生成委外入库单」");
+        }
+        if ("OUTSOURCE_IN".equals(targetPanel) && !outsource) {
+            throw new IllegalStateException(label + "不能生成委外入库单，请使用「生成采购入库单」");
+        }
+    }
+
+    /**
+     * 检验单的入库方向门禁（来料/委外回厂都从到货单来）。
+     *
+     * <p>合格品只能转采购入库单或委外入库单——由现场按物料去向自己选；
+     * 产成品入库单不在这张单的职能里（成品走成品报检单），直接拒绝。
+     * 判定退回时走「生成采购退货单」（`createPurchaseReturnFromInspection`）。
+     */
+    static void requireInspectionInboundTarget(String panelCode, String targetPanel,
+                                               Map<String, Object> head,
+                                               List<Map<String, Object>> rows) {
         if (!"INSPECTION".equals(panelCode)) return;
+        if ("FINISH_IN".equals(targetPanel)) {
+            throw new IllegalStateException("检验单不做产成品入库：成品入库走「成品报检单 → 生成产成品入库单」");
+        }
         boolean fromArrival = rows.stream()
                 .anyMatch(row -> "ARRIVAL_IN".equals(textOf(row.get("来源面板")).trim()));
         boolean fromFinishReport = rows.stream()
-                .anyMatch(row -> "FINISH_INSPECT".equals(textOf(row.get("来源面板")).trim()));
-        String businessType = textOf(head.get("业务类型")).trim();
-        boolean incoming = fromArrival || "来料检验".equals(businessType);
-        boolean finished = fromFinishReport || "成品检验".equals(businessType)
-                || "首件检验".equals(businessType);
-        if ("PURCHASE_IN".equals(targetPanel) && finished && !incoming) {
-            throw new IllegalStateException("当前检验单不是来料检验（来源为到货单），不能生成采购入库单；"
-                    + "成品检验请使用「生成产成品入库单」，委外检验请使用「生成委外入库单」");
+                .anyMatch(row -> "FINISH_INSPECT".equals(textOf(row.get("来源面板")).trim())
+                        || "FIRST_INSPECT".equals(textOf(row.get("来源面板")).trim()));
+        boolean fromReport = fromFinishReport || "成品检验".equals(textOf(head.get("业务类型")).trim());
+        if (fromReport && !fromArrival) {
+            throw new IllegalStateException("当前检验单不是由到货单生成，不能转采购入库/委外入库；"
+                    + "检验单只处理来料与委外回厂（来源为到货单）");
         }
-        if (("FINISH_IN".equals(targetPanel) || "OUTSOURCE_IN".equals(targetPanel)) && incoming) {
-            throw new IllegalStateException("来料检验不能生成"
-                    + ("FINISH_IN".equals(targetPanel) ? "产成品入库单" : "委外入库单")
-                    + "，请使用「生成采购入库单」");
-        }
+        // 来源类型跟随到货单：委外回厂只能转委外入库，采购只能转采购入库
+        requireArrivalInboundTarget(head, targetPanel, "");
     }
 
     /**
@@ -11786,6 +12037,11 @@ public class PxService implements PanelRuntimeService {
         }
         validateSourceLinks(panelCode, fd.getFormNo(), parseData(fd.getDetailData()));
         if ("INSPECTION".equals(panelCode)) confirmInspectionDetail(fd);
+        // 序列号硬校验：必须在改状态之前跑——改完就是「已审核」，聚合会把本单自己算成已登记
+        if (serialNumberService != null) {
+            serialNumberService.validate(panelCode, fd.getFormNo(), parseData(fd.getData()),
+                    parseData(fd.getDetailData()));
+        }
         String operator = currentUserName();
         String opinion = opinionOf(formData);
         fd.setStatus("已审核");
@@ -12415,7 +12671,7 @@ public class PxService implements PanelRuntimeService {
             "PU_ORDER", "SALE_INV", "PURCHASE_RETURN",
             "TRANSFER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_IN", "OUTSOURCE_FEE",
             "QUOTE_ORDER", "SALE_INVOICE", "EXPENSE", "SALE_COST_ALLOC", "PU_INVOICE", "PU_COST_ALLOC",
-            "STOCK_CHECK", "LOCATION_ADJUST", "SERIAL_NO");
+            "STOCK_CHECK", "LOCATION_ADJUST");
     private static final List<String> APPROVAL_WORKFLOW_ACTIONS = List.of(
             "提交审批", "审批通过", "审批驳回", "审批情况", "弃审");
 

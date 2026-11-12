@@ -180,14 +180,11 @@ public class QualityPanelRegistry {
             legacy.putIfAbsent("generateLabel", "生成检验单");
             config.put("selectConfig", legacy);
         }
-        Map<String, Object> finishReportSelect = selectConfig("FINISH_INSPECT", "选成品报检单", "items",
-                "报检数量", "报检数量",
-                maps("单据编号", "来源单号", "生产车间", "部门", "加工单号", "加工单号"),
-                maps("存货编码", "存货编码", "存货名称", "存货名称", "规格型号", "规格型号",
-                        "计量单位", "计量单位", "报检数量", "报检数量"));
-        finishReportSelect.put("generateButton", "生成检验单");
-        finishReportSelect.put("generateLabel", "生成检验单");
-        config.put("selectConfigs", selectConfigs("选到货单", legacy, "选成品报检单", finishReportSelect));
+        // 检验单只从到货单来：来料与委外回厂都是到货单收回公司；
+        // 成品检验由成品报检单自己承载（报检单自带检验结论），不再提供「选成品报检单」入口
+        config.put("selectConfigs", selectConfigs("选到货单", legacy));
+        // 「选单」下拉是从 buttonGroups 渲染的，光改 selectConfigs 不够，按钮也要摘掉
+        removeAction(config, "选单", "选成品报检单");
         addSourceFields(config);
         upgradeInspectionReferences(config);
         addUnqualifiedTab(config);
@@ -196,7 +193,9 @@ public class QualityPanelRegistry {
         ensureHeadReference(config, "检验部门", "DEPT", "部门名称");
         ensureHeadField(config, "采购订单号", "文本", null, "");
         ensureHeadField(config, "加工单号", "文本", null, "");
-        for (String name : List.of("检验部门", "采购订单号", "加工单号")) ensureFormField(config, name);
+        // 来源类型跟随到货单：采购到货的检验单只能转采购入库，委外回厂只能转委外入库
+        ensureHeadField(config, "来源类型", "下拉框", List.of("采购", "委外"), "采购");
+        for (String name : List.of("检验部门", "采购订单号", "加工单号", "来源类型")) ensureFormField(config, name);
         // T+ QM15 明细字段：应检数量、验收退回、行级不合格原因、让步接收含税单价、样本记录
         ensureDetailField(config, "应检数量", "小数", false, true);
         ensureColumnAfter(config, "报检数量", "应检数量");
@@ -216,10 +215,19 @@ public class QualityPanelRegistry {
         ensureColumnAfter(config, "记录样本明细", "样本明细个数");
         setDetailDefault(config, "记录样本明细", false);
         setDetailDefault(config, "样本明细个数", 0);
+        // 生单：判定合格 → 采购入库 / 委外入库；判定退回 → 采购退货。
+        // 检验单不做产成品入库（成品走成品报检单），成品报检退回单也不属于来料/委外这条线
         ensureAction(config, "生单", "生成采购入库单");
+        ensureAction(config, "生单", "生成委外入库单");
         ensureAction(config, "生单", "生成采购退货单");
+        removeAction(config, "生单", "生成产成品入库单");
+        removeAction(config, "生单", "生成成品报检退回单（生产报检）");
+        removeAction(config, "生单", "生成成品报检退回单（委外报检）");
         // 到货退回单没有对应的目标单据/路由，T+ 抓取配置里的这个入口在运行库中一并摘掉
         removeAction(config, "生单", "生成到货退回单");
+        // 业务类型/检验类别只留来料与委外：成品检验在成品报检单上，不在这张单
+        ensureHeadField(config, "业务类型", "下拉框", List.of("来料检验", "委外检验"), "来料检验");
+        ensureHeadField(config, "检验类别", "下拉框", List.of("来料检验", "委外检验"), "来料检验");
         for (String name : List.of("让步接收数量", "报废数量", "判定退货数量")) {
             ensureDetailField(config, name, "小数", true, true);
         }
@@ -478,8 +486,9 @@ public class QualityPanelRegistry {
         select.put("columns", List.of("单据编号", "单据日期", "生产车间", "加工单号",
                 "工序编码", "工序名称", "报工数量"));
         Map<String, Object> selects = selectConfigs("选工序汇报单", select);
+        // 首件报检单自带判定与处置，不再往「来料/成品检验单」推单：检验单只由到货单生成
         List<Map<String, Object>> groups = withApprovalGroup(
-                voucherGroups(new ArrayList<>(selects.keySet()), "生成检验单"));
+                voucherGroups(new ArrayList<>(selects.keySet()), null));
         return config("FIRST_INSPECT", "首件报检单", "单据", head,
                 List.of(tab("items", "明细", items, "报检数量")), groups, selects);
     }
