@@ -9,7 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 委外追踪路线：销售订单 → 委外加工单 → 发料 → 回厂首检 → 委外入库 → 委外加工费用。
+ * 委外追踪路线：销售订单 → 委外加工单 → 发料 → 委外检验 → 委外入库 → 委外加工费用。
+ *
+ * <p>2026-11-13：回厂检验从「首件报检单」改为「委外检验单」（独立成单，合格才能入库）；
+ * 首件报检单只作历史单据的分支保留，不再作为路线环节。
  * 同一销售订单下的自制线（排产/加工单/报工/产成品入库）不属于委外路线，不能混进来。
  */
 class ProcessTraceOutsourceRouteTest {
@@ -25,6 +28,7 @@ class ProcessTraceOutsourceRouteTest {
                 doc("SO_ORDER", "SO-001", "已审核"),
                 doc("OUTSOURCE_ORDER", "WW-001", "已审核", "SO-001"),
                 doc("OUTSOURCE_ISSUE", "WF-001", "已审核", "WW-001"),
+                doc("OUTSOURCE_INSPECTION", "WJ-001", "已审核", "WW-001"),
                 doc("FIRST_INSPECT", "SJ-001", "已审核", "WW-001"),
                 doc("OUTSOURCE_IN", "WR-001", "已审核", "WW-001"),
                 doc("OUTSOURCE_FEE", "WY-001", "已审核", "WW-001")));
@@ -39,15 +43,31 @@ class ProcessTraceOutsourceRouteTest {
     void outsourceSeedUsesOutsourceRoute() {
         ProcessTraceService.TraceResult r = service.trace("WW-001", chain(true));
 
-        assertEquals(List.of("SO_ORDER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_IN",
-                        "OUTSOURCE_FEE"),
+        assertEquals(List.of("SO_ORDER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_INSPECTION",
+                        "OUTSOURCE_IN", "OUTSOURCE_FEE"),
                 r.route().stream().map(ProcessTraceService.RouteNode::panelCode).toList(),
-                "委外路线五步：首件报检是入库节点的分支，不单独占一步");
-        assertTrue(r.route().stream().allMatch(ProcessTraceService.RouteNode::present), "五步都有单据");
+                "委外路线六步：回厂检验是独立环节，首件报检只作历史分支");
+        assertTrue(r.route().stream().allMatch(ProcessTraceService.RouteNode::present), "六步都有单据");
     }
 
     @Test
-    void firstInspectIsBranchOfReceiptNode() {
+    void outsourceInspectionIsItsOwnRouteNode() {
+        ProcessTraceService.TraceResult r = service.trace("WW-001", chain(false));
+
+        ProcessTraceService.RouteNode inspect = r.route().stream()
+                .filter(n -> "OUTSOURCE_INSPECTION".equals(n.panelCode())).findFirst()
+                .orElseThrow(() -> new AssertionError("委外路线必须有委外检验单环节"));
+        assertEquals("WJ-001", inspect.docNo());
+        int inspectAt = r.route().indexOf(inspect);
+        int inboundAt = -1;
+        for (int i = 0; i < r.route().size(); i++) {
+            if ("OUTSOURCE_IN".equals(r.route().get(i).panelCode())) inboundAt = i;
+        }
+        assertTrue(inboundAt >= 0 && inspectAt < inboundAt, "检验必须排在入库之前");
+    }
+
+    @Test
+    void legacyFirstInspectStaysAsBranchOfReceiptNode() {
         ProcessTraceService.TraceResult r = service.trace("WW-001", chain(false));
 
         ProcessTraceService.RouteNode receipt = r.route().stream()
@@ -83,7 +103,7 @@ class ProcessTraceOutsourceRouteTest {
         assertFalse(nos.contains("WW-002"), "兄弟委外单不该出现在这条追踪里");
         assertFalse(nos.contains("WF-002"));
         assertFalse(nos.contains("WR-002"));
-        assertEquals(6, nos.size(), "只剩销售订单 + 本单五张");
+        assertEquals(7, nos.size(), "只剩销售订单 + 本单六张（含委外检验单）");
     }
 
     @Test
@@ -95,8 +115,8 @@ class ProcessTraceOutsourceRouteTest {
                         .findFirst().orElseThrow().panelCode());
 
         ProcessTraceService.TraceResult fromFee = service.trace("WY-001", chain(false));
-        assertEquals(List.of("SO_ORDER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_IN",
-                        "OUTSOURCE_FEE"),
+        assertEquals(List.of("SO_ORDER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_INSPECTION",
+                        "OUTSOURCE_IN", "OUTSOURCE_FEE"),
                 fromFee.route().stream().map(ProcessTraceService.RouteNode::panelCode).toList());
     }
 }

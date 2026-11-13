@@ -146,28 +146,28 @@ test('质检「相关单据」不再列未使用的两张单（流程图里也�
   assert.ok(!block.includes("'PROCESS_INSPECTION'"), '生产过程检验单不该再出现在质量管理的单据栏')
 })
 
-// ---------- 列模式（委外管理：接单 → 发料/结算 + 回厂首检） ----------
+// ---------- 列模式（委外管理：接单 → 发料/结算 + 回厂检验） ----------
 
 /** 委外模块的排版输入：镜像 BusinessOverview.vue 里 code: 'outsource' 的 layout/nodes/pos。 */
 const OUTSOURCE = {
   layout: 'columns',
-  nodes: ['SO_ORDER', 'OUTSOURCE_ORDER', 'OUTSOURCE_ISSUE', 'FIRST_INSPECT', 'OUTSOURCE_FEE', 'OUTSOURCE_IN']
-    .map((code) => ({ code })),
+  nodes: ['SO_ORDER', 'OUTSOURCE_ORDER', 'OUTSOURCE_ISSUE', 'OUTSOURCE_INSPECTION', 'OUTSOURCE_FEE',
+    'OUTSOURCE_IN'].map((code) => ({ code })),
   pos: {
     SO_ORDER: [1, 0], OUTSOURCE_ORDER: [1, 1],
-    OUTSOURCE_ISSUE: [0, 2], FIRST_INSPECT: [1, 2], OUTSOURCE_FEE: [2, 2],
+    OUTSOURCE_ISSUE: [0, 2], OUTSOURCE_INSPECTION: [1, 2], OUTSOURCE_FEE: [2, 2],
     OUTSOURCE_IN: [1, 3],
   },
 }
 
-test('委外：接单一条竖线，发料/结算分列两侧，首检夹在入库之前', () => {
+test('委外：接单一条竖线，发料/结算分列两侧，回厂检验夹在入库之前', () => {
   const layout = layoutNodes(OUTSOURCE)
   assert.equal(layout.SO_ORDER.x, layout.OUTSOURCE_ORDER.x, '销售订单 → 委外加工单 是同一条竖线')
-  assert.equal(layout.OUTSOURCE_ORDER.x, layout.FIRST_INSPECT.x, '首检在同一列，不拐弯')
-  assert.ok(layout.FIRST_INSPECT.y < layout.OUTSOURCE_IN.y, '先回厂首检、再委外入库')
+  assert.equal(layout.OUTSOURCE_ORDER.x, layout.OUTSOURCE_INSPECTION.x, '回厂检验在同一列，不拐弯')
+  assert.ok(layout.OUTSOURCE_INSPECTION.y < layout.OUTSOURCE_IN.y, '先回厂检验、再委外入库')
   assert.ok(layout.OUTSOURCE_ISSUE.x < layout.OUTSOURCE_ORDER.x, '发料单在左')
   assert.ok(layout.OUTSOURCE_FEE.x > layout.OUTSOURCE_ORDER.x, '费用单在右')
-  assert.equal(layout.OUTSOURCE_ISSUE.y, layout.FIRST_INSPECT.y, '发料/首检/结算同排（都是加工单的下游）')
+  assert.equal(layout.OUTSOURCE_ISSUE.y, layout.OUTSOURCE_INSPECTION.y, '发料/检验/结算同排（都是加工单的下游）')
 })
 
 test('委外镜像的节点清单与源文件一致', () => {

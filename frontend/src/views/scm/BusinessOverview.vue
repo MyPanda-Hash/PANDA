@@ -594,36 +594,37 @@ const modules = [
      *   接单：销售订单 ——生成委外加工单——→ 委外加工单（推式：销售订单点「生成委外加工单」落草稿；
      *        委外加工单也仍可「选销售订单」拉式带入，两条路都保留）
      *   发料/结算：委外加工单 ——发料——→ 委外发料单；——结算——→ 委外加工费用单（按产成品明细委外单价×数量）
-     *   回厂：委外加工单 ——回厂首检——→ 首件报检单 ——首检通过——→ 委外入库单
-     * 入库那道门是真的：`PxService#requireOutsourceFirstInspects` 在点「生成委外入库单」时按工艺路线
-     * 补建工序首检单并拦一次，检完并审核通过才允许入库；有检验单时也可从检验单「生成委外入库单」。
+     *   回厂：委外加工单 ——回厂检验——→ 委外检验单 ——检验合格——→ 委外入库单
+     * 入库那道门是真的：`PxService#requireOutsourceInspectionPassed` 在点「生成委外入库单」时检查
+     * 该委外加工单的委外检验单——必须已审核、逐行判定合格/让步接收，否则拦下；入库量以合格量为上限。
      */
     layout: 'columns',
     nodes: [
       { code: 'SO_ORDER', label: '销售订单' },
       { code: 'OUTSOURCE_ORDER', label: '委外加工单' },
       { code: 'OUTSOURCE_ISSUE', label: '委外发料单' },
-      { code: 'FIRST_INSPECT', label: '首件报检单' },
+      { code: 'OUTSOURCE_INSPECTION', label: '委外检验单' },
       { code: 'OUTSOURCE_FEE', label: '委外加工费用单' },
       { code: 'OUTSOURCE_IN', label: '委外入库单' },
     ],
     edges: [
       { from: 'SO_ORDER', to: 'OUTSOURCE_ORDER', label: '生成委外加工单' },
       { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_ISSUE', label: '发料', offset: 28 },
-      { from: 'OUTSOURCE_ORDER', to: 'FIRST_INSPECT', label: '回厂首检', offset: 28 },
+      { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_INSPECTION', label: '回厂检验', offset: 28 },
       { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_FEE', label: '结算', offset: 28 },
-      { from: 'FIRST_INSPECT', to: 'OUTSOURCE_IN', label: '首检通过' },
+      { from: 'OUTSOURCE_INSPECTION', to: 'OUTSOURCE_IN', label: '检验合格' },
     ],
     pos: {
       SO_ORDER: [1, 0], OUTSOURCE_ORDER: [1, 1],
-      OUTSOURCE_ISSUE: [0, 2], FIRST_INSPECT: [1, 2], OUTSOURCE_FEE: [2, 2],
+      OUTSOURCE_ISSUE: [0, 2], OUTSOURCE_INSPECTION: [1, 2], OUTSOURCE_FEE: [2, 2],
       OUTSOURCE_IN: [1, 3],
     },
-    note: '销售订单可「生成委外加工单」（也可在委外单里选销售订单带入）；一旦走了委外，该订单就不能再生成生产加工单或销售出库单。入库前系统按工艺路线补建工序首件报检单，审核通过才允许入库；加工费用单按产成品明细的委外单价×数量汇总。',
+    note: '销售订单可「生成委外加工单」（也可在委外单里选销售订单带入）；一旦走了委外，该订单就不能再生成生产加工单或销售出库单。回厂必须「生成委外检验单」并检验审核通过（判定合格或让步接收）才能生成委外入库单，入库数量以合格量为上限；加工费用单按产成品明细的委外单价×数量汇总。',
     docs: [
       { code: 'OUTSOURCE_ORDER', label: '委外加工单' }, { code: 'OUTSOURCE_ISSUE', label: '委外发料单' },
+      { code: 'OUTSOURCE_INSPECTION', label: '委外检验单' },
       { code: 'OUTSOURCE_IN', label: '委外入库单' }, { code: 'OUTSOURCE_FEE', label: '委外加工费用单' },
-      { code: 'FIRST_INSPECT', label: '首件报检单' }, { code: 'SO_ORDER', label: '销售订单' },
+      { code: 'SO_ORDER', label: '销售订单' },
     ],
     archives: [
       { code: 'INV', label: '存货' }, { code: 'UOM', label: '计量单位' }, { code: 'PARTNER', label: '往来单位' },

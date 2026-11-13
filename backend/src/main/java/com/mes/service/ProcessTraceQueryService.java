@@ -31,7 +31,8 @@ public class ProcessTraceQueryService {
 
     /** 参与流程追踪的单据面板白名单。 */
     private static final Set<String> TRACE_PANELS = Set.of(
-            "QUOTE_ORDER", "SO_ORDER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_IN", "OUTSOURCE_FEE",
+            "QUOTE_ORDER", "SO_ORDER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_INSPECTION",
+            "OUTSOURCE_IN", "OUTSOURCE_FEE",
             "PU_REQ", "PU_ORDER", "ARRIVAL_IN", "INSPECTION", "PURCHASE_IN", "PURCHASE_RETURN",
             "MANU_ORDER", "DISPATCH", "PROCESS_REPORT", "MATERIAL_REQ", "TRANSFER", "MATERIAL_OUT",
             "FINISH_INSPECT", "FINISH_IN", "SALE_OUT", "SALE_INV", "SALE_INVOICE",
@@ -46,7 +47,8 @@ public class ProcessTraceQueryService {
 
     /** 上游引用字段：表头与明细里出现这些都视为"引用了一张上游单据"。 */
     private static final List<String> LINK_KEYS = List.of(
-            "来源单号", "销售订单号", "匹配来源单号", "加工单号", "上游单号", "源单号", "原首检单号");
+            "来源单号", "销售订单号", "匹配来源单号", "加工单号", "委外加工单号", "上游单号", "源单号",
+            "原首检单号");
 
     /** 纯计算用的解析器（不依赖注入，便于单测直接调静态方法）。 */
     private static final ObjectMapper PLAIN = new ObjectMapper();

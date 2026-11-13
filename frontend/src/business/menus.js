@@ -175,6 +175,7 @@ export const menuTree = [
             code: 'doc', title: '单据', children: [
               { code: 'outsourceOrder', title: '委外加工单', path: '/panelx/list/OUTSOURCE_ORDER', icon: 'Tickets', panelCode: 'OUTSOURCE_ORDER', operationName: '新增流程' },
               { code: 'outsourceIssue', title: '委外发料单', path: '/panelx/list/OUTSOURCE_ISSUE', icon: 'Tickets', panelCode: 'OUTSOURCE_ISSUE', operationName: '新增流程' },
+              { code: 'outsourceInspection', title: '委外检验单', path: '/panelx/list/OUTSOURCE_INSPECTION', icon: 'Tickets', panelCode: 'OUTSOURCE_INSPECTION', operationName: '新增流程' },
               { code: 'outsourceIn', title: '委外入库单', path: '/panelx/list/OUTSOURCE_IN', icon: 'Tickets', panelCode: 'OUTSOURCE_IN', operationName: '新增流程' },
               { code: 'outsourceFee', title: '委外加工费用单', path: '/panelx/list/OUTSOURCE_FEE', icon: 'Tickets', panelCode: 'OUTSOURCE_FEE', operationName: '新增流程' },
             ],

@@ -272,8 +272,12 @@ class PxServiceFirstInspectPerProcessTest {
         verify(formMapper, never()).insert(any(FormData.class));
     }
 
+    /**
+     * 委外回厂不再借道首件报检：2026-11-13 起回厂检验是独立的「委外检验单」，
+     * 没有它（或没审完、判定不合格）一律不许生成委外入库单，也不再补建首检单。
+     */
     @Test
-    void outsourcedInboundCreatesPerProcessInspectionAndBlocks() throws Exception {
+    void outsourcedInboundRequiresOutsourceInspectionNotFirstInspect() throws Exception {
         FormData oo = document("OUTSOURCE_ORDER", "WW-1", "已审核",
                 Map.of("单据编号", "WW-1", "委外供应商", "宁波精工", "生产车间", "熔铸车间"),
                 Map.of("products", List.of(Map.of("产品编码", "CP003", "产品名称", "法兰 D",
@@ -286,8 +290,8 @@ class PxServiceFirstInspectPerProcessTest {
         IllegalStateException e = assertThrows(IllegalStateException.class, () ->
                 service.callButton("OUTSOURCE_ORDER", "生成委外入库单", Map.of("编号", "WW-1"), Map.of()));
 
-        assertTrue(e.getMessage().contains("首件"), e.getMessage());
-        assertTrue(inserted("FIRST_INSPECT").size() > 0, "委外回厂也要按工序补首检单");
+        assertTrue(e.getMessage().contains("委外检验单"), e.getMessage());
+        assertTrue(inserted("FIRST_INSPECT").isEmpty(), "委外回厂不该再补首件报检单");
     }
 
     /** 首检单按本工序的报工量设上限：末道还没报（成品完工量 0）不该把车削的首检拦下来。 */

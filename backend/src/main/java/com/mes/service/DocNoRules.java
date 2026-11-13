@@ -70,6 +70,7 @@ public final class DocNoRules {
         m.put("OUTSOURCE_ISSUE", "WF");  // 委外发料单
         m.put("OUTSOURCE_IN", "WR");     // 委外入库单
         m.put("OUTSOURCE_FEE", "WY");    // 委外加工费用单
+        m.put("OUTSOURCE_INSPECTION", "WJ");  // 委外检验单（回厂检验）
         // 质量
         m.put("FINISH_INSPECT", "BJ");          // 成品报检单
         m.put("INSPECTION", "JY");              // 来料/成品检验单

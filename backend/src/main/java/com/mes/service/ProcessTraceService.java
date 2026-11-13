@@ -109,7 +109,7 @@ public class ProcessTraceService {
         int seq = 0;
         // 销售链
         for (String code : List.of("QUOTE_ORDER", "SO_ORDER", "OUTSOURCE_ORDER",
-                "OUTSOURCE_ISSUE", "OUTSOURCE_IN", "OUTSOURCE_FEE")) {
+                "OUTSOURCE_ISSUE", "OUTSOURCE_INSPECTION", "OUTSOURCE_IN", "OUTSOURCE_FEE")) {
             m.put(code, seq++);
         }
         // 采购链
@@ -137,6 +137,7 @@ public class ProcessTraceService {
             Map.entry("SO_ORDER", "销售订单"),
             Map.entry("OUTSOURCE_ORDER", "委外加工单"),
             Map.entry("OUTSOURCE_ISSUE", "委外发料单"),
+            Map.entry("OUTSOURCE_INSPECTION", "委外检验单"),
             Map.entry("OUTSOURCE_IN", "委外入库单"),
             Map.entry("OUTSOURCE_FEE", "委外加工费用单"),
             Map.entry("PU_REQ", "请购单"),
@@ -294,11 +295,14 @@ public class ProcessTraceService {
     private static final Set<String> BATCH_PANELS = Set.of("ARRIVAL_IN", "INSPECTION");
 
     /**
-     * 委外路线：销售订单（选单带出）→ 委外加工单 → 发料 → 回厂首检 → 委外入库 → 委外加工费用。
-     * 首件报检单在委外是按工艺路线一道工序一张（一工序一单），所以直接作为路线上的环节展开。
+     * 委外路线：销售订单（选单带出）→ 委外加工单 → 发料 → 回厂检验 → 委外入库 → 委外加工费用。
+     *
+     * <p>回厂检验自 2026-11-13 起是独立的「委外检验单」（一张委外加工单一张，合格才能入库）；
+     * 首件报检单只作为历史单据的分支保留（见 {@code outsourceInspectBranches}），不再占环节。
      */
     private static final List<String> OUTSOURCE_ROUTE = List.of(
-            "SO_ORDER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_IN", "OUTSOURCE_FEE");
+            "SO_ORDER", "OUTSOURCE_ORDER", "OUTSOURCE_ISSUE", "OUTSOURCE_INSPECTION",
+            "OUTSOURCE_IN", "OUTSOURCE_FEE");
 
     /**
      * 委外单追踪时剔除的自制线单据：同一张销售订单可能既有自制行也有委外行，

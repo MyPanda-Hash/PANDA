@@ -100,3 +100,10 @@ test("三条生单线都登记为受支持动作", () => {
     assert.equal(isActionSupported(action), true, `${action} 必须可用`);
   }
 });
+
+// 2026-11-13：委外回厂检验独立成单（委外检验单），链路上要有生成与入库两个动作
+test("委外检验单的两个动作都在支持表里", () => {
+  for (const action of ["生成委外检验单", "生成委外入库单"]) {
+    assert.equal(isActionSupported(action), true, `${action} 必须可用`);
+  }
+});
