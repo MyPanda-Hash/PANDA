@@ -439,9 +439,17 @@ public class ProcessTraceService {
             if (hits.isEmpty()) {
                 // 比入口单据更上游的环节不补：从加工单追踪时不该出现「待生成 销售订单」
                 if (seedOrder <= orderOf(code)) {
+                    String status = PENDING;
                     // 采购入库已经有了、却没有检验单 → 到货行免检直入，这一环写「免检直入」而不是「待生成」
-                    String status = "INSPECTION".equals(code)
-                            && !byPanel.getOrDefault("PURCHASE_IN", List.of()).isEmpty() ? "免检直入" : PENDING;
+                    if ("INSPECTION".equals(code) && !byPanel.getOrDefault("PURCHASE_IN", List.of()).isEmpty()) {
+                        status = "免检直入";
+                    }
+                    // 委外入库已经有了、却没有委外检验单 → 2026-11-13 之前的老单，写「历史直入」
+                    // （这批单已经入库，显示「待生成」会让人误以为还要补检验）
+                    if ("OUTSOURCE_INSPECTION".equals(code)
+                            && !byPanel.getOrDefault("OUTSOURCE_IN", List.of()).isEmpty()) {
+                        status = "历史直入";
+                    }
                     nodes.add(pendingNode(code, "", "", status));
                 }
                 continue;

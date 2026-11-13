@@ -67,6 +67,26 @@ class ProcessTraceOutsourceRouteTest {
     }
 
     @Test
+    void legacyChainWithoutInspectionShowsHistoricalDirectInbound() {
+        // 2026-11-13 之前生成的委外单没有委外检验单，但已经入库了：
+        // 这一环不能显示「待生成」（会让人以为还得补检验），要标成历史直入
+        List<ProcessTraceService.Doc> docs = List.of(
+                doc("SO_ORDER", "SO-001", "已审核"),
+                doc("OUTSOURCE_ORDER", "WW-001", "已审核", "SO-001"),
+                doc("OUTSOURCE_ISSUE", "WF-001", "已审核", "WW-001"),
+                doc("FIRST_INSPECT", "SJ-001", "已审核", "WW-001"),
+                doc("OUTSOURCE_IN", "WR-001", "已审核", "WW-001"),
+                doc("OUTSOURCE_FEE", "WY-001", "已审核", "WW-001"));
+
+        ProcessTraceService.TraceResult r = service.trace("WW-001", docs);
+
+        ProcessTraceService.RouteNode node = r.route().stream()
+                .filter(n -> "OUTSOURCE_INSPECTION".equals(n.panelCode())).findFirst().orElseThrow();
+        assertFalse(node.present(), "历史单没有检验单，不算已完成");
+        assertEquals("历史直入", node.status(), "不能显示待生成，要说明是历史单据直接入库");
+    }
+
+    @Test
     void legacyFirstInspectStaysAsBranchOfReceiptNode() {
         ProcessTraceService.TraceResult r = service.trace("WW-001", chain(false));
 

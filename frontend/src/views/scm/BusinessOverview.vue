@@ -433,7 +433,8 @@ const PANEL_ICONS = {
   MATERIAL_ISSUE: 'form', MATERIAL_REQ: 'form',
   MATERIAL_OUT: 'export', FINISH_IN: 'file-done', FINISH_INSPECT: 'file-search',
   TRANSFER: 'swap', PICK_ORDER: 'container', OUTSOURCE_ORDER: 'deployment-unit',
-  OUTSOURCE_ISSUE: 'export', OUTSOURCE_IN: 'import', OUTSOURCE_FEE: 'money-collect',
+  OUTSOURCE_ISSUE: 'export', OUTSOURCE_INSPECTION: 'safety-certificate',
+  OUTSOURCE_IN: 'import', OUTSOURCE_FEE: 'money-collect',
   // 库存
   OTHER_IN: 'import', OTHER_OUT: 'export', INIT_BALANCE: 'database',
   STOCK_CHECK: 'audit', LOCATION_ADJUST: 'aim', STOCK_STATUS: 'database',
@@ -609,9 +610,18 @@ const modules = [
     ],
     edges: [
       { from: 'SO_ORDER', to: 'OUTSOURCE_ORDER', label: '生成委外加工单' },
-      { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_ISSUE', label: '发料', offset: 28 },
-      { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_INSPECTION', label: '回厂检验', offset: 28 },
-      { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_FEE', label: '结算', offset: 28 },
+      // 一进三出：左右两条支线从加工单的侧边中点横出、进目标卡侧边中点，
+      // 中间「回厂检验」竖直下出。此前三条都走「下出上进」，左右两条的横段与
+      // 回厂检验的标签落在同一高度，画面上连成一条横线、三处标签挤在一起。
+      {
+        from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_ISSUE', label: '发料', offset: 18,
+        sourceHandle: 'out-l', targetHandle: 'in-r', sourcePosition: 'left', targetPosition: 'right',
+      },
+      { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_INSPECTION', label: '回厂检验', offset: 22 },
+      {
+        from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_FEE', label: '结算', offset: 18,
+        sourceHandle: 'out', targetHandle: 'in', sourcePosition: 'right', targetPosition: 'left',
+      },
       { from: 'OUTSOURCE_INSPECTION', to: 'OUTSOURCE_IN', label: '检验合格' },
     ],
     pos: {
@@ -621,7 +631,8 @@ const modules = [
     },
     note: '销售订单可「生成委外加工单」（也可在委外单里选销售订单带入）；一旦走了委外，该订单就不能再生成生产加工单或销售出库单。回厂必须「生成委外检验单」并检验审核通过（判定合格或让步接收）才能生成委外入库单，入库数量以合格量为上限；加工费用单按产成品明细的委外单价×数量汇总。',
     docs: [
-      { code: 'OUTSOURCE_ORDER', label: '委外加工单' }, { code: 'OUTSOURCE_ISSUE', label: '委外发料单' },
+      { code: 'OUTSOURCE_ORDER', label: '委外加工单' },
+      { code: 'OUTSOURCE_ISSUE', label: '委外发料单' },
       { code: 'OUTSOURCE_INSPECTION', label: '委外检验单' },
       { code: 'OUTSOURCE_IN', label: '委外入库单' }, { code: 'OUTSOURCE_FEE', label: '委外加工费用单' },
       { code: 'SO_ORDER', label: '销售订单' },
@@ -1276,6 +1287,7 @@ const pickPanels = [
   { code: 'SO_ORDER', label: '销售订单' },
   { code: 'MANU_ORDER', label: '生产加工单' },
   { code: 'OUTSOURCE_ORDER', label: '委外加工单' },
+  { code: 'OUTSOURCE_INSPECTION', label: '委外检验单' },
   { code: 'PURCHASE_IN', label: '采购入库单' },
   { code: 'SALE_OUT', label: '销售出库单' },
   { code: 'FINISH_IN', label: '产成品入库单' },
