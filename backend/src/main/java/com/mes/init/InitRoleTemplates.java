@@ -48,6 +48,30 @@ public final class InitRoleTemplates {
     private InitRoleTemplates() {
     }
 
+    /** 按模板名归类（模板「岗位模板」列填的就是这些中文标签）。 */
+    public static Role byLabel(String label) {
+        String key = label == null ? "" : label.trim();
+        if (key.isEmpty()) return null;
+        for (Role role : Role.values()) {
+            if (role.label.equals(key) || role.name().equalsIgnoreCase(key)) return role;
+        }
+        return null;
+    }
+
+    /**
+     * 按「显式审批面板」生成授权：给了具体面板就以它为准，全给 view/query/add/edit/print/audit。
+     *
+     * <p>这样「谁审批什么」可以逐人写死在表里，不再只靠岗位关键词推断。
+     */
+    public static Map<String, List<String>> grantsForPanels(List<String> panels) {
+        Map<String, List<String>> out = new LinkedHashMap<>();
+        List<String> perms = List.of("view", "query", "add", "edit", "print", "audit");
+        for (String panel : panels) {
+            if (panel != null && !panel.isBlank()) out.put(panel.trim(), perms);
+        }
+        return out;
+    }
+
     /** 按职务/职责归类；都不命中给「通用」（只读几个主流程面板）。 */
     public static Role classify(String title, String duties) {
         String text = ((title == null ? "" : title) + " " + (duties == null ? "" : duties)).toLowerCase();

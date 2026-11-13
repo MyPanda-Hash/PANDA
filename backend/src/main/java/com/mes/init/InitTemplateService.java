@@ -124,7 +124,7 @@ public class InitTemplateService {
         return switch (module) {
             case DEPT -> List.of(SAMPLE_TAG + "D01", "生产部", "", "10");
             case EMPLOYEE -> List.of(SAMPLE_TAG + "E001", "张伟", "D01", "车间主任",
-                    "13800000000", "排产、报工审核", "zhangwei");
+                    "13800000000", "排产、报工审核", "zhangwei", "生产", "MANU_ORDER");
             case PARTNER -> List.of(SAMPLE_TAG + "KH001", "华东铝业", "客户", "销售一部", "张伟", "", "否");
             case WH -> List.of(SAMPLE_TAG + "CK01", "原料仓", "原料仓", "厂区东侧", "陈仓管", "否");
             case ITEM -> List.of(SAMPLE_TAG + "CP001", "铝棒 Φ80", "Φ80×3000", "件",

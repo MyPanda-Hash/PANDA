@@ -330,9 +330,16 @@ public class InitApplyService {
                 result.add(item("user", account, "skip", "账号已存在，跳过（不改密码与角色）"));
                 continue;
             }
-            InitRoleTemplates.Role roleKind = InitRoleTemplates.classify(value(row, "职务"), value(row, "岗位职责"));
+            // 岗位模板列优先（显式选），没填就按职务/职责关键词猜
+            InitRoleTemplates.Role roleKind = InitRoleTemplates.byLabel(value(row, "岗位模板"));
+            if (roleKind == null) {
+                roleKind = InitRoleTemplates.classify(value(row, "职务"), value(row, "岗位职责"));
+            }
             boolean supervisor = InitRoleTemplates.isSupervisor(value(row, "职务"));
-            Long roleId = ensureRole(roleKind, supervisor, operator);
+            List<String> approvalPanels = resolvePanels(splitCodes(value(row, "审批面板")));
+            Long roleId = approvalPanels.isEmpty()
+                    ? ensureRole(roleKind, supervisor, operator)
+                    : ensureCustomRole(value(row, "职务"), code, approvalPanels, operator);
             Long deptId = deptIdOf(value(row, "所属部门编码"));
             jdbc.update("""
                     insert into sys_user (user_name, password, real_name, phone, factory_code,
@@ -340,14 +347,82 @@ public class InitApplyService {
                     values (?,?,?,?,?,1,?,?, now())
                     """, account, passwordEncoder.encode(INIT_PASSWORD), name,
                     value(row, "手机"), "F01", roleId, deptId);
+            String roleLabel = approvalPanels.isEmpty()
+                    ? InitRoleTemplates.roleName(roleKind, supervisor)
+                    : value(row, "职务") + "（审批 " + String.join("/", approvalPanels) + "）";
             result.add(item("user", account, "insert",
-                    "建账号（初始密码 " + INIT_PASSWORD + "），角色=" + InitRoleTemplates.roleName(roleKind, supervisor)));
+                    "建账号（初始密码 " + INIT_PASSWORD + "），角色=" + roleLabel));
         }
         if (changed) {
             detail.put("employees", employees);
             saveDetail(doc, detail, operator);
         }
         return result;
+    }
+
+    /**
+     * 「谁审批什么」逐人明确：按职务 + 显式审批面板建一个专用角色，面板全给到 audit。
+     *
+     * <p>同一职务 + 同一批面板的人共用一个角色（按编码判重），不会一人一个角色把角色表撑爆。
+     */
+    private Long ensureCustomRole(String title, String employeeCode, List<String> panels, String operator) {
+        String name = (title == null || title.isBlank() ? "自定义" : title.trim()) + "（审批）";
+        String code = "INIT_R_CUSTOM_" + Integer.toHexString((name + "|" + String.join(",", panels)).hashCode());
+        Long id = jdbc.query("select id from sys_role where role_code = ? limit 1",
+                rs -> rs.next() ? rs.getLong(1) : null, code);
+        boolean created = false;
+        if (id == null) {
+            id = jdbc.queryForObject(
+                    "insert into sys_role (role_code, role_name, is_admin, remark, create_time)"
+                            + " values (?,?,0,?,now()) returning id",
+                    Long.class, code, name, "初始化按「审批面板」创建（员工 " + employeeCode + "）");
+            created = true;
+        }
+        int granted = 0;
+        for (Map.Entry<String, List<String>> entry : InitRoleTemplates.grantsForPanels(panels).entrySet()) {
+            Integer exists = jdbc.queryForObject(
+                    "select count(*) from sys_role_panel where role_id = ? and panel_code = ?",
+                    Integer.class, id, entry.getKey());
+            if (exists != null && exists > 0) continue;
+            jdbc.update("""
+                    insert into sys_role_panel (role_id, panel_code, perms, can_approve)
+                    values (?,?,?,?)
+                    """, id, entry.getKey(), String.join(",", entry.getValue()), 1);
+            granted++;
+        }
+        if (created || granted > 0) {
+            log.info("初始化{}角色 {}：{} 个面板审批权 by {}", created ? "创建" : "补齐", name, granted, operator);
+        }
+        return id;
+    }
+
+    /** 「审批面板」列：支持逗号/顿号/分号/空格分隔。 */
+    static List<String> splitCodes(String raw) {
+        List<String> out = new ArrayList<>();
+        if (raw == null || raw.isBlank()) return out;
+        for (String part : raw.split("[,，、;；\\s]+")) {
+            String code = part.trim();
+            if (!code.isEmpty()) out.add(code);
+        }
+        return out;
+    }
+
+    /** 面板列既接受编码（SO_ORDER）也接受中文名（销售订单），统一转成编码。 */
+    private List<String> resolvePanels(List<String> raw) {
+        if (raw.isEmpty()) return List.of();
+        Map<String, String> byName = new LinkedHashMap<>();
+        for (Map<String, Object> panel : jdbc.queryForList("select panel_code, panel_name from panel_config")) {
+            byName.put(String.valueOf(panel.get("panel_name")).trim(), String.valueOf(panel.get("panel_code")));
+        }
+        List<String> out = new ArrayList<>();
+        for (String raw2 : raw) {
+            String resolved = byName.getOrDefault(raw2, raw2);
+            if (!byName.containsValue(resolved)) {
+                log.warn("初始化：审批面板「{}」在面板表里找不到，按编码 {} 写入（登录后可能看不到菜单）", raw2, resolved);
+            }
+            out.add(resolved);
+        }
+        return out;
     }
 
     /**
