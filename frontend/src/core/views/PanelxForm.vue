@@ -317,7 +317,7 @@
                     </template>
                   </el-image>
                   <el-input-number
-                    v-else-if="dr.dataType === '小数' || dr.dataType === '整数'"
+                    v-if="dr.dataType === '小数' || dr.dataType === '整数'"
                     v-model="row[dr.dataName]"
                     :controls="false"
                     :disabled="!editable || detailCellLocked(dr)"
@@ -471,6 +471,7 @@ import { ensureScanFillAction, ensureSelectAction, hasSelectConfig, isApprovalGr
 import { INVOICE_IMPORT_ACTION, INVOICE_LINE_ACTION, filterSupportedActions } from '@core/action-support'
 import { isDocApproved, docStatusStamp } from '@core/doc-status'
 import { hasUnqualifiedTab, syncUnqualifiedRow } from '@core/inspection-unqualified.js'
+import { applyHeaderCalc } from '@core/views/doc-calc.js'
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
 import RefPickDialog from './RefPickDialog.vue'
@@ -1359,6 +1360,10 @@ function applyCalc(data = detailData) {
         if (row[rule.target] !== v) row[rule.target] = v
         vars[rule.target] = v
       }
+    }
+    // 表头自动汇总：页签声明 headerCalc 时把明细列汇总回表头（如委外费用单的「费用合计」）
+    if (Array.isArray(tab.headerCalc) && tab.headerCalc.length) {
+      applyHeaderCalc(form, tab.headerCalc, rows)
     }
   }
 }
