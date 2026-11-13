@@ -88,6 +88,15 @@
                   {{ tt('传架构图') }}
                 </el-button>
                 <el-button
+                  v-if="m.code === 'employee'"
+                  size="small"
+                  :disabled="m.done || !uploadedRows.employee?.length"
+                  :loading="planning"
+                  @click="planRoles(m)"
+                >
+                  {{ tt('AI 分配权限') }}
+                </el-button>
+                <el-button
                   size="small"
                   type="primary"
                   :disabled="m.blockedBy.length > 0 || m.done"
@@ -273,6 +282,9 @@ const preview = ref(null)
 const result = ref(null)
 const checkVisible = ref(false)
 const checkRows = ref([])
+const planning = ref(false)
+/** 各模块最近一次上传解析出的行（AI 分配权限要用员工行） */
+const uploadedRows = reactive({})
 const pendingFile = ref(null)
 
 const doneCount = computed(() => state.modules.filter((m) => m.done).length)
@@ -352,6 +364,38 @@ function pickFile(m) {
   input.click()
 }
 
+/** AI 分配权限：按部门树 + 职位 + 面板清单，让数字员工给出岗位模板与审批面板。 */
+async function planRoles(m) {
+  const rows = uploadedRows.employee || []
+  if (!rows.length) {
+    ElMessage.warning(tt('请先上传员工信息'))
+    return
+  }
+  planning.value = true
+  result.value = null
+  try {
+    const res = await request.post('/init/role-plan', { rows })
+    const data = res?.data || {}
+    uploadedRows.employee = data.rows || rows
+    preview.value = {
+      module: 'employee',
+      moduleLabel: data.moduleLabel || m.label,
+      moduleNeedsConfirm: false,
+      fileName: data.fileName || tt('AI 分配结果'),
+      rowCount: data.rowCount || rows.length,
+      rows: data.rows || [],
+      errors: data.errors || [],
+      warnings: [...(data.warnings || []), `${tt('模型')}：${data.model || '-'}，${tt('已分配')} ${data.assigned ?? 0}/${data.rowCount ?? rows.length}`],
+      fromImage: true,
+    }
+    ElMessage.success(tt('已生成权限分配，请核对后落库'))
+  } catch (e) {
+    ElMessage.error(tt('权限分配失败') + '：' + (e?.message || ''))
+  } finally {
+    planning.value = false
+  }
+}
+
 function pickOrgChart(m) {
   const input = document.createElement('input')
   input.type = 'file'
@@ -410,6 +454,7 @@ async function doUpload(m, file) {
     })
     const data = res?.data || {}
     pendingFile.value = file.name
+    uploadedRows[m.code] = data.rows || []
     preview.value = {
       module: m.code,
       moduleLabel: data.moduleLabel || m.label,

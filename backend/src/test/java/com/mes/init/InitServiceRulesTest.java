@@ -25,7 +25,7 @@ class InitServiceRulesTest {
     InitServiceRulesTest() {
         org.mockito.Mockito.when(jdbc.queryForList(org.mockito.ArgumentMatchers.anyString()))
                 .thenReturn(List.of());
-        service = new InitService(jdbc, new InitTemplateService(), null);
+        service = new InitService(jdbc, new InitTemplateService(), null, null);
     }
 
     private static Map<String, String> row(int line, String... kv) {

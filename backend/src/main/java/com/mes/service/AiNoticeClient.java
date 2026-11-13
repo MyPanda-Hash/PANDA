@@ -148,6 +148,30 @@ public class AiNoticeClient {
         return "/panelx/form/" + panel + "?focus=" + docNo;
     }
 
+    /**
+     * 让数字员工按部门树 + 职位 + 面板清单，给每个员工分配岗位模板与审批面板。
+     *
+     * @return null 表示 AI 不可用（未配置令牌 / 未启动 / 调用失败）
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> rolePlan(Map<String, Object> payload) {
+        if (!enabled()) return null;
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Nexus-Internal-Token", token);
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+            ResponseEntity<String> response = rest.exchange(
+                    baseUrl + "/internal/v1/mes/role-plan", HttpMethod.POST,
+                    new HttpEntity<>(json.writeValueAsString(payload), headers), String.class);
+            String body = response.getBody();
+            if (body == null || body.isBlank()) return null;
+            return json.readValue(body, Map.class);
+        } catch (Exception e) {
+            log.warn("数字员工权限分配不可用：{}", e.getMessage());
+            return null;
+        }
+    }
+
     /** 供前端直接使用的元信息（不外泄令牌）。 */
     public Map<String, Object> describe() {
         Map<String, Object> out = new LinkedHashMap<>();

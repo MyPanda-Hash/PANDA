@@ -90,6 +90,18 @@ public class InitController {
         return ApiResult.ok(service.parseOrgChart(file, hint, auth.getName()));
     }
 
+    /**
+     * AI 分配权限：按部门树 + 员工职位 + 面板清单，让数字员工给出每个人的
+     * 岗位模板与审批面板（只返回预览行，确认后仍走 /apply 落库）。
+     */
+    @PostMapping("/role-plan")
+    public ApiResult<Map<String, Object>> rolePlan(@RequestBody Map<String, Object> body,
+                                                   Authentication auth) {
+        guard(auth);
+        List<Map<String, String>> rows = InitService.stringRows((List<?>) body.getOrDefault("rows", List.of()));
+        return ApiResult.ok(service.planRoles(rows, auth.getName()));
+    }
+
     /** 按模块落库（部门/存货/工序/路线/BOM/员工）。 */
     @PostMapping("/apply")
     public ApiResult<Map<String, Object>> apply(@RequestBody Map<String, Object> body, Authentication auth) {

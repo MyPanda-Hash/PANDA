@@ -33,6 +33,8 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mes.service.AiNoticeClient;
+
 /**
  * 系统初始化向导：状态、一次性锁、上传留痕、管理员保护、模板与解析入口。
  *
@@ -62,6 +64,7 @@ public class InitService {
     private final InitTemplateService templates;
     private final InitApplyService applier;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final AiNoticeClient aiNotices;
 
     /** 上传原件落盘目录；与数据库备份同源思路，默认放 /opt/light-mes 下 */
     @Value("${mes.init.upload-dir:/opt/light-mes/init-uploads}")
@@ -75,10 +78,12 @@ public class InitService {
     @Value("${mes.init.ai-token:}")
     private String aiToken;
 
-    public InitService(JdbcTemplate jdbc, InitTemplateService templates, InitApplyService applier) {
+    public InitService(JdbcTemplate jdbc, InitTemplateService templates, InitApplyService applier,
+                       AiNoticeClient aiNotices) {
         this.jdbc = jdbc;
         this.templates = templates;
         this.applier = applier;
+        this.aiNotices = aiNotices;
     }
 
     // ───────────────────────── 状态与锁 ─────────────────────────
@@ -336,6 +341,125 @@ public class InitService {
         out.put("notes", parsed.getOrDefault("notes", ""));
         out.put("storedPath", storedPath);
         recordUpload(batchNo, module, file, storedPath, rows.size(), operator);
+        return out;
+    }
+
+    /**
+     * AI 分配权限：把部门树 + 员工 + 面板清单交给数字员工，让它给出每个人的
+     * 岗位模板与审批面板，结果直接补进员工行（「岗位模板 / 审批面板」两列）。
+     *
+     * <p>人仍然在环：这一步只产出预览行，用户确认后才走 apply 落库。
+     */
+    public Map<String, Object> planRoles(List<Map<String, String>> rows, String operator) {
+        ensureUnlocked();
+        if (rows == null || rows.isEmpty()) throw new IllegalArgumentException("先上传员工信息，再做权限分配");
+        if (!aiNotices.enabled()) {
+            throw new IllegalStateException("权限分配需要数字员工：未配置 MES_INIT_AI_TOKEN");
+        }
+
+        List<Map<String, Object>> employees = new ArrayList<>();
+        for (Map<String, String> row : rows) {
+            Map<String, Object> emp = new LinkedHashMap<>();
+            emp.put("code", row.getOrDefault("员工编码", ""));
+            emp.put("name", row.getOrDefault("姓名", ""));
+            emp.put("title", row.getOrDefault("职务", ""));
+            emp.put("duties", row.getOrDefault("岗位职责", ""));
+            emp.put("dept", row.getOrDefault("所属部门编码", ""));
+            employees.add(emp);
+        }
+
+        List<Map<String, Object>> panels = new ArrayList<>();
+        for (Map<String, Object> panel : jdbc.queryForList(
+                "select panel_code, panel_name from panel_config order by panel_code")) {
+            Map<String, Object> p = new LinkedHashMap<>();
+            p.put("code", panel.get("panel_code"));
+            p.put("name", panel.get("panel_name"));
+            panels.add(p);
+        }
+
+        List<Map<String, Object>> templates = new ArrayList<>();
+        for (InitRoleTemplates.Role role : InitRoleTemplates.Role.values()) {
+            Map<String, Object> t = new LinkedHashMap<>();
+            t.put("template", role.label());
+            t.put("panels", InitRoleTemplates.grants(role, false).keySet().stream().toList());
+            templates.add(t);
+        }
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("depts", deptRows());
+        payload.put("employees", employees);
+        payload.put("panels", panels);
+        payload.put("templates", templates);
+
+        Map<String, Object> reply = aiNotices.rolePlan(payload);
+        if (reply == null) {
+            throw new IllegalStateException("数字员工没有返回分配结果（检查 AI 后端与模型端点）");
+        }
+
+        Map<String, Map<String, Object>> byCode = new LinkedHashMap<>();
+        Object assignments = reply.get("assignments");
+        if (assignments instanceof List<?> list) {
+            for (Object item : list) {
+                if (!(item instanceof Map<?, ?> raw)) continue;
+                Map<String, Object> a = new LinkedHashMap<>();
+                raw.forEach((k, v) -> a.put(String.valueOf(k), v));
+                String code = String.valueOf(a.getOrDefault("code", "")).trim();
+                if (!code.isEmpty()) byCode.put(code, a);
+            }
+        }
+
+        List<Map<String, String>> enriched = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
+        Object rawWarnings = reply.get("warnings");
+        if (rawWarnings instanceof List<?> list) {
+            for (Object w : list) warnings.add(String.valueOf(w));
+        }
+        int assigned = 0;
+        for (Map<String, String> row : rows) {
+            Map<String, String> copy = new LinkedHashMap<>(row);
+            Map<String, Object> plan = byCode.get(String.valueOf(row.getOrDefault("员工编码", "")).trim());
+            if (plan != null) {
+                String template = String.valueOf(plan.getOrDefault("template", "")).trim();
+                Object panelsRaw = plan.get("approvalPanels");
+                List<String> approved = new ArrayList<>();
+                if (panelsRaw instanceof List<?> list) {
+                    for (Object p : list) {
+                        String code = String.valueOf(p).trim();
+                        if (!code.isEmpty()) approved.add(code);
+                    }
+                }
+                copy.put("岗位模板", template);
+                copy.put("审批面板", String.join(",", approved));
+                copy.put("AI 判断依据", String.valueOf(plan.getOrDefault("reason", "")));
+                if (!template.isEmpty() || !approved.isEmpty()) assigned++;
+            } else {
+                warnings.add("员工「" + row.getOrDefault("姓名", row.get("员工编码")) + "」没有拿到分配结果，按职务关键词兜底");
+            }
+            enriched.add(copy);
+        }
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("module", InitModule.EMPLOYEE.code());
+        out.put("moduleLabel", InitModule.EMPLOYEE.label());
+        out.put("rowCount", enriched.size());
+        out.put("rows", enriched);
+        out.put("errors", List.of());
+        out.put("warnings", warnings);
+        out.put("assigned", assigned);
+        out.put("model", String.valueOf(reply.getOrDefault("model", "")));
+        return out;
+    }
+
+    /** 部门行：AI 需要知道谁在哪个部门，才能判断上下级审批关系。 */
+    private List<Map<String, Object>> deptRows() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> row : jdbc.queryForList(
+                "select dept_name, dept_code, parent_id from sys_dept order by sort, id")) {
+            Map<String, Object> dept = new LinkedHashMap<>();
+            dept.put("name", row.get("dept_name"));
+            dept.put("code", row.get("dept_code"));
+            out.add(dept);
+        }
         return out;
     }
 
