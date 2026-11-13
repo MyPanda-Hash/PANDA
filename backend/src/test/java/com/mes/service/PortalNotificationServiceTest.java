@@ -70,8 +70,9 @@ class PortalNotificationServiceTest {
     void messagesOnlyCarryUnreadGroupChatFromDigitalEmployee() {
         // 口径变更（2026-11-13）：消息不再混入 MES 审批结果，只显示数字员工群聊未读，
         // 并且按已读游标过滤（游标之后的消息才算未读）
-        when(jdbc.query(anyString(), any(org.springframework.jdbc.core.RowMapper.class), eq("alice")))
-                .thenReturn(java.util.Collections.singletonList(null));
+        // 群游标查询：假库没有数据，等于「全部未读」
+        org.mockito.Mockito.doNothing().when(jdbc).query(
+                anyString(), any(org.springframework.jdbc.core.RowCallbackHandler.class), eq("alice"));
         when(aiNotices.fetch(eq("alice"), isNull())).thenReturn(Map.of("bound", true, "todos", List.of()));
         when(aiNotices.groupUrl("grp_1")).thenReturn("http://localhost:18091/group?group=grp_1");
         when(aiNotices.messages(any())).thenReturn(List.of(Map.of(
@@ -83,29 +84,38 @@ class PortalNotificationServiceTest {
 
         List<Map<String, Object>> result = service.list("alice", "message");
 
+        // 消息按群聊分类：一个群一条，带未读条数与消息明细
         assertEquals(1, result.size());
-        assertEquals("ai-msg:gmsg_1", result.get(0).get("id"));
-        assertTrue(String.valueOf(result.get(0).get("title")).contains("AI 调度台"));
-        assertEquals("今天的 MES 待办汇总", result.get(0).get("content"));
-        assertTrue(String.valueOf(result.get(0).get("targetPath")).contains("/group?group=grp_1"));
-        assertEquals(Boolean.TRUE, result.get(0).get("external"));
+        Map<String, Object> group = result.get(0);
+        assertEquals("ai-group:grp_1", group.get("id"));
+        assertEquals("AI 调度台", group.get("title"));
+        assertEquals(1, group.get("unreadCount"));
+        assertTrue(String.valueOf(group.get("content")).startsWith("未读 1 条"));
+        assertEquals("grp_1", group.get("groupId"));
+        assertEquals(Boolean.TRUE, group.get("external"));
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> messages = (List<Map<String, Object>>) group.get("messages");
+        assertEquals(1, messages.size());
+        assertEquals("今天的 MES 待办汇总", messages.get(0).get("text"));
         // 不再查审批流水：消息只有一个来源
         verify(approvalMapper, never()).selectList(any());
     }
 
     @Test
-    void markMessageReadPushesCursorAndReturnsClearedCount() {
-        when(jdbc.query(anyString(), any(org.springframework.jdbc.core.RowMapper.class), eq("alice")))
-                .thenReturn(java.util.Collections.singletonList(null));
+    void markMessageReadPushesPerGroupCursorAndReturnsClearedCount() {
+        // 群游标查询：假库没有数据，等于「全部未读」
+        org.mockito.Mockito.doNothing().when(jdbc).query(
+                anyString(), any(org.springframework.jdbc.core.RowCallbackHandler.class), eq("alice"));
         when(aiNotices.fetch(eq("alice"), isNull())).thenReturn(Map.of("bound", true, "todos", List.of()));
         when(aiNotices.messages(any())).thenReturn(List.of(
                 Map.of("id", "gmsg_1", "groupId", "grp_1", "groupName", "群", "text", "a", "createdAt", "2026-11-13 08:00:00"),
                 Map.of("id", "gmsg_2", "groupId", "grp_1", "groupName", "群", "text", "b", "createdAt", "2026-11-13 08:01:00")));
 
-        int cleared = service.markMessageRead("alice");
+        int cleared = service.markMessageRead("alice", "grp_1");
 
         assertEquals(2, cleared);
-        verify(jdbc).update(contains("insert into portal_notice_read"), eq("alice"), any(Object.class));
+        verify(jdbc).update(contains("insert into portal_notice_read_group"),
+                eq("alice"), eq("grp_1"), any(Object.class));
     }
 
     @Test

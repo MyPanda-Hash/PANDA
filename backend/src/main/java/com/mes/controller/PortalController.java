@@ -50,12 +50,17 @@ public class PortalController {
         return n;
     }
 
-    /** 清空消息未读：把游标推到当前时间，之后的群聊消息才算未读。 */
+    /**
+     * 清空消息未读：只推该群（或全部群）的游标，之后的群聊消息才算未读。
+     *
+     * @param groupId 为空表示清空所有群
+     */
     @PostMapping("/notice/read")
     public ApiResult<Integer> markRead(@RequestParam(defaultValue = "message") String type,
+                                       @RequestParam(required = false) String groupId,
                                        Authentication authentication) {
         if (!"message".equals(type)) return ApiResult.ok(0);
-        return ApiResult.ok(notificationService.markMessageRead(authentication.getName()));
+        return ApiResult.ok(notificationService.markMessageRead(authentication.getName(), groupId));
     }
 
     @GetMapping("/notice/list")

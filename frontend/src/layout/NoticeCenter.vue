@@ -51,6 +51,38 @@
       </div>
     </el-popover>
 
+    <!-- 群聊消息弹窗：按群查看未读消息，宽度固定、高度限 60vh，不铺满屏幕 -->
+    <el-dialog
+      v-model="groupDialogVisible"
+      :title="groupCurrent?.title ? groupCurrent.title + ' · 未读消息' : tt('群聊消息')"
+      width="560px"
+      top="12vh"
+      append-to-body
+      class="nc-group-dialog"
+    >
+      <div v-if="groupCurrent" class="nc-group">
+        <div class="nc-group-head">
+          <span class="nc-group-meta">
+            {{ groupCurrent.unreadCount }} {{ tt('条未读') }} · {{ groupCurrent.time }}
+          </span>
+        </div>
+        <div class="nc-group-list">
+          <div v-for="(m, i) in groupCurrent.messages" :key="m.id || i" class="nc-group-item">
+            <div class="nc-group-row">
+              <span class="nc-group-sender">{{ m.senderKind === 'ai' ? tt('数字员工') : tt('成员') }}</span>
+              <span class="nc-group-time">{{ m.createdAt }}</span>
+            </div>
+            <div class="nc-group-text">{{ m.text }}</div>
+          </div>
+          <el-empty v-if="!groupCurrent.messages?.length" :description="tt('暂无消息')" :image-size="50" />
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="groupDialogVisible = false">{{ tt('关闭') }}</el-button>
+        <el-button type="primary" @click="openGroupChat">{{ tt('打开群聊') }}</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="detailVisible" :title="current?.typeTitle ? tt(current.typeTitle) : tt('消息通知')" width="560px" append-to-body>
       <div v-if="current" class="nc-detail">
         <div class="nc-detail-head">
@@ -136,14 +168,9 @@ const historyList = ref([])
 function toggle(type) {
   const next = visible.value === type ? null : type
   visible.value = next
-  if (!next) return
-  load(next).then(() => {
-    // 拉完列表再清未读：load() 会用「未读条数」重置角标，顺序反了会被它覆盖回去
-    if (next === 'message' && listMap.message.length) {
-      badge.value = { ...badge.value, message: 0 }
-      apiMarkNoticeRead('message').catch(() => {})
-    }
-  })
+  // 只负责拉列表：未读在「点开某个群」时才清（见 openDetail），
+  // 否则一开弹层就把所有群的未读清掉，与「按群分类」的口径矛盾
+  if (next) load(next)
 }
 
 async function load(type, options = {}) {
@@ -151,7 +178,8 @@ async function load(type, options = {}) {
   loadingMap[type] = true
   try {
     listMap[type] = await apiGetNotices(type)
-    badge.value = { ...badge.value, [type]: listMap[type].length }
+    // 消息按群分组：角标要数「未读条数合计」，不能数群个数
+    badge.value = { ...badge.value, [type]: type === 'message' ? messageUnreadTotal(listMap[type]) : listMap[type].length }
     // 消息只显示未读：打开即视为已读，游标推到当前时间；本次仍把已取到的条目展示完，
     // 关掉再打开就是空的（用户口径：未读清零后从列表消失）
     if (type === 'message' && options.markRead && listMap[type].length) {
@@ -180,12 +208,38 @@ function handleHide(type) {
   if (visible.value === type) visible.value = null
 }
 
+const groupDialogVisible = ref(false)
+
+/** 消息分组的未读合计。 */
+function messageUnreadTotal(list) {
+  return (list || []).reduce((sum, g) => sum + Number(g.unreadCount || 0), 0)
+}
+const groupCurrent = ref(null)
+
 function openDetail(n, cfg) {
+  // 消息是按群分组的：点开看这个群的未读消息，不进通用详情
+  if (cfg.type === 'message' && n.messages) {
+    groupCurrent.value = decorate(n)
+    visible.value = null
+    detailVisible.value = false
+    groupDialogVisible.value = true
+    // 只清这个群的未读，其它群不受影响：游标写后台，列表里把该群摘掉并重算角标
+    if (n.groupId) apiMarkNoticeRead('message', n.groupId).catch(() => {})
+    listMap.message = (listMap.message || []).filter((g) => g.groupId !== n.groupId)
+    badge.value = { ...badge.value, message: messageUnreadTotal(listMap.message) }
+    return
+  }
   current.value = decorate(n)
   currentCrg.value = cfg
   visible.value = null
   historyVisible.value = false
   detailVisible.value = true
+}
+
+/** 打开群聊（AI 门户，新标签）。 */
+function openGroupChat() {
+  const url = groupCurrent.value?.targetPath
+  if (url) window.open(url, '_blank', 'noopener')
 }
 
 function openHistory(cfg) {
@@ -343,6 +397,55 @@ onBeforeUnmount(() => {
   line-height: 13px;
   transform: translate(50%, -34%);
 }
+.nc-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nc-group-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--t-text-3, #8a919f);
+}
+.nc-group-list {
+  max-height: 38vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+.nc-group-item {
+  border: 1px solid var(--t-border-light, #e6e9ef);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: var(--t-bg-hover, #fafbfc);
+}
+.nc-group-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.nc-group-sender {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--t-text-2, #59616e);
+}
+.nc-group-time {
+  font-size: 11px;
+  color: var(--t-text-3, #8a919f);
+  font-variant-numeric: tabular-nums;
+}
+.nc-group-text {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--t-text-1, #1f2329);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .nc-head {
   display: flex;
   justify-content: space-between;

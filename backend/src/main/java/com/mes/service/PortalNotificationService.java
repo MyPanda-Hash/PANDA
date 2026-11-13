@@ -54,31 +54,9 @@ public class PortalNotificationService {
     public Map<String, Integer> badge(String userName) {
         Map<String, Integer> result = new LinkedHashMap<>();
         result.put("todo", todos(userName).size());
-        result.put("message", messages(userName).size());
+        result.put("message", unreadMessageCount(userName));
         result.put("alarm", alarms().size());
         return result;
-    }
-
-    /** 该账号的消息已读游标；没读过返回 null（全部未读）。 */
-    private LocalDateTime messageCursor(String userName) {
-        List<LocalDateTime> rows = jdbc.query(
-                "select message_read_at from portal_notice_read where user_name = ?",
-                (rs, i) -> rs.getTimestamp(1) == null ? null : rs.getTimestamp(1).toLocalDateTime(),
-                userName);
-        return rows.isEmpty() ? null : rows.get(0);
-    }
-
-    /** 清空未读：把游标推到当前时间，返回清掉的条数。 */
-    public int markMessageRead(String userName) {
-        int cleared = aiMessages(userName).size();
-        LocalDateTime now = LocalDateTime.now();
-        jdbc.update("""
-                insert into portal_notice_read (user_name, message_read_at, update_time)
-                values (?, ?, now())
-                on conflict (user_name) do update set message_read_at = excluded.message_read_at,
-                                                      update_time = now()
-                """, userName, now);
-        return cleared;
     }
 
     /** 数字员工的待办与消息（AI 不可用时返回空表，不影响 MES 自己的通知）。 */
@@ -182,38 +160,133 @@ public class PortalNotificationService {
     }
 
     /**
-     * 消息：只收数字员工相关群聊在「已读游标」之后的消息。
+     * 消息：按群聊分类，每个群一条；只统计该群「已读游标」之后的未读消息。
      *
-     * <p>口径（2026-11-13 用户确认）：不再混入 MES 自己的审批结果；只显示未读，
-     * 清空未读后列表为空——所以这里不需要再查审批流水。
+     * <p>口径（2026-11-13 用户确认）：不混入 MES 审批结果；点开某个群只清这个群的未读，
+     * 清空后该群从列表消失。MES 不存消息副本，AI 侧是权威数据源。
      */
     private List<Map<String, Object>> messages(String userName) {
-        return aiMessages(userName);
+        Map<String, List<Map<String, Object>>> byGroup = new LinkedHashMap<>();
+        for (Map<String, Object> message : aiMessages(userName)) {
+            String groupId = String.valueOf(message.getOrDefault("groupId", ""));
+            byGroup.computeIfAbsent(groupId, k -> new ArrayList<>()).add(message);
+        }
+        Map<String, LocalDateTime> cursors = groupCursors(userName);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map.Entry<String, List<Map<String, Object>>> entry : byGroup.entrySet()) {
+            String groupId = entry.getKey();
+            LocalDateTime cursor = cursors.get(groupId);
+            List<Map<String, Object>> unread = new ArrayList<>();
+            for (Map<String, Object> message : entry.getValue()) {
+                if (cursor == null || after(message, cursor)) unread.add(message);
+            }
+            if (unread.isEmpty()) continue;
+            String groupName = String.valueOf(unread.get(0).getOrDefault("groupName", "项目群聊"));
+            Map<String, Object> latest = unread.get(0);
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", "ai-group:" + groupId);
+            item.put("type", "message");
+            item.put("title", groupName);
+            item.put("time", String.valueOf(latest.getOrDefault("createdAt", "")));
+            item.put("read", false);
+            item.put("content", "未读 " + unread.size() + " 条 · " + String.valueOf(latest.getOrDefault("text", "")));
+            item.put("source", "ai");
+            item.put("sourceLabel", "群聊");
+            item.put("groupId", groupId);
+            item.put("unreadCount", unread.size());
+            item.put("targetPath", aiNotices.groupUrl(groupId));
+            item.put("external", true);
+            item.put("actionLabel", "打开群聊");
+            // 弹窗里要展示的消息（按时间正序，读起来顺）
+            List<Map<String, Object>> detail = new ArrayList<>(unread);
+            detail.sort(Comparator.comparing(m -> String.valueOf(m.getOrDefault("createdAt", ""))));
+            item.put("messages", detail);
+            result.add(item);
+        }
+        return result;
     }
 
-    /** 数字员工相关群聊的最近消息：点开直接进对应群聊。 */
+    /** 未读总数：按群统计后求和。 */
+    private int unreadMessageCount(String userName) {
+        int total = 0;
+        for (Map<String, Object> group : messages(userName)) {
+            total += (int) group.getOrDefault("unreadCount", 0);
+        }
+        return total;
+    }
+
+    /** 某个群的消息是否在游标之后。 */
+    private boolean after(Map<String, Object> message, LocalDateTime cursor) {
+        Object createdAt = message.get("createdAt");
+        if (createdAt == null) return true;
+        try {
+            return LocalDateTime.parse(String.valueOf(createdAt), TIME_FORMAT).isAfter(cursor);
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /** 该账号在各群上的已读游标。 */
+    private Map<String, LocalDateTime> groupCursors(String userName) {
+        Map<String, LocalDateTime> cursors = new LinkedHashMap<>();
+        jdbc.query("select group_id, read_at from portal_notice_read_group where user_name = ?",
+                rs -> {
+                    java.sql.Timestamp readAt = rs.getTimestamp(2);
+                    cursors.put(rs.getString(1), readAt == null ? null : readAt.toLocalDateTime());
+                }, userName);
+        return cursors;
+    }
+
+    /**
+     * 清空某个群的未读（只推这个群的游标，其它群不受影响）。返回清掉的条数。
+     *
+     * @param groupId 为空时清空所有群
+     */
+    public int markMessageRead(String userName, String groupId) {
+        int cleared = 0;
+        LocalDateTime now = LocalDateTime.now();
+        List<String> groups = new ArrayList<>();
+        if (groupId == null || groupId.isBlank()) {
+            for (Map<String, Object> group : messages(userName)) {
+                groups.add(String.valueOf(group.get("groupId")));
+                cleared += (int) group.getOrDefault("unreadCount", 0);
+            }
+        } else {
+            groups.add(groupId);
+            for (Map<String, Object> group : messages(userName)) {
+                if (groupId.equals(String.valueOf(group.get("groupId")))) {
+                    cleared = (int) group.getOrDefault("unreadCount", 0);
+                    break;
+                }
+            }
+        }
+        for (String group : groups) {
+            if (group == null || group.isBlank() || "null".equals(group)) continue;
+            jdbc.update("""
+                    insert into portal_notice_read_group (user_name, group_id, read_at, update_time)
+                    values (?, ?, ?, now())
+                    on conflict (user_name, group_id) do update set read_at = excluded.read_at,
+                                                                  update_time = now()
+                    """, userName, group, now);
+        }
+        return cleared;
+    }
+
+    /** 数字员工相关群聊的最近消息（AI 侧已按账号过滤）。 */
     private List<Map<String, Object>> aiMessages(String userName) {
-        Map<String, Object> payload = aiNotices.fetch(userName, messageCursor(userName));
+        Map<String, Object> payload = aiNotices.fetch(userName, null);
         if (payload == null) return List.of();
         List<Map<String, Object>> result = new ArrayList<>();
         for (Map<String, Object> message : aiNotices.messages(payload)) {
             String id = String.valueOf(message.getOrDefault("id", ""));
             if (id.isEmpty()) continue;
-            String groupName = String.valueOf(message.getOrDefault("groupName", ""));
-            String groupId = String.valueOf(message.getOrDefault("groupId", ""));
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("id", "ai-msg:" + id);
-            item.put("type", "message");
-            item.put("title", (groupName.isEmpty() ? "项目群聊" : groupName) + " · 数字员工消息");
-            item.put("time", String.valueOf(message.getOrDefault("createdAt", "")));
-            // 服务端只回游标之后的消息，取回来的都是未读
-            item.put("read", false);
-            item.put("content", String.valueOf(message.getOrDefault("text", "")));
-            item.put("source", "ai");
-            item.put("sourceLabel", groupName.isEmpty() ? "群聊" : groupName);
-            item.put("targetPath", aiNotices.groupUrl(groupId));
-            item.put("external", true);
-            item.put("actionLabel", "打开群聊");
+            item.put("groupId", String.valueOf(message.getOrDefault("groupId", "")));
+            item.put("groupName", String.valueOf(message.getOrDefault("groupName", "")));
+            item.put("senderKind", String.valueOf(message.getOrDefault("senderKind", "")));
+            item.put("text", String.valueOf(message.getOrDefault("text", "")));
+            item.put("createdAt", String.valueOf(message.getOrDefault("createdAt", "")));
             result.add(item);
         }
         return result;

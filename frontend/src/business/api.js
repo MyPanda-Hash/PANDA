@@ -37,8 +37,8 @@ export async function apiGetNotices(type) {
 }
 
 /** 清空消息未读（群聊消息只显示未读，清空后列表为空）。 */
-export async function apiMarkNoticeRead(type) {
-  const res = await request.post('/portal/notice/read', null, { params: { type } })
+export async function apiMarkNoticeRead(type, groupId) {
+  const res = await request.post('/portal/notice/read', null, { params: { type, groupId } })
   return res?.data ?? res
 }
 
