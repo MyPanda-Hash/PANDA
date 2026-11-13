@@ -47,6 +47,8 @@ public class SecurityConfig {
                     // 开放审批接口：不放行给匿名用户，而是放行给 X-Open-Api-Token 门禁
                     // （见 OpenApiGuard：令牌 + IP 白名单 + 限流，且只读）
                     .requestMatchers(HttpMethod.GET, "/api/open/approvals/**").permitAll()
+                    // 开放业务接口（只读）：单据追踪 / 详情 / 库存，同上由 OpenApiGuard 把关
+                    .requestMatchers(HttpMethod.GET, "/api/open/biz/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .anyRequest().authenticated())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

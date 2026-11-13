@@ -233,7 +233,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
 import { useTabsStore } from '@/stores/tabs'
@@ -252,6 +252,7 @@ const user = useUserStore()
 const tabs = useTabsStore()
 const locale = useLocaleStore()
 const router = useRouter()
+const route = useRoute()
 
 // ---------- 内嵌搜索 ----------
 const keyword = ref('')
@@ -325,9 +326,16 @@ async function refreshFactories() {
 }
 
 // ---------- AI 数字员工入口 ----------
-// 向后端要 60 秒票据后免密进入；后端没配密钥就退回只打开对话页
+// 向后端要 60 秒票据后免密进入；后端没配密钥就退回只打开对话页。
+// 带上当前面板与单号，AI 首轮就能按「你正在看哪张单」作答（L2 只读融合）
+function aiContext() {
+  const panelCode = route && route.params && route.params.panelCode ? String(route.params.panelCode) : ''
+  const formNo = route && route.query && route.query.code ? String(route.query.code) : ''
+  return { panelCode, formNo, user: user.account }
+}
+
 function goAiAssistant() {
-  openAiAssistant(apiGetAiSsoTicket)
+  openAiAssistant(apiGetAiSsoTicket, { context: aiContext() })
 }
 
 // ---------- 帮助下拉 ----------
