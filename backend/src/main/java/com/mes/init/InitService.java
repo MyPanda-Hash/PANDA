@@ -49,14 +49,16 @@ public class InitService {
 
     private final JdbcTemplate jdbc;
     private final InitTemplateService templates;
+    private final InitApplyService applier;
 
     /** 上传原件落盘目录；与数据库备份同源思路，默认放 /opt/light-mes 下 */
     @Value("${mes.init.upload-dir:/opt/light-mes/init-uploads}")
     private String uploadDir;
 
-    public InitService(JdbcTemplate jdbc, InitTemplateService templates) {
+    public InitService(JdbcTemplate jdbc, InitTemplateService templates, InitApplyService applier) {
         this.jdbc = jdbc;
         this.templates = templates;
+        this.applier = applier;
     }
 
     // ───────────────────────── 状态与锁 ─────────────────────────
@@ -248,10 +250,10 @@ public class InitService {
                 String v = value(row, column);
                 if (v.isEmpty()) errors.add("第 " + line + " 行：" + column + " 不能为空");
             }
-            String key = value(row, keyColumn);
+            String key = dedupeKey(module, row);
             if (!key.isEmpty()) {
                 Integer prev = seen.put(key, line);
-                if (prev != null) errors.add("第 " + line + " 行：" + keyColumn + "「" + key
+                if (prev != null) errors.add("第 " + line + " 行：" + keyColumn + "「" + value(row, keyColumn)
                         + "」与第 " + prev + " 行重复");
             }
         }
@@ -269,6 +271,19 @@ public class InitService {
         if (module == InitModule.OPENING_STOCK) {
             warnings.add("期初库存不会直接落库：上传后需在弹窗里核对/修改并确认，确认时才写期初单与证据表");
         }
+    }
+
+    /**
+     * 判重键：一项一行的是单列，一对多的必须用组合键——
+     * 工艺路线一个编码下多道工序、BOM 一个产品下多个子件，都是正常的多行，不能算重复。
+     */
+    static String dedupeKey(InitModule module, Map<String, String> row) {
+        String primary = value(row, keyColumn(module));
+        return switch (module) {
+            case ROUTING -> primary + "|" + value(row, "工序顺序") + "|" + value(row, "工序编码");
+            case BOM -> primary + "|" + value(row, "子件编码");
+            default -> primary;
+        };
     }
 
     static String keyColumn(InitModule module) {
@@ -307,7 +322,47 @@ public class InitService {
         if (module.needsConfirmation()) {
             throw new IllegalStateException("期初库存要核对后确认才能落库，请走「核对并写入期初」");
         }
-        throw new IllegalStateException("模块「" + module.label() + "」的落库还未实现（P1），当前只支持上传与校验");
+        if (rows == null || rows.isEmpty()) {
+            throw new IllegalArgumentException("没有可落库的行，请先上传「" + module.fileName() + "」");
+        }
+        // 前置模块必须先完成：BOM 离不开存货与路线，路线离不开工序
+        Map<String, Object> state = state();
+        @SuppressWarnings("unchecked")
+        List<String> done = (List<String>) state.get("modulesDone");
+        for (InitModule required : module.requires()) {
+            if (!done.contains(required.code())) {
+                throw new IllegalStateException("请先完成「" + required.label() + "」再导入「" + module.label() + "」");
+            }
+        }
+        Map<String, Object> batch = currentBatch(operator);
+        String batchNo = batch.get("batch_no").toString();
+
+        Map<String, Object> result = applier.apply(module, rows, operator);
+        // 逐条留痕 + 标记模块完成
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> items = (List<Map<String, Object>>) result.get("items");
+        for (Map<String, Object> item : items) {
+            jdbc.update("""
+                    insert into init_batch_item (batch_no, module, natural_key, target, action, message)
+                    values (?,?,?,?,?,?)
+                    """, batchNo, module.code(), String.valueOf(item.get("key")),
+                    String.valueOf(item.get("target")), String.valueOf(item.get("action")),
+                    String.valueOf(item.get("message")));
+        }
+        markModuleDone(batchNo, module);
+        result.put("batchNo", batchNo);
+        return result;
+    }
+
+    /** 标记模块完成（幂等：已存在不重复追加）。 */
+    private void markModuleDone(String batchNo, InitModule module) {
+        Map<String, Object> row = stateRow();
+        List<String> done = row == null ? List.of() : splitModules(row.get("modules_done"));
+        if (done.contains(module.code())) return;
+        List<String> next = new ArrayList<>(done);
+        next.add(module.code());
+        jdbc.update("update init_state set modules_done = ?, update_time = now() where batch_no = ?",
+                String.join(",", next), batchNo);
     }
 
     // ───────────────────────── 落盘与留痕 ─────────────────────────

@@ -25,7 +25,7 @@ class InitServiceRulesTest {
     InitServiceRulesTest() {
         org.mockito.Mockito.when(jdbc.queryForList(org.mockito.ArgumentMatchers.anyString()))
                 .thenReturn(List.of());
-        service = new InitService(jdbc, new InitTemplateService());
+        service = new InitService(jdbc, new InitTemplateService(), null);
     }
 
     private static Map<String, String> row(int line, String... kv) {
@@ -107,6 +107,31 @@ class InitServiceRulesTest {
         assertTrue(errors.stream().anyMatch(e -> e.contains("第 3 行") && e.contains("存货名称")), errors.toString());
         assertTrue(errors.stream().anyMatch(e -> e.contains("CP001") && e.contains("重复")), errors.toString());
         assertTrue(errors.stream().anyMatch(e -> e.contains("参考成本") && e.contains("不是数字")), errors.toString());
+    }
+
+    @Test
+    @DisplayName("一对多的模块用组合键判重：同路线多道工序、同产品多个子件都不算重复")
+    void compositeDedupeKeyForOneToMany() {
+        List<Map<String, String>> routing = List.of(
+                row(3, "工艺路线编码", "GY1", "工艺路线名称", "路线", "工序顺序", "10", "工序编码", "OP10"),
+                row(4, "工艺路线编码", "GY1", "工艺路线名称", "路线", "工序顺序", "20", "工序编码", "OP20"));
+        List<String> errors = new ArrayList<>();
+        service.validate(InitModule.ROUTING, routing, errors, new ArrayList<>());
+        assertTrue(errors.isEmpty(), "同一路线两道工序是正常的：" + errors);
+
+        List<Map<String, String>> bom = List.of(
+                row(3, "产品编码", "P1", "子件编码", "C1", "定额数量", "1"),
+                row(4, "产品编码", "P1", "子件编码", "C2", "定额数量", "2"));
+        List<String> bomErrors = new ArrayList<>();
+        service.validate(InitModule.BOM, bom, bomErrors, new ArrayList<>());
+        assertTrue(bomErrors.isEmpty(), "同一产品多个子件是正常的：" + bomErrors);
+
+        // 真正重复（同路线同工序、同产品同子件）仍要报
+        List<String> dup = new ArrayList<>();
+        service.validate(InitModule.BOM, List.of(
+                row(3, "产品编码", "P1", "子件编码", "C1", "定额数量", "1"),
+                row(4, "产品编码", "P1", "子件编码", "C1", "定额数量", "2")), dup, new ArrayList<>());
+        assertTrue(dup.stream().anyMatch(e -> e.contains("重复")), dup.toString());
     }
 
     @Test
