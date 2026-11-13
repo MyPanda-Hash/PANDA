@@ -155,10 +155,9 @@ class InitServiceRulesTest {
     void moduleDependencies() {
         assertEquals(List.of(), InitModule.DEPT.requires());
         assertEquals(List.of(), InitModule.PARTNER.requires());
-        assertEquals(List.of(), InitModule.UOM.requires());
         assertEquals(List.of(), InitModule.WH.requires());
         assertEquals(List.of(InitModule.DEPT), InitModule.EMPLOYEE.requires());
-        assertEquals(List.of(InitModule.UOM), InitModule.ITEM.requires());
+        assertEquals(List.of(), InitModule.ITEM.requires(), "计量单位是系统内置，不再是前置");
         assertEquals(List.of(InitModule.PROCESS), InitModule.ROUTING.requires());
         assertEquals(List.of(InitModule.ITEM, InitModule.ROUTING), InitModule.BOM.requires());
         assertEquals(List.of(InitModule.ITEM, InitModule.WH), InitModule.OPENING_STOCK.requires());

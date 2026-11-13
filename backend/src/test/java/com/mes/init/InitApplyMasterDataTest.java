@@ -81,30 +81,6 @@ class InitApplyMasterDataTest {
     }
 
     @Test
-    @DisplayName("计量单位：合并进 UOM.uoms，换算率缺省 1")
-    void applyUom() throws Exception {
-        FormData uomDoc = doc("UOM", "计量单位", Map.of(),
-                Map.of("uoms", List.of(Map.of("计量单位编码", "U01", "计量单位名称", "件"))));
-        when(formMapper.selectOne(any())).thenReturn(uomDoc);
-
-        Map<String, Object> out = service.apply(InitModule.UOM, List.of(
-                row("计量单位编码", "U01", "计量单位名称", "件"),
-                row("计量单位编码", "U02", "计量单位名称", "吨")), "admin");
-
-        assertEquals(1, out.get("inserted"));
-        assertEquals(1, out.get("skipped"));
-        ArgumentCaptor<FormData> captor = ArgumentCaptor.forClass(FormData.class);
-        verify(formMapper).updateById(captor.capture());
-        Map<?, ?> detail = json.readValue(captor.getValue().getDetailData(), Map.class);
-        List<?> uoms = (List<?>) detail.get("uoms");
-        assertEquals(2, uoms.size());
-        Map<?, ?> added = (Map<?, ?>) uoms.get(1);
-        assertEquals("U02", added.get("计量单位编码"));
-        assertEquals(1.0, ((Number) added.get("换算率")).doubleValue(), 0.001);
-        assertEquals("吨", added.get("主单位"), "主单位缺省取名称");
-    }
-
-    @Test
     @DisplayName("仓库：合并进 WH.stores，允许零库存出库按是/否解析")
     void applyWh() throws Exception {
         FormData whDoc = doc("WH", "仓库", Map.of(), Map.of("stores", List.of()));

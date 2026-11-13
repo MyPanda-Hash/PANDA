@@ -112,7 +112,6 @@ public class InitTemplateService {
         return switch (header) {
             case "部门编码", "部门名称", "员工编码", "姓名", "所属部门编码",
                  "往来单位编码", "往来单位名称", "性质",
-                 "计量单位编码", "计量单位名称",
                  "仓库编码", "仓库名称",
                  "存货编码", "存货名称", "计量单位", "工序编码", "工序名称",
                  "工艺路线编码", "工艺路线名称", "工序顺序", "产品编码", "子件编码",
@@ -127,7 +126,6 @@ public class InitTemplateService {
             case EMPLOYEE -> List.of(SAMPLE_TAG + "E001", "张伟", "D01", "车间主任",
                     "13800000000", "排产、报工审核", "zhangwei");
             case PARTNER -> List.of(SAMPLE_TAG + "KH001", "华东铝业", "客户", "销售一部", "张伟", "", "否");
-            case UOM -> List.of(SAMPLE_TAG + "U01", "件", "单计量", "件", "1");
             case WH -> List.of(SAMPLE_TAG + "CK01", "原料仓", "原料仓", "厂区东侧", "陈仓管", "否");
             case ITEM -> List.of(SAMPLE_TAG + "CP001", "铝棒 Φ80", "Φ80×3000", "件",
                     "全月平均", "20", "原材料", "GY-CP001");

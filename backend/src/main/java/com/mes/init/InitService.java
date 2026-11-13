@@ -421,7 +421,6 @@ public class InitService {
             case DEPT -> "部门编码";
             case EMPLOYEE -> "员工编码";
             case PARTNER -> "往来单位编码";
-            case UOM -> "计量单位编码";
             case WH -> "仓库编码";
             case ITEM -> "存货编码";
             case PROCESS -> "工序编码";
@@ -435,7 +434,6 @@ public class InitService {
         return switch (module) {
             case DEPT -> List.of("排序");
             case EMPLOYEE, PARTNER, WH -> List.of();
-            case UOM -> List.of("换算率");
             case ITEM -> List.of("参考成本");
             case PROCESS -> List.of("标准合格率%");
             case ROUTING -> List.of("工序顺序");

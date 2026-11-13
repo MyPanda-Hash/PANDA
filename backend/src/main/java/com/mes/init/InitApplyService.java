@@ -66,7 +66,6 @@ public class InitApplyService {
         List<Map<String, Object>> items = switch (module) {
             case DEPT -> applyDept(rows, operator);
             case PARTNER -> applyPartner(rows, operator);
-            case UOM -> applyUom(rows, operator);
             case WH -> applyWh(rows, operator);
             case ITEM -> applyItem(rows, operator);
             case PROCESS -> applyProcess(rows, operator);
@@ -182,45 +181,6 @@ public class InitApplyService {
             }
         }
         return null;
-    }
-
-    // ───────────────────────── 计量单位 ─────────────────────────
-
-    /** 计量单位：单文档 UOM.uoms，按计量单位编码判重。 */
-    List<Map<String, Object>> applyUom(List<Map<String, String>> rows, String operator) {
-        FormData doc = archiveDoc("UOM", "计量单位");
-        Map<String, Object> detail = parse(doc.getDetailData());
-        List<Map<String, Object>> uoms = rowsOf(detail, "uoms");
-        Set<String> existing = new LinkedHashSet<>();
-        for (Map<String, Object> row : uoms) existing.add(String.valueOf(row.get("计量单位编码")).trim());
-
-        List<Map<String, Object>> result = new ArrayList<>();
-        int seq = uoms.size();
-        for (Map<String, String> row : rows) {
-            String code = value(row, "计量单位编码");
-            if (code.isEmpty()) {
-                result.add(item("uom", "", "skip", "计量单位编码为空"));
-                continue;
-            }
-            if (!existing.add(code)) {
-                result.add(item("uom", code, "skip", "计量单位已存在，跳过"));
-                continue;
-            }
-            Map<String, Object> r = new LinkedHashMap<>();
-            r.put("编号", "UOM-" + String.format("%03d", ++seq));
-            r.put("计量单位编码", code);
-            r.put("计量单位名称", value(row, "计量单位名称"));
-            r.put("单位类型", value(row, "单位类型").isEmpty() ? "单计量" : value(row, "单位类型"));
-            r.put("主单位", value(row, "主单位").isEmpty() ? value(row, "计量单位名称") : value(row, "主单位"));
-            r.put("换算率", number(value(row, "换算率"), 1));
-            uoms.add(r);
-            result.add(item("uom", code, "insert", "新增计量单位"));
-        }
-        if (result.stream().anyMatch(r -> "insert".equals(r.get("action")))) {
-            detail.put("uoms", uoms);
-            saveDetail(doc, detail, operator);
-        }
-        return result;
     }
 
     // ───────────────────────── 仓库 ─────────────────────────

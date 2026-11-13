@@ -19,8 +19,6 @@ public enum InitModule {
             "手机", "岗位职责", "登录账号"),
     PARTNER("partner", "往来单位", "往来单位编码", "往来单位名称", "性质",
             "分管部门", "分管人员", "职位", "停用"),
-    UOM("uom", "计量单位", "计量单位编码", "计量单位名称", "单位类型",
-            "主单位", "换算率"),
     WH("wh", "仓库", "仓库编码", "仓库名称", "仓库类别", "仓库地址",
             "负责人", "允许零库存出库"),
     ITEM("item", "存货", "存货编码", "存货名称", "规格型号", "计量单位",
@@ -62,7 +60,6 @@ public enum InitModule {
             case DEPT -> "组织架构.xlsx";
             case EMPLOYEE -> "员工信息.xlsx";
             case PARTNER -> "往来单位.xlsx";
-            case UOM -> "计量单位.xlsx";
             case WH -> "仓库.xlsx";
             case ITEM -> "存货.xlsx";
             case PROCESS -> "工序.xlsx";
@@ -75,9 +72,9 @@ public enum InitModule {
     /** 该模块的前置模块：前置未完成时界面置灰，服务端也拒绝落库。 */
     public List<InitModule> requires() {
         return switch (this) {
-            case DEPT, PROCESS, PARTNER, UOM, WH -> List.of();
+            case DEPT, PROCESS, PARTNER, WH -> List.of();
             case EMPLOYEE -> List.of(DEPT);
-            case ITEM -> List.of(UOM);
+            case ITEM -> List.of();
             case ROUTING -> List.of(PROCESS);
             case BOM -> List.of(ITEM, ROUTING);
             case OPENING_STOCK -> List.of(ITEM, WH);
