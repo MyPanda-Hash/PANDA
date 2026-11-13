@@ -20,6 +20,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -50,10 +59,19 @@ public class InitService {
     private final JdbcTemplate jdbc;
     private final InitTemplateService templates;
     private final InitApplyService applier;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     /** 上传原件落盘目录；与数据库备份同源思路，默认放 /opt/light-mes 下 */
     @Value("${mes.init.upload-dir:/opt/light-mes/init-uploads}")
     private String uploadDir;
+
+    /** 数字员工（解析服务）地址：组织架构图交给它读成部门树草案 */
+    @Value("${mes.init.ai-url:http://127.0.0.1:8000}")
+    private String aiUrl;
+
+    /** MES ↔ 数字员工的内部令牌；两边不一致或未配置时，图片解析直接不可用 */
+    @Value("${mes.init.ai-token:}")
+    private String aiToken;
 
     public InitService(JdbcTemplate jdbc, InitTemplateService templates, InitApplyService applier) {
         this.jdbc = jdbc;
@@ -206,6 +224,98 @@ public class InitService {
         out.put("warnings", warnings);
         out.put("uploadId", uploadId);
         out.put("batchNo", batch.get("batch_no"));
+        return out;
+    }
+
+    /**
+     * 组织架构图 → 部门树草案（决策 D4：允许图片）。
+     *
+     * <p>MES 自己不调模型：图片转给数字员工的内部接口，它用视觉模型读成部门行；
+     * MES 只把结果套成「组织架构」模块的行，走同一套预览 / 落库路径（人一定要在环）。
+     */
+    public Map<String, Object> parseOrgChart(MultipartFile file, String hint, String operator) throws IOException {
+        ensureUnlocked();
+        InitModule module = InitModule.DEPT;
+        if (file == null || file.isEmpty()) throw new IllegalArgumentException("请选择组织架构图（PNG / JPG）");
+        String name = String.valueOf(file.getOriginalFilename());
+        String lower = name.toLowerCase(Locale.ROOT);
+        if (!(lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg")
+                || lower.endsWith(".webp"))) {
+            throw new IllegalArgumentException("组织架构图只支持 PNG / JPG / WebP");
+        }
+        if (aiToken == null || aiToken.isBlank()) {
+            throw new IllegalStateException("图片解析未启用：未配置 MES_INIT_AI_TOKEN（与数字员工的内部令牌一致）");
+        }
+
+        Map<String, Object> batch = currentBatch(operator);
+        String batchNo = batch.get("batch_no").toString();
+        String storedPath = storeFile(batchNo, module, file);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.set("X-Nexus-Internal-Token", aiToken);
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", new ByteArrayResource(file.getBytes()) {
+            @Override
+            public String getFilename() {
+                return name;
+            }
+        });
+        if (hint != null && !hint.isBlank()) body.add("hint", hint);
+
+        Map<String, Object> parsed;
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(
+                    aiUrl.replaceAll("/+$", "") + "/internal/v1/init/org-chart",
+                    new HttpEntity<>(body, headers), Map.class);
+            parsed = response.getBody() == null ? Map.of() : response.getBody();
+        } catch (RestClientException e) {
+            throw new IllegalStateException("解析服务不可用（数字员工未启动或令牌不一致）：" + e.getMessage());
+        }
+
+        List<Map<String, String>> rows = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
+        Object rawWarnings = parsed.get("warnings");
+        if (rawWarnings instanceof List<?> list) {
+            for (Object w : list) warnings.add(String.valueOf(w));
+        }
+        Object rawDepts = parsed.get("depts");
+        if (rawDepts instanceof List<?> list) {
+            int index = 0;
+            for (Object item : list) {
+                if (!(item instanceof Map<?, ?> rawDept)) continue;
+                index++;
+                Map<String, String> row = new LinkedHashMap<>();
+                Map<String, Object> dept = new LinkedHashMap<>();
+                rawDept.forEach((k, v) -> dept.put(String.valueOf(k), v));
+                row.put("部门编码", String.valueOf(dept.getOrDefault("code", "D" + index)));
+                row.put("部门名称", String.valueOf(dept.getOrDefault("name", "")));
+                row.put("上级部门编码", String.valueOf(dept.getOrDefault("parentCode", "")));
+                row.put("排序", String.valueOf(dept.getOrDefault("sort", index * 10)));
+                row.put("__row", String.valueOf(index + 1));
+                rows.add(row);
+            }
+        }
+        if (rows.isEmpty()) {
+            String message = String.valueOf(parsed.getOrDefault("message", "图里没有识别出部门"));
+            throw new IllegalStateException(message + "；可以换一张更清晰的组织架构图，或改用 Excel 模板");
+        }
+
+        List<String> errors = new ArrayList<>();
+        validate(module, rows, errors, warnings);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("module", module.code());
+        out.put("moduleLabel", module.label());
+        out.put("fileName", name);
+        out.put("rowCount", rows.size());
+        out.put("rows", rows);
+        out.put("errors", errors);
+        out.put("warnings", warnings);
+        out.put("batchNo", batchNo);
+        out.put("model", parsed.getOrDefault("model", ""));
+        out.put("notes", parsed.getOrDefault("notes", ""));
+        out.put("storedPath", storedPath);
+        recordUpload(batchNo, module, file, storedPath, rows.size(), operator);
         return out;
     }
 

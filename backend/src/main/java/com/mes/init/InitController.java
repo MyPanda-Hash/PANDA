@@ -72,7 +72,16 @@ public class InitController {
         return ApiResult.ok(service.upload(module, file, auth.getName()));
     }
 
-    /** 落库（P1）：当前明确拒绝并说明，避免半成品写脏库。 */
+    /** 组织架构图 → 部门树草案：转给数字员工解析，返回与 Excel 上传同构的行。 */
+    @PostMapping("/org-chart")
+    public ApiResult<Map<String, Object>> orgChart(@RequestParam("file") MultipartFile file,
+                                                   @RequestParam(required = false) String hint,
+                                                   Authentication auth) throws IOException {
+        guard(auth);
+        return ApiResult.ok(service.parseOrgChart(file, hint, auth.getName()));
+    }
+
+    /** 按模块落库（部门/存货/工序/路线/BOM/员工）。 */
     @PostMapping("/apply")
     public ApiResult<Map<String, Object>> apply(@RequestBody Map<String, Object> body, Authentication auth) {
         guard(auth);

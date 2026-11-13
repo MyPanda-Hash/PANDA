@@ -76,6 +76,15 @@
                   {{ tt('下载模板') }}
                 </el-button>
                 <el-button
+                  v-if="m.code === 'dept'"
+                  size="small"
+                  :disabled="m.blockedBy.length > 0 || m.done"
+                  :loading="uploading === 'org-chart'"
+                  @click="pickOrgChart(m)"
+                >
+                  {{ tt('传架构图') }}
+                </el-button>
+                <el-button
                   size="small"
                   type="primary"
                   :disabled="m.blockedBy.length > 0 || m.done"
@@ -93,6 +102,9 @@
             <header class="wz-preview-head">
               <span class="wz-preview-title">
                 {{ tt(preview.moduleLabel) }} · {{ preview.fileName }} · {{ preview.rowCount }}{{ tt('行') }}
+                <el-tag v-if="preview.fromImage" size="small" type="warning" effect="plain">
+                  {{ tt('AI 识别，请逐行核对') }}
+                </el-tag>
               </span>
               <div class="wz-preview-actions">
                 <el-button size="small" @click="preview = null">{{ tt('取消') }}</el-button>
@@ -334,6 +346,52 @@ function pickFile(m) {
     if (file) await doUpload(m, file)
   }
   input.click()
+}
+
+function pickOrgChart(m) {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/png,image/jpeg,image/webp'
+  input.style.display = 'none'
+  document.body.appendChild(input)
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (file) await uploadOrgChart(m, file)
+    input.remove()
+  }
+  input.click()
+}
+
+async function uploadOrgChart(m, file) {
+  uploading.value = 'org-chart'
+  result.value = null
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('hint', '')
+    const res = await request.post('/init/org-chart', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 150000,
+    })
+    const data = res?.data || {}
+    preview.value = {
+      module: m.code,
+      moduleLabel: data.moduleLabel || m.label,
+      moduleNeedsConfirm: false,
+      fileName: data.fileName || file.name,
+      rowCount: data.rowCount || 0,
+      rows: data.rows || [],
+      errors: data.errors || [],
+      warnings: [...(data.warnings || []), data.notes ? `${tt('模型判断')}：${data.notes}` : ''].filter(Boolean),
+      fromImage: true,
+    }
+    if (preview.value.errors.length) ElMessage.warning(tt('识别结果有问题，请按提示调整或改用 Excel 模板'))
+    else ElMessage.success(`${tt('已从图里识别出')} ${preview.value.rowCount} ${tt('个部门，请核对后落库')}`)
+  } catch (e) {
+    ElMessage.error(tt('架构图解析失败') + '：' + (e?.message || ''))
+  } finally {
+    uploading.value = ''
+  }
 }
 
 async function doUpload(m, file) {
