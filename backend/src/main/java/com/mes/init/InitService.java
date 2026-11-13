@@ -19,6 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
@@ -269,8 +271,21 @@ public class InitService {
                     aiUrl.replaceAll("/+$", "") + "/internal/v1/init/org-chart",
                     new HttpEntity<>(body, headers), Map.class);
             parsed = response.getBody() == null ? Map.of() : response.getBody();
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            // 解析服务自己会解释原因（本机模型没起来、令牌不对、模型看不到图…），
+            // 原样透传它的 message，别用「服务不可用」把真正的原因盖掉。
+            String detail = e.getResponseBodyAsString();
+            String message = detail;
+            try {
+                Map<?, ?> errorBody = new ObjectMapper().readValue(detail, Map.class);
+                Object explained = errorBody.get("message");
+                if (explained != null) message = String.valueOf(explained);
+            } catch (Exception ignore) {
+                // 不是 JSON 就原样返回
+            }
+            throw new IllegalStateException(message);
         } catch (RestClientException e) {
-            throw new IllegalStateException("解析服务不可用（数字员工未启动或令牌不一致）：" + e.getMessage());
+            throw new IllegalStateException("组织架构图解析服务不可用（本地脚本未启动？）：" + e.getMessage());
         }
 
         List<Map<String, String>> rows = new ArrayList<>();
