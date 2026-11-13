@@ -63,7 +63,7 @@ try {
   $r.Output | ForEach-Object { Log "  $_" }
 
   # ---------- 4. 运行部署脚本（前台，超时给足） ----------
-  Log "运行 deploy-route1.sh（安装 nginx/JDK17/MySQL + 建库，约 3-6 分钟）..."
+  Log "运行 deploy-route1.sh（安装 nginx/JDK17/PostgreSQL + 建库，约 3-6 分钟）..."
   $r = Invoke-SSHCommand -SessionId $s.SessionId -Command "cd /opt/light-mes && bash deploy-route1.sh ${Domain}" -TimeOut 900
   $r.Output | Select-Object -Last 15 | ForEach-Object { Log "  $_" }
   if ($r.ExitStatus -ne 0) { Log "脚本退出码 $($r.ExitStatus)，继续兜底步骤"; $r.Error | ForEach-Object { Log "  ERR $_" } }
@@ -79,12 +79,12 @@ try {
 if ! systemctl is-active --quiet light-mes; then
   echo "light-mes 未运行，重建配置..."
   printf '%s\n' \
-'[Unit]' 'Description=light-mes backend' 'After=network.target mysql.service' '' \
+'[Unit]' 'Description=light-mes backend' 'After=network.target postgresql.service' '' \
 '[Service]' 'WorkingDirectory=/opt/light-mes' \
 'ExecStart=/usr/bin/java -jar /opt/light-mes/light-mes-backend-0.1.0.jar' \
 'Restart=on-failure' 'RestartSec=5' \
-'Environment=SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/light_mes?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai' \
-'Environment=SPRING_DATASOURCE_USERNAME=root' 'Environment=SPRING_DATASOURCE_PASSWORD=root' '' \
+'Environment=SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/light_mes' \
+'Environment=SPRING_DATASOURCE_USERNAME=postgres' 'Environment=SPRING_DATASOURCE_PASSWORD=root' '' \
 '[Install]' 'WantedBy=multi-user.target' \
 > /etc/systemd/system/light-mes.service
   systemctl daemon-reload && systemctl enable --now light-mes && sleep 6
@@ -117,12 +117,12 @@ Log "全量验证..."
 $s = New-SSHSession -ComputerName $ServerIp -Credential $cred -AcceptKey -ConnectionTimeout 30
 try {
   $r = Invoke-SSHCommand -SessionId $s.SessionId -Command @'
-echo "== 服务 =="; systemctl is-active light-mes mysql nginx | tr '\n' ' '; echo
+echo "== 服务 =="; systemctl is-active light-mes postgresql nginx | tr '\n' ' '; echo
 echo "== 登录 =="
 TOKEN=$(curl -s -m 10 http://127.0.0.1:3308/api/auth/login -X POST -H "Content-Type: application/json" -d '{"userName":"admin","password":"123456"}' | grep -o '"code":[0-9]*' | head -1)
 echo "登录 code: $TOKEN"
 echo "== 前端 =="; curl -s -o /dev/null -w "http_code: %{http_code}\n" http://127.0.0.1/
-echo "== 数据库 =="; mysql -uroot -proot -N -e "USE light_mes; SELECT CONCAT('menus=',(SELECT COUNT(*) FROM sys_menu),' panels=',(SELECT COUNT(*) FROM panel_config),' forms=',(SELECT COUNT(*) FROM form_data),' users=',(SELECT COUNT(*) FROM sys_user));" 2>/dev/null
+echo "== 数据库 =="; sudo -u postgres psql -tA -d light_mes -c "SELECT 'menus='||(SELECT COUNT(*) FROM sys_menu)||' panels='||(SELECT COUNT(*) FROM panel_config)||' forms='||(SELECT COUNT(*) FROM form_data)||' users='||(SELECT COUNT(*) FROM sys_user);" 2>/dev/null
 '@
   $r.Output | ForEach-Object { Log "  $_" }
 }

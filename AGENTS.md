@@ -5,15 +5,15 @@
 
 ## 项目一句话
 
-配置驱动的轻 MES：Vue 3 + Element Plus 前端，Spring Boot 3 + MyBatis-Plus 后端，MySQL `light_mes` 存面板配置与业务数据。列表、表单、明细、参照、选单、导入、权限共用 `PanelRuntime`，面板/字段/按钮/状态由 `panel_config` JSON 驱动，前后端数据键是中文。
+配置驱动的轻 MES：Vue 3 + Element Plus 前端，Spring Boot 3 + MyBatis-Plus 后端，PostgreSQL 16 `light_mes` 存面板配置与业务数据。列表、表单、明细、参照、选单、导入、权限共用 `PanelRuntime`，面板/字段/按钮/状态由 `panel_config` JSON 驱动，前后端数据键是中文。
 
-唯一数据链路：浏览器 → Spring Boot `/api/px/*` → MySQL。项目只保留 SQL 后端模式，Mock、PanelX 直连/代理、运行模式开关都不再存在。
+唯一数据链路：浏览器 → Spring Boot `/api/px/*` → PostgreSQL。项目只保留 SQL 后端模式，Mock、PanelX 直连/代理、运行模式开关都不再存在。
 
 ## 开工顺序
 
 每个任务按此顺序走，不跳步：
 
-1. **定权威源**：面板字段/按钮/状态/选单 → 运行库 `panel_config` + `backend/src/main/resources/db/init.sql`；业务规则与事务 → 后端；展示与交互 → 前端通用组件。
+1. **定权威源**：面板字段/按钮/状态/选单 → 运行库 `panel_config` + `backend/src/main/resources/db/migration/`（Flyway 结构）；业务规则与事务 → 后端；展示与交互 → 前端通用组件。
 2. **读主题文档**：改面板读 `docs/frontend/前端面板设计.md`，改接口/审批/生单读 `docs/backend/后端逻辑设计.md`，改流程/测试/安全读 `docs/development/开发与质量.md`，上线读 `docs/deploy/服务器部署.md`。`docs/archive/` 是本地历史，不入库、不作实现依据。
 3. **判边界**：前端 `core/` 不得 import `business/`，只能经 `PanelRuntime`；MES/PLM 编码、菜单、领域动作留在 `business/` 或后端适配层。
 4. **最小实现**：一次一个行为。字段名、明细键、`buttonName`、状态值是跨端契约，改动时数据库、后端、前端消费者一起改。
@@ -31,7 +31,7 @@
 | 自定义页面/看板 | `node tools/entry-audit.mjs`（入口清单与路由一致、站内跳转无死链） |
 | 跨端 / 部署 | `node tools/verify-project.mjs`，再 `git diff --check` |
 
-本机实测（2026-10-22）：Node 24.19、JDK 25、项目内 Maven 3.9.9 可用；`mysql` 客户端不在 PATH，需要连库时先确认命令是否可用，或用 Node 脚本走 API。
+本机实测（2026-11-12）：Node 22.14、JDK 25、项目内 Maven 3.9.9 可用；`psql`/`pg_dump` 不在主机 PATH，连库与备份走 `docker exec light-mes-pg ...`，或用 Node 脚本走 API。
 
 ## 代码地图
 
@@ -43,15 +43,15 @@
 | `backend/.../controller/` | HTTP 协议层 |
 | `backend/.../panel/` | 通用面板运行时与 `PanelActionHandler` 扩展契约 |
 | `backend/.../service/`、`mapper/`、`entity/` | 业务规则、事务、数据访问 |
-| `backend/src/main/resources/db/init.sql` | 新环境初始化基线；运行库改动要回写这里防漂移 |
+| `backend/src/main/resources/db/migration/` | PostgreSQL 结构权威源（Flyway）；改结构只能追加 `V2__*.sql` |
 | `tools/` | 校验、构建、抓取、数据库维护工具；说明见 `tools/README.md` |
 
-本地端口：MySQL 3308（`MES_DB_PORT`）、后端 8080（`MES_HTTP_PORT`）、前端开发 5173、预览 4173；换机器只设环境变量，不改文件。构建产物齐全时可跑 `start-project.bat`。
+本地端口：PostgreSQL 5432（`MES_DB_PORT`）、后端 8080（`MES_HTTP_PORT`）、前端开发 5173、预览 4173；换机器只设环境变量，不改文件。本地一键启动走工作区 `start-local.sh`。
 
 ## 数据与 SQL 门禁
 
-- **结构化业务表必须预留 30 个扩展列**：`ext_str1-10`（VARCHAR 200）、`ext_num1-10`（DECIMAL(18,4)）、`ext_date1-5`（DATETIME）、`ext_flag1-5`（TINYINT）。普通面板字段写 `panel_config` JSON，不改表；确需结构化字段时占用空闲 `ext_*` 列并登记「列 ↔ 业务字段」，新表建表时同样预留。存量库用 `tools/update-2026-10-22-reserved-columns.sql` 幂等补齐。规则正文见 `docs/backend/后端逻辑设计.md` §2。
-- 初始化用 `mysql -uroot -p --default-character-set=utf8mb4 --execute="source backend/src/main/resources/db/init.sql"`。不要用 `Get-Content init.sql | mysql`，Windows 文本管道会把中文不可逆替换成 `?`；初始化后跑 `node tools/repair-db-question-marks.cjs --check`。
+- **结构化业务表必须预留 30 个扩展列**：`ext_str1-10`（varchar(200)）、`ext_num1-10`（numeric(18,4)）、`ext_date1-5`（timestamp(0)）、`ext_flag1-5`（smallint）。普通面板字段写 `panel_config` JSON，不改表；确需结构化字段时占用空闲 `ext_*` 列并登记「列 ↔ 业务字段」，新表建表时同样预留。新表在 Flyway 迁移里同样预留；`tools/update-2026-10-22-reserved-columns.sql` 是 MySQL 时代的补齐脚本，只作回滚资产。规则正文见 `docs/backend/后端逻辑设计.md` §2。
+- 数据库结构由 Flyway 在启动时执行 `db/migration/V1__baseline.sql`，不要手工建表或改表；方言门禁 `node tools/pg-dialect-audit.mjs`，迁移对账 `node tools/pg-parity.mjs`。MySQL 脚本只作回滚资产（`db/README.md`）。
 - `form_data` 业务唯一键是 `(panel_code, form_no)`；明细保存完整 `detail`，页面未加载完明细时不保存，后端不用缺失 `detail` 清空原数据。
 - 单号取最大序号 + 查重 + 唯一键兜底，不用 `COUNT + 1`。
 - 库存以 `STOCK_STATUS` 实时聚合为唯一口径，不复制静态“现存量”快照。

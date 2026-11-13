@@ -4,13 +4,13 @@ cd /d "%~dp0"
 set "ROOT=%~dp0"
 
 rem U 盘多机环境：各机端口不同时不改任何文件，只设环境变量（cmd 或系统环境变量均可）：
-rem   set MES_DB_PORT=3306        （MySQL 端口，默认 3308）
+rem   set MES_DB_PORT=5432        （PostgreSQL 端口，默认 5432）
 rem   set MES_HTTP_PORT=8081      （后端 HTTP 端口，默认 8080）
-rem   set SPRING_DATASOURCE_PASSWORD=xxx （MySQL 密码，必填）
+rem   set SPRING_DATASOURCE_PASSWORD=xxx （PostgreSQL 密码，必填）
 rem   set MES_JWT_SECRET=xxx       （至少 64 位密码学安全随机值，必填）
 rem   set MES_AI_SSO_SECRET=xxx    （与 AI 数字员工 DOC_NEXUS_MES_SSO_SECRET 相同；不设则 AI 入口降级）
 rem   set MES_AI_DIR=xxx           （AI 数字员工目录，默认 ..\doc-nexus-ai）
-if not defined MES_DB_PORT set "MES_DB_PORT=3308"
+if not defined MES_DB_PORT set "MES_DB_PORT=5432"
 if not defined MES_HTTP_PORT set "MES_HTTP_PORT=8080"
 
 call "%ROOT%tools\detect-jdk.bat"
@@ -31,14 +31,14 @@ if not exist "%ROOT%frontend\dist\index.html" (
   goto :fail
 )
 
-rem 端口探测用真实 TCP 连接：本机 netstat 对某些监听（如 phpstudy MySQL）时有时无，
+rem 端口探测用真实 TCP 连接：本机 netstat 对某些监听（如 phpstudy PostgreSQL）时有时无，
 rem 用 netstat|findstr LISTENING 判断会误报「未运行」。
 call :portup %MES_DB_PORT%
 if errorlevel 1 (
-  echo [错误] MySQL 未在 %MES_DB_PORT% 端口运行，请先启动 MySQL（或 set MES_DB_PORT=实际端口）。
+  echo [错误] PostgreSQL 未在 %MES_DB_PORT% 端口运行，请先启动 PostgreSQL（或 set MES_DB_PORT=实际端口）。
   goto :fail
 )
-echo [1/4] MySQL 已运行（%MES_DB_PORT%）
+echo [1/4] PostgreSQL 已运行（%MES_DB_PORT%）
 
 if not defined SPRING_DATASOURCE_PASSWORD (
   echo [错误] 未设置 SPRING_DATASOURCE_PASSWORD，请先配置数据库密码。

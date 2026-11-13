@@ -1,4 +1,4 @@
-<!-- DbBackup.vue — 系统管理 · 数据备份：一键 mysqldump 备份 + 留痕 + 下载 -->
+<!-- DbBackup.vue — 系统管理 · 数据备份：一键 pg_dump 备份 + 留痕 + 下载 -->
 <template>
   <div class="backup-wrap">
     <div class="head">

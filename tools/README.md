@@ -23,8 +23,11 @@
 | `detect-jdk.bat` | 查找本机可用的 JDK 17+ |
 | `apache-maven-3.9.9/`、`settings.xml` | 固定 Maven 版本和镜像配置 |
 | `tplus-grab/` | 真实 T+ 页面结构、截图和交互取证 |
-| `e2e-*.cjs`、`regression-*.cjs` | 本地 SQL 模式回归 |
-| `build-deploy-sql.mjs` | 生成部署所需 SQL 产物 |
+| `e2e-*.cjs`、`regression-*.cjs` | 本地回归脚本，**MySQL 时代产物**（直连 `mysql` 客户端、默认后端端口 3308），复用前需按 PostgreSQL 改写 |
+| `mysql2pg-schema.mjs` | 从 MySQL 运行库 `information_schema` 生成 PostgreSQL 结构基线 `db/migration/V1__baseline.sql` |
+| `mysql2pg-copy.sh` | 一次性把 MySQL 数据搬进 PostgreSQL（`mysqldump --tab` + `COPY`），逐表核对行数与序列 |
+| `pg-dialect-audit.mjs` | 方言门禁：运行路径出现 MySQL 专有语法即失败 |
+| `pg-parity.mjs` | 迁移对账：MySQL 与 PostgreSQL 逐表行数、关键金额合计、序列健康 |
 | `repair-db-question-marks.cjs` | 检查或修复错误文本管道造成的数据库中文 `??` 污染；应用修复前自动备份 |
 
 常用命令：
@@ -36,7 +39,7 @@ node tools/action-support-audit.mjs
 node tools/verify-project.mjs
 ```
 
-数据库 UTF-8 检查与修复（默认连接 `127.0.0.1:3306/light_mes`，密码从 `MES_DB_PASSWORD` 读取）：
+历史：数据库 UTF-8 检查与修复（仅对 MySQL 有效，连接 `127.0.0.1:3306/light_mes`，密码从 `MES_DB_PASSWORD` 读取）：
 
 ```powershell
 node tools/repair-db-question-marks.cjs --check

@@ -45,18 +45,18 @@ mv -f light-mes-backend.jar light-mes-backend-0.1.0.jar
 rm -rf /var/www/light-mes/dist
 mv -f dist /var/www/light-mes/dist
 # 增量面板 SQL（仅 panel_config，幂等）
-mysql -uroot -proot light_mes < /opt/light-mes/incr-panels.sql
-echo "SQL_OK: $(mysql -uroot -proot -N -e "SELECT COUNT(*) FROM light_mes.panel_config WHERE panel_code IN ('TRANSFER','OUTSOURCE_ORDER','QUOTE_ORDER','PU_INVOICE','STOCK_CHECK','SERIAL_NO','SERIAL_STATUS')") new panels"
+sudo -u postgres psql -q -d light_mes -f /opt/light-mes/incr-panels.sql
+echo "SQL_OK: $(sudo -u postgres psql -tA -d light_mes -c "SELECT COUNT(*) FROM panel_config WHERE panel_code IN ('TRANSFER','OUTSOURCE_ORDER','QUOTE_ORDER','PU_INVOICE','STOCK_CHECK','SERIAL_NO','SERIAL_STATUS')") new panels"
 # 确保 systemd 带 MES_JWT_SECRET（缺失则重写 service 文件）
 if ! grep -q MES_JWT_SECRET /etc/systemd/system/light-mes.service 2>/dev/null; then
   cp -f /etc/systemd/system/light-mes.service /etc/systemd/system/light-mes.service.bak 2>/dev/null || true
   printf '%s\n' \
-'[Unit]' 'Description=light-mes backend' 'After=network.target mysql.service' '' \
+'[Unit]' 'Description=light-mes backend' 'After=network.target postgresql.service' '' \
 '[Service]' 'WorkingDirectory=/opt/light-mes' \
 'ExecStart=/usr/bin/java -jar /opt/light-mes/light-mes-backend-0.1.0.jar' \
 'Restart=on-failure' 'RestartSec=5' \
-'Environment=SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/light_mes?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai' \
-'Environment=SPRING_DATASOURCE_USERNAME=root' 'Environment=SPRING_DATASOURCE_PASSWORD=root' \
+'Environment=SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/light_mes' \
+'Environment=SPRING_DATASOURCE_USERNAME=postgres' 'Environment=SPRING_DATASOURCE_PASSWORD=root' \
 "Environment=MES_JWT_SECRET=$secret" 'Environment=MES_JWT_EXPIRE_HOURS=24' '' \
 '[Install]' 'WantedBy=multi-user.target' \
 > /etc/systemd/system/light-mes.service

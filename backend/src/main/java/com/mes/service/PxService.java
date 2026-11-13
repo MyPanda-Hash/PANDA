@@ -978,8 +978,9 @@ public class PxService implements PanelRuntimeService {
             jdbcTemplate.update(
                     "INSERT INTO px_column_pref (panel_code, owner, col_name, seq, alias, width, visible, update_by) "
                             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
-                            + "ON DUPLICATE KEY UPDATE seq = VALUES(seq), alias = VALUES(alias), width = VALUES(width), "
-                            + "visible = VALUES(visible), update_by = VALUES(update_by)",
+                            + "ON CONFLICT (panel_code, owner, col_name) DO UPDATE SET seq = EXCLUDED.seq, "
+                            + "alias = EXCLUDED.alias, width = EXCLUDED.width, visible = EXCLUDED.visible, "
+                            + "update_by = EXCLUDED.update_by",
                     panelCode, SHARED_OWNER, name, seq, alias, width,
                     visibleFlag(c.get("visible")) ? 1 : 0, userName);
             seq += 10;

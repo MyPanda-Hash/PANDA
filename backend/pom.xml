@@ -59,10 +59,26 @@
       <artifactId>mybatis-plus-jsqlparser</artifactId>
       <version>${mybatis-plus.version}</version>
     </dependency>
+    <!-- 运行库：PostgreSQL（2026-11-12 迁移）。MySQL 驱动保留到回滚窗口结束，
+         删除时同步删掉 DbBackupService 的 mysql 分支和 db/*.sql 的 MySQL 脚本。 -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
     <dependency>
       <groupId>com.mysql</groupId>
       <artifactId>mysql-connector-j</artifactId>
       <scope>runtime</scope>
+    </dependency>
+    <!-- 结构版本化：db/migration/V1__baseline.sql 为 PostgreSQL 唯一结构权威源 -->
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
     </dependency>
     <dependency>
       <groupId>io.jsonwebtoken</groupId>

@@ -23,7 +23,8 @@
 | 前端面板设计 | [前端面板设计](frontend/前端面板设计.md) | 页面结构、配置映射、控件、交互和新面板接入 |
 | 自定义页面入口清单 | [面板入口清单](frontend/面板入口清单.md) | 每个自定义页面/看板的全部入口，改页面前逐项核对 |
 | 后端逻辑设计 | [后端逻辑设计](backend/后端逻辑设计.md) | SQL 数据模型、接口、状态机、审批、生单和权限 |
-| 服务器部署 | [服务器部署](deploy/服务器部署.md) | MySQL、Spring Boot、nginx、systemd、HTTPS 和验收 |
+| 服务器部署 | [服务器部署](deploy/服务器部署.md) | PostgreSQL、Spring Boot、nginx、systemd、HTTPS 和验收 |
+| 数据库迁移 PostgreSQL | [数据库迁移-PostgreSQL](deploy/数据库迁移-PostgreSQL.md) | 换库取证、类型映射、语法改写、分阶段实施与验收 |
 | 开发与质量 | [开发与质量](development/开发与质量.md) | 目录边界、开发流程、测试、文档和安全要求 |
 
 ## 阅读顺序

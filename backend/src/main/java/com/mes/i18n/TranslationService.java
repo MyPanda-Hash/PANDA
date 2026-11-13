@@ -212,7 +212,8 @@ public class TranslationService {
             for (Map.Entry<String, String> e : translated.entrySet()) {
                 jdbcTemplate.update(
                         "INSERT INTO sys_translation (scope, ref_key, locale, text, source) VALUES ('biz', ?, ?, ?, 'mt') "
-                                + "ON DUPLICATE KEY UPDATE text = VALUES(text), source = VALUES(source)",
+                                + "ON CONFLICT (scope, ref_key, locale) DO UPDATE SET text = EXCLUDED.text, "
+                                + "source = EXCLUDED.source",
                         e.getKey(), loc, e.getValue());
             }
         } catch (Exception e) {

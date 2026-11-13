@@ -523,7 +523,7 @@ export default {
     '服务连接异常': 'Service error',
     '版本：v0.2.0（门户壳 T+ 形态）': 'Version: v0.2.0 (T+ style portal)',
     '参考：畅捷通 T+ 门户（h2t.chanjet.com）': 'Ref: Chanjet T+ portal (h2t.chanjet.com)',
-    '技术栈：Vue3 + Element Plus / Spring Boot 3 + MySQL': 'Stack: Vue3 + Element Plus / Spring Boot 3 + MySQL',
+    '技术栈：Vue3 + Element Plus / Spring Boot 3 + PostgreSQL': 'Stack: Vue3 + Element Plus / Spring Boot 3 + PostgreSQL',
     '© 2026 轻MES 项目组': '© 2026 lightMES Team',
     'AI 智能帮助': 'AI Assistant',
     '模块开发中，此处为功能占位页': 'Module under development. This is a placeholder page.',

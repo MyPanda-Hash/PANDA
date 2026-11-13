@@ -11,11 +11,19 @@ spring:
       max-request-size: 11MB
       file-size-threshold: 10MB
   datasource:
-    # 主机/端口环境变量化（默认回归提交约定 localhost:3308），多机 U 盘环境不再改文件
-    url: jdbc:mysql://${MES_DB_HOST:localhost}:${MES_DB_PORT:3308}/light_mes?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: "${SPRING_DATASOURCE_USERNAME:root}"
+    # PostgreSQL（2026-11-12 由 MySQL 迁移）。回滚到 MySQL 不改代码：在 .env.local 里
+    # 设 SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/light_mes?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    # 并设 MES_FLYWAY_ENABLED=false（MySQL 结构由 db/*.sql 提供，不走 Flyway）。
+    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://${MES_DB_HOST:localhost}:${MES_DB_PORT:5432}/light_mes}"
+    username: "${SPRING_DATASOURCE_USERNAME:postgres}"
     password: "${SPRING_DATASOURCE_PASSWORD:}" # 本地/生产环境均通过环境变量注入
-    driver-class-name: com.mysql.cj.jdbc.Driver
+  flyway:
+    # 结构唯一权威源：db/migration/V1__baseline.sql（由 tools/mysql2pg-schema.mjs 从运行库生成）
+    enabled: "${MES_FLYWAY_ENABLED:true}"
+    locations: classpath:db/migration
+    # 已存在的库（迁移搬过来的）只登记基线、不重放 DDL
+    baseline-on-migrate: true
+    baseline-version: 1
   sql:
     init:
       mode: never
@@ -30,6 +38,12 @@ mybatis-plus:
       id-type: auto
 
 mes:
+  # 数据库主动备份：本机没有 PostgreSQL 客户端时把 pg-dump 设成
+  #   docker exec -i -e PGPASSWORD light-mes-pg pg_dump
+  backup:
+    dir: "${MES_BACKUP_DIR:/opt/light-mes/backup}"
+    pg-dump: "${MES_PG_DUMP_CMD:pg_dump}"
+    mysql-dump: "${MES_MYSQL_DUMP_CMD:mysqldump}" # pg-dialect-audit: allow 回滚窗口内保留 MySQL 分支
   # 开票方（销售方）信息：销售发票打印页使用，可用环境变量覆盖
   # 销货单审批通过后是否自动开票。true=一路自动（发票直接进草稿）；
   # false=由「销售开票」工作台手动勾选销货单开票。

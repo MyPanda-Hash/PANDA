@@ -22,7 +22,7 @@ export function roundDecimal(value, digits = 2) {
   return rounded / factor
 }
 
-// 数据访问固定为 SQL 后端：/api/px/* -> Spring Boot -> MySQL。
+// 数据访问固定为 SQL 后端：/api/px/* -> Spring Boot -> PostgreSQL。
 
 const APPROVAL_WORKFLOW_ACTIONS = ['提交审批', '审批通过', '审批驳回', '审批情况', '弃审']
 /**

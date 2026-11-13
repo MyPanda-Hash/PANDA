@@ -221,7 +221,7 @@
         <div class="about-logo">轻<span>MES</span></div>
         <div class="about-row">{{ tt('版本：v0.2.0（门户壳 T+ 形态）') }}</div>
         <div class="about-row">{{ tt('参考：畅捷通 T+ 门户（h2t.chanjet.com）') }}</div>
-        <div class="about-row">{{ tt('技术栈：Vue3 + Element Plus / Spring Boot 3 + MySQL') }}</div>
+        <div class="about-row">{{ tt('技术栈：Vue3 + Element Plus / Spring Boot 3 + PostgreSQL') }}</div>
         <div class="about-row about-copy">{{ tt('© 2026 轻MES 项目组') }}</div>
       </div>
     </el-dialog>

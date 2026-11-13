@@ -2,63 +2,57 @@
 # ============================================================
 # light-mes 路线① 一键部署脚本（Ubuntu/Debian 系服务器）
 # 用法: sudo bash deploy-route1.sh [你的域名，可留空=用IP访问]
-# 前置: 已上传这三个文件到服务器:
-#   /opt/light-mes/light-mes-backend-0.1.0.jar   （后端 jar）
-#   /opt/light-mes/init.sql                      （数据库脚本）
+# 前置: 已上传到服务器:
+#   /opt/light-mes/light-mes-backend-0.1.0.jar   （后端 jar，内含 Flyway 结构脚本）
+#   /opt/light-mes/light_mes.pg.dump             （可选：pg_dump -Fc 的数据包）
 #   /var/www/light-mes/dist/                     （前端 dist 目录）
+# 结构由 jar 内的 Flyway（db/migration/V1__baseline.sql）在首次启动时自动创建。
 # ============================================================
 set -euo pipefail
 
 DOMAIN="${1:-}"
 JAR_SRC=/opt/light-mes/light-mes-backend-0.1.0.jar
 DIST=/var/www/light-mes/dist
-SQL=/opt/light-mes/init.sql
+DUMP=/opt/light-mes/light_mes.pg.dump
 
-if [ ! -f "$JAR_SRC" ] || [ ! -f "$SQL" ] || [ ! -d "$DIST" ]; then
+if [ ! -f "$JAR_SRC" ] || [ ! -d "$DIST" ]; then
   echo "[错误] 缺少文件，请先上传:"
   echo "  jar    -> $JAR_SRC"
-  echo "  sql    -> $SQL"
   echo "  dist   -> $DIST"
+  echo "  数据包（可选）-> $DUMP"
   exit 1
 fi
 
-echo "== 1/5 安装依赖 (nginx + JDK17 + MySQL) =="
+echo "== 1/5 安装依赖 (nginx + JDK17 + PostgreSQL 16) =="
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
-apt-get install -y nginx openjdk-17-jdk-headless mysql-server
+apt-get install -y nginx openjdk-17-jdk-headless postgresql postgresql-client
 
 echo "== 2/5 初始化数据库 =="
-systemctl enable --now mysql
-# 幂等：探测 root 连接方式（无密码 / root/root），未知密码时明确报错而非静默失败
-if mysql -uroot -e "SELECT 1" >/dev/null 2>&1; then
-  echo "MySQL root 无密码可连，设置密码为 root（幂等）"
-  mysql -uroot <<'SQL'
-ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';
-FLUSH PRIVILEGES;
-SQL
-elif mysql -uroot -proot -e "SELECT 1" >/dev/null 2>&1; then
-  echo "MySQL root/root 已可连，跳过密码设置（已初始化过）"
+# PostgreSQL：库名 light_mes、角色 postgres。口令由 MES_DB_PASSWORD 传入（默认 root，部署后请改）
+DB_PASSWORD="${MES_DB_PASSWORD:-root}"
+systemctl enable --now postgresql
+if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='light_mes'" | grep -q 1; then
+  sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE light_mes ENCODING 'UTF8' LC_COLLATE 'C.UTF-8' LC_CTYPE 'C.UTF-8' TEMPLATE template0;"
+  echo "已创建数据库 light_mes"
 else
-  echo "[错误] MySQL root 密码未知（既非无密码也非 root），无法初始化数据库" >&2
-  echo "[错误] 请手动执行: mysql -uroot -p < /opt/light-mes/light_mes_deploy.sql" >&2
-  exit 1
+  echo "数据库 light_mes 已存在，跳过创建"
 fi
-FULL_SQL=/opt/light-mes/light_mes_deploy.sql
-if [ -f "$FULL_SQL" ]; then
-  echo "检测到全量数据包 light_mes_deploy.sql，执行【备份旧库 → 整体覆盖导入】"
+sudo -u postgres psql -v ON_ERROR_STOP=1 -c "ALTER USER postgres WITH PASSWORD '${DB_PASSWORD}';"
+sudo -u postgres psql -d light_mes -tAc "ALTER DATABASE light_mes SET timezone TO 'Asia/Shanghai';" >/dev/null
+
+if [ -f "$DUMP" ]; then
+  echo "检测到数据包 $DUMP，执行【备份旧库 → 整体恢复】"
   mkdir -p /opt/light-mes/backup
-  if mysql -uroot -proot -e "USE light_mes" >/dev/null 2>&1; then
-    BK="/opt/light-mes/backup/light_mes_$(date +%Y%m%d_%H%M%S).sql"
-    mysqldump -uroot -proot --single-transaction --routines --triggers light_mes > "$BK" 2>/dev/null \
-      && echo "旧库已备份: $BK" \
-      || echo "[警告] 旧库备份失败，继续覆盖导入"
-    mysql -uroot -proot -e "DROP DATABASE IF EXISTS light_mes"
+  if sudo -u postgres psql -tAc "SELECT 1" light_mes >/dev/null 2>&1 && [ "$(sudo -u postgres psql -d light_mes -tAc "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public'")" != "0" ]; then
+    BK="/opt/light-mes/backup/light_mes_$(date +%Y%m%d_%H%M%S).dump"
+    sudo -u postgres pg_dump -Fc -d light_mes > "$BK" && echo "旧库已备份: $BK" || echo "[警告] 旧库备份失败，继续恢复"
+    sudo -u postgres psql -d light_mes -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" >/dev/null
   fi
-  mysql -uroot -proot < "$FULL_SQL"
-  echo "全量数据导入完成: light_mes"
+  sudo -u postgres pg_restore --no-owner --no-privileges -d light_mes "$DUMP"
+  echo "数据恢复完成: light_mes"
 else
-  mysql -uroot -proot < "$SQL"
-  echo "数据库初始化完成: light_mes"
+  echo "[提示] 未提供数据包，首次启动由 Flyway 建空库结构；面板与业务数据需另行导入"
 fi
 
 echo "== 3/5 后端 systemd 服务 =="
@@ -73,16 +67,16 @@ fi
 printf '%s\n' \
 '[Unit]' \
 'Description=light-mes backend' \
-'After=network.target mysql.service' \
+'After=network.target postgresql.service' \
 '' \
 '[Service]' \
 'WorkingDirectory=/opt/light-mes' \
 'ExecStart=/usr/bin/java -jar /opt/light-mes/light-mes-backend-0.1.0.jar' \
 'Restart=on-failure' \
 'RestartSec=5' \
-'Environment=SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/light_mes?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai' \
-'Environment=SPRING_DATASOURCE_USERNAME=root' \
-'Environment=SPRING_DATASOURCE_PASSWORD=root' \
+'Environment=SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/light_mes' \
+'Environment=SPRING_DATASOURCE_USERNAME=postgres' \
+"Environment=SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}" \
 '' \
 '[Install]' \
 'WantedBy=multi-user.target' \
@@ -136,5 +130,5 @@ echo " ⚠️ 接下来 3 件事（脚本管不了）:"
 echo "  1. 云控制台「安全组」放行 80 / 443 端口（有些还要放 3308 先测试）"
 echo "  2. 有域名则加 A 记录指向服务器公网 IP"
 echo "  3. HTTPS: 执行 certbot --nginx -d 你的域名"
-echo " ⚠️ 安全提醒: MySQL root 密码当前是 root，生产请修改"
+echo " ⚠️ 安全提醒: PostgreSQL postgres 口令当前是 ${DB_PASSWORD}，生产请改（MES_DB_PASSWORD 传入）"
 echo "=========================================="

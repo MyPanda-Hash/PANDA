@@ -8,7 +8,7 @@
 | 最后整理 | 2026-09-01 |
 | 文档导航 | [文档中心](docs/README.md) |
 
-轻 MES 当前提供可运行的制造业务基线，并开始作为需求驱动 PLM 的技术底座演进。前端使用 Vue 3，后端使用 Spring Boot，面板配置和业务数据统一存储在 MySQL。既有 T+ 形态只作为交互参考，新功能以实际 PLM 需求、领域模型和验收条件为准。
+轻 MES 当前提供可运行的制造业务基线，并开始作为需求驱动 PLM 的技术底座演进。前端使用 Vue 3，后端使用 Spring Boot，面板配置和业务数据统一存储在 PostgreSQL 16。既有 T+ 形态只作为交互参考，新功能以实际 PLM 需求、领域模型和验收条件为准。
 
 ## 系统结构
 
@@ -17,7 +17,7 @@
   -> Vue 3 / Element Plus
   -> /api/*
   -> Spring Boot /api/px/* 与业务接口
-  -> MySQL light_mes
+  -> PostgreSQL light_mes
 ```
 
 项目只保留 SQL 后端模式，不包含 Mock、外部 PanelX 直连或 PanelX 代理模式。`PanelxList`、`PanelxForm` 和 `/panelx/...` 是内部通用面板命名。
@@ -28,7 +28,7 @@
 |---|---|
 | 前端页面、控件和面板接入 | [前端面板设计](docs/frontend/前端面板设计.md) |
 | SQL、接口、审批、权限和生单 | [后端逻辑设计](docs/backend/后端逻辑设计.md) |
-| MySQL、Spring Boot 和 nginx 上线 | [服务器部署](docs/deploy/服务器部署.md) |
+| PostgreSQL、Spring Boot 和 nginx 上线 | [服务器部署](docs/deploy/服务器部署.md)；换库过程见 [数据库迁移](docs/deploy/数据库迁移-PostgreSQL.md) |
 | 开发流程、测试和安全 | [开发与质量](docs/development/开发与质量.md) |
 
 ## 目录
@@ -45,7 +45,7 @@ light-mes/
 ├── backend/
 │   └── src/main/
 │       ├── java/com/mes/          # Controller、Service、Mapper、Entity
-│       └── resources/db/init.sql  # 新环境数据库初始化基线
+│       └── resources/db/migration # PostgreSQL 结构基线（Flyway 自动执行）
 ├── docs/               # 四份当前主题文档和原始证据
 └── tools/              # 项目校验、JDK 探测、Maven 和维护工具
 ```
@@ -54,17 +54,18 @@ light-mes/
 
 ## 本地启动
 
-前置条件：Node.js、JDK 17+、MySQL 运行在本机（默认端口 3308）。
+前置条件：Node.js、JDK 17+、PostgreSQL 16 运行在本机（默认端口 5432）。
 
-端口约定（U 盘多机环境，换机器只设环境变量、不改文件）：后端 HTTP 默认 `8080`（`MES_HTTP_PORT` 覆盖）、MySQL 默认 `localhost:3308`（`MES_DB_HOST`/`MES_DB_PORT` 覆盖）、数据库密码走 `SPRING_DATASOURCE_PASSWORD`。
+端口约定（U 盘多机环境，换机器只设环境变量、不改文件）：后端 HTTP 默认 `8080`（`MES_HTTP_PORT` 覆盖）、PostgreSQL 默认 `localhost:5432`（`MES_DB_HOST`/`MES_DB_PORT` 覆盖）、数据库密码走 `SPRING_DATASOURCE_PASSWORD`。
 
-1. 初始化数据库：
+1. 准备数据库：
 
-   ```powershell
-   mysql -uroot -p --default-character-set=utf8mb4 --execute="source backend/src/main/resources/db/init.sql"
+   ```bash
+   docker start light-mes-pg      # 或本机 PostgreSQL 16，端口 5432
+   docker exec light-mes-pg pg_isready -U postgres
    ```
 
-   不要使用 `Get-Content init.sql | mysql`，Windows PowerShell 文本管道可能把中文替换为字面量 `?`。初始化后可运行 `node tools/repair-db-question-marks.cjs --check` 检查数据库编码。
+   不用手工建表：后端启动时 Flyway 执行 `backend/src/main/resources/db/migration/V1__baseline.sql`，建出 26 张表、索引、注释和 `update_time` 触发器。MySQL 相关脚本只作回滚资产（见 `db/README.md`）。
 
 2. 在当前终端注入本地凭据：
 
