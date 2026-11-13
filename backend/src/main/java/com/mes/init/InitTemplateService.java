@@ -38,9 +38,15 @@ public class InitTemplateService {
     /** 示例行的首列标记：解析时整行跳过 */
     static final String SAMPLE_TAG = "（示例）";
 
-    /** 生成该模块的 xlsx 模板。 */
+    /** 生成该模块的模板；format=xls 时给旧版 Excel（2003）也能打开的文件。 */
     public byte[] template(InitModule module) throws IOException {
-        try (XSSFWorkbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+        return template(module, "xlsx");
+    }
+
+    public byte[] template(InitModule module, String format) throws IOException {
+        boolean xls = "xls".equalsIgnoreCase(format == null ? "" : format.trim());
+        try (Workbook wb = xls ? new org.apache.poi.hssf.usermodel.HSSFWorkbook() : new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = wb.createSheet(module.label());
             sheet.createFreezePane(0, 1);
 
@@ -83,6 +89,13 @@ public class InitTemplateService {
         }
     }
 
+    /** 模板下载用的文件名（按格式给扩展名）。 */
+    public static String fileNameOf(InitModule module, String format) {
+        String base = module.fileName();
+        if (!"xls".equalsIgnoreCase(format == null ? "" : format.trim())) return base;
+        return base.replaceAll("\\.xlsx$", ".xls");
+    }
+
     /**
      * 模块内的必填列：期初库存只认「仓库 / 存货编码 / 数量」——
      * 存货名称、规格、单位由存货档案带出，客户表里没有也不该拦。
@@ -98,6 +111,9 @@ public class InitTemplateService {
     static boolean required(String header) {
         return switch (header) {
             case "部门编码", "部门名称", "员工编码", "姓名", "所属部门编码",
+                 "往来单位编码", "往来单位名称", "性质",
+                 "计量单位编码", "计量单位名称",
+                 "仓库编码", "仓库名称",
                  "存货编码", "存货名称", "计量单位", "工序编码", "工序名称",
                  "工艺路线编码", "工艺路线名称", "工序顺序", "产品编码", "子件编码",
                  "定额数量", "仓库", "数量" -> true;
@@ -110,6 +126,9 @@ public class InitTemplateService {
             case DEPT -> List.of(SAMPLE_TAG + "D01", "生产部", "", "10");
             case EMPLOYEE -> List.of(SAMPLE_TAG + "E001", "张伟", "D01", "车间主任",
                     "13800000000", "排产、报工审核", "zhangwei");
+            case PARTNER -> List.of(SAMPLE_TAG + "KH001", "华东铝业", "客户", "销售一部", "张伟", "", "否");
+            case UOM -> List.of(SAMPLE_TAG + "U01", "件", "单计量", "件", "1");
+            case WH -> List.of(SAMPLE_TAG + "CK01", "原料仓", "原料仓", "厂区东侧", "陈仓管", "否");
             case ITEM -> List.of(SAMPLE_TAG + "CP001", "铝棒 Φ80", "Φ80×3000", "件",
                     "全月平均", "20", "原材料", "GY-CP001");
             case PROCESS -> List.of(SAMPLE_TAG + "OP10", "下料", "机加车间", "99", "自制", "计件");

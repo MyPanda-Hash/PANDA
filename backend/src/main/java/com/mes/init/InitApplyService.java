@@ -65,6 +65,9 @@ public class InitApplyService {
     public Map<String, Object> apply(InitModule module, List<Map<String, String>> rows, String operator) {
         List<Map<String, Object>> items = switch (module) {
             case DEPT -> applyDept(rows, operator);
+            case PARTNER -> applyPartner(rows, operator);
+            case UOM -> applyUom(rows, operator);
+            case WH -> applyWh(rows, operator);
             case ITEM -> applyItem(rows, operator);
             case PROCESS -> applyProcess(rows, operator);
             case ROUTING -> applyRouting(rows, operator);
@@ -134,6 +137,133 @@ public class InitApplyService {
             jdbc.update("update sys_dept set parent_id = ? where id = ?", parent, self);
         }
         return items;
+    }
+
+    // ───────────────────────── 往来单位（客户 / 供应商） ─────────────────────────
+
+    /** 往来单位：一张单一个单位，按「往来单位编码」判重；性质决定是客户还是供应商。 */
+    List<Map<String, Object>> applyPartner(List<Map<String, String>> rows, String operator) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map<String, String> row : rows) {
+            String code = value(row, "往来单位编码");
+            String name = value(row, "往来单位名称");
+            if (code.isEmpty() || name.isEmpty()) {
+                result.add(item("partner", code, "skip", "往来单位编码或名称为空"));
+                continue;
+            }
+            if (partnerDocByCode(code) != null) {
+                result.add(item("partner", code, "skip", "往来单位已存在，跳过"));
+                continue;
+            }
+            String nature = value(row, "性质");
+            if (nature.isEmpty()) nature = "客户";
+            Map<String, Object> head = new LinkedHashMap<>();
+            head.put("往来单位编码", code);
+            head.put("往来单位名称", name);
+            head.put("性质", nature);
+            head.put("结算客户", nature.contains("客户"));
+            head.put("客户价格等级", "");
+            head.put("分管部门", value(row, "分管部门"));
+            head.put("分管人员", value(row, "分管人员"));
+            head.put("职位", value(row, "职位"));
+            head.put("建档日期", LocalDateTime.now().toLocalDate().toString());
+            head.put("停用", "是".equals(value(row, "停用")) || "true".equalsIgnoreCase(value(row, "停用")));
+            insertDoc("PARTNER", code, head, Map.of(), operator);
+            result.add(item("partner", code, "insert", "新增往来单位（" + nature + "）"));
+        }
+        return result;
+    }
+
+    private FormData partnerDocByCode(String code) {
+        for (FormData doc : formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "PARTNER"))) {
+            if (code.equals(String.valueOf(parse(doc.getData()).getOrDefault("往来单位编码", "")).trim())) {
+                return doc;
+            }
+        }
+        return null;
+    }
+
+    // ───────────────────────── 计量单位 ─────────────────────────
+
+    /** 计量单位：单文档 UOM.uoms，按计量单位编码判重。 */
+    List<Map<String, Object>> applyUom(List<Map<String, String>> rows, String operator) {
+        FormData doc = archiveDoc("UOM", "计量单位");
+        Map<String, Object> detail = parse(doc.getDetailData());
+        List<Map<String, Object>> uoms = rowsOf(detail, "uoms");
+        Set<String> existing = new LinkedHashSet<>();
+        for (Map<String, Object> row : uoms) existing.add(String.valueOf(row.get("计量单位编码")).trim());
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        int seq = uoms.size();
+        for (Map<String, String> row : rows) {
+            String code = value(row, "计量单位编码");
+            if (code.isEmpty()) {
+                result.add(item("uom", "", "skip", "计量单位编码为空"));
+                continue;
+            }
+            if (!existing.add(code)) {
+                result.add(item("uom", code, "skip", "计量单位已存在，跳过"));
+                continue;
+            }
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("编号", "UOM-" + String.format("%03d", ++seq));
+            r.put("计量单位编码", code);
+            r.put("计量单位名称", value(row, "计量单位名称"));
+            r.put("单位类型", value(row, "单位类型").isEmpty() ? "单计量" : value(row, "单位类型"));
+            r.put("主单位", value(row, "主单位").isEmpty() ? value(row, "计量单位名称") : value(row, "主单位"));
+            r.put("换算率", number(value(row, "换算率"), 1));
+            uoms.add(r);
+            result.add(item("uom", code, "insert", "新增计量单位"));
+        }
+        if (result.stream().anyMatch(r -> "insert".equals(r.get("action")))) {
+            detail.put("uoms", uoms);
+            saveDetail(doc, detail, operator);
+        }
+        return result;
+    }
+
+    // ───────────────────────── 仓库 ─────────────────────────
+
+    /** 仓库：单文档 WH.stores，按仓库编码判重。 */
+    List<Map<String, Object>> applyWh(List<Map<String, String>> rows, String operator) {
+        FormData doc = archiveDoc("WH", "仓库");
+        Map<String, Object> detail = parse(doc.getDetailData());
+        List<Map<String, Object>> stores = rowsOf(detail, "stores");
+        Set<String> existing = new LinkedHashSet<>();
+        for (Map<String, Object> row : stores) existing.add(String.valueOf(row.get("仓库编码")).trim());
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        int seq = stores.size();
+        for (Map<String, String> row : rows) {
+            String code = value(row, "仓库编码");
+            if (code.isEmpty()) {
+                result.add(item("wh", "", "skip", "仓库编码为空"));
+                continue;
+            }
+            if (!existing.add(code)) {
+                result.add(item("wh", code, "skip", "仓库已存在，跳过"));
+                continue;
+            }
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("编号", "WH-" + String.format("%03d", ++seq));
+            r.put("仓库编码", code);
+            r.put("仓库名称", value(row, "仓库名称"));
+            r.put("仓库类别", value(row, "仓库类别"));
+            r.put("仓库地址", value(row, "仓库地址"));
+            r.put("负责人", value(row, "负责人"));
+            r.put("停用", false);
+            r.put("允许零库存出库", "是".equals(value(row, "允许零库存出库"))
+                    || "true".equalsIgnoreCase(value(row, "允许零库存出库")));
+            r.put("备注", "");
+            stores.add(r);
+            result.add(item("wh", code, "insert", "新增仓库"));
+        }
+        if (result.stream().anyMatch(r -> "insert".equals(r.get("action")))) {
+            detail.put("stores", stores);
+            saveDetail(doc, detail, operator);
+        }
+        return result;
     }
 
     // ───────────────────────── 存货 ─────────────────────────

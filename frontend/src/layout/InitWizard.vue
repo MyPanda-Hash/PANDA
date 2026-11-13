@@ -75,6 +75,9 @@
                 <el-button size="small" @click="downloadTemplate(m)">
                   {{ tt('下载模板') }}
                 </el-button>
+                <el-button size="small" text @click="downloadTemplate(m, 'xls')" :title="tt('旧版 Excel 2003')">
+                  .xls
+                </el-button>
                 <el-button
                   v-if="m.code === 'dept'"
                   size="small"
@@ -312,14 +315,15 @@ async function loadState() {
   }
 }
 
-async function downloadTemplate(m) {
+async function downloadTemplate(m, format) {
   try {
-    const res = await request.get(`/init/template/${m.code}`, { responseType: 'blob' })
+    const query = format ? `?format=${format}` : ''
+    const res = await request.get(`/init/template/${m.code}${query}`, { responseType: 'blob' })
     const blob = res.data instanceof Blob ? res.data : new Blob([res.data])
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = m.fileName
+    a.download = format === 'xls' ? m.fileName.replace(/\.xlsx$/, '.xls') : m.fileName
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -649,8 +653,13 @@ watch(
 }
 .wz-card-actions {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   margin-top: 2px;
+}
+.wz-card-actions :deep(.el-button + .el-button) {
+  margin-left: 0;
 }
 .wz-preview,
 .wz-result {

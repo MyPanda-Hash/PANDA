@@ -49,17 +49,26 @@ public class InitController {
         return ApiResult.ok(service.state());
     }
 
-    /** 下载模板：文件名用中文（组织架构.xlsx / 存货.xlsx …），客户不用猜该填哪张表。 */
+    /**
+     * 下载模板：文件名用中文（组织架构.xlsx / 存货.xlsx …），客户不用猜该填哪张表。
+     *
+     * <p>`?format=xls` 给旧版 Excel（2003）——很多工厂电脑上还是 .xls 工作流。
+     */
     @GetMapping("/template/{module}")
-    public ResponseEntity<byte[]> template(@PathVariable String module, Authentication auth) throws IOException {
+    public ResponseEntity<byte[]> template(@PathVariable String module,
+                                           @RequestParam(required = false) String format,
+                                           Authentication auth) throws IOException {
         guard(auth);
         InitModule m = InitModule.of(module);
-        byte[] body = service.template(module);
+        boolean xls = "xls".equalsIgnoreCase(format == null ? "" : format.trim());
+        byte[] body = service.template(module, xls ? "xls" : "xlsx");
+        String fileName = InitTemplateService.fileNameOf(m, xls ? "xls" : "xlsx");
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
-                        .filename(m.fileName(), java.nio.charset.StandardCharsets.UTF_8).build().toString())
-                .contentType(MediaType.parseMediaType(
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                        .filename(fileName, java.nio.charset.StandardCharsets.UTF_8).build().toString())
+                .contentType(MediaType.parseMediaType(xls
+                        ? "application/vnd.ms-excel"
+                        : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(body);
     }
 

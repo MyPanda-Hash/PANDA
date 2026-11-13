@@ -58,6 +58,9 @@ class InitTemplateServiceTest {
         return switch (module) {
             case DEPT -> "D01";
             case EMPLOYEE -> "E001";
+            case PARTNER -> "KH001";
+            case UOM -> "U01";
+            case WH -> "CK01";
             case ITEM -> "CP001";
             case PROCESS -> "OP10";
             case ROUTING -> "GY-CP001";

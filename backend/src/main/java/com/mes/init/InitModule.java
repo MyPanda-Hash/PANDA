@@ -17,6 +17,12 @@ public enum InitModule {
     DEPT("dept", "组织架构", "部门编码", "部门名称", "上级部门编码", "排序"),
     EMPLOYEE("employee", "员工信息", "员工编码", "姓名", "所属部门编码", "职务",
             "手机", "岗位职责", "登录账号"),
+    PARTNER("partner", "往来单位", "往来单位编码", "往来单位名称", "性质",
+            "分管部门", "分管人员", "职位", "停用"),
+    UOM("uom", "计量单位", "计量单位编码", "计量单位名称", "单位类型",
+            "主单位", "换算率"),
+    WH("wh", "仓库", "仓库编码", "仓库名称", "仓库类别", "仓库地址",
+            "负责人", "允许零库存出库"),
     ITEM("item", "存货", "存货编码", "存货名称", "规格型号", "计量单位",
             "计价方式", "参考成本", "所属类别", "工艺路线"),
     PROCESS("process", "工序", "工序编码", "工序名称", "默认车间",
@@ -55,6 +61,9 @@ public enum InitModule {
         return switch (this) {
             case DEPT -> "组织架构.xlsx";
             case EMPLOYEE -> "员工信息.xlsx";
+            case PARTNER -> "往来单位.xlsx";
+            case UOM -> "计量单位.xlsx";
+            case WH -> "仓库.xlsx";
             case ITEM -> "存货.xlsx";
             case PROCESS -> "工序.xlsx";
             case ROUTING -> "工艺路线.xlsx";
@@ -66,11 +75,12 @@ public enum InitModule {
     /** 该模块的前置模块：前置未完成时界面置灰，服务端也拒绝落库。 */
     public List<InitModule> requires() {
         return switch (this) {
-            case DEPT, PROCESS -> List.of();
-            case EMPLOYEE, ITEM -> List.of(DEPT);
+            case DEPT, PROCESS, PARTNER, UOM, WH -> List.of();
+            case EMPLOYEE -> List.of(DEPT);
+            case ITEM -> List.of(UOM);
             case ROUTING -> List.of(PROCESS);
             case BOM -> List.of(ITEM, ROUTING);
-            case OPENING_STOCK -> List.of(ITEM);
+            case OPENING_STOCK -> List.of(ITEM, WH);
         };
     }
 

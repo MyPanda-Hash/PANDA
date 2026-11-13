@@ -154,11 +154,14 @@ class InitServiceRulesTest {
     @DisplayName("落库顺序：BOM 依赖存货与工艺路线，期初依赖存货，员工依赖部门")
     void moduleDependencies() {
         assertEquals(List.of(), InitModule.DEPT.requires());
+        assertEquals(List.of(), InitModule.PARTNER.requires());
+        assertEquals(List.of(), InitModule.UOM.requires());
+        assertEquals(List.of(), InitModule.WH.requires());
         assertEquals(List.of(InitModule.DEPT), InitModule.EMPLOYEE.requires());
-        assertEquals(List.of(InitModule.DEPT), InitModule.ITEM.requires());
+        assertEquals(List.of(InitModule.UOM), InitModule.ITEM.requires());
         assertEquals(List.of(InitModule.PROCESS), InitModule.ROUTING.requires());
         assertEquals(List.of(InitModule.ITEM, InitModule.ROUTING), InitModule.BOM.requires());
-        assertEquals(List.of(InitModule.ITEM), InitModule.OPENING_STOCK.requires());
+        assertEquals(List.of(InitModule.ITEM, InitModule.WH), InitModule.OPENING_STOCK.requires());
     }
 
     @Test
