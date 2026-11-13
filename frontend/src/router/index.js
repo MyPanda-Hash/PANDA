@@ -30,6 +30,9 @@ const routes = [
       { path: 'mes/plan', component: () => import('@/views/mes/PlanBoard.vue'), meta: { title: '工单排产', code: 'plan' } },
       { path: 'mes/planAnalysis', component: () => import('@/views/mes/PlanAnalysisBoard.vue'), meta: { title: '计划分析', code: 'planAnalysis' } },
       { path: 'mes/mps', component: () => import('@/views/mes/MpsBoard.vue'), meta: { title: '主生产计划', code: 'mps' } },
+      { path: 'mes/dc/config', component: () => import('@/views/dc/DcConfig.vue'), meta: { title: 'IOT设备配置', code: 'dcConfig' } },
+      { path: 'mes/dc/monitor', component: () => import('@/views/dc/DcMonitor.vue'), meta: { title: '数据监控', code: 'dcMonitor' } },
+      { path: 'mes/dc/stats', component: () => import('@/views/dc/DcStats.vue'), meta: { title: '状态统计', code: 'dcStats' } },
       { path: 'pdm/engChange', component: () => import('@/views/pdm/EngChangeBoard.vue'), meta: { title: '工程变更', code: 'engChange' } },
       { path: 'mes/materialIssue', component: () => import('@/views/mes/MaterialIssueBoard.vue'), meta: { title: '生产领料', code: 'materialIssue' } },
       // 销售发票打印页（增值税发票版式）：不放在面板容器里，独立全屏渲染便于打印

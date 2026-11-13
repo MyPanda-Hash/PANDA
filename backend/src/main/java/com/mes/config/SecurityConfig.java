@@ -49,6 +49,10 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/open/approvals/**").permitAll()
                     // 开放业务接口（只读）：单据追踪 / 详情 / 库存，同上由 OpenApiGuard 把关
                     .requestMatchers(HttpMethod.GET, "/api/open/biz/**").permitAll()
+                    // 数采硬件上报：电子秤/网关没有登录账号，凭 X-DC-Key 在 DcService 里校验
+                    .requestMatchers(HttpMethod.POST, "/api/px/dc/ingest", "/api/px/dc/heartbeat").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/px/dc/ingest/text").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/px/dc/ingest/text").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .anyRequest().authenticated())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
