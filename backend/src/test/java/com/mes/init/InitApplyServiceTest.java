@@ -35,7 +35,8 @@ class InitApplyServiceTest {
     @BeforeEach
     void setUp() {
         formMapper = mock(FormDataMapper.class);
-        service = new InitApplyService(null, formMapper, json);
+        service = new InitApplyService(null, formMapper, json,
+                new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(), null);
     }
 
     private static Map<String, String> row(String... kv) {
@@ -150,13 +151,11 @@ class InitApplyServiceTest {
     // ---------- 未实现模块 ----------
 
     @Test
-    @DisplayName("员工与期初库存不在 P1 范围，明确提示而不是静默成功")
-    void unsupportedModulesFailLoudly() {
-        for (InitModule module : List.of(InitModule.EMPLOYEE, InitModule.OPENING_STOCK)) {
-            IllegalStateException e = org.junit.jupiter.api.Assertions.assertThrows(
-                    IllegalStateException.class,
-                    () -> service.apply(module, List.of(row("x", "1")), "admin"));
-            assertTrue(e.getMessage().contains(module.label()), e.getMessage());
-        }
+    @DisplayName("期初库存不走普通落库：必须核对确认，明确提示而不是静默成功")
+    void openingStockRequiresConfirmation() {
+        IllegalStateException e = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalStateException.class,
+                () -> service.apply(InitModule.OPENING_STOCK, List.of(row("x", "1")), "admin"));
+        assertTrue(e.getMessage().contains("核对"), e.getMessage());
     }
 }

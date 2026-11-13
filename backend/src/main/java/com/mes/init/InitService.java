@@ -354,6 +354,47 @@ public class InitService {
         return result;
     }
 
+    /**
+     * 期初库存：核对后确认落库（D6/D7）。
+     *
+     * <p>调用方传的是**人工核对后的行**，每行另外带 `qtyInput` / `priceInput`（上传原值），
+     * 服务端同事务写证据表 + 期初单 + 库存事务。
+     */
+    public Map<String, Object> openingConfirm(List<Map<String, String>> rows, String fileName, String operator) {
+        ensureUnlocked();
+        Map<String, Object> batch = currentBatch(operator);
+        String batchNo = batch.get("batch_no").toString();
+        Map<String, Object> result = applier.applyOpening(rows, batchNo, fileName, operator);
+        jdbc.update("""
+                insert into init_batch_item (batch_no, module, natural_key, target, action, message)
+                values (?,?,?,?,?,?)
+                """, batchNo, InitModule.OPENING_STOCK.code(), String.valueOf(result.get("initBalanceNo")),
+                "INIT_BALANCE", "insert", "期初库存 " + result.get("rowCount") + " 行，金额 "
+                        + result.get("amountTotal"));
+        markModuleDone(batchNo, InitModule.OPENING_STOCK);
+        result.put("batchNo", batchNo);
+        return result;
+    }
+
+    /** 期初证据：原始上传值 vs 人工确认值，谁在什么时候确认的。 */
+    public Map<String, Object> openingEvidence() {
+        String batchNo = text(stateRow() == null ? null : stateRow().get("batch_no"));
+        List<Map<String, Object>> rows = batchNo.isEmpty() ? List.of()
+                : jdbc.queryForList("""
+                        select item_code, item_name, spec, unit,
+                               warehouse_input, warehouse_confirmed,
+                               qty_input, qty_confirmed, price_input, price_confirmed,
+                               amount_confirmed, changed, init_balance_no, operator,
+                               to_char(confirmed_at, 'YYYY-MM-DD HH24:MI:SS') as confirmed_at
+                          from init_balance_evidence where batch_no = ? order by id
+                        """, batchNo);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("batchNo", batchNo);
+        out.put("rows", rows);
+        out.put("changedCount", rows.stream().filter(r -> Boolean.TRUE.equals(r.get("changed"))).count());
+        return out;
+    }
+
     /** 标记模块完成（幂等：已存在不重复追加）。 */
     private void markModuleDone(String batchNo, InitModule module) {
         Map<String, Object> row = stateRow();
@@ -402,6 +443,28 @@ public class InitService {
         } catch (Exception e) {
             return "";
         }
+    }
+
+    /**
+     * 把前端回传的行归一成「字符串值」。
+     *
+     * <p>JSON 里的数量/单价会被 Jackson 解析成 Integer/Double，若直接按
+     * {@code Map<String,String>} 使用会在取值时 ClassCastException（期初确认踩过），
+     * 所以入口统一转一次字符串。
+     */
+    public static List<Map<String, String>> stringRows(List<?> raw) {
+        List<Map<String, String>> out = new ArrayList<>();
+        for (Object row : raw) {
+            if (!(row instanceof Map<?, ?> map)) continue;
+            Map<String, String> normalized = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                String key = String.valueOf(entry.getKey());
+                Object raw2 = entry.getValue();
+                normalized.put(key, raw2 == null ? "" : String.valueOf(raw2));
+            }
+            out.add(normalized);
+        }
+        return out;
     }
 
     private static String value(Map<String, String> row, String key) {

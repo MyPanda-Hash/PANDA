@@ -18,6 +18,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mes.entity.FormData;
 import com.mes.mapper.FormDataMapper;
+import com.mes.service.StockTxnService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * 初始化落库（P1）：把上传解析出的行写进业务主数据。
@@ -44,12 +46,20 @@ public class InitApplyService {
     private final JdbcTemplate jdbc;
     private final FormDataMapper formMapper;
     private final ObjectMapper json;
+    private final PasswordEncoder passwordEncoder;
+    private final StockTxnService stockTxnService;
 
-    public InitApplyService(JdbcTemplate jdbc, FormDataMapper formMapper, ObjectMapper json) {
+    public InitApplyService(JdbcTemplate jdbc, FormDataMapper formMapper, ObjectMapper json,
+                            PasswordEncoder passwordEncoder, StockTxnService stockTxnService) {
         this.jdbc = jdbc;
         this.formMapper = formMapper;
         this.json = json;
+        this.passwordEncoder = passwordEncoder;
+        this.stockTxnService = stockTxnService;
     }
+
+    /** 初始化统一初始密码（用户口径 D5），登录后可自行修改。 */
+    static final String INIT_PASSWORD = "123456";
 
     /** 落库结果：逐行明细 + 计数。 */
     public Map<String, Object> apply(InitModule module, List<Map<String, String>> rows, String operator) {
@@ -59,8 +69,9 @@ public class InitApplyService {
             case PROCESS -> applyProcess(rows, operator);
             case ROUTING -> applyRouting(rows, operator);
             case BOM -> applyBom(rows, operator);
-            case EMPLOYEE, OPENING_STOCK -> throw new IllegalStateException(
-                    "模块「" + module.label() + "」的落库在后续阶段实现（当前支持 组织架构/存货/工序/工艺路线/BOM）");
+            case EMPLOYEE -> applyEmployee(rows, operator);
+            case OPENING_STOCK -> throw new IllegalStateException(
+                    "期初库存要核对后确认才能落库，请走「核对并写入期初」");
         };
         int inserted = 0;
         int skipped = 0;
@@ -105,8 +116,9 @@ public class InitApplyService {
                 continue;
             }
             Long id = jdbc.queryForObject(
-                    "insert into sys_dept (parent_id, dept_name, sort, create_time) values (0, ?, ?, now()) returning id",
-                    Long.class, name, intOf(row, "排序", 0));
+                    "insert into sys_dept (parent_id, dept_name, dept_code, sort, create_time)"
+                            + " values (0, ?, ?, ?, now()) returning id",
+                    Long.class, name, code.isEmpty() ? null : code, intOf(row, "排序", 0));
             idByCode.put(code, id);
             items.add(item("dept", name, "insert", "新建部门 id=" + id));
         }
@@ -171,6 +183,138 @@ public class InitApplyService {
             saveDetail(doc, detail, operator);
         }
         return result;
+    }
+
+    // ───────────────────────── 员工 + 账号 + 角色 ─────────────────────────
+
+    /**
+     * 员工：EMP 档案 + `sys_user` 账号（密码统一 123456）+ 按职务自动建角色并授权。
+     *
+     * <p>管理员保护（D3）：`admin` 账号一律跳过；不会创建 is_admin=1 的角色。
+     * 部门按模板里的「所属部门编码」解析（sys_dept.dept_code，V5 新增）；
+     * 找不到时回退按部门名称匹配，再找不到则账号不带部门并给出提示。
+     */
+    List<Map<String, Object>> applyEmployee(List<Map<String, String>> rows, String operator) {
+        FormData doc = archiveDoc("EMP", "员工档案");
+        Map<String, Object> detail = parse(doc.getDetailData());
+        List<Map<String, Object>> employees = rowsOf(detail, "employees");
+        Set<String> existingEmp = new LinkedHashSet<>();
+        for (Map<String, Object> row : employees) existingEmp.add(String.valueOf(row.get("员工编码")).trim());
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        boolean changed = false;
+        for (Map<String, String> row : rows) {
+            String code = value(row, "员工编码");
+            String name = value(row, "姓名");
+            String account = value(row, "登录账号");
+            if (account.isEmpty()) account = code;
+            if ("admin".equalsIgnoreCase(account)) {
+                result.add(item("employee", code, "skip", "账号 admin 由系统保留，初始化跳过"));
+                continue;
+            }
+            if (code.isEmpty() || name.isEmpty()) {
+                result.add(item("employee", code, "skip", "员工编码或姓名为空"));
+                continue;
+            }
+            if (existingEmp.add(code)) {
+                Map<String, Object> emp = new LinkedHashMap<>();
+                emp.put("员工编码", code);
+                emp.put("员工名称", name);
+                emp.put("所属部门", deptNameOf(value(row, "所属部门编码")));
+                emp.put("职务", value(row, "职务"));
+                emp.put("手机", value(row, "手机"));
+                emp.put("业务员", false);
+                emp.put("停用", false);
+                emp.put("备注", value(row, "岗位职责"));
+                employees.add(emp);
+                changed = true;
+                result.add(item("employee", code, "insert", "新增员工档案"));
+            } else {
+                result.add(item("employee", code, "skip", "员工档案已存在"));
+            }
+
+            // 账号：已存在就跳过（不覆盖既有账号的密码与角色，避免第二次导入把人改了）
+            Integer exists = jdbc.queryForObject(
+                    "select count(*) from sys_user where user_name = ?", Integer.class, account);
+            if (exists != null && exists > 0) {
+                result.add(item("user", account, "skip", "账号已存在，跳过（不改密码与角色）"));
+                continue;
+            }
+            InitRoleTemplates.Role roleKind = InitRoleTemplates.classify(value(row, "职务"), value(row, "岗位职责"));
+            boolean supervisor = InitRoleTemplates.isSupervisor(value(row, "职务"));
+            Long roleId = ensureRole(roleKind, supervisor, operator);
+            Long deptId = deptIdOf(value(row, "所属部门编码"));
+            jdbc.update("""
+                    insert into sys_user (user_name, password, real_name, phone, factory_code,
+                                          enabled, role_id, dept_id, create_time)
+                    values (?,?,?,?,?,1,?,?, now())
+                    """, account, passwordEncoder.encode(INIT_PASSWORD), name,
+                    value(row, "手机"), "F01", roleId, deptId);
+            result.add(item("user", account, "insert",
+                    "建账号（初始密码 " + INIT_PASSWORD + "），角色=" + InitRoleTemplates.roleName(roleKind, supervisor)));
+        }
+        if (changed) {
+            detail.put("employees", employees);
+            saveDetail(doc, detail, operator);
+        }
+        return result;
+    }
+
+    /**
+     * 建角色（按编码判重）并补齐面板权限。
+     *
+     * <p>sys_role_panel 上没有 (role_id, panel_code) 唯一约束，不能用 ON CONFLICT；
+     * 这里按「已存在即跳过」逐条判断，重跑或上次半途失败都能补齐，不会重复授权。
+     */
+    private Long ensureRole(InitRoleTemplates.Role role, boolean supervisor, String operator) {
+        String code = InitRoleTemplates.roleCode(role, supervisor);
+        String name = InitRoleTemplates.roleName(role, supervisor);
+        Long id = jdbc.query("select id from sys_role where role_code = ? limit 1",
+                rs -> rs.next() ? rs.getLong(1) : null, code);
+        boolean created = false;
+        if (id == null) {
+            id = jdbc.queryForObject(
+                    "insert into sys_role (role_code, role_name, is_admin, remark, create_time)"
+                            + " values (?,?,0,?,now()) returning id",
+                    Long.class, code, name, "初始化按岗位模板创建");
+            created = true;
+        }
+        Map<String, List<String>> grants = InitRoleTemplates.grants(role, supervisor);
+        int granted = 0;
+        for (Map.Entry<String, List<String>> entry : grants.entrySet()) {
+            List<String> perms = entry.getValue();
+            Integer exists = jdbc.queryForObject(
+                    "select count(*) from sys_role_panel where role_id = ? and panel_code = ?",
+                    Integer.class, id, entry.getKey());
+            if (exists != null && exists > 0) continue;
+            jdbc.update("""
+                    insert into sys_role_panel (role_id, panel_code, perms, can_approve)
+                    values (?,?,?,?)
+                    """, id, entry.getKey(), String.join(",", perms), perms.contains("audit") ? 1 : 0);
+            granted++;
+        }
+        if (created || granted > 0) {
+            log.info("初始化{}角色 {}（{}）：新增授权 {} 个面板 by {}",
+                    created ? "创建" : "补齐", name, code, granted, operator);
+        }
+        return id;
+    }
+
+    private Long deptIdOf(String deptCode) {
+        if (deptCode == null || deptCode.isBlank()) return null;
+        Long id = jdbc.query("select id from sys_dept where dept_code = ? limit 1",
+                rs -> rs.next() ? rs.getLong(1) : null, deptCode.trim());
+        if (id != null) return id;
+        return jdbc.query("select id from sys_dept where dept_name = ? limit 1",
+                rs -> rs.next() ? rs.getLong(1) : null, deptCode.trim());
+    }
+
+    private String deptNameOf(String deptCode) {
+        if (deptCode == null || deptCode.isBlank()) return "";
+        Long id = deptIdOf(deptCode);
+        if (id == null) return deptCode;
+        return jdbc.query("select dept_name from sys_dept where id = ?",
+                rs -> rs.next() ? rs.getString(1) : "", id);
     }
 
     // ───────────────────────── 工序 ─────────────────────────
@@ -342,6 +486,101 @@ public class InitApplyService {
             }
         }
         return result;
+    }
+
+    // ───────────────────────── 期初库存（核对后确认） ─────────────────────────
+
+    /**
+     * 期初库存确认落库：写证据表 → 生成 INIT_BALANCE 期初单 → 审核（落库存事务）。
+     *
+     * <p>证据表（D7）：每行同时记录**上传原值**（`qtyInput`/`priceInput`，前端上传时带回）与
+     * **人工确认值**（`数量`/`主单价`），并标记是否被改过，事后可逐行对账。
+     *
+     * @param rows 每行含 仓库/存货编码/存货名称/规格型号/计量单位/数量/主单价，
+     *             以及可选的 qtyInput / priceInput（上传原值）
+     */
+    Map<String, Object> applyOpening(List<Map<String, String>> rows, String batchNo,
+                                     String fileName, String operator) {
+        if (rows == null || rows.isEmpty()) throw new IllegalArgumentException("没有可写入的期初库存行");
+        String initNo = "INIT-" + LocalDateTime.now().format(java.time.format.DateTimeFormatter
+                .ofPattern("yyyyMMdd-HHmmss"));
+        List<Map<String, Object>> items = new ArrayList<>();
+        double totalAmount = 0;
+        for (Map<String, String> row : rows) {
+            String warehouse = value(row, "仓库");
+            String code = value(row, "存货编码");
+            if (warehouse.isEmpty() || code.isEmpty()) continue;
+            double qty = number(value(row, "数量"), 0);
+            if (qty == 0) continue;
+            double price = number(value(row, "主单价"), 0);
+            double amount = Math.round(qty * price * 100) / 100.0;
+            totalAmount += amount;
+            items.add(new LinkedHashMap<>(Map.of(
+                    "存货编码", code,
+                    "存货名称", value(row, "存货名称"),
+                    "规格型号", value(row, "规格型号"),
+                    "计量单位", value(row, "计量单位"),
+                    "数量", qty,
+                    "主单价", price,
+                    "金额", amount,
+                    "仓库", warehouse)));
+        }
+        if (items.isEmpty()) throw new IllegalArgumentException("期初库存没有有效行（数量为 0 或缺少仓库/存货编码）");
+
+        Map<String, Object> head = new LinkedHashMap<>();
+        head.put("期初余额单号", initNo);
+        head.put("单据日期", LocalDateTime.now().toLocalDate().toString());
+        head.put("仓库", value(rows.get(0), "仓库"));
+        head.put("备注", "系统初始化导入（批次 " + batchNo + "）");
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("items", items);
+        insertDoc("INIT_BALANCE", initNo, head, detail, operator);
+
+        // 审核：期初必须真正进库存，否则开始用系统时余额是空的
+        if (stockTxnService != null) {
+            stockTxnService.post("INIT_BALANCE", initNo, head, detail);
+        }
+
+        for (Map<String, String> row : rows) {
+            String code = value(row, "存货编码");
+            if (code.isEmpty()) continue;
+            double qty = number(value(row, "数量"), 0);
+            if (qty == 0) continue;
+            double price = number(value(row, "主单价"), 0);
+            double qtyInput = number(value(row, "qtyInput"), qty);
+            double priceInput = number(value(row, "priceInput"), price);
+            boolean changed = Math.abs(qty - qtyInput) > 1e-9 || Math.abs(price - priceInput) > 1e-9
+                    || !value(row, "仓库").equals(value(row, "warehouseInput").isEmpty()
+                    ? value(row, "仓库") : value(row, "warehouseInput"));
+            jdbc.update("""
+                    insert into init_balance_evidence (batch_no, source_file, source_row,
+                        item_code, item_name, spec, unit,
+                        warehouse_input, warehouse_confirmed, qty_input, qty_confirmed,
+                        price_input, price_confirmed, amount_confirmed, changed,
+                        init_balance_no, operator, confirmed_at)
+                    values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,now())
+                    """, batchNo, fileName, lineOf(row),
+                    code, value(row, "存货名称"), value(row, "规格型号"), value(row, "计量单位"),
+                    value(row, "warehouseInput").isEmpty() ? value(row, "仓库") : value(row, "warehouseInput"),
+                    value(row, "仓库"), qtyInput, qty, priceInput, price,
+                    Math.round(qty * price * 100) / 100.0, changed, initNo, operator);
+        }
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("initBalanceNo", initNo);
+        out.put("rowCount", items.size());
+        out.put("amountTotal", Math.round(totalAmount * 100) / 100.0);
+        out.put("message", "期初库存已写入并审核，库存事务已生成");
+        return out;
+    }
+
+    private static int lineOf(Map<String, String> row) {
+        String raw = value(row, "__row");
+        try {
+            return Integer.parseInt(raw);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     // ───────────────────────── 共用 ─────────────────────────

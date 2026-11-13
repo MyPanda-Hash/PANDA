@@ -1,224 +1,473 @@
+<!-- InitWizard.vue — 系统初始化向导（AI 辅助开箱即用）
+     设计基线 Ant Design v6：colorPrimary #1677ff、圆角 6、控件高 32、正文 14/22、8pt 间距。
+     界面取向：工具界面、密而不挤；一屏看全 7 个模块的状态与下一步动作，不引导、不装饰。
+     流程：下载模板 → 上传校验 → 预览确认 → 落库 → （期初）核对改数 → 完成初始化并锁定账套。 -->
 <template>
   <teleport to="body">
-    <div v-if="app.initWizardVisible" class="wizard-mask">
-      <div class="wizard">
-        <!-- 头部 -->
-        <div class="wz-header">
-          <div class="wz-close" @click="skip">
-            <el-icon><Close /></el-icon>
+    <div v-if="app.initWizardVisible" class="wz-mask" @click.self="close">
+      <div class="wz">
+        <header class="wz-head">
+          <div>
+            <h2 class="wz-title">{{ tt('系统初始化') }}</h2>
+            <p class="wz-sub">
+              {{ tt('按模块下载模板、填写后上传；期初库存需逐行核对再写入，全部完成后本账套锁定，不可再次导入') }}
+            </p>
           </div>
-          <div class="wz-title">{{ tt('MES 初始化配置') }}</div>
-          <div class="wz-subtitle">{{ tt('三步即可轻松完成行业功能初始化流程') }}</div>
+          <div class="wz-head-right">
+            <span v-if="state.batchNo" class="wz-batch">{{ tt('批次') }} {{ state.batchNo }}</span>
+            <el-button text @click="close">{{ tt('关闭') }}</el-button>
+          </div>
+        </header>
+
+        <div v-if="loading" class="wz-loading">
+          <el-icon class="is-loading"><Loading /></el-icon>
+          {{ tt('正在读取初始化状态…') }}
         </div>
 
-        <!-- 步骤指示 -->
-        <div class="wz-steps">
-          <div class="wz-step" :class="{ done: step > 1, active: step === 1 }">
-            <span class="wz-step-no">1</span>
-            <div class="wz-step-text">
-              <div class="wz-step-name">{{ tt('第一步') }}</div>
-              <div class="wz-step-desc">{{ tt('选择行业细分 & 经营业态') }}</div>
-            </div>
-          </div>
-          <div class="wz-step-arrow"><el-icon><ArrowRight /></el-icon></div>
-          <div class="wz-step" :class="{ done: step > 2, active: step === 2 }">
-            <span class="wz-step-no">2</span>
-            <div class="wz-step-text">
-              <div class="wz-step-name">{{ tt('第二步') }}</div>
-              <div class="wz-step-desc">{{ tt('行业特性选择 & 设置') }}</div>
-            </div>
-          </div>
-          <div class="wz-step-arrow"><el-icon><ArrowRight /></el-icon></div>
-          <div class="wz-step" :class="{ done: step > 3, active: step === 3 }">
-            <span class="wz-step-no">3</span>
-            <div class="wz-step-text">
-              <div class="wz-step-name">{{ tt('第三步') }}</div>
-              <div class="wz-step-desc">{{ tt('完成初始化设置') }}</div>
-            </div>
-          </div>
+        <!-- 已锁定：只读完成态 -->
+        <div v-else-if="state.locked" class="wz-locked">
+          <el-result icon="success" :title="tt('本账套已完成初始化')">
+            <template #sub-title>
+              <span>{{ tt('完成时间') }}：{{ state.lockedAt }} · {{ tt('操作人') }}：{{ state.lockedBy }}</span>
+            </template>
+          </el-result>
+          <ul class="wz-done-list">
+            <li v-for="m in state.modules" :key="m.code">
+              <el-tag :type="m.done ? 'success' : 'info'" size="small" effect="plain">
+                {{ m.done ? tt('已导入') : tt('未导入') }}
+              </el-tag>
+              <span class="wz-done-name">{{ tt(m.label) }}</span>
+            </li>
+          </ul>
+          <p class="wz-hint">
+            {{ tt('初始化不可重复执行；后续新增数据请走各面板的导入功能，库存差异请走盘点/调整单。') }}
+          </p>
         </div>
 
-        <!-- 第一步：行业 & 业态 -->
-        <div v-if="step === 1" class="wz-body">
-          <div class="wz-body-title">{{ tt('选择行业细分') }}</div>
-          <div class="wz-cards">
-            <div
-              v-for="i in industries"
-              :key="i.code"
-              class="wz-card"
-              :class="{ active: form.industry === i.code }"
-              @click="form.industry = i.code"
-            >
-              <el-icon class="wz-card-icon"><component :is="i.icon" /></el-icon>
-              <span class="wz-card-name">{{ tt(i.name) }}</span>
-              <span class="wz-card-desc">{{ tt(i.desc) }}</span>
-            </div>
-          </div>
-          <div class="wz-body-title">{{ tt('选择经营业态') }}</div>
-          <div class="wz-cards">
-            <div
-              v-for="b in business"
-              :key="b.code"
-              class="wz-card small"
-              :class="{ active: form.business === b.code }"
-              @click="form.business = b.code"
-            >
-              <span class="wz-card-name">{{ tt(b.name) }}</span>
-              <span class="wz-card-desc">{{ tt(b.desc) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 第二步：特性选择 -->
-        <div v-if="step === 2" class="wz-body">
-          <div class="wz-body-title">{{ tt('选择启用模块') }}</div>
-          <div class="wz-cards">
-            <div
-              v-for="m in modules"
+        <!-- 未锁定：模块清单 -->
+        <div v-else class="wz-body">
+          <div class="wz-grid">
+            <section
+              v-for="m in state.modules"
               :key="m.code"
-              class="wz-card small checkable"
-              :class="{ active: form.modules.includes(m.code) }"
-              @click="toggleModule(m.code)"
+              class="wz-card"
+              :class="{ done: m.done, blocked: m.blockedBy.length && !m.done }"
             >
-              <span class="wz-check"><el-icon v-if="form.modules.includes(m.code)"><Check /></el-icon></span>
-              <span class="wz-card-name">{{ tt(m.name) }}</span>
-              <span class="wz-card-desc">{{ tt(m.desc) }}</span>
-            </div>
+              <header class="wz-card-head">
+                <span class="wz-card-name">{{ tt(m.label) }}</span>
+                <el-tag v-if="m.done" type="success" size="small" effect="plain">{{ tt('已导入') }}</el-tag>
+                <el-tag v-else-if="m.blockedBy.length" type="info" size="small" effect="plain">
+                  {{ tt('待') }}{{ m.blockedBy.map((x) => tt(x)).join('/') }}
+                </el-tag>
+                <el-tag v-else type="warning" size="small" effect="plain">{{ tt('待导入') }}</el-tag>
+              </header>
+
+              <div class="wz-card-meta">
+                {{ tt('模板') }}：{{ m.fileName }}
+                <span v-if="m.needsConfirmation" class="wz-card-note">· {{ tt('需核对后写入') }}</span>
+              </div>
+
+              <div class="wz-card-fields">
+                <span v-for="h in m.headers" :key="h" class="wz-field">{{ h }}</span>
+              </div>
+
+              <footer class="wz-card-actions">
+                <el-button size="small" @click="downloadTemplate(m)">
+                  {{ tt('下载模板') }}
+                </el-button>
+                <el-button
+                  size="small"
+                  type="primary"
+                  :disabled="m.blockedBy.length > 0 || m.done"
+                  :loading="uploading === m.code"
+                  @click="pickFile(m)"
+                >
+                  {{ m.done ? tt('已导入') : tt('上传') }}
+                </el-button>
+              </footer>
+            </section>
           </div>
-          <div class="wz-body-title">{{ tt('报工方式') }}</div>
-          <el-radio-group v-model="form.reportMode" class="wz-radio-group">
-            <el-radio-button value="scan">{{ tt('扫码报工（推荐）') }}</el-radio-button>
-            <el-radio-button value="manual">{{ tt('手工报工') }}</el-radio-button>
-            <el-radio-button value="batch">{{ tt('批量报工') }}</el-radio-button>
-          </el-radio-group>
+
+          <!-- 上传结果预览 -->
+          <section v-if="preview" class="wz-preview">
+            <header class="wz-preview-head">
+              <span class="wz-preview-title">
+                {{ tt(preview.moduleLabel) }} · {{ preview.fileName }} · {{ preview.rowCount }}{{ tt('行') }}
+              </span>
+              <div class="wz-preview-actions">
+                <el-button size="small" @click="preview = null">{{ tt('取消') }}</el-button>
+                <el-button
+                  v-if="!preview.moduleNeedsConfirm"
+                  size="small"
+                  type="primary"
+                  :disabled="preview.errors.length > 0"
+                  :loading="applying"
+                  @click="applyPreview"
+                >
+                  {{ tt('确认落库') }}
+                </el-button>
+                <el-button
+                  v-else
+                  size="small"
+                  type="primary"
+                  :disabled="preview.errors.length > 0"
+                  @click="openCheck"
+                >
+                  {{ tt('核对并写入期初') }}
+                </el-button>
+              </div>
+            </header>
+
+            <el-alert
+              v-if="preview.errors.length"
+              type="error"
+              :closable="false"
+              show-icon
+              :title="tt('存在') + preview.errors.length + tt('个问题，修正后重新上传')"
+            >
+              <ul class="wz-issues">
+                <li v-for="(e, i) in preview.errors.slice(0, 8)" :key="i">{{ e }}</li>
+              </ul>
+            </el-alert>
+            <el-alert
+              v-else-if="preview.warnings.length"
+              type="warning"
+              :closable="false"
+              show-icon
+            >
+              <ul class="wz-issues">
+                <li v-for="(w, i) in preview.warnings.slice(0, 5)" :key="i">{{ w }}</li>
+              </ul>
+            </el-alert>
+
+            <el-table :data="preview.rows.slice(0, 8)" size="small" border class="wz-table">
+              <el-table-column
+                v-for="h in previewHeaders"
+                :key="h"
+                :prop="h"
+                :label="h"
+                min-width="110"
+                show-overflow-tooltip
+              />
+            </el-table>
+            <p v-if="preview.rowCount > 8" class="wz-hint">
+              {{ tt('仅预览前 8 行，共') }} {{ preview.rowCount }} {{ tt('行') }}
+            </p>
+          </section>
+
+          <!-- 落库结果 -->
+          <section v-if="result" class="wz-result">
+            <header class="wz-result-head">
+              <span class="wz-result-title">{{ tt(result.moduleLabel) }}{{ tt('导入结果') }}</span>
+              <span class="wz-result-num">
+                {{ tt('新增') }} {{ result.inserted }} · {{ tt('跳过') }} {{ result.skipped }}
+                <template v-if="result.failed"> · {{ tt('失败') }} {{ result.failed }}</template>
+              </span>
+            </header>
+            <ul class="wz-issues wz-result-list">
+              <li v-for="(it, i) in result.items.slice(0, 10)" :key="i">
+                <el-tag :type="it.action === 'insert' ? 'success' : 'info'" size="small" effect="plain">
+                  {{ it.action === 'insert' ? tt('新增') : tt('跳过') }}
+                </el-tag>
+                <code class="wz-result-key">{{ it.key }}</code>
+                <span class="wz-result-msg">{{ it.message }}</span>
+              </li>
+            </ul>
+          </section>
+
+          <footer class="wz-foot">
+            <span class="wz-foot-tip">
+              {{ tt('已完成') }} {{ doneCount }} / {{ state.modules.length }} {{ tt('个模块') }}
+            </span>
+            <el-button :disabled="doneCount === 0" :loading="finishing" type="primary" @click="finishInit">
+              {{ tt('完成初始化并锁定') }}
+            </el-button>
+          </footer>
         </div>
 
-        <!-- 第三步：完成 -->
-        <div v-if="step === 3" class="wz-body">
-          <div class="wz-result">
-            <div class="wz-result-icon">
-              <el-icon><CircleCheckFilled /></el-icon>
-            </div>
-            <div class="wz-result-text">
-              {{ tt('完成行业化设置，自动为您匹配') }}<br />
-              <span class="wz-result-hl">{{ tt('全新的专属桌面、菜单、选项功能、关注指标及相关报表') }}</span>
-            </div>
-          </div>
-          <div class="wz-summary">
-            <div class="wz-summary-row">
-              <span class="wz-summary-label">{{ tt('行业细分') }}</span>
-              <span>{{ tt(industryName) }}</span>
-            </div>
-            <div class="wz-summary-row">
-              <span class="wz-summary-label">{{ tt('经营业态') }}</span>
-              <span>{{ tt(businessName) }}</span>
-            </div>
-            <div class="wz-summary-row">
-              <span class="wz-summary-label">{{ tt('启用模块') }}</span>
-              <span>{{ moduleNames || tt('仅基础模块') }}</span>
-            </div>
-            <div class="wz-summary-row">
-              <span class="wz-summary-label">{{ tt('报工方式') }}</span>
-              <span>{{ tt(reportModeName) }}</span>
-            </div>
-            <div class="wz-summary-row">
-              <span class="wz-summary-label">{{ tt('当前工厂') }}</span>
-              <span>{{ user.factoryName }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 底部按钮 -->
-        <div class="wz-footer">
-          <div v-if="step === 1" class="wz-start" @click="next">{{ tt('开始配置') }}</div>
-          <template v-else>
-            <div class="wz-back" @click="prev">{{ tt('上一步') }}</div>
-            <div v-if="step === 2" class="wz-start" @click="next">{{ tt('下一步') }}</div>
-            <div v-else class="wz-start" @click="finish">{{ tt('完成设置') }}</div>
+        <!-- 期初核对弹窗：可逐行改数量/单价，改过的标黄并显示原值 -->
+        <el-dialog v-model="checkVisible" :title="tt('期初库存核对')" width="920px" append-to-body>
+          <p class="wz-hint wz-check-tip">
+            {{ tt('核对数量与单价，可直接修改；确认后写入期初余额单并记入证据表（保留上传原值与修改记录）') }}
+          </p>
+          <el-table :data="checkRows" size="small" border max-height="380" class="wz-table">
+            <el-table-column prop="仓库" :label="tt('仓库')" width="110" />
+            <el-table-column prop="存货编码" :label="tt('存货编码')" width="120" />
+            <el-table-column prop="存货名称" :label="tt('存货名称')" min-width="140" show-overflow-tooltip />
+            <el-table-column prop="规格型号" :label="tt('规格型号')" min-width="110" show-overflow-tooltip />
+            <el-table-column prop="计量单位" :label="tt('单位')" width="70" />
+            <el-table-column :label="tt('数量')" width="150">
+              <template #default="{ row }">
+                <el-input-number v-model="row.数量" :min="0" :step="1" :controls="false" size="small"
+                  style="width: 100%" @change="markChanged(row)" />
+              </template>
+            </el-table-column>
+            <el-table-column :label="tt('主单价')" width="140">
+              <template #default="{ row }">
+                <el-input-number v-model="row.主单价" :min="0" :step="0.01" :precision="2" :controls="false"
+                  size="small" style="width: 100%" @change="markChanged(row)" />
+              </template>
+            </el-table-column>
+            <el-table-column :label="tt('金额')" width="120" align="right">
+              <template #default="{ row }">
+                <span class="wz-amount">{{ amountOf(row) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column :label="tt('原值')" width="130">
+              <template #default="{ row }">
+                <span v-if="row.changed" class="wz-changed">
+                  {{ row.qtyInput }} / {{ row.priceInput }}
+                </span>
+                <span v-else class="wz-muted">—</span>
+              </template>
+            </el-table-column>
+          </el-table>
+          <p class="wz-hint">
+            {{ tt('合计') }}：{{ checkRows.length }} {{ tt('行') }}，{{ tt('数量') }} {{ totalQty }}，
+            {{ tt('金额') }} {{ totalAmount }}
+          </p>
+          <template #footer>
+            <el-button @click="checkVisible = false">{{ tt('取消') }}</el-button>
+            <el-button type="primary" :loading="confirming" @click="confirmOpening">
+              {{ tt('确认写入期初') }}
+            </el-button>
           </template>
-          <div class="wz-skip" @click="skip">{{ tt('下次再说') }}</div>
-        </div>
+        </el-dialog>
       </div>
     </div>
   </teleport>
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import { Loading } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import request from '@core/request'
 import { useAppStore } from '@/stores/app'
-import { useUserStore } from '@/stores/user'
 import { tt } from '@/i18n'
-import { ElMessage } from 'element-plus'
 
 const app = useAppStore()
-const user = useUserStore()
 
-const step = ref(1)
+const loading = ref(false)
+const uploading = ref('')
+const applying = ref(false)
+const finishing = ref(false)
+const confirming = ref(false)
+const state = reactive({ locked: false, batchNo: '', lockedAt: '', lockedBy: '', modules: [] })
+const preview = ref(null)
+const result = ref(null)
+const checkVisible = ref(false)
+const checkRows = ref([])
+const pendingFile = ref(null)
 
-const industries = [
-  { code: 'metal', name: '金属制品加工', desc: '铸造/锻压/热处理/机加工', icon: 'Coin' },
-  { code: 'auto', name: '汽车零部件', desc: '车削件/冲压件/总成', icon: 'Van' },
-  { code: 'elec', name: '电子制造', desc: 'SMT/组装/测试', icon: 'Cpu' },
-  { code: 'mach', name: '机械加工', desc: 'CNC/模具/装配', icon: 'Setting' },
-  { code: 'other', name: '其他行业', desc: '通用离散制造', icon: 'OfficeBuilding' },
-]
-
-const business = [
-  { code: 'incoming', name: '来料加工', desc: '客户供料，赚取加工费' },
-  { code: 'self', name: '自主生产', desc: '自购料生产销售' },
-  { code: 'mixed', name: '混合经营', desc: '自产与代工并存' },
-]
-
-const modules = [
-  { code: 'prod', name: '生产管理', desc: '加工单/工序/排产' },
-  { code: 'inv', name: '库存核算', desc: '出入库/盘点/核算' },
-  { code: 'qc', name: '质量管理', desc: '来料/过程/完工检验' },
-  { code: 'eq', name: '设备管理', desc: '台账/点检/OEE' },
-  { code: 'salary', name: '工资核算', desc: '计件工资/汇总' },
-]
-
-const form = reactive({
-  industry: '',
-  business: '',
-  modules: ['prod', 'inv'],
-  reportMode: 'scan',
+const doneCount = computed(() => state.modules.filter((m) => m.done).length)
+const previewHeaders = computed(() => {
+  const rows = preview.value?.rows || []
+  if (!rows.length) return []
+  return Object.keys(rows[0]).filter((k) => !k.startsWith('__'))
+})
+const totalQty = computed(() => sumOf('数量'))
+const totalAmount = computed(() => {
+  const v = checkRows.value.reduce((s, r) => s + Number(r.数量 || 0) * Number(r.主单价 || 0), 0)
+  return v.toFixed(2)
 })
 
-function toggleModule(code) {
-  const idx = form.modules.indexOf(code)
-  if (idx >= 0) form.modules.splice(idx, 1)
-  else form.modules.push(code)
+function sumOf(key) {
+  const v = checkRows.value.reduce((s, r) => s + Number(r[key] || 0), 0)
+  return Number.isInteger(v) ? v : v.toFixed(2)
 }
 
-const industryName = computed(() => industries.find((i) => i.code === form.industry)?.name || '未选择')
-const businessName = computed(() => business.find((b) => b.code === form.business)?.name || '未选择')
-const moduleNames = computed(() => form.modules.map((c) => tt(modules.find((m) => m.code === c)?.name)).filter(Boolean).join('、'))
-const reportModeName = computed(() => ({ scan: '扫码报工', manual: '手工报工', batch: '批量报工' })[form.reportMode])
+function amountOf(row) {
+  return (Number(row.数量 || 0) * Number(row.主单价 || 0)).toFixed(2)
+}
 
-function next() {
-  if (step.value === 1) {
-    if (!form.industry || !form.business) return ElMessage.warning(tt('请先选择行业细分与经营业态'))
+async function loadState() {
+  loading.value = true
+  try {
+    const res = await request.get('/init/state')
+    const data = res?.data || {}
+    Object.assign(state, {
+      locked: !!data.locked,
+      batchNo: data.batchNo || '',
+      lockedAt: data.lockedAt || '',
+      lockedBy: data.lockedBy || '',
+      modules: data.modules || [],
+    })
+  } catch (e) {
+    ElMessage.error(tt('读取初始化状态失败') + '：' + (e?.message || ''))
+  } finally {
+    loading.value = false
   }
-  if (step.value < 3) step.value++
 }
 
-function prev() {
-  if (step.value > 1) step.value--
+async function downloadTemplate(m) {
+  try {
+    const res = await request.get(`/init/template/${m.code}`, { responseType: 'blob' })
+    const blob = res.data instanceof Blob ? res.data : new Blob([res.data])
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = m.fileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 2000)
+  } catch (e) {
+    ElMessage.error(tt('下载模板失败') + '：' + (e?.message || ''))
+  }
 }
 
-function finish() {
-  app.finishInitWizard()
+const fileInput = ref(null)
+
+function pickFile(m) {
+  if (!fileInput.value) {
+    fileInput.value = document.createElement('input')
+    fileInput.value.type = 'file'
+    fileInput.value.accept = '.xlsx,.xls'
+    fileInput.value.style.display = 'none'
+    document.body.appendChild(fileInput.value)
+  }
+  const input = fileInput.value
+  input.value = ''
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (file) await doUpload(m, file)
+  }
+  input.click()
+}
+
+async function doUpload(m, file) {
+  uploading.value = m.code
+  result.value = null
+  try {
+    const fd = new FormData()
+    fd.append('module', m.code)
+    fd.append('file', file)
+    const res = await request.post('/init/upload', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    const data = res?.data || {}
+    pendingFile.value = file.name
+    preview.value = {
+      module: m.code,
+      moduleLabel: data.moduleLabel || m.label,
+      moduleNeedsConfirm: !!m.needsConfirmation,
+      fileName: data.fileName || file.name,
+      rowCount: data.rowCount || 0,
+      rows: data.rows || [],
+      errors: data.errors || [],
+      warnings: data.warnings || [],
+    }
+    if (preview.value.errors.length) ElMessage.warning(tt('上传有问题，请按提示修正'))
+    else loadState()
+  } catch (e) {
+    ElMessage.error(tt('上传失败') + '：' + (e?.message || ''))
+  } finally {
+    uploading.value = ''
+  }
+}
+
+async function applyPreview() {
+  applying.value = true
+  try {
+    const res = await request.post('/init/apply', {
+      module: preview.value.module,
+      rows: preview.value.rows,
+    })
+    result.value = res.data?.data || null
+    preview.value = null
+    ElMessage.success(tt('已导入'))
+    await loadState()
+  } catch (e) {
+    ElMessage.error(tt('导入失败') + '：' + (e?.message || ''))
+  } finally {
+    applying.value = false
+  }
+}
+
+function openCheck() {
+  checkRows.value = (preview.value?.rows || []).map((row) => ({
+    ...row,
+    qtyInput: row.数量,
+    priceInput: row.主单价,
+    changed: false,
+  }))
+  checkVisible.value = true
+}
+
+function markChanged(row) {
+  row.changed = Number(row.数量) !== Number(row.qtyInput) || Number(row.主单价) !== Number(row.priceInput)
+}
+
+async function confirmOpening() {
+  confirming.value = true
+  try {
+    const res = await request.post('/init/opening/confirm', {
+      fileName: preview.value?.fileName || '',
+      rows: checkRows.value,
+    })
+    const data = res?.data || {}
+    checkVisible.value = false
+    preview.value = null
+    result.value = {
+      moduleLabel: tt('期初库存'),
+      inserted: data.rowCount || 0,
+      skipped: 0,
+      failed: 0,
+      items: [{ action: 'insert', key: data.initBalanceNo, message: data.message || '' }],
+    }
+    ElMessage.success(`${tt('期初已写入')}：${data.initBalanceNo}`)
+    await loadState()
+  } catch (e) {
+    ElMessage.error(tt('写入期初失败') + '：' + (e?.message || ''))
+  } finally {
+    confirming.value = false
+  }
+}
+
+async function finishInit() {
+  try {
+    await ElMessageBox.confirm(
+      tt('完成后本账套将锁定，不可再次执行初始化导入。确认完成？'),
+      tt('完成初始化'),
+      { type: 'warning', confirmButtonText: tt('确认完成'), cancelButtonText: tt('再检查一下') },
+    )
+  } catch {
+    return
+  }
+  finishing.value = true
+  try {
+    await request.post('/init/finish')
+    ElMessage.success(tt('初始化完成，账套已锁定'))
+    await loadState()
+  } catch (e) {
+    ElMessage.error(tt('完成失败') + '：' + (e?.message || ''))
+  } finally {
+    finishing.value = false
+  }
+}
+
+function close() {
+  // 已锁定的账套没有可做的事，关掉就记住「初始化已完成」，避免每次登录都弹
+  if (state.locked) app.finishInitWizard()
   app.closeInitWizard(false)
-  ElMessage.success(tt('初始化完成，已为您匹配专属桌面与菜单'))
 }
 
-function skip() {
-  app.closeInitWizard(true)
-}
+watch(
+  () => app.initWizardVisible,
+  (visible) => {
+    if (visible) {
+      preview.value = null
+      result.value = null
+      loadState()
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <style scoped>
-.wizard-mask {
+.wz-mask {
   position: fixed;
   inset: 0;
   z-index: 5000;
@@ -226,251 +475,271 @@ function skip() {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 24px;
 }
-.wizard {
-  width: 720px;
-  max-width: 92vw;
-  max-height: 90vh;
+.wz {
+  width: 1120px;
+  max-width: 100%;
+  max-height: 92vh;
   overflow: auto;
-  background: var(--t-card-bg);
-  border-radius: 10px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+  background: var(--t-bg, #fff);
+  border-radius: 8px;
+  border: 1px solid var(--t-border-light, #e6e9ef);
   display: flex;
   flex-direction: column;
 }
-.wz-header {
-  position: relative;
-  padding: 26px 30px 18px;
-  background: #174c42;
-  color: #fff;
-  border-radius: 10px 10px 0 0;
+.wz-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 12px;
+  border-bottom: 1px solid var(--t-border-light, #e6e9ef);
+  flex-wrap: wrap;
 }
-.wz-close {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  font-size: 16px;
-  cursor: pointer;
-  opacity: 0.85;
-}
-.wz-close:hover {
-  opacity: 1;
+.wz-head > div:first-child {
+  flex: 1 1 260px;
+  min-width: 0;
 }
 .wz-title {
-  font-size: 20px;
-  font-weight: 600;
-}
-.wz-subtitle {
-  font-size: 12px;
-  margin-top: 6px;
-  opacity: 0.9;
-}
-.wz-steps {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 18px 30px;
-  border-bottom: 1px solid var(--t-border-light);
-}
-.wz-step {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-}
-.wz-step-no {
-  width: 26px;
-  height: 26px;
+  margin: 0 0 4px;
+  font-size: 18px;
   line-height: 26px;
-  text-align: center;
-  border-radius: 50%;
-  background: var(--t-border-light);
-  color: var(--t-text-3);
+  font-weight: 600;
+  color: var(--t-text-1, #1f2329);
+}
+.wz-sub {
+  margin: 0;
   font-size: 13px;
+  line-height: 20px;
+  color: var(--t-text-3, #8a919f);
+}
+.wz-head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-shrink: 0;
 }
-.wz-step.active .wz-step-no {
-  background: var(--t-primary);
-  color: #fff;
-}
-.wz-step.done .wz-step-no {
-  background: #67c23a;
-  color: #fff;
-}
-.wz-step-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--t-text-1);
-}
-.wz-step-desc {
+.wz-batch {
   font-size: 12px;
-  color: var(--t-text-3);
-  margin-top: 2px;
+  color: var(--t-text-3, #8a919f);
+  font-variant-numeric: tabular-nums;
 }
-.wz-step-arrow {
-  color: var(--t-text-3);
-  font-size: 14px;
+.wz-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 24px;
+  color: var(--t-text-3, #8a919f);
+  font-size: 13px;
 }
 .wz-body {
-  flex: 1;
-  padding: 20px 30px 10px;
+  padding: 16px 24px 20px;
 }
-.wz-body-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--t-text-1);
-  margin: 10px 0;
-}
-.wz-cards {
-  display: flex;
-  flex-wrap: wrap;
+.wz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 12px;
 }
 .wz-card {
-  width: calc(20% - 10px);
-  min-width: 118px;
-  border: 1px solid var(--t-border);
-  border-radius: 8px;
-  padding: 14px 10px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.15s;
-  position: relative;
+  border: 1px solid var(--t-border-light, #e6e9ef);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--t-bg, #fff);
 }
-.wz-card:hover {
-  border-color: var(--t-primary);
+.wz-card.done {
+  border-color: #b7eb8f;
+  background: #f6ffed;
 }
-.wz-card.active {
-  border-color: var(--t-primary);
-  background: var(--t-hover-bg);
-  box-shadow: 0 0 0 1px var(--t-primary) inset;
+.wz-card.blocked {
+  background: var(--t-bg-hover, #fafbfc);
 }
-.wz-card.small {
-  width: calc(33.3% - 8px);
-  min-width: 200px;
-  text-align: left;
+.wz-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.wz-card-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--t-text-1, #1f2329);
+}
+.wz-card-meta {
+  font-size: 12px;
+  color: var(--t-text-3, #8a919f);
+}
+.wz-card-note {
+  color: var(--t-primary, #1677ff);
+}
+.wz-card-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.wz-field {
+  font-size: 11px;
+  line-height: 18px;
+  padding: 0 6px;
+  border-radius: 4px;
+  border: 1px solid var(--t-border-light, #e6e9ef);
+  color: var(--t-text-2, #59616e);
+  background: var(--t-bg-hover, #fafbfc);
+}
+.wz-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+.wz-preview,
+.wz-result {
+  margin-top: 16px;
+  border: 1px solid var(--t-border-light, #e6e9ef);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.wz-preview-head,
+.wz-result-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.wz-preview-title,
+.wz-result-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--t-text-1, #1f2329);
+}
+.wz-preview-actions {
+  display: flex;
+  gap: 8px;
+}
+.wz-result-num {
+  font-size: 12px;
+  color: var(--t-text-3, #8a919f);
+  font-variant-numeric: tabular-nums;
+}
+.wz-issues {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12px;
+  line-height: 20px;
+}
+.wz-result-list {
+  list-style: none;
+  padding-left: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
-.wz-card-icon {
-  font-size: 24px;
-  color: var(--t-primary);
-  margin-bottom: 6px;
-}
-.wz-card-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--t-text-1);
-}
-.wz-card-desc {
-  font-size: 12px;
-  color: var(--t-text-3);
-}
-.wz-card.checkable {
-  flex-direction: row;
+.wz-result-list li {
+  display: flex;
   align-items: center;
   gap: 8px;
 }
-.wz-card.checkable .wz-card-desc {
-  margin-left: auto;
-}
-.wz-check {
-  width: 16px;
-  height: 16px;
-  border: 1px solid var(--t-text-3);
-  border-radius: 3px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.wz-result-key {
   font-size: 12px;
-  color: #fff;
-  flex-shrink: 0;
+  color: var(--t-text-1, #1f2329);
 }
-.wz-card.active .wz-check {
-  background: var(--t-primary);
-  border-color: var(--t-primary);
+.wz-result-msg {
+  font-size: 12px;
+  color: var(--t-text-3, #8a919f);
 }
-.wz-radio-group {
-  margin: 4px 0 8px;
+.wz-table {
+  margin-top: 4px;
 }
-.wz-result {
-  text-align: center;
-  padding: 18px 0 10px;
+.wz-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--t-text-3, #8a919f);
 }
-.wz-result-icon {
-  font-size: 44px;
-  color: #67c23a;
+.wz-check-tip {
+  margin-bottom: 8px;
 }
-.wz-result-text {
-  font-size: 13px;
-  color: var(--t-text-2);
-  line-height: 1.9;
-  margin-top: 10px;
+.wz-amount {
+  font-variant-numeric: tabular-nums;
 }
-.wz-result-hl {
-  color: var(--t-primary);
-  font-weight: 600;
+.wz-changed {
+  color: #d46b08;
+  font-variant-numeric: tabular-nums;
 }
-.wz-summary {
-  margin: 10px auto 0;
-  max-width: 460px;
-  border: 1px solid var(--t-border-light);
-  border-radius: 8px;
-  overflow: hidden;
+.wz-muted {
+  color: var(--t-text-4, #b0b6c0);
 }
-.wz-summary-row {
-  display: flex;
-  padding: 9px 14px;
-  font-size: 13px;
-  color: var(--t-text-1);
-  border-bottom: 1px solid var(--t-border-light);
-}
-.wz-summary-row:last-child {
-  border-bottom: none;
-}
-.wz-summary-label {
-  width: 90px;
-  color: var(--t-text-3);
-  flex-shrink: 0;
-}
-.wz-footer {
+.wz-foot {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 30px 20px;
-  border-top: 1px solid var(--t-border-light);
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--t-border-light, #e6e9ef);
 }
-.wz-start {
-  background: var(--t-primary);
-  color: #fff;
-  font-size: 14px;
-  padding: 8px 26px;
-  border-radius: 4px;
-  cursor: pointer;
+.wz-foot-tip {
+  font-size: 12px;
+  color: var(--t-text-3, #8a919f);
+  font-variant-numeric: tabular-nums;
 }
-.wz-start:hover {
-  background: var(--t-primary-dark);
+.wz-locked {
+  padding: 16px 24px 24px;
 }
-.wz-back {
-  border: 1px solid var(--t-border);
-  color: var(--t-text-2);
-  font-size: 14px;
-  padding: 8px 26px;
-  border-radius: 4px;
-  cursor: pointer;
+.wz-done-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
 }
-.wz-back:hover {
-  color: var(--t-primary);
-  border-color: var(--t-primary);
-}
-.wz-skip {
-  margin-left: auto;
+.wz-done-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
-  color: var(--t-text-3);
-  cursor: pointer;
+  color: var(--t-text-2, #59616e);
 }
-.wz-skip:hover {
-  color: var(--t-primary);
+.wz-done-name {
+  color: var(--t-text-1, #1f2329);
+}
+
+/* 窄屏：标题与关闭按钮分两行，模块卡片单列，避免标题被挤成竖排 */
+@media (max-width: 640px) {
+  .wz-mask {
+    padding: 12px;
+  }
+  .wz-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 16px 16px 10px;
+  }
+  /* 纵向布局下 flex-basis 会变成高度（曾把标题区撑成 260px 空白），这里显式复位 */
+  .wz-head > div:first-child {
+    flex: 0 0 auto;
+  }
+  .wz-head-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .wz-batch {
+    display: none;
+  }
+  .wz-body {
+    padding: 12px 16px 16px;
+  }
+  .wz-grid {
+    grid-template-columns: 1fr;
+  }
+  .wz-title {
+    font-size: 16px;
+    line-height: 24px;
+  }
 }
 </style>

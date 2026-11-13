@@ -77,9 +77,25 @@ public class InitController {
     public ApiResult<Map<String, Object>> apply(@RequestBody Map<String, Object> body, Authentication auth) {
         guard(auth);
         String module = String.valueOf(body.getOrDefault("module", ""));
-        @SuppressWarnings("unchecked")
-        List<Map<String, String>> rows = (List<Map<String, String>>) body.getOrDefault("rows", List.of());
+        List<Map<String, String>> rows = InitService.stringRows((List<?>) body.getOrDefault("rows", List.of()));
         return ApiResult.ok(service.apply(module, rows, auth.getName()));
+    }
+
+    /** 期初库存：核对（可改）后确认落库，同时写证据表。 */
+    @PostMapping("/opening/confirm")
+    public ApiResult<Map<String, Object>> openingConfirm(@RequestBody Map<String, Object> body,
+                                                         Authentication auth) {
+        guard(auth);
+        List<Map<String, String>> rows = InitService.stringRows((List<?>) body.getOrDefault("rows", List.of()));
+        String fileName = String.valueOf(body.getOrDefault("fileName", ""));
+        return ApiResult.ok(service.openingConfirm(rows, fileName, auth.getName()));
+    }
+
+    /** 期初证据：原始上传值 / 人工确认值 / 操作人 / 时间。 */
+    @GetMapping("/opening/evidence")
+    public ApiResult<Map<String, Object>> openingEvidence(Authentication auth) {
+        guard(auth);
+        return ApiResult.ok(service.openingEvidence());
     }
 
     /** 完成初始化并锁定账套。 */
