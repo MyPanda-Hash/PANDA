@@ -266,17 +266,6 @@ export const menuTree = [
     ],
   },
   {
-    code: 'dc',
-    title: '设备数采',
-    desc: '网关 · 采集点 · 报警 · 在线率',
-    icon: 'Connection',
-    children: [
-      { code: 'dcConfig', title: 'IOT设备配置', path: '/mes/dc/config', icon: 'Connection' },
-      { code: 'dcMonitor', title: '数据监控', path: '/mes/dc/monitor', icon: 'Monitor' },
-      { code: 'dcStats', title: '状态统计', path: '/mes/dc/stats', icon: 'TrendCharts' },
-    ],
-  },
-  {
     code: 'wms',
     title: 'WMS',
     desc: '仓内作业 · 配货 · 库存账表',
@@ -435,6 +424,17 @@ export const menuTree = [
           { code: 'bomRev', title: '物料清单反向查询', path: '/panelx/list/BOM_REV', icon: 'BottomLeft', panelCode: 'BOM_REV' }
         ],
       },
+    ],
+  },
+  {
+    code: 'dc',
+    title: '设备数采',
+    desc: '网关 · 采集点 · 报警 · 在线率',
+    icon: 'Connection',
+    children: [
+      { code: 'dcConfig', title: 'IOT设备配置', path: '/mes/dc/config', icon: 'Connection' },
+      { code: 'dcMonitor', title: '数据监控', path: '/mes/dc/monitor', icon: 'Monitor' },
+      { code: 'dcStats', title: '状态统计', path: '/mes/dc/stats', icon: 'TrendCharts' },
     ],
   },
   {
