@@ -4,6 +4,7 @@ import com.mes.dto.ApiResult;
 import com.mes.service.PortalNotificationService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -47,6 +48,14 @@ public class PortalController {
         n.put("read", read);
         n.put("content", content);
         return n;
+    }
+
+    /** 清空消息未读：把游标推到当前时间，之后的群聊消息才算未读。 */
+    @PostMapping("/notice/read")
+    public ApiResult<Integer> markRead(@RequestParam(defaultValue = "message") String type,
+                                       Authentication authentication) {
+        if (!"message".equals(type)) return ApiResult.ok(0);
+        return ApiResult.ok(notificationService.markMessageRead(authentication.getName()));
     }
 
     @GetMapping("/notice/list")

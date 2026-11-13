@@ -33,6 +33,8 @@ public class AiNoticeClient {
 
     private static final Logger log = LoggerFactory.getLogger(AiNoticeClient.class);
     private static final long FAILURE_TTL_MS = 30_000;
+    private static final java.time.format.DateTimeFormatter SINCE_FORMAT =
+            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final RestTemplate rest;
     private final ObjectMapper json;
@@ -80,14 +82,26 @@ public class AiNoticeClient {
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> fetch(String mesUserName) {
+        return fetch(mesUserName, null);
+    }
+
+    /**
+     * 取通知；`since` 是 MES 侧的已读游标（本地墙钟时间），只回它之后的消息。
+     */
+    public Map<String, Object> fetch(String mesUserName, java.time.LocalDateTime since) {
         if (!enabled() || mesUserName == null || mesUserName.isBlank()) return null;
         if (System.currentTimeMillis() < failedUntil) return null;
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Nexus-Internal-Token", token);
+            String url = baseUrl + "/internal/v1/mes/notifications?mes_user={u}";
+            Object[] args = new Object[] { mesUserName };
+            if (since != null) {
+                url += "&since={s}";
+                args = new Object[] { mesUserName, since.format(SINCE_FORMAT) };
+            }
             ResponseEntity<String> response = rest.exchange(
-                    baseUrl + "/internal/v1/mes/notifications?mes_user={u}", HttpMethod.GET,
-                    new HttpEntity<>(headers), String.class, mesUserName);
+                    url, HttpMethod.GET, new HttpEntity<>(headers), String.class, args);
             String body = response.getBody();
             if (body == null || body.isBlank()) return null;
             Map<String, Object> parsed = json.readValue(body, Map.class);

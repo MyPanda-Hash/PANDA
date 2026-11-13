@@ -7,7 +7,6 @@
       placement="bottom-end"
       :width="340"
       popper-class="notice-popover"
-      @show="load(cfg.type)"
       @hide="handleHide(cfg.type)"
     >
       <template #reference>
@@ -16,7 +15,7 @@
           class="nc-ref"
           :class="[`type-${cfg.type}`, { active: visible === cfg.type }]"
           :aria-label="`${tt(cfg.title)}${badge[cfg.type] ? `，${badge[cfg.type]} ${tt('条')}` : ''}`"
-          @click="visible = visible === cfg.type ? null : cfg.type"
+          @click="toggle(cfg.type)"
         >
           <el-tooltip :content="tt(cfg.title)" placement="bottom">
             <el-badge :value="badge[cfg.type]" :max="99" :hidden="!badge[cfg.type]" class="nc-badge">
@@ -101,7 +100,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { apiGetBadge, apiGetNotices } from '@/business/api'
+import { apiGetBadge, apiGetNotices, apiMarkNoticeRead } from '@/business/api'
 import { useUserStore } from '@/stores/user'
 import { tt } from '@/i18n'
 
@@ -128,12 +127,38 @@ const currentCrg = ref(types[0])
 const historyCrg = ref(types[0])
 const historyList = ref([])
 
-async function load(type) {
+/**
+ * 点图标开/关弹层。
+ *
+ * <p>弹层的显隐由 `visible` 控制，Element Plus 在这种情况下不派发 `show` 事件，
+ * 所以「点开即已读」放在这里做，而不是挂在 `@show` 上（踩过：价标一直不清）。
+ */
+function toggle(type) {
+  const next = visible.value === type ? null : type
+  visible.value = next
+  if (!next) return
+  load(next).then(() => {
+    // 拉完列表再清未读：load() 会用「未读条数」重置角标，顺序反了会被它覆盖回去
+    if (next === 'message' && listMap.message.length) {
+      badge.value = { ...badge.value, message: 0 }
+      apiMarkNoticeRead('message').catch(() => {})
+    }
+  })
+}
+
+async function load(type, options = {}) {
   if (loadingMap[type]) return
   loadingMap[type] = true
   try {
     listMap[type] = await apiGetNotices(type)
     badge.value = { ...badge.value, [type]: listMap[type].length }
+    // 消息只显示未读：打开即视为已读，游标推到当前时间；本次仍把已取到的条目展示完，
+    // 关掉再打开就是空的（用户口径：未读清零后从列表消失）
+    if (type === 'message' && options.markRead && listMap[type].length) {
+      // 先清角标再发请求：点开即视为已读，不必等接口回来
+      badge.value = { ...badge.value, message: 0 }
+      apiMarkNoticeRead('message').catch(() => {})
+    }
   } catch (e) {
     listMap[type] = []
   } finally {
@@ -215,6 +240,7 @@ function step(dir) {
 let refreshTimer = null
 
 onMounted(() => {
+  // 只预取列表与角标，不标已读——「点开才算看过」由弹层的 @show 负责
   Promise.all(types.map((type) => load(type.type)))
   refreshTimer = window.setInterval(() => {
     refreshBadge()

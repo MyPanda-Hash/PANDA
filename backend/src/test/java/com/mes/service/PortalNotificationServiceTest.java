@@ -20,6 +20,11 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -32,13 +37,14 @@ class PortalNotificationServiceTest {
     @Mock private ReportQueryService reportQueryService;
     @Mock private RoleService roleService;
     @Mock private AiNoticeClient aiNotices;
+    @Mock private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     private PortalNotificationService service;
 
     @BeforeEach
     void setUp() {
         service = new PortalNotificationService(
-                formMapper, approvalMapper, panelMapper, reportQueryService, roleService, aiNotices);
+                formMapper, approvalMapper, panelMapper, reportQueryService, roleService, aiNotices, jdbc);
     }
 
     @Test
@@ -61,21 +67,45 @@ class PortalNotificationServiceTest {
     }
 
     @Test
-    void approvalMessagesReturnOnlyToTheSubmittingAccount() {
-        // messages() 查询两次：先按 action=SUBMIT + operator=alice 取本人提交记录，再按面板取审批结果。
-        // 桩必须按调用顺序分别返回，否则审批结果行会混入提交记录，被误认成 alice 的单据。
-        when(approvalMapper.selectList(any())).thenReturn(
-                List.of(approval(1L, "SO_ORDER", "SO-001", "SUBMIT", "PENDING", "alice"),
-                        approval(3L, "SO_ORDER", "SO-002", "SUBMIT", "PENDING", "bob")),
-                List.of(approval(2L, "SO_ORDER", "SO-001", "APPROVE", "APPROVED", "manager"),
-                        approval(4L, "SO_ORDER", "SO-002", "REJECT", "REJECTED", "manager")));
-        when(panelMapper.selectList(any())).thenReturn(List.of(panel("SO_ORDER", "销售订单")));
+    void messagesOnlyCarryUnreadGroupChatFromDigitalEmployee() {
+        // 口径变更（2026-11-13）：消息不再混入 MES 审批结果，只显示数字员工群聊未读，
+        // 并且按已读游标过滤（游标之后的消息才算未读）
+        when(jdbc.query(anyString(), any(org.springframework.jdbc.core.RowMapper.class), eq("alice")))
+                .thenReturn(java.util.Collections.singletonList(null));
+        when(aiNotices.fetch(eq("alice"), isNull())).thenReturn(Map.of("bound", true, "todos", List.of()));
+        when(aiNotices.groupUrl("grp_1")).thenReturn("http://localhost:18091/group?group=grp_1");
+        when(aiNotices.messages(any())).thenReturn(List.of(Map.of(
+                "id", "gmsg_1",
+                "groupId", "grp_1",
+                "groupName", "AI 调度台",
+                "text", "今天的 MES 待办汇总",
+                "createdAt", "2026-11-13 08:03:08")));
 
         List<Map<String, Object>> result = service.list("alice", "message");
 
         assertEquals(1, result.size());
-        assertTrue(String.valueOf(result.get(0).get("title")).contains("SO-001 审批通过"));
-        assertEquals("APPROVED", result.get(0).get("result"));
+        assertEquals("ai-msg:gmsg_1", result.get(0).get("id"));
+        assertTrue(String.valueOf(result.get(0).get("title")).contains("AI 调度台"));
+        assertEquals("今天的 MES 待办汇总", result.get(0).get("content"));
+        assertTrue(String.valueOf(result.get(0).get("targetPath")).contains("/group?group=grp_1"));
+        assertEquals(Boolean.TRUE, result.get(0).get("external"));
+        // 不再查审批流水：消息只有一个来源
+        verify(approvalMapper, never()).selectList(any());
+    }
+
+    @Test
+    void markMessageReadPushesCursorAndReturnsClearedCount() {
+        when(jdbc.query(anyString(), any(org.springframework.jdbc.core.RowMapper.class), eq("alice")))
+                .thenReturn(java.util.Collections.singletonList(null));
+        when(aiNotices.fetch(eq("alice"), isNull())).thenReturn(Map.of("bound", true, "todos", List.of()));
+        when(aiNotices.messages(any())).thenReturn(List.of(
+                Map.of("id", "gmsg_1", "groupId", "grp_1", "groupName", "群", "text", "a", "createdAt", "2026-11-13 08:00:00"),
+                Map.of("id", "gmsg_2", "groupId", "grp_1", "groupName", "群", "text", "b", "createdAt", "2026-11-13 08:01:00")));
+
+        int cleared = service.markMessageRead("alice");
+
+        assertEquals(2, cleared);
+        verify(jdbc).update(contains("insert into portal_notice_read"), eq("alice"), any(Object.class));
     }
 
     @Test

@@ -36,6 +36,12 @@ export async function apiGetNotices(type) {
   return res?.data ?? res
 }
 
+/** 清空消息未读（群聊消息只显示未读，清空后列表为空）。 */
+export async function apiMarkNoticeRead(type) {
+  const res = await request.post('/portal/notice/read', null, { params: { type } })
+  return res?.data ?? res
+}
+
 /** AI 数字员工免密入口：后端签 60 秒票据，返回 { ticket, url } */
 export async function apiGetAiSsoTicket() {
   const res = await request.get('/ai/sso-ticket')

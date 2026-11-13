@@ -36,16 +36,19 @@ public class PortalNotificationService {
     private final ReportQueryService reportQueryService;
     private final RoleService roleService;
     private final AiNoticeClient aiNotices;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     public PortalNotificationService(FormDataMapper formMapper, FormApprovalMapper approvalMapper,
                                      PanelConfigMapper panelMapper, ReportQueryService reportQueryService,
-                                     RoleService roleService, AiNoticeClient aiNotices) {
+                                     RoleService roleService, AiNoticeClient aiNotices,
+                                     org.springframework.jdbc.core.JdbcTemplate jdbc) {
         this.formMapper = formMapper;
         this.approvalMapper = approvalMapper;
         this.panelMapper = panelMapper;
         this.reportQueryService = reportQueryService;
         this.roleService = roleService;
         this.aiNotices = aiNotices;
+        this.jdbc = jdbc;
     }
 
     public Map<String, Integer> badge(String userName) {
@@ -54,6 +57,28 @@ public class PortalNotificationService {
         result.put("message", messages(userName).size());
         result.put("alarm", alarms().size());
         return result;
+    }
+
+    /** 该账号的消息已读游标；没读过返回 null（全部未读）。 */
+    private LocalDateTime messageCursor(String userName) {
+        List<LocalDateTime> rows = jdbc.query(
+                "select message_read_at from portal_notice_read where user_name = ?",
+                (rs, i) -> rs.getTimestamp(1) == null ? null : rs.getTimestamp(1).toLocalDateTime(),
+                userName);
+        return rows.isEmpty() ? null : rows.get(0);
+    }
+
+    /** 清空未读：把游标推到当前时间，返回清掉的条数。 */
+    public int markMessageRead(String userName) {
+        int cleared = aiMessages(userName).size();
+        LocalDateTime now = LocalDateTime.now();
+        jdbc.update("""
+                insert into portal_notice_read (user_name, message_read_at, update_time)
+                values (?, ?, now())
+                on conflict (user_name) do update set message_read_at = excluded.message_read_at,
+                                                      update_time = now()
+                """, userName, now);
+        return cleared;
     }
 
     /** 数字员工的待办与消息（AI 不可用时返回空表，不影响 MES 自己的通知）。 */
@@ -156,65 +181,19 @@ public class PortalNotificationService {
         return result;
     }
 
+    /**
+     * 消息：只收数字员工相关群聊在「已读游标」之后的消息。
+     *
+     * <p>口径（2026-11-13 用户确认）：不再混入 MES 自己的审批结果；只显示未读，
+     * 清空未读后列表为空——所以这里不需要再查审批流水。
+     */
     private List<Map<String, Object>> messages(String userName) {
-        // 先取当前账号自己的 SUBMIT 记录（按单据取最新一次提交人），再按单据反查审批结果。
-        // 旧实现从“最近 2000 条流水”里回配 SUBMIT，单据的提交记录被滑出窗口后结果消息会静默丢失。
-        List<FormApproval> submissions = approvalMapper.selectList(new LambdaQueryWrapper<FormApproval>()
-                .eq(FormApproval::getAction, "SUBMIT")
-                .eq(FormApproval::getOperator, userName)
-                .orderByDesc(FormApproval::getId)
-                .last("LIMIT " + APPROVAL_SCAN_LIMIT));
-        if (submissions.isEmpty()) return List.of();
-
-        Map<String, String> submitters = new HashMap<>();
-        Set<String> panelCodes = new HashSet<>();
-        for (FormApproval submission : submissions) {
-            submitters.putIfAbsent(key(submission.getPanelCode(), submission.getFormNo()), submission.getOperator());
-            panelCodes.add(submission.getPanelCode());
-        }
-        List<FormApproval> records = approvalMapper.selectList(new LambdaQueryWrapper<FormApproval>()
-                .in(FormApproval::getPanelCode, panelCodes)
-                .in(FormApproval::getAction, List.of("APPROVE", "REJECT"))
-                .orderByDesc(FormApproval::getId)
-                .last("LIMIT " + APPROVAL_SCAN_LIMIT));
-
-        List<FormApproval> outcomes = new ArrayList<>();
-        for (FormApproval record : records) {
-            if (userName.equals(submitters.get(key(record.getPanelCode(), record.getFormNo())))) {
-                outcomes.add(record);
-            }
-        }
-        outcomes.sort(Comparator.comparing(FormApproval::getId,
-                Comparator.nullsLast(Comparator.naturalOrder())).reversed());
-
-        Map<String, String> panelNames = panelNames(panelCodes);
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (FormApproval outcome : outcomes) {
-            boolean approved = "APPROVE".equals(outcome.getAction());
-            String action = approved ? "审批通过" : "审批驳回";
-            String panelName = panelNames.getOrDefault(outcome.getPanelCode(), outcome.getPanelCode());
-            StringBuilder content = new StringBuilder("您提交的")
-                    .append(panelName).append(' ').append(outcome.getFormNo())
-                    .append("已由「").append(text(outcome.getOperator(), "未知账号")).append("」")
-                    .append(action).append('。');
-            if (outcome.getOpinion() != null && !outcome.getOpinion().isBlank()) {
-                content.append("审批意见：").append(outcome.getOpinion());
-            }
-            Map<String, Object> item = baseNotice("message:" + outcome.getId(), "message",
-                    panelName + " " + outcome.getFormNo() + " " + action,
-                    outcome.getCreateTime(), content.toString(), outcome.getPanelCode(), outcome.getFormNo());
-            item.put("result", approved ? "APPROVED" : "REJECTED");
-            item.put("actionLabel", "查看单据");
-            result.add(item);
-            if (result.size() >= LIST_LIMIT) break;
-        }
-        result.addAll(aiMessages(userName));
-        return result;
+        return aiMessages(userName);
     }
 
     /** 数字员工相关群聊的最近消息：点开直接进对应群聊。 */
     private List<Map<String, Object>> aiMessages(String userName) {
-        Map<String, Object> payload = aiPayload(userName);
+        Map<String, Object> payload = aiNotices.fetch(userName, messageCursor(userName));
         if (payload == null) return List.of();
         List<Map<String, Object>> result = new ArrayList<>();
         for (Map<String, Object> message : aiNotices.messages(payload)) {
@@ -222,13 +201,13 @@ public class PortalNotificationService {
             if (id.isEmpty()) continue;
             String groupName = String.valueOf(message.getOrDefault("groupName", ""));
             String groupId = String.valueOf(message.getOrDefault("groupId", ""));
-            boolean unread = Boolean.TRUE.equals(message.get("unread"));
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("id", "ai-msg:" + id);
             item.put("type", "message");
             item.put("title", (groupName.isEmpty() ? "项目群聊" : groupName) + " · 数字员工消息");
             item.put("time", String.valueOf(message.getOrDefault("createdAt", "")));
-            item.put("read", !unread);
+            // 服务端只回游标之后的消息，取回来的都是未读
+            item.put("read", false);
             item.put("content", String.valueOf(message.getOrDefault("text", "")));
             item.put("source", "ai");
             item.put("sourceLabel", groupName.isEmpty() ? "群聊" : groupName);
