@@ -90,3 +90,13 @@ test('isCatchAllGroup 只认收纳组', () => {
   for (const name of ['新增', '保存', '审批', '选单', '打印']) assert.equal(isCatchAllGroup({ name }), false)
   assert.equal(isCatchAllGroup(null), false)
 })
+// 2026-11-13：销售订单必须能生成委外加工单（推式），且这个动作要走 generate 权限
+test("生成委外加工单在前端动作支持表里，点了不会 409", () => {
+  assert.equal(isActionSupported("生成委外加工单"), true);
+});
+
+test("三条生单线都登记为受支持动作", () => {
+  for (const action of ["生成委外加工单", "生成生产加工单", "生成销售出库单"]) {
+    assert.equal(isActionSupported(action), true, `${action} 必须可用`);
+  }
+});

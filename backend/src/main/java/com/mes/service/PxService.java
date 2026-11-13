@@ -2090,6 +2090,8 @@ public class PxService implements PanelRuntimeService {
                 return changeStatus(panelCode, formData, "取消中止");
             case "生成生产加工单":   // 推式生单：销售订单 → 生产加工单（对齐真实 T+「生单-生成生产加工单」）
                 return createMoFromSo(panelCode, formData, buttonParam);
+            case "生成委外加工单":   // 推式生单：销售订单 → 委外加工单（委外线；与自制/出库互斥）
+                return createOutsourceFromSo(panelCode, formData);
             case "按产成品重算材料":  // 产成品数量变了：材料明细按 BOM 重新展开
                 return recomputeMaterials(panelCode, formData);
             case "选工艺路线":       // 手工建单：按路线整体替换工序明细
@@ -2816,6 +2818,18 @@ public class PxService implements PanelRuntimeService {
             throw new IllegalStateException("该销售订单已有销售出库单（状态：" + blockingSaleOut
                     + "），不能再生成生产加工单；如需预生产入库，请直接新增生产加工单排单。");
         }
+        // 已走委外线的订单不能再投自制：两条线并行会让同一批货既外协又自制，产出翻倍。
+        String blockingOutsource = findOutsourceOfSo(String.valueOf(no));
+        if (blockingOutsource != null) {
+            throw new IllegalStateException("该销售订单已生成委外加工单（状态：" + blockingOutsource
+                    + "），不能再生成生产加工单；委外与自制只能走一条线。");
+        }
+        // 同一订单已排过生产（草稿/审批中/已审核/已完工）就不再重复生成，避免多张加工单叠加超产。
+        String blockingManu = findBlockingManuOrder(String.valueOf(no));
+        if (blockingManu != null) {
+            throw new IllegalStateException("该销售订单已有生产加工单（状态：" + blockingManu
+                    + "），不能重复生成；如需加量请编辑该加工单或走排产。");
+        }
 
         Map<String, Object> head = parseData(so.getData());
         Map<String, Object> detailMap = parseData(so.getDetailData());
@@ -3041,6 +3055,141 @@ public class PxService implements PanelRuntimeService {
             throw new IllegalArgumentException("行号必须是整数：" + raw);
         }
     }
+    /**
+     * 推式生单：销售订单（SO_ORDER）→ 委外加工单（OUTSOURCE_ORDER），草稿。
+     *
+     * <p>与自制/出库三条线互斥：已生成委外单、已排自制加工单、或已有销售出库单，都拒绝重复生单。
+     * 委外单的产成品明细照抄订单行，材料明细按 BOM 带出（委外发料据此生成）。
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createOutsourceFromSo(String panelCode, Map<String, Object> formData) {
+        if (!"SO_ORDER".equals(panelCode)) {
+            throw new IllegalStateException("仅销售订单可生成委外加工单，当前单据：" + panelCode);
+        }
+        Object no = formData.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少表单编号");
+        String soNo = String.valueOf(no);
+        FormData so = formMapper.selectOne(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "SO_ORDER")
+                .eq(FormData::getFormNo, soNo));
+        if (so == null) throw new IllegalArgumentException("销售订单不存在：" + soNo);
+        if (!"已审核".equals(so.getStatus())) {
+            throw new IllegalStateException("仅已审核销售订单可生成委外加工单（当前状态：" + so.getStatus() + "）");
+        }
+
+        // 三条生单线互斥：先看委外自己，再看自制与出库。
+        String dupOutsource = findOutsourceOfSo(soNo);
+        if (dupOutsource != null) {
+            throw new IllegalStateException("该销售订单已有委外加工单（状态：" + dupOutsource
+                    + "），不能重复生成；如需调整请直接处理该单据。");
+        }
+        String blockingManu = findBlockingManuOrder(soNo);
+        if (blockingManu != null) {
+            throw new IllegalStateException("该销售订单已有生产加工单（状态：" + blockingManu
+                    + "），不能再生成委外加工单；委外与自制只能走一条线。");
+        }
+        String blockingSaleOut = findBlockingSaleOut(soNo);
+        if (blockingSaleOut != null) {
+            throw new IllegalStateException("该销售订单已有销售出库单（状态：" + blockingSaleOut
+                    + "），不能再生成委外加工单。");
+        }
+
+        Map<String, Object> head = parseData(so.getData());
+        Map<String, Object> detailMap = parseData(so.getDetailData());
+        List<Map<String, Object>> items = detailMap.get("items") instanceof List
+                ? (List<Map<String, Object>>) detailMap.get("items") : new ArrayList<>();
+        if (items.isEmpty()) throw new IllegalStateException("销售订单无明细：" + soNo);
+
+        String newNo = generateFormNo("OUTSOURCE_ORDER", head);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("单据日期", LocalDate.now().toString());
+        data.put("业务类型", "委外加工");
+        // 委外供应商留空由用户在委外单上选（销售订单里没有供应商概念）
+        data.put("委外供应商", "");
+        data.put("生产车间", "委外");
+        data.put("部门", head.getOrDefault("部门", ""));
+        data.put("经手人", head.getOrDefault("业务员", ""));
+        data.put("交货日期", head.getOrDefault("预计交货日期", ""));
+        data.put("预完工日", head.getOrDefault("预计交货日期", ""));
+        data.put("备注", "由销售订单 " + soNo + " 生成");
+
+        List<Map<String, Object>> products = new ArrayList<>();
+        for (Map<String, Object> it : items) {
+            Map<String, Object> p = new LinkedHashMap<>();
+            p.put("产品编码", it.getOrDefault("存货编码", ""));
+            p.put("产品名称", it.getOrDefault("存货名称", ""));
+            p.put("规格型号", it.getOrDefault("规格型号", ""));
+            p.put("计量单位", it.getOrDefault("销售单位", it.getOrDefault("计量单位", "件")));
+            p.put("数量", it.getOrDefault("数量", 0));
+            // 委外单价按订单单价带出，用户可在委外单上改成实际外协价
+            p.put("委外单价", it.getOrDefault("单价", 0));
+            p.put("金额", it.getOrDefault("金额", 0));
+            p.put("行中止", false);
+            products.add(p);
+        }
+
+        // 材料明细按 BOM 带出：委外发料据此生成，缺了就到不了外协厂。
+        List<Map<String, Object>> materials = new ArrayList<>();
+        Map<String, List<Map<String, Object>>> bomByItem = bomChildrenByParent();
+        Set<String> matKeys = new HashSet<>();
+        for (Map<String, Object> p : products) {
+            String pcode = String.valueOf(p.getOrDefault("产品编码", ""));
+            for (Map<String, Object> b : bomByItem.getOrDefault(pcode, List.of())) {
+                String mcode = String.valueOf(b.getOrDefault("材料编码", ""));
+                if (mcode.isEmpty() || !matKeys.add(pcode + "|" + mcode)) continue;
+                Map<String, Object> m = new LinkedHashMap<>();
+                double quota = num(b.getOrDefault("定额需用数量", 0));
+                double productQty = num(p.getOrDefault("数量", 0));
+                double plan = round2(quota * productQty);
+                m.put("材料编码", mcode);
+                m.put("材料名称", b.getOrDefault("材料名称", ""));
+                m.put("规格型号", b.getOrDefault("规格型号", ""));
+                m.put("计量单位", b.getOrDefault("计量单位", "kg"));
+                m.put("计划数量", plan);
+                String matWarehouse = stockTxnService == null ? null
+                        : stockTxnService.warehouseOfItem(mcode, String.valueOf(m.get("材料名称")));
+                m.put("预出仓库", matWarehouse == null || matWarehouse.isBlank() ? "原料仓" : matWarehouse);
+                m.put("现存量", 0);
+                m.put("可用量", 0);
+                materials.add(m);
+            }
+        }
+
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("products", products);
+        detail.put("materials", materials);
+
+        Map<String, Object> out = insertGenerated("OUTSOURCE_ORDER", "SO_ORDER", soNo, data, detail);
+        return out;
+    }
+
+    /** BOM 子件按父件编码分组：委外单与自制加工单共用同一份展开口径。 */
+    @SuppressWarnings("unchecked")
+    private Map<String, List<Map<String, Object>>> bomChildrenByParent() {
+        Map<String, List<Map<String, Object>>> byParent = new HashMap<>();
+        for (FormData bdoc : formMapper.selectList(
+                new LambdaQueryWrapper<FormData>().eq(FormData::getPanelCode, "BOM"))) {
+            Map<String, Object> bdetail = parseData(bdoc.getDetailData());
+            if (!(bdetail.get("children") instanceof List<?> children)) continue;
+            for (Object o : children) {
+                if (!(o instanceof Map)) continue;
+                Map<String, Object> it = (Map<String, Object>) o;
+                String parent = String.valueOf(it.getOrDefault("父件编码", ""));
+                if (parent.isEmpty()) continue;
+                Map<String, Object> bomRow = new HashMap<>();
+                bomRow.put("材料编码", it.getOrDefault("子件编码", ""));
+                bomRow.put("材料名称", it.getOrDefault("子件名称", ""));
+                bomRow.put("规格型号", it.getOrDefault("规格型号", ""));
+                bomRow.put("计量单位", it.getOrDefault("子件计量单位", "kg"));
+                bomRow.put("定额需用数量", PlanAnalyzeService.unitUsage(
+                        BigDecimal.valueOf(num(it.getOrDefault("定额数量", 0))),
+                        BigDecimal.valueOf(num(it.getOrDefault("生产数量", 1)))).doubleValue());
+                byParent.computeIfAbsent(parent, k -> new ArrayList<>()).add(bomRow);
+            }
+        }
+        return byParent;
+    }
+
     /**
      * 推式生单：生产加工单（MANU_ORDER）→ 工序汇报单（PROCESS_REPORT）
      * 表头：加工单号/生产车间/产品/客户/销售订单号；明细 = 加工单工序明细（工序编码/车间/工作中心/设备/班组/工人/计划数量→报工数量/工价）
@@ -5207,6 +5356,54 @@ public class PxService implements PanelRuntimeService {
     }
 
     /** 未完结（草稿/审批中）的销售出库单：拦住重复生成，避免多张草稿叠加后超卖。 */
+    /** 未完结：草稿/审批中/已审核/已完工都算占用这条生单线；中止、已关闭、空按不占用。 */
+    static boolean isActiveDownstream(String status) {
+        if (status == null || status.isBlank()) return false;
+        return switch (status.trim()) {
+            case "草稿", "审批中", "已审核", "已完工" -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * 该销售订单已生成且未废弃的委外加工单状态；没有返回 null。
+     *
+     * <p>认两种挂法：表头「来源单号」= 销售订单号（本系统生单写入），或「来源单据=销售订单」+ 同号。
+     * 已中止/已关闭的委外单不再占用，允许重开一张。
+     */
+    String findOutsourceOfSo(String soNo) {
+        return firstActiveBySoLink("OUTSOURCE_ORDER", soNo);
+    }
+
+    /** 该销售订单已生成且未废弃的生产加工单状态；没有返回 null。 */
+    String findBlockingManuOrder(String soNo) {
+        return firstActiveBySoLink("MANU_ORDER", soNo);
+    }
+
+    /** 按「来源单号 / 销售订单号」找出该订单在某面板下未废弃的单据状态。 */
+    private String firstActiveBySoLink(String panelCode, String soNo) {
+        if (soNo == null || soNo.isBlank()) return null;
+        List<FormData> docs = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, panelCode));
+        for (FormData doc : docs) {
+            if (!isActiveDownstream(doc.getStatus())) continue;
+            Map<String, Object> head;
+            try {
+                head = parseData(doc.getData());
+            } catch (Exception e) {
+                continue;
+            }
+            String sourceNo = str(head.getOrDefault("来源单号", "")).trim();
+            String sourcePanel = str(head.getOrDefault("来源单据", "")).trim();
+            String soField = str(head.getOrDefault("销售订单号", "")).trim();
+            // 来源单据有两种历史写法：生单写 panel code（SO_ORDER），手工建单选完带入的写中文「销售订单」
+            boolean soPanel = "SO_ORDER".equals(sourcePanel) || "销售订单".equals(sourcePanel) || sourcePanel.isBlank();
+            boolean linked = soNo.equals(sourceNo) || (soNo.equals(soField) && soPanel);
+            if (linked) return doc.getStatus();
+        }
+        return null;
+    }
+
     String findOpenSaleOut(String soNo) {
         if (soNo == null || soNo.isBlank()) return null;
         List<FormData> outs = formMapper.selectList(new LambdaQueryWrapper<FormData>()
@@ -5371,6 +5568,12 @@ public class PxService implements PanelRuntimeService {
                 .eq(FormData::getPanelCode, "SO_ORDER").eq(FormData::getFormNo, String.valueOf(no)));
         if (src == null) throw new IllegalArgumentException("销售订单不存在：" + no);
         if (!"已审核".equals(src.getStatus())) throw new IllegalStateException("仅已审核销售订单可生成销售出库单");
+        // 已走委外线的订单不能直接出库：货物还在外协厂，出库会出成负库存、也绕过了回厂入库。
+        String blockingOutsource = findOutsourceOfSo(String.valueOf(no));
+        if (blockingOutsource != null) {
+            throw new IllegalStateException("该销售订单已生成委外加工单（状态：" + blockingOutsource
+                    + "），不能再生成销售出库单；请等委外回厂入库后再出库。");
+        }
         Map<String, Object> head = parseData(src.getData());
         Map<String, Object> dm = parseData(src.getDetailData());
         List<Map<String, Object>> items = dm.get("items") instanceof List

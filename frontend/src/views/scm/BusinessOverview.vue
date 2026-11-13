@@ -591,7 +591,8 @@ const modules = [
     code: 'outsource', name: '委外管理', icon: 'deployment-unit', color: '#13a8a8',
     /**
      * 委外三段（列模式，pos 写 [列, 行]）：
-     *   接单：销售订单 ——选单——→ 委外加工单（拉式：加工单选销售订单带入产品/材料，销售订单没有「生成委外加工单」按钮）
+     *   接单：销售订单 ——生成委外加工单——→ 委外加工单（推式：销售订单点「生成委外加工单」落草稿；
+     *        委外加工单也仍可「选销售订单」拉式带入，两条路都保留）
      *   发料/结算：委外加工单 ——发料——→ 委外发料单；——结算——→ 委外加工费用单（按产成品明细委外单价×数量）
      *   回厂：委外加工单 ——回厂首检——→ 首件报检单 ——首检通过——→ 委外入库单
      * 入库那道门是真的：`PxService#requireOutsourceFirstInspects` 在点「生成委外入库单」时按工艺路线
@@ -607,7 +608,7 @@ const modules = [
       { code: 'OUTSOURCE_IN', label: '委外入库单' },
     ],
     edges: [
-      { from: 'SO_ORDER', to: 'OUTSOURCE_ORDER', label: '选销售订单' },
+      { from: 'SO_ORDER', to: 'OUTSOURCE_ORDER', label: '生成委外加工单' },
       { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_ISSUE', label: '发料', offset: 28 },
       { from: 'OUTSOURCE_ORDER', to: 'FIRST_INSPECT', label: '回厂首检', offset: 28 },
       { from: 'OUTSOURCE_ORDER', to: 'OUTSOURCE_FEE', label: '结算', offset: 28 },
@@ -618,7 +619,7 @@ const modules = [
       OUTSOURCE_ISSUE: [0, 2], FIRST_INSPECT: [1, 2], OUTSOURCE_FEE: [2, 2],
       OUTSOURCE_IN: [1, 3],
     },
-    note: '加工单选销售订单带入产品与材料；入库前系统按工艺路线补建工序首件报检单，审核通过才允许入库；加工费用单按产成品明细的委外单价×数量汇总。',
+    note: '销售订单可「生成委外加工单」（也可在委外单里选销售订单带入）；一旦走了委外，该订单就不能再生成生产加工单或销售出库单。入库前系统按工艺路线补建工序首件报检单，审核通过才允许入库；加工费用单按产成品明细的委外单价×数量汇总。',
     docs: [
       { code: 'OUTSOURCE_ORDER', label: '委外加工单' }, { code: 'OUTSOURCE_ISSUE', label: '委外发料单' },
       { code: 'OUTSOURCE_IN', label: '委外入库单' }, { code: 'OUTSOURCE_FEE', label: '委外加工费用单' },
