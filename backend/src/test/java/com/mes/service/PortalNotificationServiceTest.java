@@ -31,13 +31,14 @@ class PortalNotificationServiceTest {
     @Mock private PanelConfigMapper panelMapper;
     @Mock private ReportQueryService reportQueryService;
     @Mock private RoleService roleService;
+    @Mock private AiNoticeClient aiNotices;
 
     private PortalNotificationService service;
 
     @BeforeEach
     void setUp() {
         service = new PortalNotificationService(
-                formMapper, approvalMapper, panelMapper, reportQueryService, roleService);
+                formMapper, approvalMapper, panelMapper, reportQueryService, roleService, aiNotices);
     }
 
     @Test

@@ -115,6 +115,27 @@ public final class DocNoRules {
      * 解析前缀。未登记面板按编码推导，<b>绝不兜底成 MO-</b>（旧实现让任何新面板都叫 MO-，
      * 与生产加工单直接撞号）。
      */
+    /**
+     * 反过来：按单号前缀猜面板编码（AI 待办只给单号时用来拼跳转路径）。
+     *
+     * <p>前缀是唯一的（生成时按面板取），所以反查是确定的；查不到返回空串，
+     * 调用方应当退化到「去群聊看」而不是猜一个面板。
+     */
+    public static String panelOfFormNo(String formNo) {
+        String no = formNo == null ? "" : formNo.trim();
+        if (no.isEmpty()) return "";
+        String matched = "";
+        for (Map.Entry<String, String> entry : PREFIXES.entrySet()) {
+            String prefix = entry.getValue();
+            if (prefix == null || prefix.isBlank()) continue;
+            if (!no.regionMatches(true, 0, prefix + "-", 0, prefix.length() + 1)) continue;
+            // 常见兜底前缀（GEN 之类）会同时命中多个面板，宁可返回空也不要瞎指
+            if (!matched.isEmpty()) return "";
+            matched = entry.getKey();
+        }
+        return matched;
+    }
+
     public static String prefixOf(String panelCode) {
         if (panelCode == null || panelCode.isBlank()) return "GEN";
         String mapped = PREFIXES.get(panelCode);

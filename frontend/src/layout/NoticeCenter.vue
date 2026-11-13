@@ -41,6 +41,7 @@
           @click="openDetail(n, cfg)"
         >
           <div class="nc-item-top">
+            <span v-if="n.sourceLabel" class="nc-src" :class="'src-' + (n.source || 'mes')">{{ n.sourceLabel }}</span>
             <span class="nc-item-title">{{ n.title }}</span>
             <span v-if="!n.read" class="nc-dot"></span>
           </div>
@@ -55,6 +56,9 @@
       <div v-if="current" class="nc-detail">
         <div class="nc-detail-head">
           <el-tag size="small" :type="current.tagType">{{ tt(current.typeTitle) }}</el-tag>
+          <el-tag v-if="current.sourceLabel" size="small" type="info" effect="plain">
+            {{ current.sourceLabel }}
+          </el-tag>
           <span class="nc-detail-title">{{ current.title }}</span>
         </div>
         <div class="nc-detail-time">{{ current.time }}</div>
@@ -168,10 +172,19 @@ function openHistory(cfg) {
 }
 
 async function goCurrent() {
-  if (!current.value?.targetPath) return
+  const item = current.value
+  if (!item?.targetPath) return
+  // 数字员工的群聊在 AI 门户（另一个站），只能新开标签；站内单据仍走路由
+  const external = item.external || /^https?:\/\//i.test(item.targetPath)
+  if (external) {
+    window.open(item.targetPath, '_blank', 'noopener')
+    detailVisible.value = false
+    historyVisible.value = false
+    return
+  }
   const target = {
-    path: current.value.targetPath,
-    query: current.value.formNo ? { focus: current.value.formNo } : {},
+    path: item.targetPath,
+    query: item.formNo ? { focus: item.formNo } : {},
   }
   detailVisible.value = false
   historyVisible.value = false
@@ -229,8 +242,8 @@ onBeforeUnmount(() => {
 
 .nc-ref {
   position: relative;
-  width: 34px;
-  height: 32px;
+  width: 44px;
+  height: 36px;
   display: grid;
   place-items: center;
   margin: 0;
@@ -241,7 +254,7 @@ onBeforeUnmount(() => {
   background: transparent;
   color: var(--t-navbar-text);
   font: inherit;
-  font-size: 17px;
+  font-size: 23px;
   cursor: pointer;
   outline: none;
 }
@@ -266,9 +279,27 @@ onBeforeUnmount(() => {
 .nc-ref.type-message.active { color: #456f7e; background: #eaf0f2; }
 .nc-ref.type-alarm.active { color: #ad4438; background: #faece9; }
 
+.nc-src {
+  flex-shrink: 0;
+  max-width: 84px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 5px;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 18px;
+  background: var(--t-bg-hover, #f2f3f5);
+  color: var(--t-text-3, #8a919f);
+}
+.nc-src.src-ai {
+  background: #eaf4ff;
+  color: #1677ff;
+}
+
 .nc-badge {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
 }
@@ -276,14 +307,15 @@ onBeforeUnmount(() => {
 .nc-badge :deep(.el-badge__content) {
   top: 0;
   right: 2px;
-  min-width: 15px;
-  height: 15px;
-  padding: 0 3px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
   border: 2px solid var(--t-navbar-bg);
   background-color: var(--t-badge);
-  font-size: 9px;
-  line-height: 11px;
-  transform: translate(52%, -38%);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 13px;
+  transform: translate(50%, -34%);
 }
 .nc-head {
   display: flex;

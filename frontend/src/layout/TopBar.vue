@@ -42,7 +42,7 @@
       <span class="t-user-info" id="serviceEndTime">{{ tt('服务到期') }} {{ user.serviceEnd }}</span>
     </div>
 
-    <!-- ===== 右：搜索 / 更新公告 / 移动端 / 通知角标 / 全屏 / 帮助 / 用户 ===== -->
+    <!-- ===== 右：搜索 / 移动端 / 待办·消息·预警 / 全屏 / 语言 / 帮助 / 用户 ===== -->
     <div class="t-right">
       <!-- AI 数字员工入口：新标签打开独立的 AI 对话服务（后续接账号单点登录） -->
       <el-tooltip :content="tt('打开 AI 数字员工')" placement="bottom">
@@ -84,35 +84,12 @@
         </div>
       </div>
 
-      <!-- 更新公告（new 角标） -->
-      <el-popover v-model:visible="noticePop" placement="bottom-end" :width="340" trigger="click" @show="loadNotices">
-        <template #reference>
-          <span class="gonggao">
-            {{ tt('更新公告') }}
-            <span v-if="hasUnread" class="new-icon">new</span>
-          </span>
-        </template>
-        <div class="nc-head">
-          <span class="nc-title">{{ tt('更新公告') }}</span>
-        </div>
-        <div class="nc-list">
-          <div v-for="n in notices" :key="n.id" class="nc-item" :class="{ unread: !n.read }" @click="openNotice(n)">
-            <div class="nc-item-top">
-              <span class="nc-item-title">{{ n.title }}</span>
-              <span v-if="!n.read" class="nc-dot"></span>
-            </div>
-            <div class="nc-item-time">{{ n.time }}</div>
-          </div>
-          <el-empty v-if="!notices.length" :description="tt('暂无公告')" :image-size="50" />
-        </div>
-      </el-popover>
-
       <!-- 移动端 -->
       <el-tooltip :content="tt('移动端扫码报工（建设中）')" placement="bottom">
         <span class="bar-icon"><el-icon><Iphone /></el-icon></span>
       </el-tooltip>
 
-      <!-- 待办 / 消息 / 预警 -->
+      <!-- 待办 / 消息 / 预警（含数字员工的待办与群聊消息） -->
       <NoticeCenter />
 
       <!-- 全屏 -->
@@ -173,17 +150,6 @@
       </el-dropdown>
     </div>
 
-    <!-- 公告详情 -->
-    <el-dialog v-model="noticeDetailVisible" :title="tt('更新公告')" width="560px" append-to-body>
-      <div v-if="currentNotice" class="nc-detail">
-        <div class="nc-detail-head">
-          <span class="nc-detail-title">{{ currentNotice.title }}</span>
-          <el-tag v-if="!currentNotice.read" size="small" type="danger">new</el-tag>
-        </div>
-        <div class="nc-detail-time">{{ currentNotice.time }}</div>
-        <div class="nc-detail-content">{{ currentNotice.content }}</div>
-      </div>
-    </el-dialog>
 
     <!-- 账号管理 -->
     <el-dialog v-model="accountVisible" :title="tt('账号管理')" width="440px" append-to-body>
@@ -240,7 +206,7 @@ import { useTabsStore } from '@/stores/tabs'
 import { useLocaleStore } from '@/stores/locale'
 import { tt } from '@/i18n'
 import { flatMenus, menuTree as rawMenuTree, filterMenuTree } from '@/business/menus'
-import { apiGetNotices, apiGetAiSsoTicket } from '@/business/api'
+import { apiGetAiSsoTicket } from '@/business/api'
 import { openAiAssistant } from '@/business/ai-assistant'
 import { ElMessage } from 'element-plus'
 import NoticeCenter from './NoticeCenter.vue'
@@ -297,27 +263,6 @@ onMounted(() => {
   locale.loadAvailable()
 })
 onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
-
-// ---------- 更新公告 ----------
-const noticePop = ref(false)
-const notices = ref([])
-const noticeDetailVisible = ref(false)
-const currentNotice = ref(null)
-
-const hasUnread = computed(() => notices.value.some((n) => !n.read))
-
-async function loadNotices() {
-  if (notices.value.length) return
-  try {
-    notices.value = await apiGetNotices('notice')
-  } catch (e) {}
-}
-
-function openNotice(n) {
-  currentNotice.value = n
-  noticePop.value = false
-  noticeDetailVisible.value = true
-}
 
 // ---------- 工厂 ----------
 async function refreshFactories() {
@@ -642,7 +587,7 @@ function changePwd() {
 
 .bar-icon {
   display: inline-flex;
-  font-size: 17px;
+  font-size: 20px;
   cursor: pointer;
   color: var(--t-navbar-text);
   outline: none;

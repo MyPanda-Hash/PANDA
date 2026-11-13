@@ -35,15 +35,17 @@ public class PortalNotificationService {
     private final PanelConfigMapper panelMapper;
     private final ReportQueryService reportQueryService;
     private final RoleService roleService;
+    private final AiNoticeClient aiNotices;
 
     public PortalNotificationService(FormDataMapper formMapper, FormApprovalMapper approvalMapper,
                                      PanelConfigMapper panelMapper, ReportQueryService reportQueryService,
-                                     RoleService roleService) {
+                                     RoleService roleService, AiNoticeClient aiNotices) {
         this.formMapper = formMapper;
         this.approvalMapper = approvalMapper;
         this.panelMapper = panelMapper;
         this.reportQueryService = reportQueryService;
         this.roleService = roleService;
+        this.aiNotices = aiNotices;
     }
 
     public Map<String, Integer> badge(String userName) {
@@ -52,6 +54,11 @@ public class PortalNotificationService {
         result.put("message", messages(userName).size());
         result.put("alarm", alarms().size());
         return result;
+    }
+
+    /** 数字员工的待办与消息（AI 不可用时返回空表，不影响 MES 自己的通知）。 */
+    private Map<String, Object> aiPayload(String userName) {
+        return aiNotices.fetch(userName);
     }
 
     public List<Map<String, Object>> list(String userName, String type) {
@@ -105,6 +112,46 @@ public class PortalNotificationService {
             item.put("actionLabel", "去审批");
             result.add(item);
             if (result.size() >= LIST_LIMIT) break;
+        }
+        result.addAll(aiTodos(userName));
+        return result;
+    }
+
+    /**
+     * 数字员工派下来的待办：带来源标记与跳转路径，按时间倒序插在最前面。
+     *
+     * <p>这些待办在 AI 侧完成后会自动消失，不需要 MES 记已读状态。
+     */
+    private List<Map<String, Object>> aiTodos(String userName) {
+        Map<String, Object> payload = aiPayload(userName);
+        if (payload == null) return List.of();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map<String, Object> todo : aiNotices.todos(payload)) {
+            String id = String.valueOf(todo.getOrDefault("id", ""));
+            if (id.isEmpty()) continue;
+            String title = String.valueOf(todo.getOrDefault("title", ""));
+            String detail = String.valueOf(todo.getOrDefault("detail", ""));
+            String groupName = String.valueOf(todo.getOrDefault("groupName", ""));
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", "ai-todo:" + id);
+            item.put("type", "todo");
+            item.put("title", title);
+            item.put("time", String.valueOf(todo.getOrDefault("createdAt", "")));
+            item.put("read", true);
+            item.put("content", detail.isEmpty() ? "来自数字员工" + (groupName.isEmpty() ? "" : "（" + groupName + "）") : detail);
+            item.put("source", "ai");
+            item.put("sourceLabel", "数字员工");
+            item.put("priority", String.valueOf(todo.getOrDefault("priority", "")));
+            String target = aiNotices.targetPath(todo);
+            if (target != null) {
+                item.put("targetPath", target);
+                item.put("actionLabel", "去处理");
+            } else {
+                item.put("targetPath", aiNotices.groupUrl(String.valueOf(todo.getOrDefault("groupId", ""))));
+                item.put("external", true);
+                item.put("actionLabel", "去群聊看");
+            }
+            result.add(item);
         }
         return result;
     }
@@ -160,6 +207,35 @@ public class PortalNotificationService {
             item.put("actionLabel", "查看单据");
             result.add(item);
             if (result.size() >= LIST_LIMIT) break;
+        }
+        result.addAll(aiMessages(userName));
+        return result;
+    }
+
+    /** 数字员工相关群聊的最近消息：点开直接进对应群聊。 */
+    private List<Map<String, Object>> aiMessages(String userName) {
+        Map<String, Object> payload = aiPayload(userName);
+        if (payload == null) return List.of();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map<String, Object> message : aiNotices.messages(payload)) {
+            String id = String.valueOf(message.getOrDefault("id", ""));
+            if (id.isEmpty()) continue;
+            String groupName = String.valueOf(message.getOrDefault("groupName", ""));
+            String groupId = String.valueOf(message.getOrDefault("groupId", ""));
+            boolean unread = Boolean.TRUE.equals(message.get("unread"));
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", "ai-msg:" + id);
+            item.put("type", "message");
+            item.put("title", (groupName.isEmpty() ? "项目群聊" : groupName) + " · 数字员工消息");
+            item.put("time", String.valueOf(message.getOrDefault("createdAt", "")));
+            item.put("read", !unread);
+            item.put("content", String.valueOf(message.getOrDefault("text", "")));
+            item.put("source", "ai");
+            item.put("sourceLabel", groupName.isEmpty() ? "群聊" : groupName);
+            item.put("targetPath", aiNotices.groupUrl(groupId));
+            item.put("external", true);
+            item.put("actionLabel", "打开群聊");
+            result.add(item);
         }
         return result;
     }
