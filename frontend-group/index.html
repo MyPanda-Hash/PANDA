@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="theme-color" content="#f5f4ee" />
+    <title>项目群聊 · 缔智元数字员工</title>
+    <script>
+      // 先定主题再画：没存过就跟随系统，存过就用存的
+      (() => {
+        try {
+          const saved = localStorage.getItem('dnx-theme');
+          const dark = saved
+            ? saved === 'dark'
+            : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        } catch (_) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="/group/app.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="back" href="/chat" aria-label="返回对话">←</a>
+      <h1>项目群聊</h1>
+      <div class="topbar__right">
+        <button class="tool" id="btnStaff" type="button" title="员工知识库（仅管理员）"
+                aria-label="员工知识库" hidden>
+          <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true">
+            <circle cx="6" cy="5.5" r="2.4" fill="none" stroke="currentColor" stroke-width="1.3" />
+            <path d="M2 13.2c0-2.2 1.8-3.6 4-3.6s4 1.4 4 3.6" fill="none"
+                  stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+            <path d="M11 6.2a2 2 0 1 1 0 3.8M12 13.2c0-1.6-.8-2.6-2-3.1" fill="none"
+                  stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <button class="bell" id="btnBell" type="button" aria-label="MES 待处理事件">
+          <svg class="bell__icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+            <path d="M8 1.6a3.2 3.2 0 0 1 3.2 3.2v2.3l1.1 2.1H3.7l1.1-2.1V4.8A3.2 3.2 0 0 1 8 1.6Z"
+                  fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+            <path d="M6.5 11.6a1.6 1.6 0 0 0 3 0" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+          </svg>
+          <span class="bell__count" id="bellCount" hidden>0</span>
+        </button>
+        <div class="user-menu" id="userMenu">
+          <button class="who who--button" id="btnUserMenu" type="button"
+                  aria-haspopup="menu" aria-expanded="false" aria-label="账号菜单">
+            <span class="who__avatar" id="meAvatar" aria-hidden="true"></span>
+            <span id="me"></span>
+            <svg class="who__caret" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
+              <path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor"
+                    stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <div class="user-menu__panel" id="userMenuPanel" role="menu" hidden>
+            <p class="user-menu__label">外观</p>
+            <div class="theme-switch" role="group" aria-label="外观">
+              <button type="button" data-theme-choice="light" role="menuitemradio">浅色</button>
+              <button type="button" data-theme-choice="dark" role="menuitemradio">深色</button>
+              <button type="button" data-theme-choice="auto" role="menuitemradio">跟随系统</button>
+            </div>
+            <div class="user-menu__sep"></div>
+            <button class="user-menu__item" id="btnSettings" type="button" role="menuitem">个人设置</button>
+            <div class="user-menu__sep" id="userMenuSep" hidden></div>
+            <button class="user-menu__item user-menu__item--danger" id="btnDisband"
+                    type="button" role="menuitem" hidden>解散该群聊</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="pane pane--groups" id="groupsPane">
+        <div class="pane__head">
+          <h2>我的项目群</h2>
+          <button class="btn btn--ghost" id="btnNewGroup" type="button">新建</button>
+        </div>
+        <ul class="group-list" id="groupList" role="list"></ul>
+        <p class="empty" id="groupsEmpty" hidden>
+          还没有项目群。<br />建一个群，把成员拉进来就能开工。
+        </p>
+      </aside>
+
+      <section class="pane pane--room">
+        <div class="room-head" id="roomHead" hidden>
+          <div class="room-head__main">
+            <span class="room-avatar" id="roomAvatar" aria-hidden="true"></span>
+            <div class="room-head__text">
+              <h2 id="roomName"></h2>
+              <p class="room-head__meta" id="roomMeta"></p>
+            </div>
+          </div>
+          <div class="room-head__actions">
+            <button class="btn btn--ghost only-narrow" id="btnTodosMobile" type="button">
+              待办 <span class="pill" id="todoCountMobile">0</span>
+            </button>
+            <button class="btn btn--ghost" id="btnDistill" type="button" hidden>提炼经验</button>
+            <button class="btn btn--ghost" id="btnInvite" type="button">邀请成员</button>
+            <button class="btn btn--primary" id="btnAnalyze" type="button">AI 整理待办</button>
+          </div>
+        </div>
+
+        <select class="group-select" id="groupSelect" aria-label="选择项目群"></select>
+
+        <div class="stream" id="stream"></div>
+
+        <form class="composer" id="composer" hidden>
+          <div class="composer__tools">
+            <label class="tool" for="fileInput" title="发送文件或图片" aria-label="发送文件或图片">
+              <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true">
+                <path d="M9.5 3.2 4.8 7.9a2.3 2.3 0 0 0 3.2 3.2l5-5a3.4 3.4 0 0 0-4.8-4.8L3 6.5"
+                      fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+              </svg>
+            </label>
+            <input id="fileInput" type="file" hidden multiple accept="image/*,.txt,.md,.csv,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" />
+            <button class="tool" id="btnVoice" type="button" title="按住说话" aria-label="发送语音">
+              <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true">
+                <rect x="6" y="2" width="4" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="1.3" />
+                <path d="M3.6 8a4.4 4.4 0 0 0 8.8 0M8 12.4V14" fill="none" stroke="currentColor"
+                      stroke-width="1.3" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
+          <textarea id="draft" rows="1" placeholder="说点什么…（问进度直接说，或 @AI）" aria-label="消息内容"></textarea>
+          <button class="tool" id="btnEmoji" type="button" title="表情" aria-label="插入表情">
+            <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true">
+              <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.3" />
+              <circle cx="6" cy="6.6" r=".8" fill="currentColor" />
+              <circle cx="10" cy="6.6" r=".8" fill="currentColor" />
+              <path d="M5.6 9.6a2.6 2.6 0 0 0 4.8 0" fill="none" stroke="currentColor"
+                    stroke-width="1.2" stroke-linecap="round" />
+            </svg>
+          </button>
+          <button class="send" type="submit" id="btnSend">发送</button>
+          <span class="composer__hint" id="composerHint"></span>
+        </form>
+      </section>
+
+      <aside class="pane pane--side" id="sidePane">
+        <button class="btn btn--ghost side-close only-narrow" id="btnSideClose" type="button">关闭</button>
+        <div class="tabs" role="tablist">
+          <button class="tab is-on" data-tab="members" role="tab" type="button">成员</button>
+          <button class="tab" data-tab="todos" role="tab" type="button">
+            我的待办 <span class="pill" id="todoCount">0</span>
+          </button>
+        </div>
+        <div class="tab-body" id="tabMembers">
+          <ul class="member-list" id="memberList" role="list"></ul>
+        </div>
+        <div class="tab-body" id="tabTodos" hidden>
+          <ul class="todo-list" id="todoList" role="list"></ul>
+          <p class="empty" id="todosEmpty">暂时没有待办。点上方「AI 整理待办」，让 AI 从这段对话里提炼。</p>
+        </div>
+      </aside>
+    </main>
+
+    <dialog id="dialogSettings" class="dialog dialog--settings">
+      <div class="dialog__form">
+        <h2>个人设置</h2>
+
+        <section class="setting-row setting-row--avatar">
+          <div class="setting-label">头像</div>
+          <div class="setting-body">
+            <span class="avatar-preview" id="avatarPreview" aria-hidden="true"></span>
+            <div class="avatar-actions">
+              <input id="avatarInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden />
+              <button class="btn btn--ghost" id="btnAvatarPick" type="button">上传头像</button>
+              <button class="btn btn--ghost" id="btnAvatarRemove" type="button">移除</button>
+            </div>
+            <p class="setting-hint">支持 PNG / JPG / WEBP，≤5MB；会裁成 256×256 正方形。</p>
+          </div>
+        </section>
+
+        <section class="setting-row">
+          <div class="setting-label">昵称</div>
+          <div class="setting-body">
+            <input id="settingName" maxlength="120" placeholder="显示在消息与成员列表里" />
+            <button class="btn btn--primary" id="btnSaveName" type="button">保存</button>
+          </div>
+        </section>
+
+        <section class="setting-row">
+          <div class="setting-label">外观</div>
+          <div class="setting-body">
+            <div class="theme-switch" role="group" aria-label="外观">
+              <button type="button" data-theme-choice="light" role="menuitemradio">浅色</button>
+              <button type="button" data-theme-choice="dark" role="menuitemradio">深色</button>
+              <button type="button" data-theme-choice="auto" role="menuitemradio">跟随系统</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="setting-row">
+          <div class="setting-label">消息字号</div>
+          <div class="setting-body">
+            <div class="theme-switch" role="group" aria-label="消息字号">
+              <button type="button" data-font-choice="sm" role="menuitemradio">小</button>
+              <button type="button" data-font-choice="md" role="menuitemradio">标准</button>
+              <button type="button" data-font-choice="lg" role="menuitemradio">大</button>
+            </div>
+          </div>
+        </section>
+
+        <div class="dialog__actions">
+          <button class="btn btn--primary" id="btnSettingsClose" type="button">完成</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="dialogDisband" class="dialog dialog--danger">
+      <div class="dialog__form">
+        <h2>解散「<span id="disbandName"></span>」？</h2>
+        <p class="dialog__note">
+          群会从列表里消失，成员也看不到它了。<b>聊天记录、附件、待办都会保留</b>，
+          AI 还会从这段讨论里提炼项目经验，进员工知识库。
+        </p>
+        <div class="dialog__actions">
+          <button class="btn btn--ghost" id="btnDisbandCancel" type="button">取消</button>
+          <button class="btn btn--danger" id="btnDisbandConfirm" type="button">确认解散</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="dialogNewGroup" class="dialog">
+      <form class="dialog__form" id="formNewGroup">
+        <h2>新建项目群</h2>
+        <label>群名<input name="name" required maxlength="160" placeholder="例：A 型机架试产" /></label>
+        <label>项目说明<textarea name="description" rows="2" maxlength="2000"></textarea></label>
+        <div class="dialog__actions">
+          <!-- 取消必须是 type=button：type=submit 会先触发 required 校验，导致关不掉 -->
+          <button class="btn btn--ghost" id="btnNewGroupCancel" type="button">取消</button>
+          <button class="btn btn--primary" type="submit">创建</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="dialogInvite" class="dialog">
+      <div class="dialog__form">
+        <h2>邀请成员</h2>
+        <input id="inviteSearch" placeholder="搜索姓名或账号" />
+        <ul class="member-list member-list--pick" id="inviteResults"></ul>
+        <div class="dialog__actions">
+          <button class="btn btn--ghost" id="btnInviteClose" type="button">关闭</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="dialogMic" class="dialog">
+      <div class="dialog__form">
+        <h2>需要麦克风权限</h2>
+        <p class="dialog__hint" id="micReason">发送语音需要用到麦克风。</p>
+        <ol class="dialog__steps" id="micSteps">
+          <li>点浏览器地址栏左侧的锁 / 麦克风图标</li>
+          <li>把「麦克风」改成「允许」</li>
+          <li>回到这个页面点「重试」</li>
+        </ol>
+        <div class="dialog__actions">
+          <button class="btn btn--ghost" id="btnMicClose" type="button">取消</button>
+          <button class="btn btn--primary" id="btnMicRetry" type="button">重试</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- 员工知识库：全屏面板（页头返回 + 左列表 + 右详情），替换原弹窗 -->
+    <section class="staff-panel" id="staffPanel" hidden aria-label="员工知识库">
+      <header class="staff-panel__head">
+        <button class="staff-back" id="btnStaffBack" type="button" aria-label="返回群聊">
+          <svg viewBox="64 64 896 896" width="16" height="16" aria-hidden="true" fill="currentColor">
+            <path d="M872 474H286.9l350.2-304c5.6-4.9 2.2-14-5.2-14h-88.5c-3.9 0-7.6 1.4-10.5 3.9L155 487.8a31.96 31.96 0 000 48.3L535.1 866c1.5 1.3 3.3 2 5.2 2h91.5c7.4 0 10.8-9.2 5.2-14L286.9 550H872c4.4 0 8-3.6 8-8v-60c0-4.4-3.6-8-8-8z" />
+          </svg>
+          返回
+        </button>
+        <h2 class="staff-panel__title">员工知识库</h2>
+        <span class="staff-panel__badge">仅管理员</span>
+        <div class="staff-panel__actions">
+          <button class="btn btn--ghost" id="btnStaffDistill" type="button">生成本周画像</button>
+        </div>
+      </header>
+
+      <nav class="staff-panel__tabs" role="tablist">
+        <button class="staff-tab is-on" data-staff-tab="profiles" role="tab" type="button">
+          职能卡片 <span class="staff-tab__n" id="staffCountProfiles">0</span>
+        </button>
+        <button class="staff-tab" data-staff-tab="experiences" role="tab" type="button">
+          项目经验 <span class="staff-tab__n" id="staffCountExperiences">0</span>
+        </button>
+        <button class="staff-tab" data-staff-tab="promotions" role="tab" type="button">
+          晋升候选 <span class="staff-tab__n" id="staffCountPromotions">0</span>
+        </button>
+      </nav>
+
+      <div class="staff-panel__body" id="staffBody">
+        <aside class="staff-side">
+          <div class="staff-side__search" id="staffSearchWrap" hidden>
+            <input id="staffSearch" placeholder="搜索标题 / 问题 / 处理方式" />
+          </div>
+          <ul class="staff-side__list" id="staffList" role="list"></ul>
+          <p class="staff-empty" id="staffEmpty">暂无可查看的数据。</p>
+        </aside>
+        <section class="staff-detail" id="staffDetail">
+          <p class="staff-empty">从左侧选择一条查看详情。</p>
+        </section>
+      </div>
+    </section>
+
+    <dialog id="dialogEvents" class="dialog dialog--wide">
+      <div class="dialog__form">
+        <h2>MES 待处理事件</h2>
+        <p class="dialog__hint">AI 助手定时扫描 MES，按单据和角色派发；处理完可在 MES 里操作。</p>
+        <p class="event-summary" id="eventsSummary"></p>
+        <div class="watch-health" id="watchHealth" hidden>
+          <span class="health-dot" id="healthDot"></span>
+          <span class="health-text" id="healthText"></span>
+          <span class="health-sla" id="healthSla"></span>
+        </div>
+        <div class="event-filters" role="group" aria-label="筛选待办事件">
+          <div class="filter-row" id="ackedFilters">
+            <button class="chip is-on" data-acked="any" type="button">全部</button>
+            <button class="chip" data-acked="none" type="button">未认领 <span class="chip__n"></span></button>
+            <button class="chip" data-acked="me" type="button">我认领的 <span class="chip__n"></span></button>
+            <button class="chip" data-acked="others" type="button">他人认领 <span class="chip__n"></span></button>
+          </div>
+          <div class="filter-row" id="assigneeFilters"></div>
+        </div>
+        <ul class="event-list" id="eventList" role="list"></ul>
+        <p class="empty" id="eventsEmpty">暂时没有需要你处理的事。</p>
+        <div class="dialog__actions">
+          <button class="btn btn--ghost" id="btnEventsClose" type="button">关闭</button>
+        </div>
+      </div>
+    </dialog>
+
+    <div class="emoji-panel" id="emojiPanel" hidden></div>
+    <div class="mention-panel" id="mentionPanel" hidden></div>
+
+    <div class="msg-menu" id="msgMenu" hidden>
+      <button type="button" data-action="quote">引用</button>
+      <button type="button" data-action="copy">复制</button>
+      <button type="button" data-action="recall">撤回</button>
+    </div>
+
+    <div class="quote-bar" id="quoteBar" hidden>
+      <span class="quote-bar__text"></span>
+      <button type="button" id="btnQuoteCancel" aria-label="取消引用">×</button>
+    </div>
+
+    <dialog id="dialogImage" class="dialog dialog--image">
+      <img id="dialogImageSrc" alt="查看大图" />
+      <button class="btn btn--ghost" id="btnImageClose" type="button">关闭</button>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/group/app.js"></script>
+    <script src="/notify-bubble.js" defer></script>
+</body>
+</html>

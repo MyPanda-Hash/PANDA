@@ -1,0 +1,28 @@
+{
+  "fixture_version": "mock-evidence-v1",
+  "default": [
+    {
+      "citation_id": "MOCK-CIT-001",
+      "title": "示例经营报告",
+      "excerpt": "示例公司在报告期内完成了既定的产品交付计划。",
+      "locator": {"page": 12, "section": "经营回顾"},
+      "provider": "mock"
+    },
+    {
+      "citation_id": "MOCK-CIT-002",
+      "title": "示例实施方案",
+      "excerpt": "示例项目采用分阶段上线方式，并为每个阶段设置验收门槛。",
+      "locator": {"page": 7, "section": "实施路径"},
+      "provider": "mock"
+    }
+  ],
+  "partial": [
+    {
+      "citation_id": "MOCK-CIT-003",
+      "title": "示例资料节选",
+      "excerpt": "现有资料只描述了目标，没有提供完整的量化结果。",
+      "locator": {"page": 3, "section": "项目目标"},
+      "provider": "mock"
+    }
+  ]
+}

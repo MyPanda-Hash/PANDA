@@ -1,0 +1,58 @@
+# === 凭据与环境（绝不入库）===
+.env
+.env.local
+.env.*.local
+# 任何 .env 的备份/变体（.env.bak-xxx 这类最容易漏）
+.env.*
+!.env.example
+*.env
+!.env.example
+data/mes-credentials.json
+data/**/credentials*.json
+
+# === 运行数据（含数据库/上传/会话，不入库）===
+data/
+!data/.gitkeep
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# === Node ===
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# === 构建与日志产物 ===
+build.log
+*.log
+frontend/dist/
+dist.rar
+dist.tar.gz
+
+# === 编辑器与系统 ===
+.idea/
+.vscode/
+*.iml
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# === 本地临时 ===
+tmp/
+*.tmp
+
+# === 运行期数据库（含真实业务数据，绝不入库）===
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+restart.out

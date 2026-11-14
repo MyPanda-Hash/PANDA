@@ -1,0 +1,43 @@
+name: doc-nexus-ai
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.backend
+      args:
+        DOC_NEXUS_LINKMIND_ENABLED: "0"
+        DOC_NEXUS_BUILD_ID: "local-dev-20261028"
+    image: doc-nexus-ai-backend:local
+    container_name: doc-nexus-backend
+    env_file:
+      - .env
+    environment:
+      DOC_NEXUS_DATABASE_URL: "sqlite:////data/db/doc_nexus.sqlite3"
+      DOC_NEXUS_DB_PATH: "/data/db/doc_nexus.sqlite3"
+      DOC_NEXUS_PI_ROOT: "/data/pi-runtime"
+      DOC_NEXUS_UPLOAD_DIR: "/data/uploads"
+    volumes:
+      - ./data:/data
+    ports:
+      - "127.0.0.1:18000:8000"
+    shm_size: "512m"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 90s
+      retries: 5
+
+  frontend:
+    image: nginx:1.27-alpine
+    container_name: doc-nexus-frontend
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "0.0.0.0:18091:80"
+    restart: unless-stopped

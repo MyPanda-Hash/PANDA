@@ -1,0 +1,143 @@
+FROM node:22-bookworm-slim AS pi-runtime
+
+ARG PI_CODING_AGENT_VERSION=0.82.1
+ARG MCPORTER_VERSION=0.9.0
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+
+RUN npm config set registry "${NPM_REGISTRY}" \
+    && npm install -g --prefix /opt/pi-runtime \
+        "@earendil-works/pi-coding-agent@${PI_CODING_AGENT_VERSION}" \
+        "mcporter@${MCPORTER_VERSION}" \
+        --no-audit --no-fund
+COPY backend/scripts/patch-pi-compaction.mjs /tmp/patch-pi-compaction.mjs
+RUN node /tmp/patch-pi-compaction.mjs && rm /tmp/patch-pi-compaction.mjs
+COPY backend/scripts/patch-pi-control-messages.mjs /tmp/patch-pi-control-messages.mjs
+RUN node /tmp/patch-pi-control-messages.mjs && rm /tmp/patch-pi-control-messages.mjs
+COPY backend/scripts/check-pi-auto-compaction.mjs /tmp/check-pi-auto-compaction.mjs
+RUN node /tmp/check-pi-auto-compaction.mjs /opt/pi-runtime/bin/pi && rm /tmp/check-pi-auto-compaction.mjs
+
+# Install the integrity-locked native binary and its skill resources; reuse Chromium.
+FROM node:24-bookworm-slim AS agent-browser-runtime
+WORKDIR /opt/agent-browser-runtime
+ENV AGENT_BROWSER_SKILLS_DIR=/usr/local/share/agent-browser/skill-data
+COPY backend/scripts/agent-browser-runtime/package.json \
+    backend/scripts/agent-browser-runtime/package-lock.json ./
+RUN npm ci --ignore-scripts --no-audit --no-fund --registry=https://registry.npmjs.org \
+    && arch="$(node -p process.arch)" \
+    && install -m 0755 "node_modules/agent-browser/bin/agent-browser-linux-${arch}" /usr/local/bin/agent-browser \
+    && mkdir -p /usr/local/share/agent-browser \
+    && cp node_modules/agent-browser/LICENSE \
+        node_modules/agent-browser/cli/src/native/a11y/LICENSE-axe-core*.txt \
+        /usr/local/share/agent-browser/ \
+    && cp -R node_modules/agent-browser/skill-data /usr/local/share/agent-browser/skill-data \
+    && agent-browser --version \
+    && agent-browser skills get core --full
+
+FROM node:22-bookworm-slim AS dashi-ppt-runtime
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+WORKDIR /opt/dashi-ppt-runtime
+COPY backend/app/builtin_skills/dashi-ppt/project/package.json \
+    backend/app/builtin_skills/dashi-ppt/project/package-lock.json ./
+RUN npm config set registry "${NPM_REGISTRY}" \
+    && npm ci --include=dev --no-audit --no-fund \
+    && npm ls --depth=0 \
+    && node -e "for (const dependency of ['esbuild','gsap','html-to-image','pdf-lib','playwright-core','pngjs','pptxgenjs','react','react-dom','tsx']) require.resolve(dependency)" \
+    && ./node_modules/.bin/tsx --version
+
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PI_TELEMETRY=0 \
+    PI_SKIP_VERSION_CHECK=1 \
+    DASHI_PPT_RUNTIME_ROOT=/opt/dashi-ppt-runtime \
+    NODE_PATH=/opt/dashi-ppt-runtime/node_modules \
+    PATH=/opt/dashi-ppt-runtime/node_modules/.bin:${PATH} \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    CHROME_PATH=/usr/bin/chromium \
+    AGENT_BROWSER_EXECUTABLE_PATH=/usr/bin/chromium \
+    AGENT_BROWSER_CONTENT_BOUNDARIES=1 \
+    AGENT_BROWSER_SKILLS_DIR=/usr/local/share/agent-browser/skill-data \
+    OPENSSL_PATH=/usr/bin/openssl \
+    TZ=Asia/Shanghai
+
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        ca-certificates \
+        chromium \
+        curl \
+        fd-find \
+        fontconfig \
+        fonts-crosextra-caladea \
+        fonts-crosextra-carlito \
+        fonts-dejavu-core \
+        fonts-dejavu-extra \
+        fonts-liberation2 \
+        fonts-noto-cjk \
+        fonts-noto-color-emoji \
+        fonts-urw-base35 \
+        fonts-wqy-zenhei \
+        git \
+        libreoffice-calc \
+        libreoffice-core \
+        libreoffice-impress \
+        libreoffice-writer \
+        openssl \
+        poppler-utils \
+        procps \
+        tzdata \
+        unzip \
+        zip \
+    && ln -snf "/usr/share/zoneinfo/${TZ}" /etc/localtime \
+    && echo "${TZ}" > /etc/timezone \
+    && ln -s /usr/bin/fdfind /usr/local/bin/fd \
+    && test -x /usr/local/bin/fd \
+    && fd --version \
+    && test -x "${CHROME_PATH}" \
+    && "${CHROME_PATH}" --version \
+    && fc-match Arial \
+    && openssl version \
+    && pdftoppm -v \
+    && command -v soffice \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=pi-runtime /usr/local/bin/node /usr/local/bin/node
+COPY --from=pi-runtime /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
+COPY --from=pi-runtime /opt/pi-runtime /opt/pi-runtime
+COPY --from=dashi-ppt-runtime /opt/dashi-ppt-runtime /opt/dashi-ppt-runtime
+COPY --from=agent-browser-runtime /usr/local/bin/agent-browser /usr/local/bin/agent-browser
+COPY --from=agent-browser-runtime /usr/local/share/agent-browser /usr/local/share/agent-browser
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+    && ln -s /opt/pi-runtime/bin/pi /usr/local/bin/pi \
+    && ln -s /opt/pi-runtime/bin/mcporter /usr/local/bin/mcporter \
+    && node --version \
+    && npm --version \
+    && pi --version \
+    && mcporter --version \
+    && agent-browser --version \
+    && agent-browser skills get core --full \
+    && /opt/dashi-ppt-runtime/node_modules/.bin/tsx --version
+
+COPY backend/scripts/pptx-runtime/requirements.lock /tmp/pptx-requirements.lock
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip \
+    && pip install --require-hashes -r /tmp/pptx-requirements.lock \
+    && python -c "from openpyxl import Workbook; from PIL import Image; from lxml import etree; from pptx import Presentation; print('document Python runtime: ok')"
+
+# Tavily 独立依赖环境；只预装 CLI，不登录、不修改已审批的 Skill。
+COPY backend/scripts/tavily-runtime/requirements.lock /tmp/tavily-requirements.lock
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m venv /opt/tavily-runtime \
+    && /opt/tavily-runtime/bin/python -I -m pip install --require-hashes -r /tmp/tavily-requirements.lock \
+    && /opt/tavily-runtime/bin/python -I -m pip check \
+    && ln -s /opt/tavily-runtime/bin/tvly /usr/local/bin/tvly \
+    && tvly --version \
+    && tvly search --help
+
+COPY backend/app/services/pi_runtime/extensions /opt/pi-extensions
+COPY backend/scripts/pptx-runtime/fonts.conf /etc/fonts/conf.d/99-doc-nexus-ppt-fonts.conf
+
+WORKDIR /workspace
+CMD ["pi", "--mode", "rpc"]

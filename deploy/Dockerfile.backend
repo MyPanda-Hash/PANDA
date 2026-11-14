@@ -1,0 +1,227 @@
+# Local adaptation of backend/Dockerfile (来源：DMBox-Runtime.tar 的 snapshot 809)。
+# 差异：删除 `COPY scripts/writing-skills` / `COPY scripts/builtin-skills` 及随后的 RUN，
+# 因为该仓库根目录的 scripts/ 没有随镜像层进入归档；其余构建步骤与原文件一致。
+FROM node:22-bookworm-slim AS pi-runtime
+ARG PI_CODING_AGENT_VERSION=0.82.1
+ARG MCPORTER_VERSION=0.9.0
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+RUN npm config set registry "${NPM_REGISTRY}" \
+    && npm install -g --prefix /opt/pi-runtime \
+        "@earendil-works/pi-coding-agent@${PI_CODING_AGENT_VERSION}" \
+        "mcporter@${MCPORTER_VERSION}" \
+        --no-audit --no-fund
+COPY backend/scripts/patch-pi-compaction.mjs /tmp/patch-pi-compaction.mjs
+RUN node /tmp/patch-pi-compaction.mjs && rm /tmp/patch-pi-compaction.mjs
+COPY backend/scripts/patch-pi-control-messages.mjs /tmp/patch-pi-control-messages.mjs
+RUN node /tmp/patch-pi-control-messages.mjs && rm /tmp/patch-pi-control-messages.mjs
+COPY backend/scripts/check-pi-auto-compaction.mjs /tmp/check-pi-auto-compaction.mjs
+RUN node /tmp/check-pi-auto-compaction.mjs /opt/pi-runtime/bin/pi && rm /tmp/check-pi-auto-compaction.mjs
+
+# The npm archive contains Linux native binaries and separate CLI skill resources.
+# Ignore lifecycle scripts: do not fetch a second binary or Chrome at build time.
+FROM node:24-bookworm-slim AS agent-browser-runtime
+WORKDIR /opt/agent-browser-runtime
+ENV AGENT_BROWSER_SKILLS_DIR=/usr/local/share/agent-browser/skill-data
+COPY backend/scripts/agent-browser-runtime/package.json \
+    backend/scripts/agent-browser-runtime/package-lock.json ./
+RUN npm ci --ignore-scripts --no-audit --no-fund --registry=https://registry.npmjs.org \
+    && arch="$(node -p process.arch)" \
+    && install -m 0755 "node_modules/agent-browser/bin/agent-browser-linux-${arch}" /usr/local/bin/agent-browser \
+    && mkdir -p /usr/local/share/agent-browser \
+    && cp node_modules/agent-browser/LICENSE \
+        node_modules/agent-browser/cli/src/native/a11y/LICENSE-axe-core*.txt \
+        /usr/local/share/agent-browser/ \
+    && cp -R node_modules/agent-browser/skill-data /usr/local/share/agent-browser/skill-data \
+    && agent-browser --version \
+    && agent-browser skills get core --full
+
+FROM node:22-bookworm-slim AS dashi-ppt-runtime
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+WORKDIR /opt/dashi-ppt-runtime
+COPY backend/app/builtin_skills/dashi-ppt/project/package.json \
+    backend/app/builtin_skills/dashi-ppt/project/package-lock.json ./
+RUN npm config set registry "${NPM_REGISTRY}" \
+    && npm ci --include=dev --no-audit --no-fund \
+    && npm ls --depth=0 \
+    && node -e "for (const dependency of ['esbuild','gsap','html-to-image','pdf-lib','playwright-core','pngjs','pptxgenjs','react','react-dom','tsx']) require.resolve(dependency)" \
+    && ./node_modules/.bin/tsx --version
+
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/backend \
+    DOC_NEXUS_PI_EXECUTABLE=/usr/local/bin/pi \
+    DOC_NEXUS_PI_ROOT=/data/pi-runtime \
+    DASHI_PPT_RUNTIME_ROOT=/opt/dashi-ppt-runtime \
+    NODE_PATH=/opt/dashi-ppt-runtime/node_modules \
+    PATH=/opt/dashi-ppt-runtime/node_modules/.bin:${PATH} \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    CHROME_PATH=/usr/bin/chromium \
+    AGENT_BROWSER_EXECUTABLE_PATH=/usr/bin/chromium \
+    AGENT_BROWSER_CONTENT_BOUNDARIES=1 \
+    AGENT_BROWSER_SKILLS_DIR=/usr/local/share/agent-browser/skill-data \
+    OPENSSL_PATH=/usr/bin/openssl \
+    TZ=Asia/Shanghai
+
+WORKDIR /app
+
+# The Docker CLI is used only by the opt-in Pi sandbox launch path.
+# LibreOffice renders .doc/.docx previews (Writer) and uploaded/generated PPTX
+# previews (Impress). Both filters are required by the document preview path.
+#
+# This is the most expensive layer in the image, so it must run before any
+# repository input: with it placed after COPY --from=pi-runtime, every
+# node/NPM/patch change invalidated and re-fetched the whole thing.
+#
+# Source: deb.debian.org measured ~20kB/s from a China-hosted build host, i.e.
+# ~2.5h for these packages, while domestic mirrors deliver 5-10MB/s. APT_MIRRORS
+# is tried in order and deb.debian.org remains the fallback, so one unreachable
+# mirror degrades the build instead of failing it. Mirror attempts are bounded
+# (Retries and Timeout) because every mirror serves the same archive: a dead
+# mirror costs about a minute before the next one is tried, instead of apt's
+# default ~6 minutes, and a stalled connection is dropped instead of hanging.
+# This is an inactivity timeout, so a slow-but-flowing mirror is still used.
+# Error-Mode=any is required for the loop to see failures at all: by default
+# apt-get update only warns ("Some index files failed to download") and exits 0
+# when a whole source is unreachable, which would end the loop on the first
+# mirror and surface a confusing "Unable to locate package" instead.
+# The official source, being the last resort, keeps apt's patient defaults.
+# Only the host name is rewritten, which keeps the /debian and /debian-security
+# paths valid for every mirror in that list.
+# Cache: .deb archives and index lists live in BuildKit cache mounts, so an
+# invalidated layer unpacks again instead of downloading the package set. The
+# archives are redirected to /var/cache/apt-docker because the base image's docker-clean
+# wipes /var/cache/apt/archives. The lists stay inside their mount and are
+# therefore never committed to the image, which is why this no longer removes
+# them with rm -rf /var/lib/apt/lists/*.
+ARG APT_MIRRORS="repo.huaweicloud.com mirrors.tuna.tsinghua.edu.cn mirrors.aliyun.com"
+ARG TARGETARCH
+RUN --mount=type=cache,id=apt-archives-${TARGETARCH},target=/var/cache/apt-docker,sharing=locked \
+    --mount=type=cache,id=apt-lists-${TARGETARCH},target=/var/lib/apt/lists,sharing=locked \
+    cp -a /etc/apt/sources.list.d/debian.sources /tmp/debian.sources.orig \
+    && mkdir -p /var/cache/apt-docker/partial \
+    && ok= \
+    && for mirror in ${APT_MIRRORS}; do \
+        sed "s|deb.debian.org|${mirror}|g" /tmp/debian.sources.orig > /etc/apt/sources.list.d/debian.sources; \
+        echo "apt-get update via ${mirror}"; \
+        if apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=25 -o APT::Update::Error-Mode=any update; then ok=1; break; fi; \
+    done \
+    && if [ -z "${ok}" ]; then \
+        echo "all mirrors in APT_MIRRORS failed; falling back to deb.debian.org"; \
+        cp -a /tmp/debian.sources.orig /etc/apt/sources.list.d/debian.sources; \
+        apt-get update; \
+    fi \
+    && DEBIAN_FRONTEND=noninteractive apt-get -o Dir::Cache::archives=/var/cache/apt-docker/ install -y --no-install-recommends \
+        ca-certificates \
+        chromium \
+        curl \
+        docker-cli \
+        fd-find \
+        fontconfig \
+        fonts-crosextra-caladea \
+        fonts-crosextra-carlito \
+        fonts-dejavu-core \
+        fonts-dejavu-extra \
+        fonts-liberation2 \
+        fonts-noto-cjk \
+        fonts-noto-color-emoji \
+        fonts-urw-base35 \
+        fonts-wqy-zenhei \
+        git \
+        libreoffice-calc \
+        libreoffice-core \
+        libreoffice-impress \
+        libreoffice-writer \
+        openssl \
+        poppler-utils \
+        procps \
+        tesseract-ocr \
+        tesseract-ocr-chi-sim \
+        tesseract-ocr-eng \
+        tzdata \
+        unzip \
+        zip \
+    && ln -snf "/usr/share/zoneinfo/${TZ}" /etc/localtime \
+    && echo "${TZ}" > /etc/timezone \
+    && ln -s /usr/bin/fdfind /usr/local/bin/fd \
+    && test -x /usr/local/bin/fd \
+    && fd --version \
+    && test -x "${CHROME_PATH}" \
+    && "${CHROME_PATH}" --version \
+    && fc-match Arial \
+    && openssl version \
+    && pdftoppm -v \
+    && command -v curl \
+    && command -v soffice \
+    && tesseract --version \
+    && tesseract --list-langs | grep -Fx chi_sim \
+    && tesseract --list-langs | grep -Fx eng \
+    && rm -f /tmp/debian.sources.orig
+
+# 使用国内 PyPI 镜像加速下载
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ \
+    && pip config set global.trusted-host mirrors.aliyun.com
+
+COPY --from=pi-runtime /usr/local/bin/node /usr/local/bin/node
+COPY --from=pi-runtime /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
+COPY --from=pi-runtime /opt/pi-runtime /opt/pi-runtime
+COPY --from=dashi-ppt-runtime /opt/dashi-ppt-runtime /opt/dashi-ppt-runtime
+COPY --from=agent-browser-runtime /usr/local/bin/agent-browser /usr/local/bin/agent-browser
+COPY --from=agent-browser-runtime /usr/local/share/agent-browser /usr/local/share/agent-browser
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+    && ln -s /opt/pi-runtime/bin/pi /usr/local/bin/pi \
+    && ln -s /opt/pi-runtime/bin/mcporter /usr/local/bin/mcporter \
+    && node --version \
+    && npm --version \
+    && pi --version \
+    && mcporter --version \
+    && agent-browser --version \
+    && agent-browser skills get core --full \
+    && /opt/dashi-ppt-runtime/node_modules/.bin/tsx --version
+
+# 先复制依赖声明，利用 Docker 层缓存
+COPY backend/pyproject.toml /app/backend/pyproject.toml
+COPY backend/scripts/pptx-runtime/requirements.lock /tmp/pptx-requirements.lock
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip \
+    && pip install /app/backend \
+    && pip install --require-hashes -r /tmp/pptx-requirements.lock \
+    && python -c "from openpyxl import Workbook; from PIL import Image; from lxml import etree; from pptx import Presentation; print('document Python runtime: ok')"
+
+# Tavily 独立依赖环境；只预装 CLI，不登录、不修改已审批的 Skill。
+COPY backend/scripts/tavily-runtime/requirements.lock /tmp/tavily-requirements.lock
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m venv /opt/tavily-runtime \
+    && /opt/tavily-runtime/bin/python -I -m pip install --require-hashes -r /tmp/tavily-requirements.lock \
+    && /opt/tavily-runtime/bin/python -I -m pip check \
+    && ln -s /opt/tavily-runtime/bin/tvly /usr/local/bin/tvly \
+    && tvly --version \
+    && tvly search --help
+
+# 再复制全部代码
+COPY backend /app/backend
+# The six prompt-only builtins also ship in the image. Runtime staging remains
+# for updater compatibility, but startup never has to trust a pre-existing
+# same-name runtime directory as a platform builtin.
+COPY backend/app/services/pi_runtime/extensions /opt/pi-extensions
+COPY backend/scripts/pptx-runtime/fonts.conf /etc/fonts/conf.d/99-doc-nexus-ppt-fonts.conf
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir /app/backend \
+    && mkdir -p /data/pi-runtime /data/db
+
+# Fail the build when uploaded/generated presentations cannot be previewed.
+RUN python /app/backend/scripts/check-pptx-preview.py
+
+# 源码部署保持原默认；离线交付构建显式设为 1，不按服务可达性切换模式。
+ARG DOC_NEXUS_LINKMIND_ENABLED=0
+ENV DOC_NEXUS_LINKMIND_ENABLED=${DOC_NEXUS_LINKMIND_ENABLED}
+
+# 构建标记：/health 上报本次交付版本，离线打包器按 --build-arg 注入。
+ARG DOC_NEXUS_BUILD_ID=""
+ENV DOC_NEXUS_BUILD_ID=${DOC_NEXUS_BUILD_ID}
+
+EXPOSE 8000
+CMD ["python", "-m", "app.server"]
