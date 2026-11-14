@@ -44,6 +44,13 @@ mes:
     dir: "${MES_BACKUP_DIR:/opt/light-mes/backup}"
     pg-dump: "${MES_PG_DUMP_CMD:pg_dump}"
     mysql-dump: "${MES_MYSQL_DUMP_CMD:mysqldump}" # pg-dialect-audit: allow 回滚窗口内保留 MySQL 分支
+    # 定时备份：默认每周一 02:00（Asia/Shanghai）。改 MES_BACKUP_CRON 可换频率，
+    # 例如 "0 0 2 * * MON"（周一） / "0 0 3 * * *"（每天）。MES_BACKUP_AUTO=false 关掉。
+    auto: "${MES_BACKUP_AUTO:true}"
+    cron: "${MES_BACKUP_CRON:0 0 2 * * MON}"
+    zone: "${MES_BACKUP_ZONE:Asia/Shanghai}"
+    # 只保留最近 N 份，避免把磁盘塞满
+    keep: "${MES_BACKUP_KEEP:8}"
   # 开票方（销售方）信息：销售发票打印页使用，可用环境变量覆盖
   # 销货单审批通过后是否自动开票。true=一路自动（发票直接进草稿）；
   # false=由「销售开票」工作台手动勾选销货单开票。

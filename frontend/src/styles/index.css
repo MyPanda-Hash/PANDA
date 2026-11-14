@@ -31,6 +31,50 @@
   --el-color-primary-light-8: #cfe1de;
   --el-color-primary-light-9: #e8f1ef;
   --el-color-primary-dark-2: #0d584c;
+
+  /* ===== 设计基线：对齐 Ant Design v6（design-kits/antd 实测值）=====
+     主色保留项目品牌绿 #116a5b，其余尺寸/字号/间距全部按 antd 规范。
+     2026-11-14 补：此前缺这一层，导致 51 处 antd 蓝 #1677ff、
+     8 种圆角、6 种字号、含 1/3/5/7/9/11px 的非栅格间距并存。 */
+
+  /* 字号阶梯（antd fontSize 14 / SM 12 / LG 16 / XL 20） */
+  --fs-xl: 20px;
+  --fs-lg: 16px;
+  --fs-md: 14px;
+  --fs-sm: 13px;
+  --fs-xs: 12px;
+  --fs-xxs: 11px;
+
+  /* 行高（antd lineHeight 1.5714） */
+  --lh-xl: 28px;
+  --lh-lg: 24px;
+  --lh-md: 22px;
+  --lh-sm: 20px;
+  --lh-xs: 18px;
+
+  /* 间距（8pt 栅格） */
+  --sp-xxs: 4px;
+  --sp-xs: 8px;
+  --sp-sm: 12px;
+  --sp-md: 16px;
+  --sp-lg: 24px;
+  --sp-xl: 32px;
+
+  /* 控件高度（antd controlHeight 32） */
+  --ctl-h-sm: 24px;
+  --ctl-h: 32px;
+  --ctl-h-lg: 40px;
+
+  /* 圆角 */
+  --rd-sm: 4px;
+  --rd: 6px;
+  --rd-lg: 8px;
+
+  /* 中性色阶（antd colorText 88/65/45/25） */
+  --ink-1: rgba(0, 0, 0, 0.88);
+  --ink-2: rgba(0, 0, 0, 0.65);
+  --ink-3: rgba(0, 0, 0, 0.45);
+  --ink-4: rgba(0, 0, 0, 0.25);
 }
 
 html.dark {
@@ -80,7 +124,11 @@ html.dark {
    - 主色保留项目品牌绿：全站导航与按钮都是绿，单页换 antd 蓝会割裂
    已接入：我的桌面（dashboard）、组织架构（OrgAdmin）、排产批次看板（DispatchBoard）、
    工序报工（ProcessReportBoard）。新页面请直接复用本类，不要再抄一份 token。 */
-.adx {
+/* 2026-11-14：--d-* 从 .adx 提升到 :root。
+   原因：el-dialog 用 append-to-body 挂到 body，脱离 .adx 作用域，
+   导致所有弹窗（选单/审批/导入/字段管理）用不了语义 token。
+   提升后全局可用，.adx 保留作为显式标记（不改变任何现有行为）。 */
+:root {
   --d-card: var(--t-card-bg);
   --d-border: var(--t-border-light);
   --d-border-strong: var(--t-border);
@@ -101,7 +149,18 @@ html.dark {
   --d-radius-sm: 6px;
 }
 
-html.dark .adx {
+/* .adx 保留：不改 token，只作为页面级标记（供将来差异化使用） */
+.adx {}
+
+/* 暗色下的中性色阶：antd dark 用白色透明度（85/65/45/25） */
+html.dark {
+  --ink-1: rgba(255, 255, 255, 0.85);
+  --ink-2: rgba(255, 255, 255, 0.65);
+  --ink-3: rgba(255, 255, 255, 0.45);
+  --ink-4: rgba(255, 255, 255, 0.25);
+}
+
+html.dark {
   --d-fill: rgba(255, 255, 255, 0.08);
   --d-fill-soft: rgba(255, 255, 255, 0.04);
   --d-primary-bg: rgba(88, 176, 158, 0.16);
@@ -134,7 +193,7 @@ body,
 }
 ::-webkit-scrollbar-thumb {
   background: #c0c4cc;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -157,11 +216,11 @@ body,
 }
 .udl-fields .el-input__wrapper:hover,
 .udl-fields .el-select__wrapper:hover {
-  border-color: #0d5bd3 !important;
+  border-color: var(--t-primary) !important;
 }
 .udl-fields .el-input__wrapper.is-focus,
 .udl-fields .el-select__wrapper.is-focused {
-  border-color: #0d5bd3 !important;
+  border-color: var(--t-primary) !important;
   box-shadow: none !important;
 }
 .udl-fields .el-input__inner {
@@ -196,7 +255,7 @@ body,
 }
 .udl-fields .el-date-editor .el-input__wrapper:hover,
 .udl-fields .el-date-editor .el-input__wrapper.is-focus {
-  border-color: #0d5bd3 !important;
+  border-color: var(--t-primary) !important;
   box-shadow: none !important;
 }
 

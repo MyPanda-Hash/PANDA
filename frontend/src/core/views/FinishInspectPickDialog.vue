@@ -125,7 +125,7 @@ function close() {
   margin: 0 0 8px;
   font-size: 12px;
   line-height: 20px;
-  color: #8c8c8c;
+  color: var(--d-text-3);
 }
 
 .fip-foot {
@@ -140,7 +140,7 @@ function close() {
   font-size: 13px;
 }
 
-.ok { color: #1677ff; font-variant-numeric: tabular-nums; }
+.ok { color: var(--t-primary); font-variant-numeric: tabular-nums; }
 .dim { color: rgba(0, 0, 0, 0.45); }
 
 :deep(.el-table) { font-size: 13px; }

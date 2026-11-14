@@ -204,7 +204,7 @@ function close() {
   margin: 0 0 8px;
   font-size: 12px;
   line-height: 20px;
-  color: #8c8c8c;
+  color: var(--d-text-3);
 }
 
 .prp-proc-head {
@@ -254,11 +254,11 @@ function close() {
   font-size: 13px;
 }
 
-.ok { color: #1677ff; font-variant-numeric: tabular-nums; }
+.ok { color: var(--t-primary); font-variant-numeric: tabular-nums; }
 .zero { color: rgba(0, 0, 0, 0.45); font-variant-numeric: tabular-nums; }
 .dim { color: rgba(0, 0, 0, 0.45); }
 
 :deep(.el-table) { font-size: 13px; }
 :deep(.el-table .cell) { font-variant-numeric: tabular-nums; }
-:deep(.el-table__row.is-picked > td) { background: #f0f7ff; }
+:deep(.el-table__row.is-picked > td) { background: var(--t-primary-tint); }
 </style>

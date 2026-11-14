@@ -325,11 +325,11 @@ async function retire(row) {
   margin-bottom: 10px;
   font-size: 12px;
   line-height: 1.6;
-  color: var(--t-text-2, #5d6c67);
+  color: var(--t-text-2, var(--d-text-2));
 }
 .fm-tip-sub {
   display: block;
-  color: var(--t-text-3, #8b9893);
+  color: var(--t-text-3, var(--d-text-3));
 }
 .fm-bar {
   display: flex;
@@ -337,13 +337,13 @@ async function retire(row) {
   gap: 8px;
   margin-bottom: 8px;
   font-size: 12px;
-  color: var(--t-text-2, #5d6c67);
+  color: var(--t-text-2, var(--d-text-2));
 }
 .fm-scope-label {
-  color: var(--t-text-3, #8b9893);
+  color: var(--t-text-3, var(--d-text-3));
 }
 .fm-count b {
-  color: var(--t-primary, #116a5b);
+  color: var(--t-primary, var(--d-primary));
 }
 .fm-table :deep(.el-table__row) {
   cursor: default;
@@ -352,17 +352,17 @@ async function retire(row) {
   padding: 0 5px;
   border-radius: 8px;
   font-size: 11px;
-  color: var(--t-text-2, #5d6c67);
-  border: 1px solid var(--t-border, #dce4e1);
+  color: var(--t-text-2, var(--d-text-2));
+  border: 1px solid var(--t-border, var(--d-border-strong));
 }
 .fm-src.custom {
-  color: var(--t-primary-dark, #0d584c);
-  border-color: var(--el-color-primary-light-5, #88b4ac);
-  background: var(--el-color-primary-light-9, #e8f1ef);
+  color: var(--t-primary-dark, var(--d-primary));
+  border-color: var(--el-color-primary-light-5, var(--d-primary));
+  background: var(--el-color-primary-light-9, var(--d-primary-bg));
 }
 .fm-help {
   margin-left: 8px;
   font-size: 12px;
-  color: var(--t-text-3, #8b9893);
+  color: var(--t-text-3, var(--d-text-3));
 }
 </style>

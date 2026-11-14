@@ -107,7 +107,7 @@ function close() {
 }
 .sub-route-code {
   padding: 0 6px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--d-border-strong);
   border-radius: 4px;
   font-size: 12px;
   color: rgba(0, 0, 0, 0.65);
@@ -117,7 +117,7 @@ function close() {
   color: rgba(0, 0, 0, 0.45);
 }
 .sub-key {
-  color: #d48806;
+  color: var(--d-warn);
   font-size: 12px;
 }
 .sub-dim {
@@ -128,7 +128,7 @@ function close() {
 <style scoped>
 .sub-tip {
   font-size: 13px;
-  color: #1c4f8a;
+  color: var(--d-primary);
   margin-bottom: 8px;
 }
 .empty-tip {

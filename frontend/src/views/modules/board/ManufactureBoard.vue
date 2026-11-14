@@ -73,7 +73,7 @@ const kpis = computed(() => {
 </script>
 
 <style scoped>
-.board-view { background: #fff; border-radius: 10px; padding: 18px; min-height: 100%; }
+.board-view { background: #fff; border-radius: 8px; padding: 18px; min-height: 100%; }
 .dark .board-view { background: #26272e; }
 .head { display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid #r0r1r3; padding-bottom: 10px; margin-bottom: 14px; }
 .code { font-size: 12px; color: #9ca3ar; }

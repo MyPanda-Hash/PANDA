@@ -291,19 +291,19 @@ onMounted(load)
   flex: 1;
   height: 6px;
   background: #f0f0f0;
-  border-radius: 3px;
+  border-radius: 4px;
   overflow: hidden;
 }
 .fill {
   display: block;
   height: 100%;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 .fill.done {
   background: #52c41a;
 }
 .fill.running {
-  background: #1677ff;
+  background: var(--t-primary);
 }
 .fill.idle {
   background: #d9d9d9;

@@ -475,7 +475,7 @@ function changePwd() {
 }
 .search-input :deep(.el-input__wrapper) {
   border: 1px solid var(--t-border);
-  border-radius: 5px;
+  border-radius: 4px;
   height: 32px;
   background: var(--t-sidebar-bg);
   box-shadow: none;
@@ -542,7 +542,7 @@ function changePwd() {
   flex-shrink: 0;
   padding: 0 4px;
   border: 1px solid var(--t-border-light);
-  border-radius: 3px;
+  border-radius: 4px;
   color: var(--t-text-2);
   background: var(--t-content-bg);
   font-size: 10px;
@@ -579,7 +579,7 @@ function changePwd() {
   font-size: 10px;
   line-height: 1;
   padding: 2px 4px;
-  border-radius: 2px;
+  border-radius: 4px;
   background: var(--t-badge);
   color: #fff;
   font-style: italic;
@@ -805,7 +805,7 @@ function changePwd() {
     display: grid;
     place-items: center;
     border: 1px solid var(--t-border);
-    border-radius: 5px;
+    border-radius: 4px;
     background: var(--t-sidebar-bg);
     font-size: 16px;
   }
@@ -825,7 +825,7 @@ function changePwd() {
     display: grid;
     place-items: center;
     border: 1px solid var(--t-border);
-    border-radius: 5px;
+    border-radius: 4px;
     background: var(--t-sidebar-bg);
   }
 

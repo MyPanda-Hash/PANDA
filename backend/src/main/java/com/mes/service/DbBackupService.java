@@ -144,6 +144,32 @@ public class DbBackupService {
         return res;
     }
 
+    /**
+     * 只保留最近 keep 份成功备份，多出来的文件连同日志一起清掉。
+     *
+     * 清的是「按 id 排序靠后的成功记录」，也就是最旧的那些；当前正在写的那份
+     * 会在 runNow 结束前就落库，所以不会误删刚生成的备份。
+     */
+    public int prune(int keep) {
+        int limit = Math.max(1, Math.min(keep, 200));
+        QueryWrapper<SysBackupLog> q = new QueryWrapper<>();
+        q.eq("status", "SUCCESS").orderByDesc("id").last("limit " + (limit + 100));
+        List<SysBackupLog> rows = logMapper.selectList(q);
+        int removed = 0;
+        for (int i = limit; i < rows.size(); i++) {
+            SysBackupLog row = rows.get(i);
+            Path f = resolveExisting(row.getFileName());
+            try {
+                if (f != null) Files.deleteIfExists(f);
+                logMapper.deleteById(row.getId());
+                removed++;
+            } catch (Exception ignored) {
+                // 删不掉就留着，下次再清
+            }
+        }
+        return removed;
+    }
+
     public List<SysBackupLog> logs(int limit) {
         int n = Math.max(1, Math.min(limit, 200));
         QueryWrapper<SysBackupLog> q = new QueryWrapper<>();

@@ -449,14 +449,14 @@ onMounted(load)
   height: 4px;
   margin-top: 4px;
   background: var(--d-fill);
-  border-radius: 2px;
+  border-radius: 4px;
   overflow: hidden;
 }
 .m-bar i {
   display: block;
   height: 100%;
   background: var(--d-primary);
-  border-radius: 2px;
+  border-radius: 4px;
 }
 
 /* ===== 三列看板 ===== */
@@ -503,7 +503,7 @@ onMounted(load)
   text-align: center;
   color: var(--d-text-2);
   background: var(--d-fill);
-  border-radius: 9px;
+  border-radius: 8px;
   font-variant-numeric: tabular-nums;
 }
 .lane-qty {
@@ -680,14 +680,14 @@ onMounted(load)
 .q-bar {
   height: 4px;
   background: var(--d-fill);
-  border-radius: 2px;
+  border-radius: 4px;
   overflow: hidden;
 }
 .q-bar i {
   display: block;
   height: 100%;
   background: var(--d-primary);
-  border-radius: 2px;
+  border-radius: 4px;
 }
 .lane-done .q-bar i { background: var(--d-ok); }
 .lane-todo .q-bar i { background: var(--d-border-strong); }

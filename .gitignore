@@ -65,3 +65,10 @@ _scratch/
 
 # 发票回传票面（OFD/PDF）属业务文件，不入库
 backend/data/
+
+# === 本地备份文件（*.bak / *.bak-时间戳 / 整目录备份）===
+*.bak
+*.bak-*
+*.bak.*
+*.bak-*/
+src.bak-*/

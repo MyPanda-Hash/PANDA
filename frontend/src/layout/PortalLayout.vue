@@ -57,12 +57,33 @@ onMounted(() => {
   if (!app.initDone) app.openInitWizard()
 })
 
+/**
+ * 外部深链补页签。
+ *
+ * 页签只在你「从菜单/单据里点开」时才创建：内部打开会显式调用 tabs.open()。
+ * 但从 AI 待办、书签、浏览器刷新直接命中 /panelx/form/XXX 时没有菜单项，
+ * 页签栏会只剩「我的桌面」，顶部看着跟平时不一样（单据还占着内容区，
+ * 却没有对应页签，也没法关掉）。这里给这类动态路由补一个页签。
+ */
+function openDeepLinkTab(path) {
+  const form = path.match(/^\/panelx\/form\/([^/]+)$/)
+  if (!form) return
+  const panel = form[1]
+  const code = route.query.code
+  const title = code ? `单据 ${code}` : `${panel}-新增`
+  tabs.open({ path, title, query: { ...route.query } })
+}
+
 watch(
   () => route.path,
   (p) => {
     tabs.setActive(p)
     const menu = findMenuByPath(p)
-    if (menu && !tabs.tabs.find((t) => t.path === p)) tabs.open(menu)
+    if (menu) {
+      if (!tabs.tabs.find((t) => t.path === p)) tabs.open(menu)
+      return
+    }
+    if (!tabs.tabs.find((t) => t.path === p)) openDeepLinkTab(p)
   },
   { immediate: true }
 )

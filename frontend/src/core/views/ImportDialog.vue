@@ -142,10 +142,10 @@ function doImport() {
 }
 .imp-file {
   font-size: 13px;
-  color: #1c4f8a;
+  color: var(--d-primary);
 }
 .imp-err {
-  color: #dc2626;
+  color: var(--d-bad);
   font-size: 12px;
 }
 .imp-match {

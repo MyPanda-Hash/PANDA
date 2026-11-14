@@ -227,23 +227,23 @@ function close() {
 }
 .mm-tag {
   font-weight: 700;
-  color: #1c4f8a;
+  color: var(--d-primary);
 }
 .mm-name {
   color: #333;
 }
 .mm-status {
   padding: 1px 8px;
-  border-radius: 3px;
+  border-radius: 4px;
   font-size: 12px;
 }
-.mm-status.草稿 { background: #fff3e0; color: #e65100; }
-.mm-status.已审核 { background: #e8f5e9; color: #2e7d32; }
-.mm-status.启用 { background: #e8f5e9; color: #2e7d32; }
-.mm-status.生效 { background: #e8f5e9; color: #2e7d32; }
-.mm-status.已中止 { background: #ffebee; color: #c62828; }
+.mm-status.草稿 { background: var(--d-warn-bg); color: var(--d-warn); }
+.mm-status.已审核 { background: var(--d-ok-bg); color: var(--d-ok); }
+.mm-status.启用 { background: var(--d-ok-bg); color: var(--d-ok); }
+.mm-status.生效 { background: var(--d-ok-bg); color: var(--d-ok); }
+.mm-status.已中止 { background: var(--d-bad-bg); color: var(--d-bad); }
 .mm-tip {
-  color: #c62828;
+  color: var(--d-bad);
   font-size: 12px;
 }
 .mm-toolbar {

@@ -366,7 +366,7 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 0 5px;
-  border-radius: 3px;
+  border-radius: 4px;
   font-size: 11px;
   line-height: 18px;
   background: var(--t-bg-hover, #f2f3f5);
@@ -374,7 +374,7 @@ onBeforeUnmount(() => {
 }
 .nc-src.src-ai {
   background: #eaf4ff;
-  color: #1677ff;
+  color: var(--t-primary);
 }
 
 .nc-badge {
@@ -511,7 +511,7 @@ onBeforeUnmount(() => {
   margin-top: 3px;
   overflow: hidden;
   color: var(--t-text-2);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 18px;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;

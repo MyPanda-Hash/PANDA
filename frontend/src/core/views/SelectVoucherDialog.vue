@@ -314,11 +314,11 @@ async function generate() {
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  color: #111827;
+  color: var(--d-text);
 }
 .sel-group-sum {
   font-weight: 400;
-  color: #6b7280;
+  color: var(--d-text-2);
   font-size: 12px;
 }
 .sel-line {
@@ -327,12 +327,12 @@ async function generate() {
   gap: 10px;
   padding-left: 24px;
   font-size: 12px;
-  color: #374151;
+  color: var(--d-text);
   line-height: 24px;
 }
 .sel-line-code {
   width: 84px;
-  color: #111827;
+  color: var(--d-text);
 }
 .sel-line-name {
   flex: 1;
@@ -349,16 +349,16 @@ async function generate() {
 .sel-line-avail {
   width: 92px;
   text-align: right;
-  color: #16a34a;
+  color: var(--d-ok);
   font-variant-numeric: tabular-nums;
 }
 .sel-line-tag {
   width: 92px;
   text-align: right;
-  color: #b45309;
+  color: var(--d-warn);
 }
 .sel-line-avail.zero {
-  color: #9ca3af;
+  color: var(--d-text-3);
 }
 .sel-tip {
   color: #666;
@@ -366,8 +366,8 @@ async function generate() {
   margin-bottom: 8px;
 }
 .sel-item {
-  color: #1c4f8a;
-  font-size: 12px;
+  color: var(--d-primary);
+  font-size: 13px;
 }
 .sel-foot {
   display: flex;

@@ -580,7 +580,7 @@ async function doImport() {
 }
 .inv-file {
   font-size: 13px;
-  color: #1c4f8a;
+  color: var(--d-primary);
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
@@ -588,11 +588,11 @@ async function doImport() {
   white-space: nowrap;
 }
 .inv-err {
-  color: #dc2626;
+  color: var(--d-bad);
   font-size: 12px;
 }
 .inv-ok {
-  color: #15803d;
+  color: var(--d-ok);
   font-size: 12px;
 }
 .inv-match {
@@ -609,7 +609,7 @@ async function doImport() {
 }
 .inv-lines {
   padding: 6px 8px;
-  background: #fafafa;
+  background: var(--d-fill-soft);
 }
 .inv-block {
   margin-top: 12px;

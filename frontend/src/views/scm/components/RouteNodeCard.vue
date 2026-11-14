@@ -126,9 +126,9 @@ function branchTitle(b) {
   gap: 1px;
   min-width: 152px;
   padding: 6px 10px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--d-border-strong);
   border-radius: 6px;
-  background: #fff;
+  background: var(--d-card);
   text-align: left;
   cursor: pointer;
   font-family: inherit;
@@ -137,7 +137,7 @@ function branchTitle(b) {
 }
 
 .rn-node:hover {
-  border-color: #1677ff;
+  border-color: var(--t-primary);
   background: #fafcff;
 }
 
@@ -172,16 +172,16 @@ function branchTitle(b) {
 
 /* 已完成 */
 .rn-node.kind-done {
-  border-color: #95de64;
-  background: #f6ffed;
+  border-color: var(--d-ok);
+  background: var(--d-ok-bg);
 }
 
 .rn-node.kind-done .rn-ic {
-  color: #52c41a;
+  color: var(--d-ok);
 }
 
 /* 进行中：生产中的工序加流光，扫过卡片表示"正在做"；只澄清状态，不做装饰
-   底色用主色 #1677ff 的低透明度带，缓动取 antd motionEaseOut */
+   底色用主色 var(--d-primary) 的低透明度带，缓动取 antd motionEaseOut */
 .rn-node.running {
   position: relative;
   overflow: hidden;
@@ -262,47 +262,47 @@ function branchTitle(b) {
 
 /* 进行中 / 卡点 */
 .rn-node.kind-doing {
-  border-color: #1677ff;
-  background: #f0f7ff;
+  border-color: var(--t-primary);
+  background: var(--t-primary-tint);
 }
 
 .rn-node.kind-doing .rn-ic {
-  color: #1677ff;
+  color: var(--t-primary);
 }
 
 .rn-node.stalled {
-  border-color: #faad14;
-  background: #fffbe6;
+  border-color: var(--d-warn);
+  background: var(--d-warn-bg);
 }
 
 .rn-node.stalled .rn-ic {
-  color: #faad14;
+  color: var(--d-warn);
 }
 
 .rn-node.stalled .rn-status {
-  color: #d48806;
+  color: var(--d-warn);
 }
 
 .rn-node.kind-aborted {
-  border-color: #ffa39e;
-  background: #fff1f0;
+  border-color: var(--d-bad-bg);
+  background: var(--d-bad-bg);
 }
 
 .rn-node.kind-aborted .rn-ic {
-  color: #ff4d4f;
+  color: var(--d-bad);
 }
 
 /* 待生成：标准路线里有、还没生成单据的环节 */
 .rn-node.pending {
   border-style: dashed;
-  border-color: #d9d9d9;
-  background: #fafafa;
+  border-color: var(--d-border-strong);
+  background: var(--d-fill-soft);
   cursor: default;
 }
 
 .rn-node.pending:hover {
-  border-color: #d9d9d9;
-  background: #fafafa;
+  border-color: var(--d-border-strong);
+  background: var(--d-fill-soft);
 }
 
 .rn-node.pending .rn-label {
@@ -326,7 +326,7 @@ function branchTitle(b) {
   gap: 4px;
   margin: 0 0 0 16px;
   padding: 6px 0 0 10px;
-  border-left: 1px dashed #b7eb8f;
+  border-left: 1px dashed var(--d-ok-bg);
 }
 
 /* 从主干卡片底部连到分支的那一小段竖线 */
@@ -336,7 +336,7 @@ function branchTitle(b) {
   left: -1px;
   top: -6px;
   height: 12px;
-  border-left: 1px dashed #b7eb8f;
+  border-left: 1px dashed var(--d-ok-bg);
 }
 
 .rn-branch {
@@ -345,13 +345,13 @@ function branchTitle(b) {
   align-items: center;
   gap: 4px;
   padding: 3px 8px;
-  border: 1px dashed #b7eb8f;
+  border: 1px dashed var(--d-ok-bg);
   border-radius: 4px;
-  background: #f6ffed;
+  background: var(--d-ok-bg);
   font-family: inherit;
   font-size: 11px;
   line-height: 16px;
-  color: #389e0d;
+  color: var(--d-ok);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -363,11 +363,11 @@ function branchTitle(b) {
   left: -11px;
   top: 50%;
   width: 10px;
-  border-top: 1px dashed #b7eb8f;
+  border-top: 1px dashed var(--d-ok-bg);
 }
 
 .rn-branch:hover {
-  border-color: #52c41a;
+  border-color: var(--d-ok);
   background: #f0fff0;
 }
 
@@ -381,28 +381,28 @@ function branchTitle(b) {
 }
 
 .rn-branch.pending {
-  border-color: #d9d9d9;
-  background: #fafafa;
+  border-color: var(--d-border-strong);
+  background: var(--d-fill-soft);
   color: rgba(0, 0, 0, 0.35);
 }
 
 .rn-branch.pending::before {
-  border-color: #d9d9d9;
+  border-color: var(--d-border-strong);
 }
 
 .rn-branch-sub {
   margin-left: 2px;
   padding: 0 4px;
-  border: 1px dashed #b7eb8f;
-  border-radius: 3px;
-  background: #fff;
-  color: #389e0d;
+  border: 1px dashed var(--d-ok-bg);
+  border-radius: 4px;
+  background: var(--d-card);
+  color: var(--d-ok);
   font-size: 10px;
   line-height: 14px;
 }
 
 .rn-branch-sub.pending {
-  border-color: #d9d9d9;
+  border-color: var(--d-border-strong);
   color: rgba(0, 0, 0, 0.35);
 }
 

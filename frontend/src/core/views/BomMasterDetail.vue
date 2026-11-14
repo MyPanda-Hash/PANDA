@@ -438,7 +438,7 @@ defineExpose({ validate })
   box-sizing: border-box;
 }
 .bom-md-sec {
-  border: 1px solid var(--t-border, #e4e7ed);
+  border: 1px solid var(--t-border, var(--d-border));
   border-radius: 6px;
   overflow: hidden;
   background: #fff;
@@ -449,8 +449,8 @@ defineExpose({ validate })
   justify-content: space-between;
   min-height: 34px;
   padding: 5px 12px;
-  background: #f5f7fa;
-  border-bottom: 1px solid var(--t-border, #e4e7ed);
+  background: var(--d-fill-soft);
+  border-bottom: 1px solid var(--t-border, var(--d-border));
 }
 .bom-md-title {
   font-size: 13px;
@@ -460,7 +460,7 @@ defineExpose({ validate })
 .bom-md-count {
   margin-left: 12px;
   font-size: 12px;
-  color: #909399;
+  color: var(--d-text-3);
 }
 /* 父件表分页条：贴表格下方，与明细区翻页条同一套视觉 */
 .bom-md-pager {
@@ -468,8 +468,8 @@ defineExpose({ validate })
   align-items: center;
   gap: 10px;
   padding: 3px 12px;
-  border-top: 1px solid #e3e8f0;
-  background: #fafbfd;
+  border-top: 1px solid var(--d-border);
+  background: var(--d-fill-soft);
   font-size: 12px;
   color: #555;
   white-space: nowrap;
@@ -478,7 +478,7 @@ defineExpose({ validate })
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #909399;
+  color: var(--d-text-3);
   white-space: nowrap;
 }
 .bom-md-size {
@@ -490,7 +490,7 @@ defineExpose({ validate })
   height: 24px;
   line-height: 22px;
   text-align: center;
-  border: 1px solid #c9cfdb;
+  border: 1px solid var(--d-border-strong);
   border-radius: 4px;
   background: #fff;
   cursor: pointer;
@@ -499,8 +499,8 @@ defineExpose({ validate })
   color: #333;
 }
 .bom-md-pager .page-btn:hover {
-  border-color: var(--t-primary, #116a5b);
-  color: var(--t-primary, #116a5b);
+  border-color: var(--t-primary, var(--d-primary));
+  color: var(--t-primary, var(--d-primary));
 }
 .bom-md-pager .page-no {
   padding: 0 2px;
@@ -509,7 +509,7 @@ defineExpose({ validate })
 .bom-md-empty {
   padding: 14px;
   font-size: 12px;
-  color: #909399;
+  color: var(--d-text-3);
   text-align: center;
 }
 .bom-ref {
@@ -520,9 +520,9 @@ defineExpose({ validate })
   justify-content: space-between;
   gap: 6px;
   padding: 0 8px;
-  color: #303133;
+  color: var(--d-text);
   background: #fff;
-  border: 1px solid #dcdfe6;
+  border: 1px solid var(--d-border-strong);
   border-radius: 4px;
   cursor: pointer;
 }
@@ -530,7 +530,7 @@ defineExpose({ validate })
   border-color: var(--el-color-primary);
 }
 :deep(.row-cur td) {
-  background: #ecf5ff !important;
+  background: var(--d-primary-bg) !important;
 }
 :deep(.el-input-number),
 :deep(.el-select) {

@@ -75,7 +75,7 @@ const stats = computed(() => {
 </script>
 
 <style scoped>
-.rework-desk { background: #fff; border-radius: 10px; padding: 18px; min-height: 100%; }
+.rework-desk { background: #fff; border-radius: 8px; padding: 18px; min-height: 100%; }
 .dark .rework-desk { background: #26272e; }
 .head { display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid #f0f1f3; padding-bottom: 10px; margin-bottom: 14px; }
 .code { font-size: 12px; color: #9ca3af; }
@@ -84,7 +84,7 @@ const stats = computed(() => {
 .stat-val { font-size: 26px; font-weight: 700; }
 .stat-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
 .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
-.task { border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; }
+.task { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
 .task.st-已返修 { opacity: .6; }
 .task-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .task-mo { font-weight: 700; color: #1f2937; }

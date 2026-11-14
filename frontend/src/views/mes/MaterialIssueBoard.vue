@@ -531,7 +531,7 @@ onMounted(load)
   align-items: baseline;
   gap: 8px;
   min-width: 0;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 20px;
 }
 .d-k {

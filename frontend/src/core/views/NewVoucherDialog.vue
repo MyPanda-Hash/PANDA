@@ -381,7 +381,7 @@ async function onSave() {
   white-space: nowrap;
 }
 .field .req {
-  color: #dc2626;
+  color: var(--d-bad);
 }
 .detail {
   margin-top: 8px;
@@ -400,11 +400,11 @@ async function onSave() {
   font-size: 11px;
   color: var(--t-text-3);
   border: 1px dashed var(--t-border);
-  border-radius: 3px;
+  border-radius: 4px;
 }
 .del {
   cursor: pointer;
-  color: #dc2626;
+  color: var(--d-bad);
 }
 .ref-ctl {
   display: flex;

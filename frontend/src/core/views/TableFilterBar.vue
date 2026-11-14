@@ -194,7 +194,7 @@ function reset() {
   gap: 6px;
   height: 28px;
   padding: 0 12px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--d-border-strong);
   border-radius: 6px;
   background: #fff;
   color: rgba(0, 0, 0, 0.88);
@@ -204,12 +204,12 @@ function reset() {
   transition: border-color 0.12s ease, color 0.12s ease;
 }
 .tfb-chip:hover {
-  border-color: #1677ff;
-  color: #1677ff;
+  border-color: var(--t-primary);
+  color: var(--t-primary);
 }
 .tfb-chip.on {
-  border-color: #1677ff;
-  background: #1677ff;
+  border-color: var(--t-primary);
+  background: var(--t-primary);
   color: #fff;
 }
 .tfb-num {
@@ -236,7 +236,7 @@ function reset() {
   margin-left: 4px;
   padding: 0 5px;
   border-radius: 8px;
-  background: #1677ff;
+  background: var(--t-primary);
   color: #fff;
   font-size: 11px;
   line-height: 16px;

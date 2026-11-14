@@ -320,7 +320,7 @@ onBeforeUnmount(reset)
 .scan-file-name {
   min-width: 0;
   overflow: hidden;
-  color: #4b5563;
+  color: var(--d-text-2);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -332,8 +332,8 @@ onBeforeUnmount(reset)
   align-items: center;
   margin-top: 14px;
   padding: 12px 0;
-  border-top: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
+  border-top: 1px solid var(--d-border);
+  border-bottom: 1px solid var(--d-border);
 }
 
 .scan-image-wrap {
@@ -342,8 +342,8 @@ onBeforeUnmount(reset)
   height: 180px;
   place-items: center;
   overflow: hidden;
-  background: #f5f7fa;
-  border: 1px solid #dcdfe6;
+  background: var(--d-fill-soft);
+  border: 1px solid var(--d-border-strong);
   border-radius: 4px;
 }
 
@@ -355,7 +355,7 @@ onBeforeUnmount(reset)
 
 .scan-image-placeholder {
   padding: 12px;
-  color: #6b7280;
+  color: var(--d-text-2);
   text-align: center;
   overflow-wrap: anywhere;
 }
@@ -365,11 +365,11 @@ onBeforeUnmount(reset)
   min-width: 0;
   flex-direction: column;
   gap: 8px;
-  color: #6b7280;
+  color: var(--d-text-2);
 }
 
 .scan-file-meta strong {
-  color: #1f2937;
+  color: var(--d-text);
 }
 
 .scan-alert,
@@ -378,7 +378,7 @@ onBeforeUnmount(reset)
 }
 
 .scan-section-title {
-  color: #303133;
+  color: var(--d-text);
   font-size: 14px;
   font-weight: 600;
 }
@@ -407,7 +407,7 @@ onBeforeUnmount(reset)
 
 .scan-header-field > span {
   overflow: hidden;
-  color: #606266;
+  color: var(--d-text-2);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

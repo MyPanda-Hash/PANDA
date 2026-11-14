@@ -120,7 +120,7 @@ function go(code) {
   border: 1px solid #cfe3ff;
   border-radius: 6px;
   padding: 12px 8px;
-  background: #f0f7ff;
+  background: var(--t-primary-tint);
 }
 .pda-step-no {
   width: 26px;
@@ -165,8 +165,8 @@ function go(code) {
 .pda-btn {
   padding: 4px 12px;
   font-size: 12.5px;
-  color: #0d5bd3;
-  background: #f0f7ff;
+  color: var(--t-primary);
+  background: var(--t-primary-tint);
   border: 1px solid #cfe3ff;
   border-radius: 4px;
   cursor: pointer;

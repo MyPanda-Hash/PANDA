@@ -72,12 +72,12 @@ function install(a) {
 </script>
 
 <style scoped>
-.solution-center { background: #fff; border-radius: 10px; padding: 18px; min-height: 100%; }
+.solution-center { background: #fff; border-radius: 8px; padding: 18px; min-height: 100%; }
 .dark .solution-center { background: #26272e; }
 .head { display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid #f0f1f3; padding-bottom: 10px; margin-bottom: 14px; }
 .code { font-size: 12px; color: #9ca3af; }
 .sec { margin-bottom: 14px; }
-.sol, .app { border: 1px solid #eef0f3; border-radius: 10px; padding: 14px; margin-bottom: 12px; text-align: center; }
+.sol, .app { border: 1px solid #eef0f3; border-radius: 8px; padding: 14px; margin-bottom: 12px; text-align: center; }
 .sol:hover, .app:hover { border-color: #289be5; }
 .sol-name { font-weight: 700; margin-bottom: 6px; }
 .sol-desc { font-size: 12px; color: #6b7280; margin-bottom: 8px; min-height: 52px; }

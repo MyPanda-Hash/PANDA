@@ -4,7 +4,7 @@
      替代主生产计划/物料需求运算/齐套分析/采购需求分析四个横向汇总面板的单据级分析入口。
      规则：数字全部由后端算好，本页只渲染，不二次计算。 -->
 <template>
-  <div class="pla-page">
+  <div class="adx pla-page">
     <header class="pla-head">
       <div class="pla-title">
         <h2>计划分析</h2>
@@ -417,7 +417,7 @@ onMounted(loadOrders)
   height: 100%;
   overflow: auto;
   background: #fff;
-  color: #1f1f1f;
+  color: var(--d-text);
   font-size: 14px;
   line-height: 22px;
 }
@@ -427,10 +427,10 @@ onMounted(loadOrders)
   justify-content: space-between;
   gap: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--d-fill);
 }
 .pla-title h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; }
-.pla-sub { display: block; margin-top: 2px; font-size: 12px; line-height: 20px; color: #8c8c8c; }
+.pla-sub { display: block; margin-top: 2px; font-size: 12px; line-height: 20px; color: var(--d-text-3); }
 .pla-actions { display: flex; align-items: center; gap: 8px; }
 .pla-select { width: 360px; }
 
@@ -438,16 +438,16 @@ onMounted(loadOrders)
   margin-top: 48px;
   text-align: center;
 }
-.pla-empty-title { margin: 0; font-size: 14px; line-height: 22px; color: #1f1f1f; }
-.pla-empty-sub { margin: 4px 0 12px; font-size: 13px; line-height: 20px; color: #8c8c8c; }
+.pla-empty-title { margin: 0; font-size: 14px; line-height: 22px; color: var(--d-text); }
+.pla-empty-sub { margin: 4px 0 12px; font-size: 13px; line-height: 20px; color: var(--d-text-3); }
 .pla-empty-inline {
   margin: 0;
   padding: 12px 16px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--d-fill);
   border-radius: 6px;
   font-size: 13px;
   line-height: 20px;
-  color: #8c8c8c;
+  color: var(--d-text-3);
 }
 
 .pla-summary {
@@ -461,33 +461,33 @@ onMounted(loadOrders)
   flex-direction: column;
   gap: 2px;
   padding: 8px 12px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--d-fill);
   border-radius: 6px;
 }
-.pla-k { font-size: 12px; line-height: 20px; color: #8c8c8c; }
+.pla-k { font-size: 12px; line-height: 20px; color: var(--d-text-3); }
 .pla-kv b { font-size: 14px; line-height: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
 
 .pla-warn {
   margin: 8px 0 0;
   padding: 8px 12px;
-  border: 1px solid #ffe7ba;
+  border: 1px solid var(--d-warn-bg);
   border-radius: 6px;
-  background: #fffbe6;
+  background: var(--d-warn-bg);
   font-size: 13px;
   line-height: 20px;
-  color: #ad6800;
+  color: var(--d-warn);
 }
 
 .pla-sec {
   margin: 24px 0 8px;
   padding-left: 8px;
-  border-left: 2px solid #1677ff;
+  border-left: 2px solid var(--t-primary);
   font-size: 13px;
   line-height: 20px;
   font-weight: 600;
-  color: #1f1f1f;
+  color: var(--d-text);
 }
-.pla-sec-hint { margin-left: 8px; font-weight: 400; font-size: 12px; color: #8c8c8c; }
+.pla-sec-hint { margin-left: 8px; font-weight: 400; font-size: 12px; color: var(--d-text-3); }
 
 /* 窄屏时表格保持自然列宽，由容器横向滚动，避免列被压扁裁切 */
 .pla-table-scroll { width: 100%; overflow-x: auto; }
@@ -513,7 +513,7 @@ onMounted(loadOrders)
   padding: 1px 8px;
   border: 1px solid #91caff;
   border-radius: 4px;
-  background: #f0f7ff;
+  background: var(--t-primary-tint);
   color: rgba(0, 0, 0, 0.85);
   font-weight: 600;
 }
@@ -531,9 +531,9 @@ onMounted(loadOrders)
   margin-bottom: 8px;
   font-size: 13px;
   line-height: 20px;
-  color: #595959;
+  color: var(--d-text-2);
 }
-.pla-route-meta b { color: #1f1f1f; font-weight: 600; }
+.pla-route-meta b { color: var(--d-text); font-weight: 600; }
 
 .pla-narrative {
   display: grid;
@@ -542,19 +542,19 @@ onMounted(loadOrders)
 }
 .pla-col {
   padding: 12px 16px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--d-fill);
   border-radius: 6px;
 }
-.pla-col h4 { margin: 0 0 8px; font-size: 13px; line-height: 20px; font-weight: 600; color: #1f1f1f; }
+.pla-col h4 { margin: 0 0 8px; font-size: 13px; line-height: 20px; font-weight: 600; color: var(--d-text); }
 .pla-col ul { margin: 0; padding-left: 18px; }
-.pla-col li { font-size: 13px; line-height: 22px; color: #595959; }
+.pla-col li { font-size: 13px; line-height: 22px; color: var(--d-text-2); }
 
 .is-bad { color: #cf1322; }
-.is-warn { color: #ad6800; }
+.is-warn { color: var(--d-warn); }
 .is-muted { color: #bfbfbf; }
 
 :deep(.el-table) { font-size: 13px; }
-:deep(.el-table th.el-table__cell) { background: #fafafa; color: #595959; font-weight: 500; }
+:deep(.el-table th.el-table__cell) { background: var(--d-fill-soft); color: var(--d-text-2); font-weight: 500; }
 :deep(.el-table .cell) { font-variant-numeric: tabular-nums; }
 
 @media (max-width: 1200px) {

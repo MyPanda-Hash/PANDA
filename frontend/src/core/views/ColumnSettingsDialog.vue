@@ -126,21 +126,21 @@ function confirm() {
 </script>
 
 <style scoped>
-.col-set-tip { font-size: 12px; color: #909399; margin-bottom: 8px; }
+.col-set-tip { font-size: 12px; color: var(--d-text-3); margin-bottom: 8px; }
 .col-set-head, .col-set-row {
   display: flex; align-items: center; gap: 8px;
-  padding: 4px 6px; border-bottom: 1px solid #ebeef5;
+  padding: 4px 6px; border-bottom: 1px solid var(--d-border);
 }
-.col-set-head { color: #606266; font-size: 12px; font-weight: 600; border-bottom: 2px solid #ebeef5; }
+.col-set-head { color: var(--d-text-2); font-size: 13px; font-weight: 600; border-bottom: 2px solid var(--d-border); }
 .col-set-row { cursor: grab; }
 .col-set-row.dragging { opacity: .4; }
-.col-set-row.drag-over { border-top: 2px solid #0d5bd3; }
+.col-set-row.drag-over { border-top: 2px solid var(--d-primary); }
 .cs-order { width: 90px; display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-.cs-idx { width: 22px; text-align: center; font-size: 12px; color: #909399; }
-.cs-drag-handle { cursor: grab; color: #c0c4cc; font-size: 14px; }
+.cs-idx { width: 22px; text-align: center; font-size: 12px; color: var(--d-text-3); }
+.cs-drag-handle { cursor: grab; color: var(--d-border-strong); font-size: 14px; }
 .cs-arrows { display: flex; flex-direction: column; line-height: 1; }
-.cs-arrow { font-size: 10px; cursor: pointer; color: #909399; user-select: none; }
-.cs-arrow:hover { color: #0d5bd3; }
+.cs-arrow { font-size: 10px; cursor: pointer; color: var(--d-text-3); user-select: none; }
+.cs-arrow:hover { color: var(--t-primary); }
 .cs-name { flex: 1; }
 .cs-show { width: 48px; text-align: center; flex-shrink: 0; }
 .col-set-list { max-height: 380px; overflow-y: auto; }

@@ -174,9 +174,9 @@ function confirm() {
   display: inline-block;
   min-width: 18px;
   padding: 0 4px;
-  border-radius: 3px;
-  border: 1px solid #d9a441;
-  color: #8a6106;
+  border-radius: 4px;
+  border: 1px solid var(--d-warn);
+  color: var(--d-warn);
   font-size: 12px;
   line-height: 18px;
 }
@@ -204,16 +204,16 @@ function confirm() {
 }
 .rfp-legend-chip {
   padding: 0 6px;
-  border: 1px solid #cfd8d5;
-  border-radius: 3px;
+  border: 1px solid var(--d-border-strong);
+  border-radius: 4px;
   background: #fff;
   color: var(--t-text-2);
   line-height: 18px;
 }
 .rfp-legend-chip.is-out {
-  border-color: #d9a441;
-  color: #8a6106;
-  background: #fdf8ec;
+  border-color: var(--d-warn);
+  color: var(--d-warn);
+  background: var(--d-warn-bg);
 }
 .rfp-legend-note {
   margin-left: 4px;
@@ -225,9 +225,9 @@ function confirm() {
   gap: 6px;
   overflow-x: auto;
   padding: 12px;
-  border: 1px solid #e2e8e6;
+  border: 1px solid var(--d-border);
   border-radius: 6px;
-  background: #fafcfb;
+  background: var(--d-fill-soft);
   min-height: 68px;
 }
 .rfp-step {
@@ -236,14 +236,14 @@ function confirm() {
   gap: 6px;
   flex: 0 0 auto;
   padding: 6px 10px;
-  border: 1px solid #cfd8d5;
+  border: 1px solid var(--d-border-strong);
   border-radius: 6px;
   background: #fff;
 }
 .rfp-step.is-out {
-  border-color: #d9a441;
+  border-color: var(--d-warn);
   border-style: dashed;
-  background: #fdf8ec;
+  background: var(--d-warn-bg);
 }
 .rfp-seq {
   display: inline-flex;
@@ -258,7 +258,7 @@ function confirm() {
   line-height: 1;
 }
 .rfp-step.is-out .rfp-seq {
-  background: #b8860b;
+  background: var(--d-warn);
 }
 .rfp-name {
   font-size: 13px;
@@ -267,9 +267,9 @@ function confirm() {
 }
 .rfp-out {
   padding: 0 4px;
-  border-radius: 3px;
-  border: 1px solid #d9a441;
-  color: #8a6106;
+  border-radius: 4px;
+  border: 1px solid var(--d-warn);
+  color: var(--d-warn);
   font-size: 11px;
   line-height: 16px;
 }
@@ -286,7 +286,7 @@ function confirm() {
 }
 .rfp-empty {
   padding: 24px 12px;
-  border: 1px dashed #e2e8e6;
+  border: 1px dashed var(--d-border);
   border-radius: 6px;
   color: var(--t-text-3);
   font-size: 13px;

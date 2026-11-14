@@ -77,7 +77,7 @@ const plan = computed(() => (planMap[code.value] || ['待规划']).map(tt))
 <style scoped>
 .module-view {
   background: #fff;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 18px;
   min-height: 100%;
 }

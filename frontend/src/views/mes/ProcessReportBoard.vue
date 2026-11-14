@@ -503,7 +503,7 @@ onMounted(load)
   width: 84px;
   height: 4px;
   background: var(--d-fill);
-  border-radius: 2px;
+  border-radius: 4px;
   overflow: hidden;
 }
 .mo-bar i {
@@ -662,7 +662,7 @@ onMounted(load)
   align-items: baseline;
   gap: 8px;
   min-width: 0;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 20px;
 }
 .d-k {
@@ -715,7 +715,7 @@ onMounted(load)
 }
 .di-text {
   margin: 6px 0 0;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 20px;
   color: var(--d-text-2);
 }

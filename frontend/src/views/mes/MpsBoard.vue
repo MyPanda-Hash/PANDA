@@ -171,7 +171,7 @@ onMounted(loadPlans)
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  background: var(--d-bg, #f6f7f8);
+  background: var(--d-bg, var(--d-fill-soft));
 }
 
 .mps-head {
@@ -185,7 +185,7 @@ onMounted(loadPlans)
   margin: 0;
   font-size: 16px;
   line-height: 24px;
-  color: var(--d-text, #1f2d3d);
+  color: var(--d-text, var(--d-text));
 }
 
 .mps-sub {
@@ -193,10 +193,10 @@ onMounted(loadPlans)
   margin-top: 4px;
   font-size: 12px;
   line-height: 20px;
-  color: var(--d-text-3, #8b9893);
+  color: var(--d-text-3, var(--d-text-3));
 }
 
-.dot { margin: 0 6px; color: var(--d-border-strong, #dce4e1); }
+.dot { margin: 0 6px; color: var(--d-border-strong, var(--d-border-strong)); }
 
 .mps-actions {
   display: flex;
@@ -216,16 +216,16 @@ onMounted(loadPlans)
 .mps-metric {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid var(--d-border, #edf1ef);
+  border: 1px solid var(--d-border, var(--d-border));
   border-radius: 6px;
-  background: #fff;
+  background: var(--d-card);
 }
 
 .mps-metric-label {
   display: block;
   font-size: 12px;
   line-height: 18px;
-  color: var(--d-text-3, #8b9893);
+  color: var(--d-text-3, var(--d-text-3));
 }
 
 .mps-metric-value {
@@ -233,10 +233,10 @@ onMounted(loadPlans)
   font-size: 18px;
   line-height: 26px;
   font-variant-numeric: tabular-nums;
-  color: var(--d-text, #1f2d3d);
+  color: var(--d-text, var(--d-text));
 }
 
-.mps-metric-value.warn { color: var(--d-warn, #faad14); }
+.mps-metric-value.warn { color: var(--d-warn, var(--d-warn)); }
 
 .mps-grid {
   flex: 1;
@@ -247,9 +247,9 @@ onMounted(loadPlans)
 }
 
 .mps-pane {
-  border: 1px solid var(--d-border, #edf1ef);
+  border: 1px solid var(--d-border, var(--d-border));
   border-radius: 6px;
-  background: #fff;
+  background: var(--d-card);
   padding: 8px 10px 10px;
   min-width: 0;
 }
@@ -260,16 +260,16 @@ onMounted(loadPlans)
   justify-content: space-between;
   padding: 2px 2px 8px;
   font-size: 13px;
-  color: var(--d-text, #1f2d3d);
+  color: var(--d-text, var(--d-text));
 }
 
 .mps-hint {
   font-size: 12px;
-  color: var(--d-text-3, #8b9893);
+  color: var(--d-text-3, var(--d-text-3));
 }
 
 .num { font-variant-numeric: tabular-nums; }
-.num.strong { color: var(--d-text, #1f2d3d); font-weight: 600; }
+.num.strong { color: var(--d-text, var(--d-text)); font-weight: 600; }
 
 .mps-tag {
   display: inline-block;
@@ -277,10 +277,10 @@ onMounted(loadPlans)
   border-radius: 4px;
   font-size: 12px;
   line-height: 20px;
-  border: 1px solid var(--d-border-strong, #dce4e1);
-  color: var(--d-text-2, #5b6b66);
+  border: 1px solid var(--d-border-strong, var(--d-border-strong));
+  color: var(--d-text-2, var(--d-text-2));
 }
 
-.mps-tag.ok { border-color: #b7eb8f; background: #f6ffed; color: #389e0d; }
-.mps-tag.warn { border-color: #ffe58f; background: #fffbe6; color: #d48806; }
+.mps-tag.ok { border-color: var(--d-ok-bg); background: var(--d-ok-bg); color: var(--d-ok); }
+.mps-tag.warn { border-color: var(--d-warn-bg); background: var(--d-warn-bg); color: var(--d-warn); }
 </style>

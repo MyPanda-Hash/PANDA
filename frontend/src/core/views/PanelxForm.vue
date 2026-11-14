@@ -1,5 +1,5 @@
 <template>
-  <div class="panelx-form" :class="{ 'sectioned-form': formSections.length }">
+  <div class="adx panelx-form" :class="{ 'sectioned-form': formSections.length }">
     <div class="card">
       <!-- 采购发票等分段式详情：独立操作栏，避免复用通用 T+ 工具栏的旧视觉 -->
       <div v-if="formSections.length" class="invoice-topbar">
@@ -1634,6 +1634,9 @@ async function load() {
     }
   } catch (e) {
     ElMessage.error(engine.errMsg(e) || tt('加载失败'))
+    // 单据没加载出来（单号不存在/已删除），别在页签栏留一张打不开的单据页签。
+    // 深链进来时这张页签是外部补的，不关掉就会一直挂着。
+    tabsStore.close(route.path)
     back()
   } finally {
     loading.value = false
@@ -2137,7 +2140,7 @@ watch(() => [panelCode.value, code.value], () => {
   justify-content: flex-end;
   gap: 8px;
   padding: 4px 8px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--d-fill);
   background: #fff;
 }
 .ref-pager-info {
@@ -2156,7 +2159,7 @@ watch(() => [panelCode.value, code.value], () => {
   color: rgba(0, 0, 0, 0.45);
   cursor: pointer;
 }
-.ref-jump:hover { color: #1677ff; }
+.ref-jump:hover { color: var(--t-primary); }
 .ref-jump-inline { margin-left: 4px; }
 
 .card {
@@ -2170,8 +2173,8 @@ watch(() => [panelCode.value, code.value], () => {
   align-items: center;
   gap: 0;
   flex-wrap: wrap;
-  background: #f5f7fa;
-  border-bottom: 1px solid #d0d7e3;
+  background: var(--d-fill-soft);
+  border-bottom: 1px solid var(--d-border-strong);
   padding: 8px 12px;
 }
 .tb-group {
@@ -2191,7 +2194,7 @@ watch(() => [panelCode.value, code.value], () => {
   text-decoration: none;
 }
 .tb-main:hover {
-  color: #3788FF;
+  color: var(--d-primary);
 }
 .tb-main.disabled {
   color: #999;
@@ -2199,10 +2202,10 @@ watch(() => [panelCode.value, code.value], () => {
 }
 /* 审批驳回：与「审批通过」并列的第二个决策，用克制的危险色区分 */
 .tb-main.danger {
-  color: #c84d3f;
+  color: var(--t-badge);
 }
 .tb-main.danger:hover {
-  color: #a93a2e;
+  color: var(--d-bad);
 }
 .tb-main.back {
   margin-left: 0;
@@ -2217,7 +2220,7 @@ watch(() => [panelCode.value, code.value], () => {
   outline: none;
 }
 .tb-caret:hover {
-  color: #3788FF;
+  color: var(--d-primary);
 }
 .tools-right {
   margin-left: auto;
@@ -2228,7 +2231,7 @@ watch(() => [panelCode.value, code.value], () => {
 .tools-right .pg {
   width: 22px;
   height: 20px;
-  border: 1px solid #d0d7e3;
+  border: 1px solid var(--d-border-strong);
   background: #fff;
   color: #222;
   display: flex;
@@ -2256,8 +2259,8 @@ watch(() => [panelCode.value, code.value], () => {
   top: -6px;
   z-index: 9;
   transform: rotate(-12deg);
-  color: #16a34a;
-  border: 2px solid #16a34a;
+  color: var(--d-ok);
+  border: 2px solid var(--d-ok);
   border-radius: 4px;
   padding: 0 10px;
   font-size: 14px;
@@ -2266,18 +2269,18 @@ watch(() => [panelCode.value, code.value], () => {
   pointer-events: none;
 }
 .approved-stamp.doing {
-  color: #b45309;
-  border-color: #b45309;
+  color: var(--d-warn);
+  border-color: var(--d-warn);
   background: rgba(255, 251, 235, 0.94);
 }
 .approved-stamp.done {
-  color: #0d5bd3;
-  border-color: #0d5bd3;
+  color: var(--t-primary);
+  border-color: var(--t-primary);
   background: rgba(239, 246, 255, 0.94);
 }
 .approved-stamp.stop {
-  color: #6b7280;
-  border-color: #6b7280;
+  color: var(--d-text-2);
+  border-color: var(--d-text-2);
   background: rgba(249, 250, 251, 0.94);
   letter-spacing: 3px;
   box-shadow: 0 1px 3px rgba(22, 163, 74, 0.25);
@@ -2337,7 +2340,7 @@ watch(() => [panelCode.value, code.value], () => {
   white-space: nowrap;
 }
 .field .req {
-  color: #dc2626;
+  color: var(--d-bad);
 }
 .field .el-input,
 .field .el-select,
@@ -2350,7 +2353,7 @@ watch(() => [panelCode.value, code.value], () => {
   align-items: center;
   gap: 2px;
 }.field .req {
-  color: #dc2626;
+  color: var(--d-bad);
 }
 .detail {
   margin-top: 12px;
@@ -2362,7 +2365,7 @@ watch(() => [panelCode.value, code.value], () => {
   margin-bottom: 8px;
 }
 .prod-selected {
-  background: #eef4ff !important;
+  background: var(--d-primary-bg) !important;
 }
 .mat-cell {
   position: relative;
@@ -2373,7 +2376,7 @@ watch(() => [panelCode.value, code.value], () => {
   position: absolute;
   top: 2px;
   right: 2px;
-  color: #e60000;
+  color: var(--d-bad);
   font-weight: 700;
   font-size: 14px;
   line-height: 1;
@@ -2382,7 +2385,7 @@ watch(() => [panelCode.value, code.value], () => {
 }
 .filter-hint {
   font-size: 12px;
-  color: #0d5bd3;
+  color: var(--t-primary);
   font-weight: 600;
   margin-right: 8px;
 }
@@ -2409,7 +2412,7 @@ watch(() => [panelCode.value, code.value], () => {
 }
 .del {
   cursor: pointer;
-  color: #dc2626;
+  color: var(--d-bad);
 }
 .img-ph {
   display: inline-flex;
@@ -2420,7 +2423,7 @@ watch(() => [panelCode.value, code.value], () => {
   font-size: 11px;
   color: var(--t-text-3);
   border: 1px dashed var(--t-border);
-  border-radius: 3px;
+  border-radius: 4px;
 }
 .act-name {
   display: inline-flex;
@@ -2505,12 +2508,12 @@ watch(() => [panelCode.value, code.value], () => {
   user-select: none;
 }
 .dt-tab.on {
-  color: #3788FF;
+  color: var(--d-primary);
   font-weight: 700;
-  border-bottom: 2px solid #3788FF;
+  border-bottom: 2px solid var(--d-primary);
 }
 .dt-tab .req {
-  color: #dc2626;
+  color: var(--d-bad);
 }
 .dt-actions {
   display: flex;
@@ -2524,7 +2527,7 @@ watch(() => [panelCode.value, code.value], () => {
   cursor: pointer;
 }
 .dt-ic:hover {
-  color: #3788FF;
+  color: var(--d-primary);
 }
 .dt-splitter {
   height: 8px;
@@ -2584,7 +2587,7 @@ watch(() => [panelCode.value, code.value], () => {
   font-weight: 700;
 }
 .dt-tab .req {
-  color: #dc2626;
+  color: var(--d-bad);
 }
 .dt-actions {
   display: flex;
@@ -2599,15 +2602,15 @@ watch(() => [panelCode.value, code.value], () => {
   text-decoration: none;
 }
 .dt-ic:hover {
-  color: #3788FF;
+  color: var(--d-primary);
 }
 .dt-splitter {
   height: 10px;
-  border-bottom: 1px solid #d0d7e3;
-  background: #f5f7fa;
+  border-bottom: 1px solid var(--d-border-strong);
+  background: var(--d-fill-soft);
 }
 .detail :deep(.el-table th.el-table__cell) {
-  background: #f7f9fc;
+  background: var(--d-fill-soft);
   color: #222;
   font-weight: 700;
 }
@@ -2661,7 +2664,7 @@ watch(() => [panelCode.value, code.value], () => {
   margin-bottom: 10px;
   padding: 8px 14px;
   background: #fff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--d-border);
   border-radius: 8px;
 }
 .sectioned-form .head {
@@ -2683,7 +2686,7 @@ watch(() => [panelCode.value, code.value], () => {
 }
 .sectioned-form .invoice-title .no {
   overflow: hidden;
-  color: #1f2937;
+  color: var(--d-text);
   font-size: 18px;
   font-weight: 700;
   text-overflow: ellipsis;
@@ -2698,7 +2701,7 @@ watch(() => [panelCode.value, code.value], () => {
 .sectioned-form .fields.udl-fields {
   padding: 16px 18px 8px;
   background: #fff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--d-border);
   border-radius: 8px;
   gap: 14px 24px;
 }
@@ -2706,8 +2709,8 @@ watch(() => [panelCode.value, code.value], () => {
   grid-column: 1 / -1;
   margin: 2px 0;
   padding-bottom: 6px;
-  border-bottom: 1px solid #f0f0f0;
-  color: #1f2937;
+  border-bottom: 1px solid var(--d-fill);
+  color: var(--d-text);
   font-size: 13px;
   font-weight: 600;
 }
@@ -2717,21 +2720,21 @@ watch(() => [panelCode.value, code.value], () => {
 .sectioned-form .detail-section-title {
   margin: 14px 0 8px;
   padding: 0 2px 6px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--d-border);
 }
 .sectioned-form .detail {
   padding: 10px 12px;
   background: #fff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--d-border);
   border-radius: 8px;
 }
 /* 发票明细：轻表格，单元格内控件不再画重边框，聚焦/悬停才提示可编辑 */
 .sectioned-form .detail :deep(.el-table--border .el-table__cell) {
-  border-right: 1px solid #f1f5f9;
+  border-right: 1px solid var(--d-fill-soft);
 }
 .sectioned-form .detail :deep(.el-table th.el-table__cell) {
-  background: #f8fafc;
-  color: #475569;
+  background: var(--d-fill-soft);
+  color: var(--d-text-2);
   font-weight: 600;
 }
 .sectioned-form .detail :deep(.el-input__wrapper),
@@ -2741,17 +2744,17 @@ watch(() => [panelCode.value, code.value], () => {
 }
 .sectioned-form .detail :deep(.el-input__wrapper:hover),
 .sectioned-form .detail :deep(.el-select__wrapper:hover) {
-  box-shadow: 0 0 0 1px #cbd5e1 inset;
+  box-shadow: 0 0 0 1px var(--d-border-strong) inset;
 }
 .sectioned-form .dt-scroll-hint {
-  color: #94a3b8;
+  color: var(--d-text-3);
   font-size: 12px;
 }
 .sectioned-form .form-summary {
   margin-top: 10px;
   padding: 12px 16px;
   background: #fff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--d-border);
   border-radius: 8px;
 }
 .sectioned-form .form-summary .form-section-title {
@@ -2768,14 +2771,14 @@ watch(() => [panelCode.value, code.value], () => {
   justify-content: space-between;
   gap: 10px;
   padding: 7px 0;
-  border-bottom: 1px dashed #f0f0f0;
+  border-bottom: 1px dashed var(--d-fill);
 }
 .summary-label {
-  color: #64748b;
+  color: var(--d-text-2);
   font-size: 12px;
 }
 .summary-value {
-  color: #1f2937;
+  color: var(--d-text);
   font-size: 13px;
   font-weight: 600;
 }

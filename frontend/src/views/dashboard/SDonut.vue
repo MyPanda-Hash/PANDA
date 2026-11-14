@@ -105,7 +105,7 @@ function colorOf(i) {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--t-text-2);
 }
 .lg-dot {

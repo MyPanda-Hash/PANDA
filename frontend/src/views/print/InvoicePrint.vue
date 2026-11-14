@@ -402,8 +402,8 @@ watch(
 .tb {
   height: 32px;
   padding: 0 14px;
-  border: 1px solid #1677ff;
-  background: #1677ff;
+  border: 1px solid var(--t-primary);
+  background: var(--t-primary);
   color: #fff;
   border-radius: 6px;
   cursor: pointer;
@@ -412,10 +412,10 @@ watch(
 .tb.ghost {
   background: #fff;
   color: #333;
-  border-color: #d9d9d9;
+  border-color: var(--d-border-strong);
 }
 .tb-tip {
-  color: #8c8c8c;
+  color: var(--d-text-3);
   font-size: 12px;
 }
 .inv-official {
@@ -426,7 +426,7 @@ watch(
   max-width: 1000px;
   margin: 0 auto 10px;
   padding: 8px 12px;
-  background: #f6ffed;
+  background: var(--d-ok-bg);
   border: 1px solid #b7eb8f;
   border-radius: 6px;
   color: #237804;
@@ -441,7 +441,7 @@ watch(
 .inv-error {
   padding: 24px;
   background: #fff;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--d-fill);
   border-radius: 6px;
   color: #cf1322;
   font-size: 13px;

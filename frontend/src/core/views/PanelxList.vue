@@ -1,5 +1,5 @@
 <template>
-  <div class="panelx-list" @click="closeCtx">
+  <div class="adx panelx-list" @click="closeCtx">
     <!-- ══════════ ① 顶部工具栏（T+ 灰条 + 单据翻页）══════════ -->
     <div class="tools">
       <button type="button" class="toolbar-query-btn" :title="tt('按表头字段查询单据')" @click.stop="openQueryDialog">
@@ -4233,8 +4233,8 @@ onUnmounted(() => {
 
 /* ═══════ ① 顶部工具栏（T+ 灰条）═══════ */
 .tools {
-  background: #f5f7fa;
-  border-bottom: 1px solid #d0d7e3;
+  background: var(--d-fill-soft);
+  border-bottom: 1px solid var(--d-border-strong);
   padding: 8px 12px;
   display: flex;
   align-items: center;
@@ -4249,15 +4249,15 @@ onUnmounted(() => {
   min-width: 64px;
   padding: 0 12px;
   border: 0;
-  border-right: 1px solid #c8ced8;
+  border-right: 1px solid var(--d-border-strong);
   background: transparent;
-  color: #263548;
+  color: var(--d-text);
   font: inherit;
   cursor: pointer;
 }
 .toolbar-query-btn:hover {
-  background: #e7eef8;
-  color: #0d5bd3;
+  background: var(--d-primary-bg);
+  color: var(--t-primary);
 }
 /* 返回：只在从外部入口（业务总览等）带 ?from= 进来时出现，放右侧与其他单据信息同区 */
 .toolbar-back-btn {
@@ -4267,25 +4267,25 @@ onUnmounted(() => {
   min-height: 28px;
   margin-right: 12px;
   padding: 0 10px;
-  border: 1px solid #c9cfdb;
-  border-radius: 3px;
+  border: 1px solid var(--d-border-strong);
+  border-radius: 4px;
   background: #fff;
-  color: #263548;
+  color: var(--d-text);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
 }
 .toolbar-back-btn:hover {
-  border-color: #0d5bd3;
-  background: #e7eef8;
-  color: #0d5bd3;
+  border-color: var(--t-primary);
+  background: var(--d-primary-bg);
+  color: var(--t-primary);
 }
 .tb-group {
   display: inline-flex;
   align-items: center;
   position: relative;
-  border: 1px solid #c9cfdb;
-  border-radius: 3px;
+  border: 1px solid var(--d-border-strong);
+  border-radius: 4px;
   overflow: visible;
   margin-right: 4px;
   background: #fff;
@@ -4297,7 +4297,7 @@ onUnmounted(() => {
   z-index: 3000;
   min-width: 160px;
   background: #fff;
-  border: 1px solid #d0d7e3;
+  border: 1px solid var(--d-border-strong);
   border-radius: 4px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
   padding: 4px 0;
@@ -4314,27 +4314,27 @@ onUnmounted(() => {
   user-select: none;
 }
 .tb-main:hover {
-  color: #0d5bd3;
-  background: #f0f5ff;
+  color: var(--t-primary);
+  background: var(--d-primary-bg);
 }
 .tb-main.disabled {
-  color: #b3b9c4;
+  color: var(--d-border-strong);
   cursor: not-allowed;
 }
 /* 审批驳回：与「审批通过」并列的第二个决策，用克制的危险色区分，但不抢主按钮 */
 .tb-main.danger {
-  color: #c84d3f;
+  color: var(--t-badge);
 }
 .tb-main.danger:hover {
-  color: #a93a2e;
-  background: #fdf1ef;
+  color: var(--d-bad);
+  background: var(--d-bad-bg);
 }
 .tb-caret {
   display: inline-flex;
   align-items: center;
   padding: 0 5px;
   font-size: 12px;
-  border-left: 1px solid #c9cfdb;
+  border-left: 1px solid var(--d-border-strong);
   color: #555;
   cursor: pointer;
 }
@@ -4351,48 +4351,48 @@ onUnmounted(() => {
 }
 .doc-chip {
   font-size: 12px;
-  color: #1c4f8a;
+  color: var(--d-primary);
   font-weight: 600;
   margin-right: 6px;
 }
 .doc-status {
   font-size: 12px;
   padding: 1px 8px;
-  border-radius: 10px;
+  border-radius: 8px;
   margin-right: 6px;
 }
 .doc-cat {
   font-size: 12px;
   padding: 1px 8px;
-  border-radius: 10px;
+  border-radius: 8px;
   margin-right: 6px;
-  color: #7c3aed;
-  border: 1px solid #ddd6fe;
-  background: #f5f3ff;
+  color: var(--t-tag-purple, #7c3aed);
+  border: 1px solid var(--t-tag-purple-border, #ddd6fe);
+  background: var(--t-tag-purple-bg, #f5f3ff);
 }
 .doc-status.已审核,
 .doc-status.已完工 {
-  color: #16a34a;
-  border: 1px solid #bbe6c4;
-  background: #f0fdf4;
+  color: var(--d-ok);
+  border: 1px solid var(--d-ok-bg);
+  background: var(--d-ok-bg);
 }
 .doc-status.生产中,
 .doc-status.审批中 {
-  color: #0d5bd3;
-  border: 1px solid #bcd2f5;
-  background: #f0f6ff;
+  color: var(--t-primary);
+  border: 1px solid var(--d-primary-bg);
+  background: var(--d-primary-bg);
 }
 .doc-status.草稿 {
-  color: #d97706;
-  border: 1px solid #f3d9a6;
-  background: #fffaf0;
+  color: var(--d-warn);
+  border: 1px solid var(--d-warn);
+  background: var(--d-warn-bg);
 }
 .page-btn {
   width: 24px;
   height: 24px;
   line-height: 22px;
   text-align: center;
-  border: 1px solid #c9cfdb;
+  border: 1px solid var(--d-border-strong);
   background: #fff;
   cursor: pointer;
   user-select: none;
@@ -4400,8 +4400,8 @@ onUnmounted(() => {
   color: #333;
 }
 .page-btn:hover {
-  border-color: #0d5bd3;
-  color: #0d5bd3;
+  border-color: var(--t-primary);
+  color: var(--t-primary);
 }
 .page-no {
   padding: 0 6px;
@@ -4414,14 +4414,14 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   padding: 3px 8px;
-  border-top: 1px solid #e3e8f0;
-  background: #fafbfd;
+  border-top: 1px solid var(--d-border);
+  background: var(--d-fill-soft);
   font-size: 12px;
   color: #555;
 }
 .dg-count,
 .dg-per-label {
-  color: #64748b;
+  color: var(--d-text-2);
 }
 .dg-per {
   display: inline-flex;
@@ -4442,14 +4442,14 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  color: var(--t-primary-dark, #0d584c);
+  color: var(--t-primary-dark, var(--d-primary));
 }
 /* 参照带出列（存货名称.品牌）：跟普通文本同样的观感，但不可编辑 */
 .carried-cell {
-  color: #475569;
+  color: var(--d-text-2);
 }
 .report-count {
-  color: #64748b;
+  color: var(--d-text-2);
   font-size: 12px;
   padding-right: 6px;
 }
@@ -4460,7 +4460,7 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 10px 16px;
   padding: 10px 12px 8px;
-  border-bottom: 1px solid #e5e9f0;
+  border-bottom: 1px solid var(--d-border);
   background: #fff;
 }
 /* 内联表头栅格（2026-11-03）：与表单页同口径，等宽列铺满，宽屏下不再挤在左边 */
@@ -4494,7 +4494,7 @@ onUnmounted(() => {
 }
 .field label.req::before {
   content: '*';
-  color: #ff0033;
+  color: var(--d-bad);
   margin-right: 2px;
 }
 .field :deep(.el-input),
@@ -4530,7 +4530,7 @@ onUnmounted(() => {
   justify-content: flex-end;
   gap: 8px;
   padding: 4px 8px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--d-fill);
   background: #fff;
 }
 .ref-pager-info {
@@ -4567,7 +4567,7 @@ onUnmounted(() => {
   color: rgba(0, 0, 0, 0.45);
   cursor: pointer;
 }
-.query-ref-select .ref-jump:hover { color: #1677ff; }
+.query-ref-select .ref-jump:hover { color: var(--t-primary); }
 
 .inline-ref-select {
   width: 100%;
@@ -4585,10 +4585,10 @@ onUnmounted(() => {
   width: 160px;
   min-height: 28px;
   padding: 0 8px;
-  border: 1px solid #d8dde6;
+  border: 1px solid var(--d-border-strong);
   border-radius: 4px;
-  background: #f7f8fa;
-  color: #3f4b5c;
+  background: var(--d-fill-soft);
+  color: var(--d-text);
   font-size: 13px;
   line-height: 26px;
   overflow: hidden;
@@ -4596,7 +4596,7 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 .header-fields.is-draft {
-  background: #fbfdff;
+  background: var(--d-fill-soft);
 }
 /* 字段筛选弹窗：没有可筛列时的空态（不能只留一片空白） */
 .field-filter-empty {
@@ -4625,7 +4625,7 @@ onUnmounted(() => {
 }
 .query-dialog-field > label {
   overflow: hidden;
-  color: #4b5563;
+  color: var(--d-text-2);
   font-size: 13px;
   text-align: right;
   text-overflow: ellipsis;
@@ -4665,18 +4665,18 @@ onUnmounted(() => {
   padding: 0 10px 10px;
   display: flex;
   flex-direction: column;
-  background: #f7f8fa;
+  background: var(--d-fill-soft);
 }
 /* 单据列表模式：整页只放表头主信息表，明细在 PanelxForm 详情页维护 */
 .doc-list-body {
   flex: 1;
   min-height: 0;
   padding: 8px 10px 10px;
-  background: #f7f8fa;
+  background: var(--d-fill-soft);
 }
 .doc-list-tip {
   margin-left: 6px;
-  color: #8c8c8c;
+  color: var(--d-text-3);
   font-size: 12px;
 }
 .report-heading {
@@ -4685,14 +4685,14 @@ onUnmounted(() => {
   align-items: center;
   gap: 14px;
   padding: 0 4px;
-  color: #1f2937;
+  color: var(--d-text);
 }
 .report-heading strong {
   font-size: 16px;
   font-weight: 600;
 }
 .report-heading span {
-  color: #64748b;
+  color: var(--d-text-2);
   font-size: 12px;
 }
 .report-table {
@@ -4701,8 +4701,8 @@ onUnmounted(() => {
   background: #fff;
 }
 :deep(.report-table th.el-table__cell) {
-  background: #f3f6fa;
-  color: #27364a;
+  background: var(--d-fill-soft);
+  color: var(--d-text);
   font-weight: 600;
   padding: 7px 0;
 }
@@ -4710,11 +4710,11 @@ onUnmounted(() => {
   padding: 5px 0;
 }
 :deep(.report-table .el-table__footer-wrapper td) {
-  background: #f8fafc;
-  color: #1f2937;
+  background: var(--d-fill-soft);
+  color: var(--d-text);
 }
 .detail {
-  border: 1px solid #d7dce5;
+  border: 1px solid var(--d-border-strong);
   margin-bottom: 8px;
   background: #fff;
   position: relative;
@@ -4723,12 +4723,12 @@ onUnmounted(() => {
    正好压在「明细/汇总」页签上，把可点的页签挡掉了；改成页签行里的一个行内标签，既不遮控件也不占新行 */
 /* 适用BOM 单元格：只读、可点开看子件；没有 BOM 的红字提示 */
 .bom-cell {
-  color: #0d5bd3;
+  color: var(--t-primary);
   cursor: pointer;
   text-decoration: underline dotted;
 }
 .bom-cell.missing {
-  color: #dc2626;
+  color: var(--d-bad);
   font-weight: 700;
   cursor: default;
   text-decoration: none;
@@ -4737,17 +4737,17 @@ onUnmounted(() => {
 .inline-ref-text {
   display: block;
   padding: 0 4px;
-  color: #111827;
+  color: var(--d-text);
   cursor: default;
 }
 /* 选工艺路线弹窗：标题下的一句说明 + 已配路线的正常字色 */
 .route-tip {
   margin: 0 0 8px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--d-text-2);
 }
 .route-cur {
-  color: #16a34a;
+  color: var(--d-ok);
 }
 /* 展开行：工艺路线要走的工序及顺序 */
 .route-flow {
@@ -4759,7 +4759,7 @@ onUnmounted(() => {
   font-size: 12px;
 }
 .route-flow-label {
-  color: #6b7280;
+  color: var(--d-text-2);
   margin-right: 2px;
 }
 .route-seq {
@@ -4770,25 +4770,25 @@ onUnmounted(() => {
   height: 16px;
   margin-right: 4px;
   border-radius: 50%;
-  background: #eef2f7;
-  color: #4b5563;
+  background: var(--d-border);
+  color: var(--d-text-2);
   font-size: 11px;
 }
 .route-name {
-  color: #111827;
+  color: var(--d-text);
 }
 .route-ws {
   margin-left: 4px;
-  color: #9ca3af;
+  color: var(--d-text-3);
 }
 .route-arrow {
-  color: #c0c4cc;
+  color: var(--d-border-strong);
 }
 .approved-stamp {
   flex: none;
   transform: rotate(-8deg);
-  color: #16a34a;
-  border: 2px solid #16a34a;
+  color: var(--d-ok);
+  border: 2px solid var(--d-ok);
   border-radius: 4px;
   padding: 0 6px;
   margin-right: 4px;
@@ -4802,28 +4802,28 @@ onUnmounted(() => {
 }
 /* 印章四态：审批通过（绿）/ 生产中（琥珀）/ 已完工（蓝）/ 已关闭中止（灰） */
 .approved-stamp.doing {
-  color: #b45309;
-  border-color: #b45309;
+  color: var(--d-warn);
+  border-color: var(--d-warn);
   background: rgba(255, 251, 235, 0.94);
   box-shadow: 0 1px 3px rgba(180, 83, 9, 0.25);
 }
 .approved-stamp.done {
-  color: #0d5bd3;
-  border-color: #0d5bd3;
+  color: var(--t-primary);
+  border-color: var(--t-primary);
   background: rgba(239, 246, 255, 0.94);
   box-shadow: 0 1px 3px rgba(13, 91, 211, 0.25);
 }
 .approved-stamp.stop {
-  color: #6b7280;
-  border-color: #6b7280;
+  color: var(--d-text-2);
+  border-color: var(--d-text-2);
   background: rgba(249, 250, 251, 0.94);
   box-shadow: 0 1px 3px rgba(107, 114, 128, 0.22);
 }
 .dt-head {
   display: flex;
   align-items: center;
-  background: #f5f7fa;
-  border-bottom: 1px solid #d0d7e3;
+  background: var(--d-fill-soft);
+  border-bottom: 1px solid var(--d-border-strong);
   min-height: 30px;
   padding: 0 6px;
 }
@@ -4832,7 +4832,7 @@ onUnmounted(() => {
   font-size: 13px;
   cursor: pointer;
   color: #333;
-  border-right: 1px solid #d0d7e3;
+  border-right: 1px solid var(--d-border-strong);
   user-select: none;
   position: relative;
   /* 页签名不换行：窄屏（768）下曾被「已审批」印章挤成两行「明/细」 */
@@ -4840,11 +4840,11 @@ onUnmounted(() => {
   flex: none;
 }
 .dt-tab:hover {
-  color: #0d5bd3;
+  color: var(--t-primary);
 }
 .dt-tab.on {
   background: #fff;
-  color: #0d5bd3;
+  color: var(--t-primary);
   font-weight: 700;
   border: 1px solid #ccc;
   border-bottom-color: #fff;
@@ -4865,7 +4865,7 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 .dt-ic:hover {
-  color: #0d5bd3;
+  color: var(--t-primary);
 }
 .mat-cell {
   position: relative;
@@ -4886,14 +4886,14 @@ onUnmounted(() => {
   min-height: 30px;
   padding: 6px 8px;
   overflow: hidden;
-  color: #556171;
+  color: var(--d-text-2);
   line-height: 18px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .inline-ref-editor.active :deep(.el-input__wrapper) {
   padding-right: 24px;
-  box-shadow: 0 0 0 1px #4b74a6 inset;
+  box-shadow: 0 0 0 1px var(--d-primary) inset;
 }
 .list-ref-icon {
   position: absolute;
@@ -4904,7 +4904,7 @@ onUnmounted(() => {
   height: 12px;
   transform: translateY(-50%);
   font-size: 12px;
-  color: #4b74a6;
+  color: var(--d-primary);
   pointer-events: none;
 }
 .detail :deep(.el-table td .el-input),
@@ -4931,8 +4931,8 @@ onUnmounted(() => {
 }
 .detail :deep(.el-table td .el-input.is-disabled .el-input__inner),
 .detail :deep(.el-table td .el-input-number.is-disabled .el-input__inner) {
-  color: #556171;
-  -webkit-text-fill-color: #556171;
+  color: var(--d-text-2);
+  -webkit-text-fill-color: var(--d-text-2);
 }
 :global(.panelx-list .draft-body .detail .el-input.is-disabled .el-input__wrapper),
 :global(.panelx-list .draft-body .detail .el-input-number.is-disabled .el-input__wrapper),
@@ -4945,7 +4945,7 @@ onUnmounted(() => {
 }
 .detail :deep(.el-table td .el-input__wrapper:hover),
 .detail :deep(.el-table td .el-select__wrapper:hover) {
-  box-shadow: 0 0 0 1px #aab8ca inset;
+  box-shadow: 0 0 0 1px var(--d-border-strong) inset;
 }
 .detail :deep(.el-table td .el-input-number .el-input__wrapper) {
   padding: 1px 8px;
@@ -4957,7 +4957,7 @@ onUnmounted(() => {
   position: absolute;
   top: 2px;
   right: 2px;
-  color: #e60000;
+  color: var(--d-bad);
   font-weight: 700;
   font-size: 14px;
   line-height: 1;
@@ -4966,17 +4966,17 @@ onUnmounted(() => {
 }
 .filter-hint {
   font-size: 12px;
-  color: #0d5bd3;
+  color: var(--t-primary);
   margin-right: 8px;
 }
 :deep(.prod-selected > td.el-table__cell) {
   background: #fff !important;
 }
 :deep(.prod-selected > td.el-table__cell:first-child) {
-  box-shadow: inset 3px 0 #7a9abe;
+  box-shadow: inset 3px 0 var(--d-primary);
 }
 :deep(.el-table th.el-table__cell) {
-  background: #f7f9fc;
+  background: var(--d-fill-soft);
   color: #333;
   font-weight: 600;
 }
@@ -4993,7 +4993,7 @@ onUnmounted(() => {
   font-weight: 600;
 }
 :deep(.el-table .sum-row td) {
-  background: #f7f9fc;
+  background: var(--d-fill-soft);
   font-weight: 600;
 }
 
@@ -5003,7 +5003,7 @@ onUnmounted(() => {
   bottom: 0;
   z-index: 20;
   background: #fff;
-  border-top: 1px solid #d0d7e3;
+  border-top: 1px solid var(--d-border-strong);
   box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.06);
   flex-shrink: 0;
 }
@@ -5046,7 +5046,7 @@ onUnmounted(() => {
   z-index: 3000;
   min-width: 150px;
   background: #fff;
-  border: 1px solid #d0d7e3;
+  border: 1px solid var(--d-border-strong);
   border-radius: 4px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
   padding: 4px 0;
@@ -5059,24 +5059,24 @@ onUnmounted(() => {
   user-select: none;
 }
 .ctx-item:hover {
-  background: #f0f5ff;
-  color: #0d5bd3;
+  background: var(--d-primary-bg);
+  color: var(--t-primary);
 }
 /* 2026-08-25：灰按钮下拉项（如草稿态「生成XX」）视觉置灰 */
 .ctx-item.disabled {
-  color: #c0c4cc;
+  color: var(--d-border-strong);
   cursor: not-allowed;
 }
 .ctx-item.disabled:hover {
   background: transparent;
-  color: #c0c4cc;
+  color: var(--d-border-strong);
 }
-:deep(.el-table .row-approved td) { background: #f0fdf4 !important; }
+:deep(.el-table .row-approved td) { background: var(--d-ok-bg) !important; }
 .main-grid { margin-bottom: 10px; }
 .main-grid .dt-head { margin-bottom: 4px; }
 .main-grid .dt-head .dt-tab.on { cursor: default; }
-:deep(.main-grid .el-table .row-cur td) { background: #eaf4fe !important; }
-:deep(.doc-list-body .el-table .row-cur td) { background: #eaf4fe !important; }
+:deep(.main-grid .el-table .row-cur td) { background: var(--d-primary-bg) !important; }
+:deep(.doc-list-body .el-table .row-cur td) { background: var(--d-primary-bg) !important; }
 :deep(.main-grid .el-table .ph-row td) { height: 31px; }
 
 @media print {
@@ -5223,6 +5223,6 @@ onUnmounted(() => {
   margin-bottom: 8px;
   font-size: 12px;
   line-height: 20px;
-  color: #8c8c8c;
+  color: var(--d-text-3);
 }
 </style>

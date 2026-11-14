@@ -167,7 +167,7 @@ function qty(v) {
 }
 
 .plb-stat b.ok {
-  color: #1677ff;
+  color: var(--t-primary);
 }
 
 .plb-stat b.zero {
@@ -182,8 +182,8 @@ function qty(v) {
 .batches { display: flex; flex-wrap: wrap; gap: 4px; }
 .batch { font-variant-numeric: tabular-nums; }
 .batch.is-clickable { cursor: pointer; }
-.batch.is-clickable:hover { color: #1677ff; border-color: #91caff; background: #f0f7ff; }
-.ok { color: #1677ff; font-variant-numeric: tabular-nums; }
+.batch.is-clickable:hover { color: var(--t-primary); border-color: var(--t-primary-tint-border); background: var(--t-primary-tint); }
+.ok { color: var(--t-primary); font-variant-numeric: tabular-nums; }
 .zero { color: rgba(0, 0, 0, 0.45); }
 .dim { color: #bfbfbf; }
 :deep(.el-table) { font-size: 13px; }

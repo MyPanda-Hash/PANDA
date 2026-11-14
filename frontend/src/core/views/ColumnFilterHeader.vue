@@ -85,7 +85,7 @@ watch(() => props.active, (on) => { if (!on) opened.value = false })
 .cfh-ic {
   flex: none;
   font-size: 12px;
-  color: var(--t-text-3, #8b9893);
+  color: var(--t-text-3, var(--d-text-3));
   cursor: pointer;
   opacity: 0.5;
   transition: opacity 0.12s ease;
@@ -96,7 +96,7 @@ watch(() => props.active, (on) => { if (!on) opened.value = false })
   opacity: 1;
 }
 .cfh-ic:hover {
-  color: var(--t-primary, #116a5b);
+  color: var(--t-primary, var(--d-primary));
 }
 .cfh-chip {
   flex: none;
@@ -105,16 +105,16 @@ watch(() => props.active, (on) => { if (!on) opened.value = false })
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 0 4px;
-  border-radius: 3px;
+  border-radius: 4px;
   font-size: 11px;
   font-weight: 400;
-  color: var(--t-primary-dark, #0d584c);
-  background: var(--el-color-primary-light-9, #e8f1ef);
-  border: 1px solid var(--el-color-primary-light-7, #b8d3ce);
+  color: var(--t-primary-dark, var(--d-primary));
+  background: var(--el-color-primary-light-9, var(--d-primary-bg));
+  border: 1px solid var(--el-color-primary-light-7, var(--d-primary-tint-border));
   cursor: pointer;
 }
 .cfh-chip:hover {
-  border-color: var(--t-primary, #116a5b);
+  border-color: var(--t-primary, var(--d-primary));
 }
 .cfh-input {
   margin-top: 2px;

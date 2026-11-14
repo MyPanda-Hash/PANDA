@@ -3,7 +3,7 @@
      ① 销售订单 → 排产 → 生成生产加工单（单号 = 销售订单号-行号，一行一张单，生成即已审核）
      ② 生产加工单 → 按工序排批次（预生产/补排）。第 1 道可排到加工单数量，第 k 道只排「上道合格」的剩余部分。 -->
 <template>
-  <div class="plb-page">
+  <div class="adx plb-page">
     <header class="plb-head">
       <div>
         <h2>{{ pageTitle }}</h2>
@@ -631,20 +631,20 @@ onMounted(() => { load(); loadArchives() })
   overflow-y: auto;
 }
 
-.plb-page { padding: 16px 24px; height: 100%; display: flex; flex-direction: column; gap: 8px; background: #fff; color: #1f1f1f; font-size: 14px; line-height: 22px; }
-.plb-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
+.plb-page { padding: 16px 24px; height: 100%; display: flex; flex-direction: column; gap: 8px; background: #fff; color: var(--d-text); font-size: 14px; line-height: 22px; }
+.plb-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--d-fill); }
 .plb-head h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; }
-.plb-sub { display: block; margin-top: 2px; font-size: 12px; line-height: 20px; color: #8c8c8c; }
-.plb-sec { margin: 16px 0 8px; padding-left: 8px; border-left: 2px solid #1677ff; font-size: 13px; line-height: 20px; font-weight: 600; color: #1f1f1f; }
+.plb-sub { display: block; margin-top: 2px; font-size: 12px; line-height: 20px; color: var(--d-text-3); }
+.plb-sec { margin: 16px 0 8px; padding-left: 8px; border-left: 2px solid var(--t-primary); font-size: 13px; line-height: 20px; font-weight: 600; color: var(--d-text); }
 .b-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 16px; margin-bottom: 16px; }
-.b-kv { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; line-height: 20px; color: #595959; padding: 6px 10px; border: 1px solid #f0f0f0; border-radius: 6px; }
-.b-kv b { color: #1f1f1f; font-weight: 600; font-variant-numeric: tabular-nums; }
-.ok { color: #1677ff; font-variant-numeric: tabular-nums; }
+.b-kv { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; line-height: 20px; color: var(--d-text-2); padding: 6px 10px; border: 1px solid var(--d-fill); border-radius: 6px; }
+.b-kv b { color: var(--d-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.ok { color: var(--t-primary); font-variant-numeric: tabular-nums; }
 .zero { color: rgba(0, 0, 0, 0.45); font-variant-numeric: tabular-nums; }
 .mono { font-family: Consolas, "Courier New", monospace; font-size: 13px; }
 /* 订单排产提示：说明生成规则，不抢视觉 */
-.plb-tip { margin: 8px 0 0; padding: 8px 12px; border: 1px solid #e6f4ff; border-radius: 6px; background: #f7fbff; font-size: 12px; line-height: 20px; color: #595959; }
+.plb-tip { margin: 8px 0 0; padding: 8px 12px; border: 1px solid var(--d-primary-bg); border-radius: 6px; background: var(--d-fill-soft); font-size: 12px; line-height: 20px; color: var(--d-text-2); }
 :deep(.el-table) { font-size: 13px; }
-:deep(.el-table th.el-table__cell) { background: #fafafa; color: #595959; font-weight: 500; }
+:deep(.el-table th.el-table__cell) { background: var(--d-fill-soft); color: var(--d-text-2); font-weight: 500; }
 :deep(.el-table .cell) { font-variant-numeric: tabular-nums; }
 </style>

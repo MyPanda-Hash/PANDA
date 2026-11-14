@@ -3,7 +3,7 @@
      controlHeight 32、正文 14/22、8pt 间距；卡片 0 层用 1px 边框不用阴影。
      流程图节点=单据面板，点击进入；箭头=生单/选单流转（smoothstep 正交连线）。 -->
 <template>
-  <div class="bo-page">
+  <div class="adx bo-page">
     <header class="bo-head">
       <div class="bo-head-main">
         <h1 class="bo-title">{{ tt('业务总览') }}</h1>
@@ -1595,7 +1595,7 @@ function go(path, title) {
 <style scoped>
 /* ---------- 设计基线（Ant Design v6 design-kits/antd）----------
    字号 14/22 正文（fontSize/lineHeight）、圆角 6（borderRadius）、
-   间距 8/16/24（8pt 网格）、边框 #d9d9d9（colorBorder）、
+   间距 8/16/24（8pt 网格）、边框 var(--d-border-strong)（colorBorder）、
    次要字 rgba(0,0,0,.65)（colorTextSecondary）、占位 rgba(0,0,0,.45)（colorTextTertiary）。
    卡片 0 层：白底 + 1px 边框，不加阴影；仅 hover 态给边框变色。 */
 .bo-page {
@@ -1607,7 +1607,7 @@ function go(path, title) {
   box-sizing: border-box;
   padding: 16px 24px 24px;
   gap: 16px;
-  background: #f5f5f5;
+  background: var(--d-fill-soft);
 }
 
 /* ---------- 页头 ---------- */
@@ -1665,7 +1665,7 @@ function go(path, title) {
   gap: 2px;
   padding: 8px;
   background: #fff;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--d-border-strong);
   border-radius: 6px;
   overflow-y: auto;
 }
@@ -1694,8 +1694,8 @@ function go(path, title) {
 }
 
 .bo-nav-item.on {
-  background: #e6f4ff;
-  color: #1677ff;
+  background: var(--d-primary-bg);
+  color: var(--t-primary);
   font-weight: 600;
 }
 
@@ -1704,7 +1704,7 @@ function go(path, title) {
 }
 
 .bo-nav-item.on .bo-nav-icon {
-  color: #1677ff;
+  color: var(--t-primary);
 }
 
 .bo-nav-label {
@@ -1720,7 +1720,7 @@ function go(path, title) {
   min-width: 20px;
   height: 18px;
   padding: 0 6px;
-  border-radius: 9px;
+  border-radius: 8px;
   background: rgba(0, 0, 0, 0.06);
   color: rgba(0, 0, 0, 0.45);
   font-size: 12px;
@@ -1730,7 +1730,7 @@ function go(path, title) {
 }
 
 .bo-nav-item.on .bo-nav-count {
-  background: #1677ff;
+  background: var(--t-primary);
   color: #fff;
 }
 
@@ -1741,7 +1741,7 @@ function go(path, title) {
   display: flex;
   flex-direction: column;
   background: #fff;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--d-border-strong);
   border-radius: 6px;
   /* 追踪路线出现后画布可用高度变小，内容比卡片高时让卡片自己滚，不裁掉下面的节点 */
   overflow-y: auto;
@@ -1754,7 +1754,7 @@ function go(path, title) {
   gap: 16px;
   flex-wrap: wrap;
   padding: 12px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--d-fill);
   flex: 0 0 auto;
 }
 
@@ -1769,7 +1769,7 @@ function go(path, title) {
 }
 
 .bo-panel-icon {
-  color: #1677ff;
+  color: var(--t-primary);
 }
 
 .bo-panel-meta {
@@ -1794,7 +1794,7 @@ function go(path, title) {
   /* 高度由 canvasH 内联给出（按节点最大纵坐标算），父级滚动，避免底部节点被裁 */
   flex: 0 0 auto;
   min-height: 420px;
-  background: #fafafa;
+  background: var(--d-fill-soft);
   overflow: hidden;
 }
 
@@ -1817,7 +1817,7 @@ function go(path, title) {
 .bo-flow-note-tag {
   flex: 0 0 auto;
   padding: 0 6px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--d-border-strong);
   border-radius: 4px;
   color: rgba(0, 0, 0, 0.65);
   font-size: 11px;
@@ -1834,7 +1834,7 @@ function go(path, title) {
   width: 176px;
   padding: 8px 10px;
   box-sizing: border-box;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--d-border-strong);
   border-radius: 6px;
   background: #fff;
   cursor: pointer;
@@ -1842,8 +1842,8 @@ function go(path, title) {
 }
 
 .fn-card:hover {
-  border-color: #1677ff;
-  background: #fafcff;
+  border-color: var(--t-primary);
+  background: var(--d-fill-soft);
 }
 
 /* 连线锚点：保留 Vue Flow 默认尺寸（改尺寸会让边锚点算错），只做视觉弱化 */
@@ -1859,7 +1859,7 @@ function go(path, title) {
 }
 
 .fn-card.no-perm:hover {
-  border-color: #d9d9d9;
+  border-color: var(--d-border-strong);
   background: #fff;
 }
 
@@ -1868,8 +1868,8 @@ function go(path, title) {
 }
 
 .fn-card.done {
-  border-color: #b7eb8f;
-  background: #f6ffed;
+  border-color: var(--d-ok-bg);
+  background: var(--d-ok-bg);
 }
 
 .fn-icon {
@@ -1880,13 +1880,13 @@ function go(path, title) {
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  background: #e6f4ff;
-  color: #1677ff;
+  background: var(--d-primary-bg);
+  color: var(--t-primary);
 }
 
 .fn-card.done .fn-icon {
-  background: #f6ffed;
-  color: #52c41a;
+  background: var(--d-ok-bg);
+  color: var(--d-ok);
 }
 
 .fn-body {
@@ -1905,24 +1905,24 @@ function go(path, title) {
 .fn-approval {
   flex: 0 0 auto;
   padding: 0 4px;
-  border: 1px solid var(--d-border-strong, #dce4e1);
-  border-radius: 3px;
+  border: 1px solid var(--d-border-strong, var(--d-border-strong));
+  border-radius: 4px;
   font-size: 10px;
   line-height: 14px;
-  color: var(--d-text-3, #8b9893);
+  color: var(--d-text-3, var(--d-text-3));
   white-space: nowrap;
 }
 
 .fn-approval.pending {
-  border-color: #ffd591;
-  background: #fffbe6;
-  color: #d46b08;
+  border-color: var(--d-warn-bg);
+  background: var(--d-warn-bg);
+  color: var(--d-warn);
 }
 
 /* 卡在「未审批」的节点：琥珀色边框上走一道流光，动画只澄清状态，不做装饰 */
 .fn-card.stalled-approval {
-  border-color: #faad14;
-  background: #fffbe6;
+  border-color: var(--d-warn);
+  background: var(--d-warn-bg);
   overflow: hidden;
 }
 
@@ -1993,12 +1993,12 @@ function go(path, title) {
   position: absolute;
   top: 6px;
   right: 6px;
-  color: #52c41a;
+  color: var(--d-ok);
   display: flex;
 }
 
 .fn-mark.stalled {
-  color: #faad14;
+  color: var(--d-warn);
 }
 
 /* 同环节多张单的汇总标记 */
@@ -2008,9 +2008,9 @@ function go(path, title) {
   right: 22px;
   min-width: 20px;
   padding: 0 5px;
-  border-radius: 9px;
-  background: #e6f4ff;
-  color: #1677ff;
+  border-radius: 8px;
+  background: var(--d-primary-bg);
+  color: var(--t-primary);
   font-size: 11px;
   line-height: 16px;
   text-align: center;
@@ -2019,42 +2019,42 @@ function go(path, title) {
 }
 
 .fn-card.stalled .fn-more {
-  background: #fff7e6;
-  color: #faad14;
+  background: var(--d-warn-bg);
+  color: var(--d-warn);
 }
 
 /* ---------- 追踪态节点 ---------- */
 /* 已完成：绿色边框 + 浅绿底 */
 .fn-card.state-done {
-  border-color: #95de64;
-  background: #f6ffed;
+  border-color: var(--d-ok);
+  background: var(--d-ok-bg);
 }
 
 .fn-card.state-done .fn-icon {
-  background: #f6ffed;
-  color: #52c41a;
+  background: var(--d-ok-bg);
+  color: var(--d-ok);
 }
 
 /* 进行中（含卡点）：蓝色边框，卡点再加琥珀色脉冲 */
 .fn-card.state-doing {
-  border-color: #1677ff;
-  background: #f0f7ff;
+  border-color: var(--t-primary);
+  background: var(--t-primary-tint);
 }
 
 .fn-card.state-doing .fn-icon {
-  background: #e6f4ff;
-  color: #1677ff;
+  background: var(--d-primary-bg);
+  color: var(--t-primary);
 }
 
 .fn-card.stalled {
-  border-color: #faad14;
-  background: #fffbe6;
+  border-color: var(--d-warn);
+  background: var(--d-warn-bg);
   animation: bo-pulse 1.8s ease-in-out infinite;
 }
 
 .fn-card.stalled .fn-icon {
-  background: #fff7e6;
-  color: #faad14;
+  background: var(--d-warn-bg);
+  color: var(--d-warn);
 }
 
 @keyframes bo-pulse {
@@ -2070,15 +2070,15 @@ function go(path, title) {
   gap: 16px;
   flex-wrap: wrap;
   padding: 10px 16px;
-  border: 1px solid #b7eb8f;
+  border: 1px solid var(--d-ok-bg);
   border-radius: 6px;
-  background: #f6ffed;
+  background: var(--d-ok-bg);
   flex: 0 0 auto;
 }
 
 .bo-track-bar.stalled {
-  border-color: #ffe58f;
-  background: #fffbe6;
+  border-color: var(--d-warn-bg);
+  background: var(--d-warn-bg);
 }
 
 .bo-track-main {
@@ -2092,11 +2092,11 @@ function go(path, title) {
 }
 
 .bo-track-icon {
-  color: #52c41a;
+  color: var(--d-ok);
 }
 
 .bo-track-bar.stalled .bo-track-icon {
-  color: #faad14;
+  color: var(--d-warn);
 }
 
 .bo-track-doc {
@@ -2116,8 +2116,8 @@ function go(path, title) {
 /* 路线类型：生产路线 / 直接出库 */
 .bo-track-route {
   padding: 1px 8px;
-  border: 1px solid #d9d9d9;
-  border-radius: 10px;
+  border: 1px solid var(--d-border-strong);
+  border-radius: 8px;
   background: #fff;
   font-size: 12px;
   line-height: 18px;
@@ -2129,7 +2129,7 @@ function go(path, title) {
 }
 
 .bo-track-msg.done {
-  color: #52c41a;
+  color: var(--d-ok);
 }
 
 
@@ -2152,14 +2152,14 @@ function go(path, title) {
 .lg-dot {
   width: 8px;
   height: 8px;
-  border-radius: 2px;
+  border-radius: 4px;
   display: inline-block;
 }
 
-.lg-dot.done { background: #52c41a; }
-.lg-dot.doing { background: #1677ff; }
-.lg-dot.stalled { background: #faad14; }
-.lg-dot.none { background: #d9d9d9; }
+.lg-dot.done { background: var(--d-ok); }
+.lg-dot.doing { background: var(--t-primary); }
+.lg-dot.stalled { background: var(--d-warn); }
+.lg-dot.none { background: var(--d-border-strong); }
 
 /* ---------- 跨模块提示 ---------- */
 .bo-cross-mod {
@@ -2168,7 +2168,7 @@ function go(path, title) {
   gap: 8px;
   flex-wrap: wrap;
   padding: 8px 16px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--d-border-strong);
   border-radius: 6px;
   background: #fff;
   font-size: 13px;
@@ -2190,7 +2190,7 @@ function go(path, title) {
   gap: 4px;
   min-height: 28px;
   padding: 2px 10px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--d-border-strong);
   border-radius: 4px;
   background: #fff;
   color: rgba(0, 0, 0, 0.88);
@@ -2201,14 +2201,14 @@ function go(path, title) {
 }
 
 .bo-cross-btn:hover {
-  border-color: #1677ff;
-  color: #1677ff;
+  border-color: var(--t-primary);
+  color: var(--t-primary);
 }
 
 .bo-cross-btn.on {
-  border-color: #1677ff;
-  background: #e6f4ff;
-  color: #1677ff;
+  border-color: var(--t-primary);
+  background: var(--d-primary-bg);
+  color: var(--t-primary);
   font-weight: 600;
 }
 
@@ -2224,7 +2224,7 @@ function go(path, title) {
 }
 
 .bo-cross-btn.on .bo-cross-num {
-  background: #1677ff;
+  background: var(--t-primary);
   color: #fff;
 }
 
@@ -2234,8 +2234,8 @@ function go(path, title) {
   min-width: 20px;
   height: 18px;
   padding: 0 6px;
-  border-radius: 9px;
-  background: #faad14;
+  border-radius: 8px;
+  background: var(--d-warn);
   color: #fff;
   font-size: 12px;
   line-height: 18px;
@@ -2244,7 +2244,7 @@ function go(path, title) {
 }
 
 .bo-nav-item.hit:not(.on) .bo-nav-icon {
-  color: #faad14;
+  color: var(--d-warn);
 }
 
 /* ---------- 经过的单据路线 ---------- */
@@ -2253,7 +2253,7 @@ function go(path, title) {
   flex-direction: column;
   gap: 8px;
   padding: 10px 16px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--d-border-strong);
   border-radius: 6px;
   background: #fff;
   flex: 0 0 auto;
@@ -2313,7 +2313,7 @@ function go(path, title) {
   flex-direction: column;
   gap: 8px;
   padding-left: 12px;
-  border-left: 1px dashed #d9d9d9;
+  border-left: 1px dashed var(--d-border-strong);
 }
 
 .bo-lane {
@@ -2326,12 +2326,12 @@ function go(path, title) {
   flex: 0 0 auto;
   min-width: 96px;
   padding: 2px 6px;
-  border: 1px solid #e6f4ff;
+  border: 1px solid var(--d-primary-bg);
   border-radius: 4px;
-  background: #f7fbff;
+  background: var(--d-fill-soft);
   font-size: 11px;
   line-height: 16px;
-  color: #1677ff;
+  color: var(--t-primary);
   font-variant-numeric: tabular-nums;
 }
 
@@ -2352,7 +2352,7 @@ function go(path, title) {
 /* 出货段：所有排产线汇合后共用 */
 .bo-lane-tail {
   padding-top: 6px;
-  border-top: 1px dashed #f0f0f0;
+  border-top: 1px dashed var(--d-fill);
 }
 
 /* 箭头上的过程名：灰底小字，压在箭头正上方，不抢节点的注意力 */
@@ -2362,12 +2362,12 @@ function go(path, title) {
   left: 50%;
   transform: translateX(-50%);
   padding: 0 4px;
-  border-radius: 3px;
+  border-radius: 4px;
   background: var(--t-card-bg, #fff);
   font-size: 10px;
   font-style: normal;
   line-height: 14px;
-  color: var(--t-text-3, #8b9893);
+  color: var(--t-text-3, var(--d-text-3));
   white-space: nowrap;
 }
 
@@ -2381,11 +2381,11 @@ function go(path, title) {
 }
 
 .bo-route-arrow.kind-done {
-  color: #95de64;
+  color: var(--d-ok);
 }
 
 .bo-route-arrow.kind-doing {
-  color: #1677ff;
+  color: var(--t-primary);
 }
 
 .bo-route-arrow.kind-pending {
@@ -2438,7 +2438,7 @@ function go(path, title) {
 }
 
 .bo-pick-row:hover {
-  background: #e6f4ff;
+  background: var(--d-primary-bg);
 }
 
 .bo-pick-no {
@@ -2470,16 +2470,16 @@ function go(path, title) {
 .bo-pick-status {
   flex: 0 0 auto;
   padding: 0 8px;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 12px;
   line-height: 20px;
   background: rgba(0, 0, 0, 0.06);
   color: rgba(0, 0, 0, 0.65);
 }
 
-.bo-pick-status.st-done { background: #f6ffed; color: #52c41a; }
-.bo-pick-status.st-doing { background: #e6f4ff; color: #1677ff; }
-.bo-pick-status.st-aborted { background: #fff1f0; color: #ff4d4f; }
+.bo-pick-status.st-done { background: var(--d-ok-bg); color: var(--d-ok); }
+.bo-pick-status.st-doing { background: var(--d-primary-bg); color: var(--t-primary); }
+.bo-pick-status.st-aborted { background: var(--d-bad-bg); color: var(--d-bad); }
 
 .bo-pick-empty {
   display: flex;
@@ -2512,7 +2512,7 @@ function go(path, title) {
   gap: 12px;
   padding: 12px;
   background: #fff;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--d-border-strong);
   border-radius: 6px;
   overflow-y: auto;
 }
@@ -2525,7 +2525,7 @@ function go(path, title) {
 
 .bo-sec + .bo-sec {
   padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--d-fill);
 }
 
 .bo-sec-head {
@@ -2551,7 +2551,7 @@ function go(path, title) {
   flex: 0 0 auto;
   min-width: 18px;
   padding: 0 6px;
-  border-radius: 9px;
+  border-radius: 8px;
   background: rgba(0, 0, 0, 0.06);
   color: rgba(0, 0, 0, 0.45);
   font-size: 11px;
@@ -2587,12 +2587,12 @@ function go(path, title) {
 }
 
 .bo-item:hover {
-  background: #e6f4ff;
-  color: #1677ff;
+  background: var(--d-primary-bg);
+  color: var(--t-primary);
 }
 
 .bo-item:hover .bo-item-icon {
-  color: #1677ff;
+  color: var(--t-primary);
 }
 
 /* 无进入权限：相关单据/档案/报表仍然列出，仅置灰并阻止跳转 */
@@ -2724,8 +2724,8 @@ function go(path, title) {
 <style scoped>
 .fn-card.is-monitor {
   border-style: dashed;
-  border-color: #d9d9d9;
-  background: #fafafa;
+  border-color: var(--d-border-strong);
+  background: var(--d-fill-soft);
   min-width: 110px;
   padding: 6px 10px;
   opacity: 0.9;
@@ -2735,10 +2735,10 @@ function go(path, title) {
   display: block;
   font-size: 10px;
   line-height: 14px;
-  color: #a6a6a6;
+  color: var(--d-text-3);
 }
 .bo-edge-monitor :deep(.vue-flow__edge-path) {
   stroke-dasharray: 4 3;
-  stroke: #d9d9d9 !important;
+  stroke: var(--d-border-strong) !important;
 }
 </style>

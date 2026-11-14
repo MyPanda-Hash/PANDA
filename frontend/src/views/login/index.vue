@@ -201,7 +201,7 @@ onMounted(async () => {
 
 <style scoped>
 .login-page {
-  --login-accent: #116a5b;
+  --login-accent: var(--d-primary);
   --login-accent-hover: #0d584c;
   position: relative;
   min-height: 100%;
@@ -239,7 +239,7 @@ onMounted(async () => {
   top: 48%;
   left: clamp(52px, 7vw, 112px);
   width: min(48vw, 650px);
-  color: #ffffff;
+  color: var(--d-card);
   transform: translateY(-50%);
   text-shadow: 0 2px 18px rgba(5, 19, 16, 0.3);
 }
@@ -262,7 +262,7 @@ onMounted(async () => {
 
 .scene-content h1 {
   margin: 0;
-  color: #ffffff;
+  color: var(--d-card);
   font-size: 46px;
   font-weight: 560;
   line-height: 1.3;
@@ -336,7 +336,7 @@ onMounted(async () => {
   place-items: center;
   border-radius: 6px;
   background: var(--login-accent);
-  color: #ffffff;
+  color: var(--d-card);
   font-size: 23px;
 }
 
@@ -356,7 +356,7 @@ onMounted(async () => {
 .login-heading {
   margin: 29px 0 24px;
   padding-top: 24px;
-  border-top: 1px solid #e2e8e5;
+  border-top: 1px solid var(--d-border);
 }
 
 .eyebrow {
@@ -419,9 +419,9 @@ onMounted(async () => {
 .login-form :deep(.el-input__wrapper),
 .login-form :deep(.el-select__wrapper) {
   min-height: 48px;
-  border: 1px solid #cfd8d4;
+  border: 1px solid var(--d-border-strong);
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--d-card);
   box-shadow: none;
   transition: border-color 0.18s, box-shadow 0.18s;
 }
@@ -508,8 +508,8 @@ onMounted(async () => {
   gap: 10px;
   margin-top: 26px;
   padding-top: 19px;
-  border-top: 1px solid #e5eae8;
-  color: #929e9a;
+  border-top: 1px solid var(--d-border);
+  color: var(--d-text-3);
   font-size: 10px;
   font-weight: 650;
 }
@@ -567,7 +567,7 @@ onMounted(async () => {
     min-height: 100%;
     display: block;
     overflow: visible;
-    background: #f8faf9;
+    background: var(--d-fill-soft);
   }
 
   .login-scene {
@@ -616,7 +616,7 @@ onMounted(async () => {
     min-height: calc(100vh - 180px);
     align-items: flex-start;
     padding: 0;
-    background: #f8faf9;
+    background: var(--d-fill-soft);
   }
 
   .login-shell {
@@ -624,7 +624,7 @@ onMounted(async () => {
     padding: 27px 24px 24px;
     border: 0;
     border-radius: 0;
-    background: #f8faf9;
+    background: var(--d-fill-soft);
     box-shadow: none;
     backdrop-filter: none;
   }

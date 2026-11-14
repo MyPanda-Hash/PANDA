@@ -279,7 +279,7 @@ onMounted(load)
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  background: var(--d-bg, #f6f7f8);
+  background: var(--d-bg, var(--d-fill-soft));
 }
 
 .wb-head {
@@ -293,7 +293,7 @@ onMounted(load)
   margin: 0;
   font-size: 16px;
   line-height: 24px;
-  color: var(--d-text, #1f2d3d);
+  color: var(--d-text, var(--d-text));
 }
 
 .wb-sub {
@@ -301,12 +301,12 @@ onMounted(load)
   margin-top: 4px;
   font-size: 12px;
   line-height: 20px;
-  color: var(--d-text-3, #8b9893);
+  color: var(--d-text-3, var(--d-text-3));
 }
 
 .dot {
   margin: 0 6px;
-  color: var(--d-border-strong, #dce4e1);
+  color: var(--d-border-strong, var(--d-border-strong));
 }
 
 .wb-actions {
@@ -324,16 +324,16 @@ onMounted(load)
 .wb-metric {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid var(--d-border, #edf1ef);
+  border: 1px solid var(--d-border, var(--d-border));
   border-radius: 6px;
-  background: #fff;
+  background: var(--d-card);
 }
 
 .wb-metric-label {
   display: block;
   font-size: 12px;
   line-height: 18px;
-  color: var(--d-text-3, #8b9893);
+  color: var(--d-text-3, var(--d-text-3));
 }
 
 .wb-metric-value {
@@ -341,24 +341,24 @@ onMounted(load)
   font-size: 18px;
   line-height: 26px;
   font-variant-numeric: tabular-nums;
-  color: var(--d-text, #1f2d3d);
+  color: var(--d-text, var(--d-text));
 }
 
-.wb-metric-value.ok { color: var(--d-ok, #52c41a); }
-.wb-metric-value.warn { color: var(--d-warn, #faad14); }
+.wb-metric-value.ok { color: var(--d-ok, var(--d-ok)); }
+.wb-metric-value.warn { color: var(--d-warn, var(--d-warn)); }
 
 .wb-tabs {
   margin-top: 4px;
 }
 
 .wb-table {
-  background: #fff;
+  background: var(--d-card);
 }
 
 .wb-code {
   margin-left: 6px;
   font-size: 12px;
-  color: var(--d-text-3, #8b9893);
+  color: var(--d-text-3, var(--d-text-3));
   font-variant-numeric: tabular-nums;
 }
 
@@ -367,7 +367,7 @@ onMounted(load)
 }
 
 .num.warn {
-  color: var(--d-warn, #faad14);
+  color: var(--d-warn, var(--d-warn));
 }
 
 .wb-tag {
@@ -376,26 +376,26 @@ onMounted(load)
   border-radius: 4px;
   font-size: 12px;
   line-height: 20px;
-  border: 1px solid var(--d-border-strong, #dce4e1);
-  color: var(--d-text-2, #5b6b66);
+  border: 1px solid var(--d-border-strong, var(--d-border-strong));
+  color: var(--d-text-2, var(--d-text-2));
 }
 
 .wb-tag.ok {
-  border-color: #b7eb8f;
-  background: #f6ffed;
-  color: #389e0d;
+  border-color: var(--d-ok-bg);
+  background: var(--d-ok-bg);
+  color: var(--d-ok);
 }
 
 .wb-tag.info {
-  border-color: #91caff;
-  background: #f0f7ff;
+  border-color: var(--t-primary-tint-border);
+  background: var(--t-primary-tint);
   color: #0958d9;
 }
 
 .wb-tag.warn {
-  border-color: #ffe58f;
-  background: #fffbe6;
-  color: #d48806;
+  border-color: var(--d-warn-bg);
+  background: var(--d-warn-bg);
+  color: var(--d-warn);
 }
 
 .wb-dlg-line {
@@ -403,6 +403,6 @@ onMounted(load)
   justify-content: space-between;
   margin-bottom: 10px;
   font-size: 13px;
-  color: var(--d-text, #1f2d3d);
+  color: var(--d-text, var(--d-text));
 }
 </style>

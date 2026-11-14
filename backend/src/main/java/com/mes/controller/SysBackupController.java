@@ -13,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,15 @@ public class SysBackupController {
     private final DbBackupService backup;
     private final RoleService roleService;
 
+    @org.springframework.beans.factory.annotation.Value("${mes.backup.auto:true}")
+    private boolean autoEnabled;
+    @org.springframework.beans.factory.annotation.Value("${mes.backup.cron:0 0 2 * * MON}")
+    private String cronExpr;
+    @org.springframework.beans.factory.annotation.Value("${mes.backup.zone:Asia/Shanghai}")
+    private String cronZone;
+    @org.springframework.beans.factory.annotation.Value("${mes.backup.keep:8}")
+    private int keepCount;
+
     public SysBackupController(DbBackupService backup, RoleService roleService) {
         this.backup = backup;
         this.roleService = roleService;
@@ -33,6 +43,18 @@ public class SysBackupController {
     public ApiResult<Map<String, Object>> run(Authentication auth) {
         if (!isAdmin(auth)) return ApiResult.fail(403, "仅管理员可操作");
         return ApiResult.ok(backup.runNow(auth.getName()));
+    }
+
+    /** 当前生效的定时计划，给页面显示用（免得文档和实际跑的对不上）。 */
+    @GetMapping("/schedule")
+    public ApiResult<Map<String, Object>> schedule(Authentication auth) {
+        if (!isAdmin(auth)) return ApiResult.fail(403, "仅管理员可操作");
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("auto", autoEnabled);
+        data.put("cron", cronExpr);
+        data.put("zone", cronZone);
+        data.put("keep", keepCount);
+        return ApiResult.ok(data);
     }
 
     @GetMapping("/list")

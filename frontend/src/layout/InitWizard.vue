@@ -591,7 +591,7 @@ watch(
   overflow: auto;
   background: var(--t-bg, #fff);
   border-radius: 8px;
-  border: 1px solid var(--t-border-light, #e6e9ef);
+  border: 1px solid var(--t-border-light, var(--d-border));
   display: flex;
   flex-direction: column;
 }
@@ -601,7 +601,7 @@ watch(
   justify-content: space-between;
   gap: 16px;
   padding: 20px 24px 12px;
-  border-bottom: 1px solid var(--t-border-light, #e6e9ef);
+  border-bottom: 1px solid var(--t-border-light, var(--d-border));
   flex-wrap: wrap;
 }
 .wz-head > div:first-child {
@@ -613,13 +613,13 @@ watch(
   font-size: 18px;
   line-height: 26px;
   font-weight: 600;
-  color: var(--t-text-1, #1f2329);
+  color: var(--t-text-1, var(--d-text));
 }
 .wz-sub {
   margin: 0;
   font-size: 13px;
   line-height: 20px;
-  color: var(--t-text-3, #8a919f);
+  color: var(--t-text-3, var(--d-text-3));
 }
 .wz-head-right {
   display: flex;
@@ -629,7 +629,7 @@ watch(
 }
 .wz-batch {
   font-size: 12px;
-  color: var(--t-text-3, #8a919f);
+  color: var(--t-text-3, var(--d-text-3));
   font-variant-numeric: tabular-nums;
 }
 .wz-loading {
@@ -637,7 +637,7 @@ watch(
   align-items: center;
   gap: 8px;
   padding: 40px 24px;
-  color: var(--t-text-3, #8a919f);
+  color: var(--t-text-3, var(--d-text-3));
   font-size: 13px;
 }
 .wz-body {
@@ -649,7 +649,7 @@ watch(
   gap: 12px;
 }
 .wz-card {
-  border: 1px solid var(--t-border-light, #e6e9ef);
+  border: 1px solid var(--t-border-light, var(--d-border));
   border-radius: 6px;
   padding: 12px;
   display: flex;
@@ -658,11 +658,11 @@ watch(
   background: var(--t-bg, #fff);
 }
 .wz-card.done {
-  border-color: #b7eb8f;
-  background: #f6ffed;
+  border-color: var(--d-ok-bg);
+  background: var(--d-ok-bg);
 }
 .wz-card.blocked {
-  background: var(--t-bg-hover, #fafbfc);
+  background: var(--t-bg-hover, var(--d-fill-soft));
 }
 .wz-card-head {
   display: flex;
@@ -673,14 +673,14 @@ watch(
 .wz-card-name {
   font-size: 14px;
   font-weight: 500;
-  color: var(--t-text-1, #1f2329);
+  color: var(--t-text-1, var(--d-text));
 }
 .wz-card-meta {
   font-size: 12px;
-  color: var(--t-text-3, #8a919f);
+  color: var(--t-text-3, var(--d-text-3));
 }
 .wz-card-note {
-  color: var(--t-primary, #1677ff);
+  color: var(--t-primary, var(--d-primary));
 }
 .wz-card-fields {
   display: flex;
@@ -692,9 +692,9 @@ watch(
   line-height: 18px;
   padding: 0 6px;
   border-radius: 4px;
-  border: 1px solid var(--t-border-light, #e6e9ef);
-  color: var(--t-text-2, #59616e);
-  background: var(--t-bg-hover, #fafbfc);
+  border: 1px solid var(--t-border-light, var(--d-border));
+  color: var(--t-text-2, var(--d-text-2));
+  background: var(--t-bg-hover, var(--d-fill-soft));
 }
 .wz-card-actions {
   display: flex;
@@ -709,7 +709,7 @@ watch(
 .wz-preview,
 .wz-result {
   margin-top: 16px;
-  border: 1px solid var(--t-border-light, #e6e9ef);
+  border: 1px solid var(--t-border-light, var(--d-border));
   border-radius: 6px;
   padding: 12px;
   display: flex;
@@ -727,7 +727,7 @@ watch(
 .wz-result-title {
   font-size: 14px;
   font-weight: 500;
-  color: var(--t-text-1, #1f2329);
+  color: var(--t-text-1, var(--d-text));
 }
 .wz-preview-actions {
   display: flex;
@@ -735,7 +735,7 @@ watch(
 }
 .wz-result-num {
   font-size: 12px;
-  color: var(--t-text-3, #8a919f);
+  color: var(--t-text-3, var(--d-text-3));
   font-variant-numeric: tabular-nums;
 }
 .wz-issues {
@@ -758,11 +758,11 @@ watch(
 }
 .wz-result-key {
   font-size: 12px;
-  color: var(--t-text-1, #1f2329);
+  color: var(--t-text-1, var(--d-text));
 }
 .wz-result-msg {
   font-size: 12px;
-  color: var(--t-text-3, #8a919f);
+  color: var(--t-text-3, var(--d-text-3));
 }
 .wz-table {
   margin-top: 4px;
@@ -771,7 +771,7 @@ watch(
   margin: 0;
   font-size: 12px;
   line-height: 20px;
-  color: var(--t-text-3, #8a919f);
+  color: var(--t-text-3, var(--d-text-3));
 }
 .wz-check-tip {
   margin-bottom: 8px;
@@ -780,11 +780,11 @@ watch(
   font-variant-numeric: tabular-nums;
 }
 .wz-changed {
-  color: #d46b08;
+  color: var(--d-warn);
   font-variant-numeric: tabular-nums;
 }
 .wz-muted {
-  color: var(--t-text-4, #b0b6c0);
+  color: var(--t-text-4, var(--d-border-strong));
 }
 .wz-foot {
   display: flex;
@@ -792,11 +792,11 @@ watch(
   justify-content: space-between;
   margin-top: 16px;
   padding-top: 12px;
-  border-top: 1px solid var(--t-border-light, #e6e9ef);
+  border-top: 1px solid var(--t-border-light, var(--d-border));
 }
 .wz-foot-tip {
   font-size: 12px;
-  color: var(--t-text-3, #8a919f);
+  color: var(--t-text-3, var(--d-text-3));
   font-variant-numeric: tabular-nums;
 }
 .wz-locked {
@@ -815,10 +815,10 @@ watch(
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: var(--t-text-2, #59616e);
+  color: var(--t-text-2, var(--d-text-2));
 }
 .wz-done-name {
-  color: var(--t-text-1, #1f2329);
+  color: var(--t-text-1, var(--d-text));
 }
 
 /* 窄屏：标题与关闭按钮分两行，模块卡片单列，避免标题被挤成竖排 */
