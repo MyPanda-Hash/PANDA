@@ -2,6 +2,11 @@
 
 来源：2026-10-28 从一份 WSL2 整机快照（`DMBox-Runtime.tar`）的 containerd 镜像层中提取；该快照已于 2026-10-30 删除，本目录是唯一副本，请勿依赖外部归档。
 
+> **现在实际怎么起**：本机（macOS）已经不用下面这套 docker compose 流程，
+> 而是由 `_light-m-ai` 工作区根的 `start-local.sh` 把 MES 与 AI 一并拉起。
+> 脚本副本、端口与踩过的坑见 [`workspace/README.md`](workspace/README.md) 与
+> [`workspace/AGENTS.md`](workspace/AGENTS.md)。下面保留的是当初从快照恢复时的运行方式，作历史参考。
+
 | 本目录 | tar 内原始位置 |
 |---|---|
 | `backend/` | `var/lib/containerd/.../snapshots/809/fs/app/backend` + `snapshots/766/fs/app/backend/pyproject.toml` |
