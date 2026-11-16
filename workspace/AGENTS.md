@@ -36,7 +36,7 @@ MES 能开、登录却全部 500。
 ### 第 ② 步做什么
 
 `start-local.sh` 依次：起 PostgreSQL / MySQL 容器 → MES 后端 :8080 →
-MES 前端 :4173 → AI 后端 :8000 → AI 前端 :18091 → WorkBuddy 中转 :18092。
+MES 前端 :4173 → AI 后端 :8000 → AI 前端 :18091 → 组织架构图解析 :18093（可选）。
 脚本自己会设 `JAVA_HOME`、`PATH`（含 `~/.local/{jdk,node,lima,pi-runtime}`），
 并 source 根目录 `.env.local`，所以不需要额外 export。
 
@@ -59,7 +59,7 @@ bash start-local.sh stop     # 只停应用进程；PostgreSQL / MySQL 容器保
 | AI 后端 | `http://127.0.0.1:8000` | 文档 <http://127.0.0.1:8000/docs> |
 | AI 前端 | <http://localhost:18091> | 标题「缔智元数字员工」 |
 | 语音悬浮窗 | <http://localhost:18091/pod> | MOSS-Live 实时语音，独立 380×600 小窗口；门户导航「语音助手」可开 |
-| WorkBuddy 中转 | `127.0.0.1:18092` | OpenAI 兼容 `/v1`，依赖 DSH 在跑 |
+| 组织架构图解析 | `127.0.0.1:18093` | 只在配了 `MES_INIT_AI_TOKEN` 时启动，走本机视觉模型 |
 
 ## 定时任务
 
@@ -79,7 +79,7 @@ bash start-local.sh stop     # 只停应用进程；PostgreSQL / MySQL 容器保
 | `/tmp/lightmes-frontend.log` | MES 前端（vite preview） |
 | `/tmp/doc-nexus.log` | AI 后端（FastAPI） |
 | `/tmp/ai-web.log` | AI 前端静态服务 + 反代 |
-| `/tmp/wb-relay.log` | WorkBuddy 中转 |
+| `/tmp/orgchart-local.log` | 组织架构图解析（仅在启用时） |
 
 ## 改动后要重新构建（脚本只跑已有产物）
 
@@ -99,7 +99,7 @@ cd light-mes/frontend && npm run build
 
 ```bash
 # 端口
-for p in 5432 8080 4173 8000 18091 18092; do
+for p in 5432 8080 4173 8000 18091; do
   printf '%s ' $p; nc -z 127.0.0.1 $p && echo OPEN || echo closed
 done
 

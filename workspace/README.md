@@ -13,7 +13,6 @@
 ├── start-local.sh       一键拉起全部服务
 ├── start-all.sh         旧版（检查系统 java/node，本机用不了）
 ├── serve-ai-web.mjs     AI 前端静态服务 + WebSocket 反代
-└── workbuddy-relay.mjs  WorkBuddy 中转
 ```
 
 这些脚本**按工作区布局写死了相对路径**（`cd doc-nexus-ai/backend`、`cd light-mes`）。
@@ -26,7 +25,7 @@
 ```bash
 cd /Users/panda/Projects/_light-m-ai
 cp AGENTS.md README-MAC.md start-local.sh start-all.sh \
-   serve-ai-web.mjs workbuddy-relay.mjs doc-nexus-ai/workspace/
+   serve-ai-web.mjs doc-nexus-ai/workspace/
 ```
 
 ## 凭据
