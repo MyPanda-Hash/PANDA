@@ -11,6 +11,7 @@ import ruLocale from 'element-plus/es/locale/lang/ru'
 import thLocale from 'element-plus/es/locale/lang/th'
 import { i18n, LOCALE_KEY, tt } from '@/i18n'
 import { localeList, localeDict } from '@/business/engine'
+import { useBrandStore } from '@/stores/brand'
 
 /** Element Plus 组件文案包映射（语言键 → EP locale） */
 export const EP_LOCALES = {
@@ -33,6 +34,8 @@ export const useLocaleStore = defineStore('locale', {
     current: localStorage.getItem(LOCALE_KEY) || 'zh-CN',
     available: [{ locale: 'zh-CN', nameZh: '简体中文', nameNative: '简体中文' }],
     loaded: false,
+  /** 进行中的加载 Promise（并发去重用，不参与响应式渲染） */
+  _loading: null,
   }),
   getters: {
     epLocale: (state) => EP_LOCALES[state.current] || zhCn,
@@ -50,19 +53,31 @@ export const useLocaleStore = defineStore('locale', {
       i18n.global.locale.value = locale
       localStorage.setItem(LOCALE_KEY, locale)
       document.documentElement.setAttribute('lang', locale)
-      document.title = tt(document.title.includes(' · ') ? document.title.split(' · ')[0] : document.title) + ' · 轻MES'
+      document.title = tt(document.title.includes(' · ') ? document.title.split(' · ')[0] : document.title) + ' · ' + useBrandStore().name
     },
-    /** 拉取可选语言（sys_locale 注册表；失败回退仅中文，loaded 不置位以便下次重试） */
+    /**
+     * 拉取可选语言（sys_locale 注册表；失败回退仅中文，loaded 不置位以便下次重试）。
+     *
+     * 并发去重：App 启动与顶栏挂载会各调一次，没有这次去重就是两个一样的请求
+     * （实测 /locale/list 每次进系统请求 2 次）。已经有结果或正在拉取时直接复用。
+     */
     async loadAvailable() {
-      try {
-        const list = await localeList()
-        if (Array.isArray(list) && list.length) {
-          this.available = list
-          this.loaded = true
+      if (this.loaded && this.available.length) return
+      if (this._loading) return this._loading
+      this._loading = (async () => {
+        try {
+          const list = await localeList()
+          if (Array.isArray(list) && list.length) {
+            this.available = list
+            this.loaded = true
+          }
+        } catch (e) {
+          /* 后端不可达：仅中文 */
+        } finally {
+          this._loading = null
         }
-      } catch (e) {
-        /* 后端不可达：仅中文 */
-      }
+      })()
+      return this._loading
     },
     /**
      * 补齐词条：只把「当前 locale 缺失的键」发给 /locale/dict（后端 30s 缓存 +

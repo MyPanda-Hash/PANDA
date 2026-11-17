@@ -94,7 +94,8 @@ public class SaleCostAllocActionHandler implements PanelActionHandler {
             BigDecimal before = number(invoiceHead.get("分摊费用"));
             BigDecimal after = before.add(entry.getValue());
             invoiceHead.put("分摊费用", after);
-            invoiceHead.put("分摊单号", formNo);
+            // 一张票可能被多张分摊单摊过：单号要记全（「、」拼接），后一张不能把前一张覆盖掉
+            invoiceHead.put("分摊单号", mergeNos(text(invoiceHead.get("分摊单号")), formNo));
             invoice.setData(toJson(invoiceHead));
             invoice.setUpdateTime(LocalDateTime.now());
             formMapper.updateById(invoice);
@@ -118,6 +119,18 @@ public class SaleCostAllocActionHandler implements PanelActionHandler {
         out.put("未分摊金额", unassigned);
         out.put("rows", applied);
         return out;
+    }
+
+    /** 分摊单号累加：已有则用「、」拼接并判重，保证同一张票能查到自己被哪几张单摊过。 */
+    static String mergeNos(String existing, String add) {
+        String base = existing == null ? "" : existing.trim();
+        String append = add == null ? "" : add.trim();
+        if (append.isEmpty()) return base;
+        if (base.isEmpty()) return append;
+        for (String one : base.split("、")) {
+            if (one.trim().equals(append)) return base;
+        }
+        return base + "、" + append;
     }
 
     // ---------- 工具 ----------

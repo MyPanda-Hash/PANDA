@@ -73,7 +73,8 @@ export const BACKEND_ACTIONS = new Set([
 ])
 
 /** PanelActionHandler 扩展点注册的动作 */
-export const EXTRA_ACTIONS = new Set(['变更', '执行分摊'])
+// 封账/反封账走 AccountingPeriodActionHandler（会计期间面板），不在 PxService 的 switch 里
+export const EXTRA_ACTIONS = new Set(['变更', '执行分摊', '封账', '反封账', '结转损益', '计提折旧'])
 
 /** 只有报表面板才有的动作 */
 export const REPORT_ACTIONS = new Set(['导出', '打印', '发送邮件', '退出'])

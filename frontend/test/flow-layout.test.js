@@ -248,3 +248,140 @@ test('质检镜像的节点清单与源文件一致', () => {
   const codes = [...block.matchAll(/\{ code: '([A-Z_]+)', label: '/g)].map((m) => m[1])
   assert.deepEqual(codes, QC.nodes.map((n) => n.code))
 })
+
+// ---------- 列模式（生产管理：报工在加工单与首检之间，排产批次旁挂不连线） ----------
+
+/** 生产模块的排版输入：镜像 BusinessOverview.vue 里 code: 'prod' 的 layout/nodes/pos/edges。 */
+const PROD = {
+  layout: 'columns',
+  nodes: ['SO_ORDER', 'PLAN', 'MANU_ORDER', 'PROCESS_REPORT_BOARD', 'FIRST_INSPECT', 'PROCESS_REPORT',
+    'FINISH_INSPECT', 'FINISH_IN', 'MATERIAL_ISSUE', 'MATERIAL_OUT', 'DISPATCH'].map((code) => ({ code })),
+  pos: {
+    SO_ORDER: [1, 0], PLAN: [1, 1], MANU_ORDER: [1, 2],
+    PROCESS_REPORT_BOARD: [1, 3], FIRST_INSPECT: [1, 4],
+    PROCESS_REPORT: [1, 5], FINISH_INSPECT: [1, 6], FINISH_IN: [1, 7],
+    MATERIAL_ISSUE: [2, 3], MATERIAL_OUT: [2, 4],
+    DISPATCH: [0, 3],
+  },
+  edges: [
+    { from: 'SO_ORDER', to: 'PLAN', label: '按订单行排产' },
+    { from: 'PLAN', to: 'MANU_ORDER', label: '生成加工单' },
+    { from: 'MANU_ORDER', to: 'PROCESS_REPORT_BOARD', label: '按批次报工' },
+    { from: 'PROCESS_REPORT_BOARD', to: 'FIRST_INSPECT', label: '首件检验' },
+    { from: 'FIRST_INSPECT', to: 'PROCESS_REPORT', label: '放行报工' },
+    { from: 'PROCESS_REPORT', to: 'FINISH_INSPECT', label: '全部工序报满' },
+    { from: 'FINISH_INSPECT', to: 'FINISH_IN', label: '检验合格入库' },
+    { from: 'MANU_ORDER', to: 'MATERIAL_ISSUE', label: '按批次领料' },
+    { from: 'MATERIAL_ISSUE', to: 'MATERIAL_OUT', label: '生成出库单' },
+  ],
+}
+
+test('生产：主链一条竖线到底（销售订单 → … → 产成品入库单 同一列）', () => {
+  const layout = layoutNodes(PROD)
+  const chain = ['SO_ORDER', 'PLAN', 'MANU_ORDER', 'PROCESS_REPORT_BOARD', 'FIRST_INSPECT',
+    'PROCESS_REPORT', 'FINISH_INSPECT', 'FINISH_IN']
+  const xs = new Set(chain.map((code) => layout[code].x))
+  assert.equal(xs.size, 1, '主链不能左右错开，否则箭头会拐来拐去')
+  for (let i = 1; i < chain.length; i += 1) {
+    assert.equal(layout[chain[i]].y - layout[chain[i - 1]].y, CARD_H + 56, `${chain[i]} 必须紧接在上一层`)
+  }
+})
+
+test('生产：工序报工就在生产加工单与首件报检单之间，且同一列不拐弯', () => {
+  const layout = layoutNodes(PROD)
+  assert.ok(layout.MANU_ORDER.y < layout.PROCESS_REPORT_BOARD.y, '报工在生产加工单之后')
+  assert.ok(layout.PROCESS_REPORT_BOARD.y < layout.FIRST_INSPECT.y, '报工在首件报检单之前')
+  assert.equal(layout.PROCESS_REPORT_BOARD.x, layout.MANU_ORDER.x, '报工与加工单同列，竖线直下')
+})
+
+test('生产：先首检后报工——首件报检单排在工序汇报单之前', () => {
+  const layout = layoutNodes(PROD)
+  assert.ok(layout.FIRST_INSPECT.y < layout.PROCESS_REPORT.y, '首检通过才放行报工')
+  assert.equal(layout.FIRST_INSPECT.x, layout.PROCESS_REPORT.x, '首检 → 汇报同一条竖线')
+  assert.ok(PROD.edges.some((e) => e.from === 'FIRST_INSPECT' && e.to === 'PROCESS_REPORT'))
+})
+
+test('生产：排产批次是看板——旁挂一列、没有任何连线', () => {
+  const layout = layoutNodes(PROD)
+  assert.ok(!PROD.edges.some((e) => e.from === 'DISPATCH' || e.to === 'DISPATCH'), '看板不参与流程流转')
+  assert.equal(layout.DISPATCH.x, layout.SO_ORDER.x - (CARD_W + GAP_X), '看板单独占左侧一列')
+  assert.equal(layout.DISPATCH.y, layout.PROCESS_REPORT_BOARD.y, '看板与报工同排，放旁边而不是串进主链')
+})
+
+test('生产：领料链在主链右侧，与报工/首检同排', () => {
+  const layout = layoutNodes(PROD)
+  assert.ok(layout.MATERIAL_ISSUE.x > layout.PROCESS_REPORT_BOARD.x, '领料在右列')
+  assert.equal(layout.MATERIAL_ISSUE.y, layout.PROCESS_REPORT_BOARD.y, '领料与报工同一层（都是加工单的分支）')
+  assert.equal(layout.MATERIAL_OUT.y, layout.FIRST_INSPECT.y, '材料出库单与首件报检单同一层')
+})
+
+test('生产：没有一条连线从无关卡片身上穿过去', () => {
+  const layout = layoutNodes(PROD)
+  const bands = new Map()
+  for (const [code, p] of Object.entries(layout)) {
+    if (!bands.has(p.y)) bands.set(p.y, [])
+    bands.get(p.y).push(code)
+  }
+  const rows = [...bands.entries()].sort((a, b) => a[0] - b[0]).map(([y, codes]) => ({ y, codes }))
+
+  const crossings = []
+  for (const edge of PROD.edges) {
+    const from = layout[edge.from]
+    const to = layout[edge.to]
+    if (!from || !to || to.y <= from.y) continue
+    // 折线在目标卡片那一列竖直下落，这一列的 x 若压在中间某行卡片上就是穿卡
+    const columnX = to.x + CARD_W / 2
+    for (const row of rows) {
+      if (row.y <= from.y || row.y >= to.y) continue
+      for (const code of row.codes) {
+        if (code === edge.from || code === edge.to) continue
+        if (columnX > layout[code].x && columnX < layout[code].x + CARD_W) {
+          crossings.push(`${edge.from}→${edge.to} 穿过 ${code}`)
+        }
+      }
+    }
+  }
+  assert.deepEqual(crossings, [], '连线要绕开卡片，不能压着卡片边框走')
+})
+
+test('生产镜像的 layout/节点清单/坐标和源文件一致', () => {
+  const here = path.dirname(fileURLToPath(import.meta.url))
+  const source = fs.readFileSync(path.join(here, '../src/views/scm/BusinessOverview.vue'), 'utf8')
+  const start = source.indexOf("code: 'prod'")
+  assert.ok(start > 0, '找不到生产模块配置')
+  const block = source.slice(start, source.indexOf('docs:', start))
+  assert.ok(block.includes("layout: 'columns'"), '生产模块必须是列模式，行模式会把单卡行重新居中')
+
+  const codes = [...block.matchAll(/\{ code: '([A-Z_]+)', label: '/g)].map((m) => m[1])
+  assert.deepEqual(codes, PROD.nodes.map((n) => n.code))
+
+  const posStart = block.indexOf('pos: {')
+  const posBlock = block.slice(posStart, block.indexOf('},', posStart))
+  const pos = {}
+  for (const m of posBlock.matchAll(/([A-Z_]+):\s*\[(\d+),\s*(\d+)\]/g)) {
+    pos[m[1]] = [Number(m[2]), Number(m[3])]
+  }
+  assert.deepEqual(pos, PROD.pos, '镜像坐标要跟流程图配置同步，否则几何用例测的是另一张图')
+})
+
+test('生产：同一排的横向箭头，标签要放得进一个列距（否则压住两边卡片边框）', () => {
+  const here = path.dirname(fileURLToPath(import.meta.url))
+  const source = fs.readFileSync(path.join(here, '../src/views/scm/BusinessOverview.vue'), 'utf8')
+  const start = source.indexOf("code: 'prod'")
+  const block = source.slice(start, source.indexOf('docs:', start))
+  const edges = [...block.matchAll(/\{ from: '([A-Z_]+)', to: '([A-Z_]+)', label: '([^']+)'/g)]
+    .map((m) => ({ from: m[1], to: m[2], label: m[3] }))
+  const layout = layoutNodes(PROD)
+  // 横向箭头只跨越两卡之间的 GAP_X，标签底色左右各 5px，所以可用宽度比列距少一点
+  const room = GAP_X - 6
+  for (const edge of edges) {
+    const from = layout[edge.from]
+    const to = layout[edge.to]
+    if (!from || !to || from.y !== to.y) continue
+    const width = edge.label.length * 11 + 10
+    assert.ok(
+      width <= room,
+      `${edge.from}→${edge.to} 的标签「${edge.label}」约 ${width}px，超过一格列距 ${room}px，会盖住卡片边框`,
+    )
+  }
+})

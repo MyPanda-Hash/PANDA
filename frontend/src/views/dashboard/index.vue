@@ -71,6 +71,152 @@
         </template>
 
         <!-- 生产执行核心 -->
+        <!-- AI 助理：今日简报摘要并入桌面，一眼看到要你定什么 -->
+        <section class="d-card d-span-12 ai-card">
+          <header class="d-head">
+            <div>
+              <h2 class="d-card__title">{{ tt('AI 助理') }}</h2>
+              <p class="d-sub">{{ tt('今日简报：一屏看完要你决定的事') }}</p>
+            </div>
+            <div class="ai-card__acts">
+              <el-button size="small" :loading="aiBriefLoading" @click="loadAiBrief">{{ tt('刷新') }}</el-button>
+              <el-button size="small" type="primary" @click="openAiAssistantPage">{{ tt('打开 AI 助理') }}</el-button>
+            </div>
+          </header>
+
+          <div v-if="aiBrief && aiBrief.available" class="ai-card__body">
+            <p class="ai-card__headline">{{ aiBrief.headline }}</p>
+            <div class="ai-card__stats">
+              <div v-for="s in aiBrief.stats" :key="s.label" class="ai-card__stat">
+                <div class="ai-card__num" :class="`is-${s.tone || 'muted'}`">{{ s.value }}</div>
+                <div class="ai-card__label">{{ s.label }}</div>
+              </div>
+            </div>
+            <ul v-if="aiBrief.decisions && aiBrief.decisions.length" class="ai-card__list">
+              <li v-for="(d, i) in aiBrief.decisions" :key="i">
+                <span class="ai-card__dot" aria-hidden="true"></span>
+                <span class="ai-card__tt">{{ d.title }}</span>
+                <span v-if="d.reason" class="ai-card__rs">{{ d.reason }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div v-else class="ai-card__empty">
+            <p>{{ (aiBrief && aiBrief.reason) || tt('正在读取 AI 助理简报…') }}</p>
+            <el-button size="small" @click="openAiAssistantPage">{{ tt('去 AI 助理里看') }}</el-button>
+          </div>
+        </section>
+        <!-- AI 数据分析：把这一屏的指标交给 AI，给出增长点与建议 -->
+        <section class="d-card d-span-12 ai-card ai-analysis">
+          <header class="d-head">
+            <div>
+              <h2 class="d-card__title">{{ tt('AI 数据分析') }}</h2>
+              <p class="d-sub">{{ tt('基于当前看板指标，分析业务增长点并给出可执行建议') }}</p>
+            </div>
+            <div class="ai-card__acts">
+              <el-button size="small" type="primary" :loading="aiAnalysisLoading" @click="runAiAnalysis">
+                {{ aiAnalysis ? tt('重新分析') : tt('生成分析') }}
+              </el-button>
+            </div>
+          </header>
+
+          <div v-if="!aiAnalysis" class="ai-analysis__idle">
+            <p>{{ tt('点「生成分析」，AI 会读一遍上面这些数字，指出哪里还有提升空间、下一步该做什么。') }}</p>
+          </div>
+
+          <div v-else-if="aiAnalysis.available" class="ai-analysis__body">
+            <p class="ai-analysis__summary">{{ aiAnalysis.summary }}</p>
+            <div class="ai-analysis__cols">
+              <div class="ai-analysis__col">
+                <div class="ai-analysis__h">{{ tt('增长点') }}</div>
+                <ul>
+                  <li v-for="(g, i) in aiAnalysis.growth" :key="i">{{ g }}</li>
+                </ul>
+              </div>
+              <div class="ai-analysis__col">
+                <div class="ai-analysis__h">{{ tt('建议') }}</div>
+                <ul>
+                  <li v-for="(a, i) in aiAnalysis.advice" :key="i">{{ a }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="ai-analysis__empty">
+            <p>{{ aiAnalysis.reason || tt('AI 分析暂时不可用') }}</p>
+            <el-button size="small" @click="runAiAnalysis">{{ tt('重试') }}</el-button>
+          </div>
+        </section>
+        <!-- 周期对比：先看「比上期涨跌」，再看细节 -->
+        <section class="d-card d-span-12 cmp-card">
+          <header class="d-head">
+            <div>
+              <h3>{{ tt('周期对比') }}</h3>
+              <p class="d-sub">
+                {{ compare ? compare.currentRange + ' / ' + tt('上期') + ' ' + compare.previousRange : tt('加载中') }}
+              </p>
+            </div>
+            <div class="cmp-switch">
+              <button
+                v-for="opt in [['month', tt('本月')], ['week', tt('本周')], ['quarter', tt('本季')]]"
+                :key="opt[0]"
+                type="button"
+                class="cmp-btn"
+                :class="{ 'is-on': comparePeriod === opt[0] }"
+                @click="switchPeriod(opt[0])"
+              >{{ opt[1] }}</button>
+            </div>
+          </header>
+
+          <div class="cmp-body">
+            <div class="cmp-total">
+              <div class="cmp-total__row">
+                <div class="cmp-total__num">{{ compare?.currentDocs ?? '-' }}</div>
+                <div class="cmp-total__meta">
+                  <div class="cmp-total__label">{{ tt('本期单据') }}</div>
+                  <div class="cmp-total__delta" :class="deltaClass(compare?.totalDelta)">
+                    {{ deltaText(compare?.totalDelta) }}
+                    <span class="cmp-total__vs">{{ tt('环比') }}</span>
+                  </div>
+                </div>
+              </div>
+              <div v-if="compare && !compare.prevAvailable" class="cmp-total__note">
+                {{ tt('上期不在数据范围内（数据始于') }} {{ compare.dataRange ? compare.dataRange.slice(0, 10) : '-' }}）
+              </div>
+              <div v-else-if="compare && !compare.yoyAvailable" class="cmp-total__note">
+                {{ tt('同比需要去年同期数据，暂未积累') }}
+              </div>
+            </div>
+
+            <div class="cmp-chart">
+              <SCompare
+                :rows="compareRows"
+                :title="tt('按天走势（本期 vs 上期）')"
+                :cur-name="tt('本期')"
+                :prev-name="tt('上期')"
+              />
+            </div>
+          </div>
+
+          <!-- 业务域：按单量排行的条形榜（设计库：指标卡→排行榜→图表→明细，粒度从大到小） -->
+          <div v-if="compareDomains.length" class="cmp-domains">
+            <div v-for="d in compareDomains" :key="d.key" class="cmp-domain">
+              <div class="cmp-domain__top">
+                <span class="cmp-domain__name">{{ d.name }}</span>
+                <span class="cmp-domain__nums">
+                  <strong>{{ d.current }}</strong>
+                  <span class="sep">/</span>
+                  <span class="prev">{{ d.previous }}</span>
+                  <span class="cmp-domain__delta" :class="deltaClass(d.delta)">{{ deltaText(d.delta) }}</span>
+                </span>
+              </div>
+              <div class="cmp-domain__track">
+                <div class="cmp-domain__fill" :style="{ width: domainWidth(d) }"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section v-if="desk.showProgress" class="d-card d-span-8">
           <div class="d-card__head">
             <div>
@@ -569,10 +715,12 @@ import { useAppStore } from '@/stores/app'
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
 import request from '@core/request'
+import { apiGetAiBrief, apiRunAiAnalysis } from '@/business/api'
 import { ElNotification } from 'element-plus'
 import SBars from './SBars.vue'
 import SDonut from './SDonut.vue'
 import SLine from './SLine.vue'
+import SCompare from './SCompare.vue'
 import STree from './STree.vue'
 import { CircleCheck, Files } from '@element-plus/icons-vue'
 
@@ -651,6 +799,66 @@ const stats = ref({
 })
 const loadingStats = ref(false)
 const loadError = ref(false)
+// 周期对比：独立接口，按周期切换（周/月/季）
+// 默认看本月：周视图在周一当天只有 1 个数据点，图看不出走势；
+// 月视图有 16 天分布，能真正看出业务节奏。
+const comparePeriod = ref('month')
+const compare = ref(null)
+const loadingCompare = ref(false)
+
+async function loadCompare() {
+  loadingCompare.value = true
+  try {
+    const r = await request.get('/dashboard/compare', { params: { period: comparePeriod.value } })
+    compare.value = r?.data || null
+  } catch (e) {
+    compare.value = null
+  } finally {
+    loadingCompare.value = false
+  }
+}
+
+function switchPeriod(p) {
+  if (comparePeriod.value === p) return
+  comparePeriod.value = p
+  loadCompare()
+}
+
+/** 对比图表用的行：series → SCompare 需要的形状。 */
+const compareRows = computed(() => {
+  const s = compare.value?.series || []
+  return s.map((row) => ({
+    label: row.currentLabel,
+    current: row.current || 0,
+    previous: row.previous || 0,
+  }))
+})
+
+/** 业务域对比：全 0 的域不占版面。 */
+const compareDomains = computed(() => {
+  const d = compare.value?.domains || {}
+  return Object.values(d).filter((x) => (x.current || 0) > 0 || (x.previous || 0) > 0)
+})
+
+/** 环比文案：null = 没有可比基线，明确说「无基线」而不是伪造 +100%。 */
+function deltaText(v) {
+  if (v === null || v === undefined) return tt('无基线')
+  const n = Number(v)
+  return (n > 0 ? '+' : '') + n.toFixed(1) + '%'
+}
+
+/** 业务域条形宽度：相对本期最大域的比例，只表达「谁多」，不表达金额。 */
+function domainWidth(d) {
+  const max = Math.max(...compareDomains.value.map((x) => x.current || 0), 1)
+  return Math.round(((d.current || 0) / max) * 100) + '%'
+}
+
+function deltaClass(v) {
+  if (v === null || v === undefined) return 'flat'
+  if (v > 0) return 'up'
+  if (v < 0) return 'down'
+  return 'flat'
+}
 const lastUpdated = ref(null)
 const refreshLeft = ref(300)
 async function load() {
@@ -673,9 +881,74 @@ async function load() {
 let refreshTimer = null
 let countdownTimer = null
 
+// ---------- AI 助理卡片 ----------
+// 数据由 MES 后端代理（/ai/brief）：浏览器不跨源取 AI 的 Cookie。
+const aiBrief = ref(null)
+const aiBriefLoading = ref(false)
+
+async function loadAiBrief() {
+  aiBriefLoading.value = true
+  try {
+    const data = await apiGetAiBrief()
+    aiBrief.value = data || null
+  } catch {
+    // 卡片是首屏次要信息：取不到就降级显示，不弹错
+    aiBrief.value = { available: false, reason: '暂时取不到简报' }
+  } finally {
+    aiBriefLoading.value = false
+  }
+}
+
+/** 侧边栏/新标签打开完整的 AI 助理（复用同一张 SSO 票据） */
+async function openAiAssistantPage() {
+  router.push('/assistant')
+}
+
+// ---------- AI 数据分析 ----------
+// 送进去的指标就是屏幕上这一份：不后端重算，否则 AI 的结论会和界面对不上。
+const aiAnalysis = ref(null)
+const aiAnalysisLoading = ref(false)
+
+function collectMetrics() {
+  const metrics = { 指标: {}, 单据量: {}, 对比: {} }
+  for (const k of kpis.value || []) {
+    const qty = String(k.value) + (k.unit || '')
+    metrics.指标[k.title] = qty + (k.meta ? '（' + k.meta + '）' : '')
+  }
+  for (const d of docStats.value || []) {
+    metrics.单据量[d.panelName] = Number(d.count || 0)
+  }
+  if (compare.value) {
+    metrics.对比 = {
+      区间: compare.value.currentRange || '',
+      本期单据: compare.value.currentDocs ?? null,
+      环比: compare.value.totalDelta ?? null,
+    }
+  }
+  metrics.数据截止 = new Date().toISOString().slice(0, 10)
+  return metrics
+}
+
+async function runAiAnalysis() {
+  aiAnalysisLoading.value = true
+  try {
+    const data = await apiRunAiAnalysis(collectMetrics())
+    aiAnalysis.value = data || { available: false, reason: '没有返回结果' }
+  } catch (e) {
+    aiAnalysis.value = { available: false, reason: (e && (e.message || e.msg)) || 'AI 分析失败' }
+  } finally {
+    aiAnalysisLoading.value = false
+  }
+}
+
 onMounted(() => {
+  loadAiBrief()
   load()
-  refreshTimer = setInterval(load, 300000)
+  loadCompare()
+  refreshTimer = setInterval(() => {
+    load()
+    loadCompare()
+  }, 300000)
   countdownTimer = setInterval(() => {
     if (!loadingStats.value && refreshLeft.value > 0) refreshLeft.value -= 1
   }, 1000)
@@ -1021,6 +1294,236 @@ watch([() => localeStore.current, docStats], async ([locale]) => {
 .d-seg__item:focus-visible {
   outline: 2px solid var(--d-primary);
   outline-offset: 1px;
+}
+
+
+
+/* ==========================================================================
+   看板视觉升级（对齐 Ant Design v6 设计库 + macOS 观感）
+   取值依据：
+   - 卡片 0 层：白底 + 1px 边框（colorBorderSecondary #f0f0f0），不用阴影
+   - 圆角：卡片 8（borderRadiusLG），控件 6
+   - 数字：tabular-nums，标签用 colorTextTertiary rgba(0,0,0,.45)
+   - 间距 8pt：卡片内 20/24，卡片间 16
+   - 层级靠留白与边框，不靠色块
+   ========================================================================== */
+
+/* ---- 卡片：统一 0 层，加大留白让内容呼吸 ---- */
+.d-card {
+  padding: 20px 24px;
+  border-radius: 8px;
+  border-color: var(--d-border);
+  background: var(--d-card);
+  transition: border-color .15s ease;
+}
+.d-card--tight { padding: 16px 18px; }
+
+/* ---- 卡片标题：字号收敛，副标题更轻 ---- */
+.d-card__title {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--d-text-1, #262626);
+}
+.d-sub {
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--d-text-3);
+}
+
+/* ---- KPI 卡：标题轻、数字重，形成 mac 式层级 ---- */
+.d-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+}
+.d-stat__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--d-text-3);
+  letter-spacing: .01em;
+}
+.d-stat__label .el-icon { font-size: 14px; opacity: .75; }
+.d-stat__value {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 2px;
+}
+.d-stat__value strong {
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--d-text-1, #262626);
+}
+.d-stat__value span {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--d-text-3);
+  white-space: nowrap;
+}
+.d-stat__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 18px;
+  color: var(--d-text-3);
+}
+
+/* ---- 状态标签：降饱和，靠文字与浅底表达，不用大色块 ---- */
+.d-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  height: 20px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.d-tag.is-ok { background: rgba(82, 196, 26, .1); color: #389e0d; }
+.d-tag.is-warn { background: rgba(250, 173, 20, .12); color: #d48806; }
+.d-tag.is-bad { background: rgba(255, 77, 79, .1); color: #cf1322; }
+.d-tag.is-info { background: rgba(22, 119, 255, .1); color: #1677ff; }
+.d-tag.is-muted { background: rgba(0, 0, 0, .04); color: var(--d-text-3); }
+
+/* ---- 图表面板：浅底托住线条，比纯白更容易读出走势 ---- */
+.d-chart {
+  margin-top: 12px;
+  padding: 12px 8px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, .015);
+}
+.d-chart--auto { padding: 12px; }
+
+/* ---- 事实列表：右对齐数字，避免长短不齐 ---- */
+.d-facts { margin: 0; }
+.d-facts > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--d-border);
+}
+.d-facts > div:last-child { border-bottom: 0; }
+.d-facts dt { font-size: 12px; line-height: 18px; color: var(--d-text-3); }
+.d-facts dd {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ---- 分段控制器：更像 mac 分段控件 ---- */
+.d-seg {
+  padding: 3px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, .035);
+  gap: 2px;
+}
+.d-seg__item {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: background-color .12s ease, color .12s ease;
+}
+.d-seg__item.on {
+  background: var(--d-card);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+}
+
+/* ---- 深色下微调 ---- */
+[data-theme="dark"] .d-chart { background: rgba(255, 255, 255, .03); }
+[data-theme="dark"] .d-seg { background: rgba(255, 255, 255, .06); }
+
+@media (max-width: 767px) {
+  .d-card { padding: 16px; border-radius: 8px; }
+  .d-stat__value strong { font-size: 24px; line-height: 30px; }
+}
+
+/* ===== 周期对比区 ===== */
+.cmp-card { display: flex; flex-direction: column; gap: 14px; }
+.cmp-total__row { display: flex; align-items: center; gap: 14px; }
+.cmp-total__meta { display: flex; flex-direction: column; gap: 2px; }
+.cmp-switch { display: flex; gap: 2px; padding: 2px; background: var(--d-bg-2, #f5f5f5); border-radius: 7px; }
+.cmp-btn {
+  padding: 4px 12px; border: 0; border-radius: 6px; background: transparent;
+  font-size: 12px; color: var(--d-text-2, #595959); cursor: pointer;
+  transition: background-color .12s, color .12s;
+}
+.cmp-btn:hover { color: var(--d-primary, #116a5b); }
+.cmp-btn.is-on { background: #fff; color: var(--d-primary, #116a5b); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+
+.cmp-body { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; align-items: stretch; }
+.cmp-total { display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.cmp-total__num { font-size: 34px; line-height: 42px; font-weight: 600; color: var(--d-text-1, #262626); letter-spacing: -0.02em; }
+.cmp-total__label { font-size: 12px; color: var(--d-text-3, #8c8c8c); }
+.cmp-total__delta { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cmp-total__delta.up { color: #cf1322; }
+.cmp-total__delta.down { color: #389e0d; }
+.cmp-total__delta.flat { color: var(--d-text-3, #8c8c8c); }
+.cmp-total__vs { font-size: 11px; font-weight: 400; color: var(--d-text-3, #8c8c8c); margin-left: 4px; }
+.cmp-total__note { margin-top: 8px; font-size: 11px; line-height: 17px; color: var(--d-text-3, #8c8c8c); }
+
+.cmp-chart { min-width: 0; }
+
+/* 业务域排行：名称 + 本期/上期 + 环比 + 条形 */
+.cmp-domains {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--d-border, #f0f0f0);
+}
+.cmp-domain { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.cmp-domain__top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.cmp-domain__name { font-size: 12px; line-height: 18px; color: var(--d-text-2, #595959); }
+.cmp-domain__nums {
+  display: inline-flex; align-items: baseline; gap: 3px;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.cmp-domain__nums strong { font-size: 15px; font-weight: 600; color: var(--d-text-1, #262626); }
+.cmp-domain__nums .sep { color: var(--d-text-3, #8c8c8c); font-size: 12px; }
+.cmp-domain__nums .prev { color: var(--d-text-3, #8c8c8c); font-size: 12px; }
+.cmp-domain__delta { margin-left: 6px; font-size: 11px; font-variant-numeric: tabular-nums; }
+.cmp-domain__delta.up { color: #cf1322; }
+.cmp-domain__delta.down { color: #389e0d; }
+.cmp-domain__delta.flat { color: var(--d-text-3, #8c8c8c); }
+
+/* 条形轨：浅灰底 + 主色填充，只表达相对量级 */
+.cmp-domain__track {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, .045);
+  overflow: hidden;
+}
+.cmp-domain__fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--d-primary, #116a5b);
+  transition: width .3s ease;
+}
+[data-theme="dark"] .cmp-domain__track { background: rgba(255, 255, 255, .08); }
+
+@media (max-width: 1100px) {
+  .cmp-body { grid-template-columns: minmax(0, 1fr); }
+  .cmp-total { flex-direction: row; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .cmp-total__delta { margin-top: 0; }
 }
 
 /* ===== 栅格与卡片 ===== */
@@ -1717,5 +2220,70 @@ watch([() => localeStore.current, docStats], async ([locale]) => {
   .d-seg__item {
     transition: none;
   }
+}
+
+/* AI 助理卡片：桌面首屏的一块摘要，视觉比四个 KPI 更「一段话」 */
+.ai-card { padding: 16px 18px; }
+.ai-card__acts { display: flex; gap: 8px; }
+.ai-card__headline {
+  font-size: 14px;
+  line-height: 24px;
+  color: var(--t-text-1);
+  margin: 4px 0 12px;
+}
+.ai-card__stats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.ai-card__stat {
+  flex: 1 1 120px;
+  border: 1px solid var(--t-border-light);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.ai-card__num {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--t-text-1);
+}
+.ai-card__num.is-warn { color: #c84d3f; }
+.ai-card__num.is-ok { color: var(--t-primary); }
+.ai-card__num.is-muted { color: var(--t-text-3); font-size: 14px; line-height: 28px; }
+.ai-card__label { font-size: 12px; color: var(--t-text-3); }
+.ai-card__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ai-card__list li { display: flex; align-items: baseline; gap: 8px; font-size: 13px; color: var(--t-text-2); }
+.ai-card__dot { width: 5px; height: 5px; border-radius: 50%; background: #c84d3f; flex: none; }
+.ai-card__tt { color: var(--t-text-1); }
+.ai-card__rs { font-size: 12px; color: var(--t-text-3); }
+.ai-card__empty { font-size: 13px; color: var(--t-text-3); display: flex; align-items: center; gap: 12px; }
+
+/* AI 数据分析：结论 + 两列清单；空态给一句说明，不留空白块 */
+.ai-analysis__idle,
+.ai-analysis__empty {
+  font-size: 13px;
+  color: var(--t-text-3);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ai-analysis__summary {
+  font-size: 14px;
+  line-height: 24px;
+  color: var(--t-text-1);
+  margin: 4px 0 12px;
+}
+.ai-analysis__cols { display: flex; gap: 24px; flex-wrap: wrap; }
+.ai-analysis__col { flex: 1 1 260px; min-width: 0; }
+.ai-analysis__h {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--t-text-2);
+  margin-bottom: 6px;
+}
+.ai-analysis__col ul { margin: 0; padding-left: 18px; }
+.ai-analysis__col li {
+  font-size: 13px;
+  line-height: 22px;
+  color: var(--t-text-2);
+  margin-bottom: 4px;
 }
 </style>

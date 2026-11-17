@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 
 export const useTabsStore = defineStore('tabs', {
   state: () => ({
-    tabs: [{ title: '我的桌面', path: '/dashboard', affix: true }],
+    tabs: [{ title: '数据看板', path: '/dashboard', affix: true }],
     active: '/dashboard',
   }),
   actions: {

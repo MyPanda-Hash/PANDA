@@ -39,7 +39,8 @@ class SalePanelRegistryTest {
         Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("panelCode", "SO_ORDER");
         metadata.put("buttonGroups", new ArrayList<>(List.of(gen)));
-        metadata.put("panelButtons", new ArrayList<>(List.of(Map.of("buttonName", "生成生产加工单"))));
+        metadata.put("panelButtons", new ArrayList<>(List.of(
+                Map.of("buttonName", "排产"), Map.of("buttonName", "生成生产加工单"))));
         Map<String, Object> config = new LinkedHashMap<>();
         config.put("metadata", metadata);
         return config;
@@ -61,10 +62,31 @@ class SalePanelRegistryTest {
         Map<String, Object> gen = groups.stream().filter(g -> "生单".equals(g.get("name"))).findFirst().orElseThrow();
         List<?> actions = (List<?>) gen.get("actions");
         assertTrue(actions.contains("生成委外加工单"), "销售订单必须能生成委外加工单：" + actions);
-        assertTrue(actions.contains("生成生产加工单"), "自制入口不能丢：" + actions);
+        assertTrue(actions.contains("生成销售出库单(普通销售)"), "其它生单入口不能被误删：" + actions);
+        assertFalse(actions.contains("生成生产加工单"),
+                "加工单只能由「排产」生成，生单里不能再有直接入口：" + actions);
         List<Map<String, Object>> buttons = listOfMaps(map(config.get("metadata")).get("panelButtons"));
         assertTrue(buttons.stream().anyMatch(b -> "生成委外加工单".equals(b.get("buttonName"))),
                 "顶部按钮也要有");
+        assertTrue(buttons.stream().noneMatch(b -> "生成生产加工单".equals(b.get("buttonName"))),
+                "顶部按钮里的直接生单也要摘掉：" + buttons);
+        assertTrue(buttons.stream().anyMatch(b -> "排产".equals(b.get("buttonName"))),
+                "排产按钮必须保留，它是加工单唯一的入口：" + buttons);
+    }
+
+    @Test
+    void removesDirectManuOrderAction() {
+        Map<String, Object> config = soConfig();
+        SalePanelRegistry.patch(config);
+
+        List<Map<String, Object>> groups = listOfMaps(map(config.get("metadata")).get("buttonGroups"));
+        for (Map<String, Object> group : groups) {
+            List<?> actions = (List<?>) group.get("actions");
+            assertFalse(actions.contains("生成生产加工单"),
+                    "「" + group.get("name") + "」分组里还留着直接生成加工单：" + actions);
+        }
+        List<Map<String, Object>> buttons = listOfMaps(map(config.get("metadata")).get("panelButtons"));
+        assertTrue(buttons.stream().noneMatch(b -> "生成生产加工单".equals(b.get("buttonName"))));
     }
 
     @Test

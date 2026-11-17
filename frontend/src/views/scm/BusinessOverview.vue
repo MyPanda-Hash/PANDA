@@ -430,6 +430,7 @@ const PANEL_ICONS = {
   RECEIPT_PAYABLE: 'money-collect',
   // 生产
   MANU_ORDER: 'tool', PLAN: 'calendar', PROCESS_REPORT: 'profile',
+  PROCESS_REPORT_BOARD: 'form',
   MATERIAL_ISSUE: 'form', MATERIAL_REQ: 'form',
   MATERIAL_OUT: 'export', FINISH_IN: 'file-done', FINISH_INSPECT: 'file-search',
   TRANSFER: 'swap', PICK_ORDER: 'container', OUTSOURCE_ORDER: 'deployment-unit',
@@ -521,47 +522,52 @@ const modules = [
   },
   {
     code: 'prod', name: '生产管理', icon: 'tool', color: '#1677ff',
-    /** 生产主流程把质量链条画进来：领料 → 报工 → 报检 → 检验 → 首件/成品报检 → 入库 */
     /**
-     * 生产主流程（2026-11-12 按批次报工定稿）：
-     * 销售订单 → 工单排产 → 生产加工单 →（按工序排批次）排产批次 → 按批次报工 → 工序汇报
-     * → 首件报检（首件合格才能报满）→ 全部工序报满 → 成品报检 → 检验合格入库。
-     * 领料同样按批次：加工单 →（生产领料：按批次直接生成材料出库单并提交审批）→ 材料出库单。
-     * 现场领料不走领料申请单；领料申请单仍保留，用于先申请后出库的审批场景。
-     * 排产在加工单之前：按销售订单行排产生成加工单（单号 = 订单号-行号），生成即已审核；
-     * 派工单是排产的批次输出，不再单独审批。检验只有首件检验（每道工序一次，分支）与完工检验（成品报检，入库前置）。
+     * 生产主流程（2026-11-16 按「报工在前、首检把关」重排，列模式）：
+     * 销售订单 → 工单排产 → 生产加工单 →（按批次报工）工序报工 →（首件检验）首件报检单
+     * →（放行报工）工序汇报单 →（全部工序报满）成品报检单 →（检验合格入库）产成品入库单。
+     * 右侧并行领料：生产加工单 →（按批次领料）生产领料 →（生成出库单）材料出库单。
+     *
+     * 两条门只写在箭头上：首件报检单没审核通过，该工序报不了工；成品报检单没审核通过，入不了库。
+     *
+     * 排产批次是**看板不是单据**：不进主干、不连任何线、不计环节数（monitor），画在左侧空列。
+     * 工序报工是**工作台页面**（不是单据）：单列成一个节点，放在生产加工单与首件报检单之间——
+     * 「哪个订单、哪道工序还没首检」只有这个页面看得见，图上看不出来。
+     * 布局用列模式（pos 写 [列, 行]）：主链一条竖线到底，领料链在右，看板在左，空位留白。
      */
+    layout: 'columns',
     nodes: [
       { code: 'SO_ORDER', label: '销售订单' },
       { code: 'PLAN', label: '工单排产' },
       { code: 'MANU_ORDER', label: '生产加工单' },
-      // 数据监控节点：派工单是排产批次的数据载体，不需要人在这上面操作，所以不进环节计数
-      { code: 'DISPATCH', label: '排产批次', monitor: true },
-      { code: 'MATERIAL_ISSUE', label: '生产领料', permCode: 'MATERIAL_OUT' },
-      { code: 'PROCESS_REPORT', label: '工序汇报单' },
-      { code: 'MATERIAL_OUT', label: '材料出库单' },
+      { code: 'PROCESS_REPORT_BOARD', label: '工序报工', permCode: 'PROCESS_REPORT' },
       { code: 'FIRST_INSPECT', label: '首件报检单' },
+      { code: 'PROCESS_REPORT', label: '工序汇报单' },
       { code: 'FINISH_INSPECT', label: '成品报检单' },
       { code: 'FINISH_IN', label: '产成品入库单' },
+      { code: 'MATERIAL_ISSUE', label: '生产领料', permCode: 'MATERIAL_OUT' },
+      { code: 'MATERIAL_OUT', label: '材料出库单' },
+      // 看板节点：只反映现场进度，不进流程、不连箭头、不计入「环节」
+      { code: 'DISPATCH', label: '排产批次', monitor: true },
     ],
     edges: [
       { from: 'SO_ORDER', to: 'PLAN', label: '按订单行排产' },
       { from: 'PLAN', to: 'MANU_ORDER', label: '生成加工单' },
-      { from: 'MANU_ORDER', to: 'DISPATCH', label: '按工序排批次', monitor: true },
-      { from: 'MANU_ORDER', to: 'MATERIAL_ISSUE', label: '按批次领料' },
-      { from: 'DISPATCH', to: 'PROCESS_REPORT', label: '按批次报工', monitor: true },
-      { from: 'MATERIAL_ISSUE', to: 'MATERIAL_OUT', label: '生成出库单·审批通过' },
-      { from: 'PROCESS_REPORT', to: 'FIRST_INSPECT', label: '首件检验' },
+      { from: 'MANU_ORDER', to: 'PROCESS_REPORT_BOARD', label: '按批次报工' },
+      { from: 'PROCESS_REPORT_BOARD', to: 'FIRST_INSPECT', label: '首件检验' },
+      { from: 'FIRST_INSPECT', to: 'PROCESS_REPORT', label: '放行报工' },
       { from: 'PROCESS_REPORT', to: 'FINISH_INSPECT', label: '全部工序报满' },
       { from: 'FINISH_INSPECT', to: 'FINISH_IN', label: '检验合格入库' },
+      { from: 'MANU_ORDER', to: 'MATERIAL_ISSUE', label: '按批次领料' },
+      { from: 'MATERIAL_ISSUE', to: 'MATERIAL_OUT', label: '生成出库单' },
     ],
-    /** 分层布局：每条边都是上一层 → 下一层，节点之间留足间距，避免重叠和出画布 */
+    /** 列模式：pos = [列, 行]。主链钉在第 1 列，领料在第 2 列，看板单独放第 0 列不连线 */
     pos: {
-      SO_ORDER: [430, 0], PLAN: [430, 130], MANU_ORDER: [430, 260],
-      DISPATCH: [150, 390], MATERIAL_ISSUE: [720, 390],
-      PROCESS_REPORT: [150, 520], MATERIAL_OUT: [720, 520],
-      FIRST_INSPECT: [60, 650], FINISH_INSPECT: [400, 650],
-      FINISH_IN: [230, 780],
+      SO_ORDER: [1, 0], PLAN: [1, 1], MANU_ORDER: [1, 2],
+      PROCESS_REPORT_BOARD: [1, 3], FIRST_INSPECT: [1, 4],
+      PROCESS_REPORT: [1, 5], FINISH_INSPECT: [1, 6], FINISH_IN: [1, 7],
+      MATERIAL_ISSUE: [2, 3], MATERIAL_OUT: [2, 4],
+      DISPATCH: [0, 3],
     },
     docs: [
       { code: 'MANU_ORDER', label: '生产加工单' }, { code: 'PLAN', label: '工单排产' },
@@ -1543,6 +1549,8 @@ const CUSTOM_PAGES = {
   PLAN: '/mes/plan',
   PLAN_ANALYSIS: '/mes/planAnalysis',
   MATERIAL_ISSUE: '/mes/materialIssue',
+  PROCESS_REPORT_BOARD: '/mes/processReport',
+  DISPATCH: '/mes/dispatchBoard',
 }
 
 /** 面板默认落点：有专属页面就去专属页面，否则走通用列表页。 */

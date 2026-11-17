@@ -30,7 +30,9 @@ public class ReportPanelRegistry {
     private static final Set<String> NUMERIC_WORDS = Set.of(
             "数量", "金额", "单价", "成本", "现存量", "结存", "调整", "税额",
             "损耗", "重量", "换算率", "余额", "工价", "工时", "进度", "合格率", "率%",
-            "合计", "单数", "已完工", "进行中", "未开工");
+            "合计", "单数", "已完工", "进行中", "未开工",
+            // 销售毛利表：分摊费用、毛利是金额，列名不含「金额/成本」，得点名，否则合计行算不出来
+            "费用", "毛利");
 
     private final PanelConfigMapper panelMapper;
     private final ObjectMapper json;
@@ -43,6 +45,7 @@ public class ReportPanelRegistry {
     /** 账务与计划类报表：数据源在 ReportQueryService，但与业务报表分开维护，避免污染 DEFINITIONS。 */
     private static final Set<String> ACCOUNTING_CODES =
             Set.of("ACCOUNT", "ACCOUNTING_ENTRY", "ACCOUNT_BALANCE", "ACCOUNT_DETAIL",
+                    "ACCOUNT_PERIOD", "BALANCE_SHEET", "INCOME_STATEMENT", "CASH_FLOW",
                     "PICK_WORKBENCH", "SPC_CONTROL",
                     "SETTLE_CUSTOMER", "SETTLE_SUPPLIER", "AGING_ANALYSIS");
 
@@ -57,6 +60,8 @@ public class ReportPanelRegistry {
     /** 声明了「只合计这些列」的报表；未声明的报表仍合计所有数值列。 */
     private static final Map<String, List<String>> SUMMARY_COLUMNS = Map.of(
             "STOCK_LEDGER", List.of("收入金额", "发出金额"),
+            // 毛利率% 是比率，合计里不能相加；只合计金额列
+            "SALE_PROFIT", List.of("价税合计", "分摊费用", "成本金额", "毛利"),
             // 库存状况表混计量单位（kg / 件 / 升）：只合计金额，数量相加没有业务意义
             "STOCK_STATUS", List.of("金额"));
 
@@ -271,6 +276,10 @@ public class ReportPanelRegistry {
         out.put("OTHER_IN_STATS", d("OTHER_IN_STATS", "其他入库单统计表",
                 c("仓库编码", "仓库", "存货编码", "存货", "规格型号", "主单位", "辅单位", "数量(主单位)", "单价", "金额", "数量(辅单位)", "单价(辅单位)"),
                 query("开始日期", "结束日期", "仓库", "存货")));
+        out.put("SALE_PROFIT", d("SALE_PROFIT", "销售毛利表",
+                c("单据日期", "单据编号", "客户", "销货单号", "价税合计", "分摊费用", "分摊单号",
+                        "成本金额", "毛利", "毛利率%", "成本口径"),
+                query("开始日期", "结束日期", "客户", "分摊单号")));
         out.put("SALE_OUT_STATS", d("SALE_OUT_STATS", "销售出库单统计表",
                 c("单据日期（周）", "存货编码", "存货", "规格型号", "主单位", "辅单位", "数量(主单位)", "成本价(主单位)", "数量(辅单位)", "成本价(辅单位)", "成本金额", "出库调整"),
                 query("开始日期", "结束日期", "仓库", "客户", "存货")));

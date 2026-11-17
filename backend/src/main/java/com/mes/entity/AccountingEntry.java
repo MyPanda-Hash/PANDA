@@ -27,6 +27,8 @@ public class AccountingEntry {
     private String partner;
     private String summary;
     private LocalDate bizDate;
+    /** 会计期间 yyyy-MM：由业务日期派生，所属期间封账后禁止写入。 */
+    private String period;
     private LocalDateTime createTime;
 
     public Long getId() { return id; }
@@ -51,6 +53,8 @@ public class AccountingEntry {
     public void setSummary(String summary) { this.summary = summary; }
     public LocalDate getBizDate() { return bizDate; }
     public void setBizDate(LocalDate bizDate) { this.bizDate = bizDate; }
+    public String getPeriod() { return period; }
+    public void setPeriod(String period) { this.period = period; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
 }

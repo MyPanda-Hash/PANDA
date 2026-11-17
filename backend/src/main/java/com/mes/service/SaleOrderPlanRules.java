@@ -44,6 +44,20 @@ public final class SaleOrderPlanRules {
         return left <= 0 ? 0 : Math.round(left * 100) / 100.0;
     }
 
+    /**
+     * 排产进度（加工单「选销售订单」弹窗上显示）：未排产 / 部分排产 / 已排产。
+     *
+     * <p>只看数量不看单据状态：还可排数量为 0 才算排完；订单行数量为 0 的（既没排也没得排）
+     * 不能显示成「已排产」，否则计划员会以为这行已经投过产。
+     *
+     * @param plannedQty 该订单各行已生成加工单占用的数量合计（按行封顶到订单数量）
+     * @param plannableQty 该订单各行还可排数量合计
+     */
+    public static String planStatus(double plannedQty, double plannableQty) {
+        if (plannableQty > 0) return plannedQty > 0 ? "部分排产" : "未排产";
+        return plannedQty > 0 ? "已排产" : "未排产";
+    }
+
     /** 投产数量必须大于 0 且不超过可排数量 */
     public static void requireWithin(double qty, double plannable, String product, double orderQty) {
         if (qty <= 0) {
@@ -57,30 +71,59 @@ public final class SaleOrderPlanRules {
     }
 
     /**
-     * 这张加工单是否占用「销售订单某行」的额度。
+     * 这条加工单产品行应该占用销售订单的哪一行（返回明细下标，0 起；占不到返回 -1）。
      *
-     * @param moHead     加工单表头
-     * @param moProducts 加工单产品明细行
-     * @param saleOrderNo 销售订单号
-     * @param lineNo      订单行号
-     * @param productCode 产品编码
+     * <p>这是排产看板与建加工单共用的占用归属规则，抽成纯函数以便单测覆盖。
+     * 早先生产代码在 PxService 里内联了同一段判断，而本类里另有一个判定方法没人调用，
+     * 形成「测试测的函数不干活、干活的函数没测试」的假安全感；现在只留这一份实现。
+     *
+     * <p>归属顺序：优先认表头写的行号（且产品要对得上）；行号缺失或对不上时，
+     * 退回按产品编码找「还没排满」的行 —— 老单据没有行号，不这样做会把第二行卡死。
+     *
+     * @param lineField   加工单表头的「销售订单行号」原值，可为空
+     * @param productCode 加工单产品编码
+     * @param items       销售订单明细行（读存货编码、数量）
+     * @param occupied    各订单行已占用数量，长度与 items 对齐
      */
-    public static boolean occupies(Map<String, Object> moHead, List<Map<String, Object>> moProducts,
-                                  String saleOrderNo, int lineNo, String productCode) {
-        if (moHead == null) return false;
-        String so = String.valueOf(moHead.getOrDefault("销售订单号", "")).trim();
-        if (so.isEmpty() || !so.equals(String.valueOf(saleOrderNo).trim())) return false;
-        String moLine = String.valueOf(moHead.getOrDefault(LINE_FIELD, "")).trim();
-        if (!moLine.isEmpty()) {
-            return moLine.equals(String.valueOf(lineNo));
+    public static int targetLine(String lineField, String productCode,
+                                 List<Map<String, Object>> items, double[] occupied) {
+        if (items == null || items.isEmpty()) return -1;
+        String code = productCode == null ? "" : productCode.trim();
+        if (code.isEmpty()) return -1;
+
+        String field = lineField == null ? "" : lineField.trim();
+        if (!field.isEmpty()) {
+            int lineNo = (int) Math.round(num(field));
+            if (lineNo >= 1 && lineNo <= items.size()) {
+                Map<String, Object> row = items.get(lineNo - 1);
+                if (row != null && code.equals(text(row.get("存货编码")))) return lineNo - 1;
+            }
         }
-        // 老加工单（无行号）按产品编码认占用
-        if (moProducts == null) return false;
-        for (Map<String, Object> p : moProducts) {
-            if (p == null) continue;
-            if (String.valueOf(p.getOrDefault("产品编码", "")).trim().equals(productCode)) return true;
+
+        for (int i = 0; i < items.size(); i++) {
+            Map<String, Object> row = items.get(i);
+            if (row == null || !code.equals(text(row.get("存货编码")))) continue;
+            double order = num(row.get("数量"));
+            double used = occupied != null && i < occupied.length ? occupied[i] : 0;
+            // 已排满的行跳过，否则同一产品多行时永远只往第一行堆
+            if (used + 1e-6 >= order) continue;
+            return i;
         }
-        return false;
+        return -1;
+    }
+
+    private static String text(Object value) {
+        return value == null ? "" : String.valueOf(value).trim();
+    }
+
+    private static double num(Object value) {
+        if (value instanceof Number number) return number.doubleValue();
+        if (value == null) return 0;
+        try {
+            return Double.parseDouble(String.valueOf(value).trim());
+        } catch (NumberFormatException ignored) {
+            return 0;
+        }
     }
 
     private static String trim(double value) {

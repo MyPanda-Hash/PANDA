@@ -55,6 +55,22 @@ public class ReportQueryService {
         this.financeStatementQueryService = financeStatementQueryService;
     }
 
+    /** 期间服务：会计期间面板的数据源。用 setter 注入，避免改动既有构造器签名。 */
+    private AccountingPeriodService periodService;
+
+    /** 财务报表服务：资产负债表 / 利润表 / 现金流量表。 */
+    private FinancialStatementService statementService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setPeriodService(AccountingPeriodService periodService) {
+        this.periodService = periodService;
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setStatementService(FinancialStatementService statementService) {
+        this.statementService = statementService;
+    }
+
     /** 简化构造：无账务/库存/计划服务时报表回退到实时聚合。 */
     public ReportQueryService(FormDataMapper formMapper, ObjectMapper json) {
         this(formMapper, json, null, null, null, null, null);
@@ -94,6 +110,7 @@ public class ReportQueryService {
             case "FINISH_IN_STATS" -> inventoryStats("FINISH");
             case "OTHER_IN_STATS" -> inventoryStats("OTHER_IN");
             case "SALE_OUT_STATS" -> inventoryStats("SALE");
+            case "SALE_PROFIT" -> saleProfitRows();
             case "MATERIAL_OUT_STATS" -> inventoryStats("MATERIAL");
             case "OTHER_OUT_STATS" -> inventoryStats("OTHER_OUT");
             case "COST_MAINTAIN" -> costRows();
@@ -153,6 +170,13 @@ public class ReportQueryService {
             case "ACCOUNTING_ENTRY" -> accountingService == null
                     ? List.of() : accountingService.accountDetail(null);
             case "ACCOUNT" -> accountingAccounts();
+            case "ACCOUNT_PERIOD" -> periodService == null ? List.of() : periodService.list();
+            case "BALANCE_SHEET" -> statementService == null ? List.of()
+                    : statementService.balanceSheet(statementPeriod(condition));
+            case "INCOME_STATEMENT" -> statementService == null ? List.of()
+                    : statementService.incomeStatement(statementPeriod(condition));
+            case "CASH_FLOW" -> statementService == null ? List.of()
+                    : statementService.cashFlow(statementPeriod(condition));
             case "PICK_WORKBENCH" -> pickQueryService == null ? List.of() : pickQueryService.workbench();
             case "SPC_CONTROL" -> spcQueryService == null ? List.of() : spcQueryService.controlCharts();
             case "SETTLE_CUSTOMER" -> financeStatementQueryService == null
@@ -164,6 +188,13 @@ public class ReportQueryService {
                     : financeStatementQueryService.aging(textOf(condition, "截止日期", "截止时间", "日期"));
             default -> List.of();
         };
+    }
+
+    /** 报表期间：优先用查询条件里的期间，缺省取最新期间（不出「全部」以免把月度表拉成累计表）。 */
+    private String statementPeriod(Map<String, Object> condition) {
+        String given = textOf(condition, "期间", "会计期间");
+        if (!given.isBlank()) return given;
+        return statementService == null ? null : statementService.latestPeriod();
     }
 
     /** 会计科目列表：直接读 stock_txn 同库的 accounting_account 表。 */
@@ -1613,6 +1644,91 @@ public class ReportQueryService {
             add(target, "加工单数量", row.get("数量"));
             add(target, "已汇报数量", row.get("累计汇报套数(工序单位)"));
             if ("已完工".equals(row.get("单据状态"))) add(target, "完工数量", row.get("数量"));
+        }
+        return out;
+    }
+
+    /**
+     * 销售毛利表：一张销售发票一行。
+     *
+     * <p>毛利 = 价税合计 − 分摊费用 − 成本金额。
+     * 成本优先取销售出库单行的成本金额（发票.销货单号 → 销货单.来源单号 → 销售出库单），
+     * 取不到再按「明细数量 × 存货参考成本」兜底，两条都拿不到按 0 计并在「成本口径」里标明，
+     * 免得 0 成本被当成真毛利。
+     */
+    private List<Map<String, Object>> saleProfitRows() {
+        Map<String, Doc> saleInvByNo = new HashMap<>();
+        for (Doc doc : docs("SALE_INV")) saleInvByNo.putIfAbsent(documentNo(doc), doc);
+
+        Map<String, BigDecimal> outCostByNo = new HashMap<>();
+        Map<String, BigDecimal> outCostByOrder = new HashMap<>();
+        for (Doc doc : docs("SALE_OUT")) {
+            BigDecimal cost = BigDecimal.ZERO;
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                BigDecimal amount = number(first(item, doc.head(), "成本金额"));
+                if (amount.signum() == 0) {
+                    amount = number(first(item, doc.head(), "数量"))
+                            .multiply(number(first(item, doc.head(), "成本价")));
+                }
+                cost = cost.add(amount);
+            }
+            outCostByNo.put(documentNo(doc), cost);
+            // 出库单表头带销售订单号：销货单的来源常是产成品入库单而不是出库单，
+            // 拿不到出库单号时按销售订单号找同一张订单的出库成本
+            String orderNo = firstText(doc.head(), "销售订单号", "来源单号");
+            if (!orderNo.isBlank()) outCostByOrder.put(orderNo, cost);
+        }
+
+        Map<String, Map<String, Object>> inventory = inventoryIndex();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("SALE_INVOICE")) {
+            BigDecimal total = number(first(doc.head(), Map.of(), "价税合计"));
+            BigDecimal alloc = number(first(doc.head(), Map.of(), "分摊费用"));
+            String saleInvNo = firstText(doc.head(), "销货单号", "来源单号");
+            BigDecimal cost = BigDecimal.ZERO;
+            String costSource = "无成本资料";
+
+            Doc saleInv = saleInvByNo.get(saleInvNo);
+            if (saleInv != null) {
+                String outNo = firstText(saleInv.head(), "来源单号");
+                String orderNo = firstText(saleInv.head(), "销售订单号");
+                if (outCostByNo.containsKey(outNo)) {
+                    cost = outCostByNo.get(outNo);
+                    costSource = "出库成本";
+                } else if (!orderNo.isBlank() && outCostByOrder.containsKey(orderNo)) {
+                    cost = outCostByOrder.get(orderNo);
+                    costSource = "出库成本(按订单)";
+                }
+            }
+            if (cost.signum() == 0) {
+                BigDecimal ref = BigDecimal.ZERO;
+                for (Map<String, Object> item : detailRows(doc, "items")) {
+                    Map<String, Object> inv = inventory.getOrDefault(firstText(item, "存货名称"), Map.of());
+                    ref = ref.add(number(first(item, doc.head(), "数量"))
+                            .multiply(number(first(inv, item, "参考成本"))));
+                }
+                if (ref.signum() != 0) {
+                    cost = ref;
+                    costSource = "参考成本";
+                }
+            }
+
+            BigDecimal profit = total.subtract(alloc).subtract(cost);
+            BigDecimal rate = total.signum() == 0 ? BigDecimal.ZERO
+                    : profit.multiply(BigDecimal.valueOf(100)).divide(total, 2, RoundingMode.HALF_UP);
+
+            out.add(row(
+                    "单据日期", value(doc, "单据日期"),
+                    "单据编号", documentNo(doc),
+                    "客户", value(doc, "客户"),
+                    "销货单号", saleInvNo,
+                    "价税合计", total,
+                    "分摊费用", alloc,
+                    "分摊单号", value(doc, "分摊单号"),
+                    "成本金额", cost,
+                    "毛利", profit,
+                    "毛利率%", rate,
+                    "成本口径", costSource));
         }
         return out;
     }

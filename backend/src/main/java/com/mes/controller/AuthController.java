@@ -91,6 +91,47 @@ public class AuthController {
         return req.getRemoteAddr();
     }
 
+    /**
+     * 用户自助改密。
+     *
+     * 为什么补这个：此前前端的「修改密码」是纯前端假实现（硬编码校验 old=123456），
+     * 库里一个字节都不动 —— 用户以为自己改了密码，其实下次还能用旧密码登录。
+     * 普通账号也根本没有轮换自己口令的出口。
+     */
+    @PostMapping("/password")
+    public ApiResult<Void> changePassword(@RequestBody Map<String, String> body, Authentication auth) {
+        String oldPassword = body.getOrDefault("old", "");
+        String newPassword = body.getOrDefault("next", "");
+        if (oldPassword.isBlank() || newPassword.isBlank()) {
+            throw new IllegalArgumentException("原密码和新密码不能为空");
+        }
+        if (newPassword.length() < 6) {
+            throw new IllegalArgumentException("新密码至少 6 位");
+        }
+        if (newPassword.equals(oldPassword)) {
+            throw new IllegalArgumentException("新密码不能与原密码相同");
+        }
+        String username = auth == null ? "" : auth.getName();
+        if (username.isBlank()) {
+            throw new IllegalStateException("未登录");
+        }
+        SysUser user = userMapper.selectOne(
+                new LambdaQueryWrapper<SysUser>().eq(SysUser::getUserName, username));
+        if (user == null) {
+            throw new IllegalStateException("用户不存在");
+        }
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            usageLog.record(username, "PASSWORD_FAIL", "原密码不正确", null);
+            throw new IllegalArgumentException("原密码不正确");
+        }
+        SysUser update = new SysUser();
+        update.setId(user.getId());
+        update.setPassword(passwordEncoder.encode(newPassword));
+        userMapper.updateById(update);
+        // 改密是敏感动作，留痕
+        usageLog.record(username, "PASSWORD_CHANGE", "自助修改密码", null);
+        return ApiResult.ok(null);
+    }
     /** 当前登录用户的权限：isAdmin / visiblePanels（可见面板）/ approvePanels（可审批面板） */
     @GetMapping("/perms")
     public ApiResult<Map<String, Object>> perms(Authentication auth) {

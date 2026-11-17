@@ -49,12 +49,17 @@ public class QualityControlPanelRegistry {
                         "queryFields", List.of(
                                 Map.of("dataName", "检验项目", "dataType", "文本"),
                                 Map.of("dataName", "过程状态", "dataType", "下拉框",
-                                        "options", List.of("受控", "失控"))),
+                                        "options", List.of("受控", "失控")),
+                                Map.of("dataName", "过程能力", "dataType", "下拉框",
+                                        "options", List.of("充足", "尚可", "不足", "无规格"))),
                         "gridTabs", List.of(Map.of(
                                 "label", "控制图",
                                 "rowSource", "rows",
-                                "columns", List.of("检验项目", "特性值", "样本数", "均值", "标准差",
-                                        "控制上限", "控制下限", "越界点数", "过程状态"))),
+                                // 规格与能力列排在控制限前面：先看「合格区间」，再看「过程能不能稳住」
+                                "columns", List.of("检验项目", "特性值", "样本数",
+                                        "规格下限", "规格上限",
+                                        "均值", "标准差", "控制下限", "控制上限", "越界点数",
+                                        "Cp", "Cpk", "过程能力", "过程状态"))),
                         "topBarBtn", List.of(Map.of("buttonName", "刷新")),
                         "rowOperationBarBtn", List.of(),
                         "events", List.of())),

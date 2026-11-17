@@ -62,15 +62,6 @@ class FinancePaymentServiceTest {
     }
 
     @Test
-    void rejectsOverPayment() {
-        FinanceVoucher a = voucher("AR", "100", "0");
-
-        IllegalStateException e = assertThrows(IllegalStateException.class,
-                () -> service.allocateWithinLimit(new BigDecimal("150"), java.util.List.of(a)));
-        assertTrue(e.getMessage().contains("超出"));
-    }
-
-    @Test
     void plainAllocateToleratesOverPaymentByLeavingRemainderUnapplied() {
         FinanceVoucher a = voucher("AR", "100", "0");
 

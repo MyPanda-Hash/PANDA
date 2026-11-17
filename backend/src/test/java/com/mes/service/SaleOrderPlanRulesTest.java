@@ -53,23 +53,39 @@ class SaleOrderPlanRulesTest {
                 () -> SaleOrderPlanRules.requireWithin(0, 10, "CP005", 10));
     }
 
-    @Test
-    void 同一订单行已生成的加工单占用该行额度() {
-        Map<String, Object> head = Map.of("销售订单号", "SO-1", "销售订单行号", 2);
-        assertTrue(SaleOrderPlanRules.occupies(head, List.of(Map.of("产品编码", "CP005")), "SO-1", 2, "CP005"));
-        assertFalse(SaleOrderPlanRules.occupies(head, List.of(Map.of("产品编码", "CP005")), "SO-1", 3, "CP005"));
-        assertFalse(SaleOrderPlanRules.occupies(head, List.of(Map.of("产品编码", "CP005")), "SO-2", 2, "CP005"));
+    private static List<Map<String, Object>> orderItems() {
+        return List.of(
+                Map.of("存货编码", "CP005", "数量", 10),
+                Map.of("存货编码", "CP005", "数量", 20),
+                Map.of("存货编码", "CP003", "数量", 5));
     }
 
     @Test
-    void 老加工单没有行号时按产品编码认占用() {
-        Map<String, Object> legacy = Map.of("销售订单号", "SO-1");
-        assertTrue(SaleOrderPlanRules.occupies(legacy, List.of(Map.of("产品编码", "CP005")), "SO-1", 1, "CP005"));
-        assertFalse(SaleOrderPlanRules.occupies(legacy, List.of(Map.of("产品编码", "CP002")), "SO-1", 1, "CP005"));
+    void 有行号且产品对得上就占该行() {
+        assertEquals(1, SaleOrderPlanRules.targetLine("2", "CP005", orderItems(), new double[3]));
+        assertEquals(2, SaleOrderPlanRules.targetLine("3", "CP003", orderItems(), new double[3]));
     }
 
     @Test
-    void 销售订单号为空时不认占用() {
-        assertFalse(SaleOrderPlanRules.occupies(Map.of(), List.of(Map.of("产品编码", "CP005")), "SO-1", 1, "CP005"));
+    void 行号产品对不上时退回按编码找() {
+        // 表头写行 3，但产品是 CP005，与第 3 行的 CP003 不符 → 退回按编码匹配
+        assertEquals(0, SaleOrderPlanRules.targetLine("3", "CP005", orderItems(), new double[3]));
+    }
+
+    @Test
+    void 老加工单没有行号时按编码占未排满的行() {
+        double[] occupied = new double[3];
+        assertEquals(0, SaleOrderPlanRules.targetLine("", "CP005", orderItems(), occupied), "第一行还有余量就占第一行");
+        occupied[0] = 10;
+        assertEquals(1, SaleOrderPlanRules.targetLine(null, "CP005", orderItems(), occupied), "第一行排满后轮到第二行");
+        occupied[1] = 20;
+        assertEquals(-1, SaleOrderPlanRules.targetLine("", "CP005", orderItems(), occupied), "两行都排满就无处可占");
+    }
+
+    @Test
+    void 产品不在订单里或明细为空时不占行() {
+        assertEquals(-1, SaleOrderPlanRules.targetLine("", "CP999", orderItems(), new double[3]));
+        assertEquals(-1, SaleOrderPlanRules.targetLine("1", "CP005", List.of(), new double[0]));
+        assertEquals(-1, SaleOrderPlanRules.targetLine("1", "", orderItems(), new double[3]));
     }
 }

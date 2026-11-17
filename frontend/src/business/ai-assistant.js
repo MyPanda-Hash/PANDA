@@ -1,5 +1,5 @@
 /**
- * AI 数字员工入口（缔智元数字员工，nginx 静态站点 + Vite SPA）。
+ * AI 助理入口（缔智元 AI 助理，nginx 静态站点 + Vite SPA）。
  *
  * 进入方式：
  *   1. 正常路径：向 light-mes 后端要一张 60 秒票据，拿免密跳转地址，新标签直接进对话页；
@@ -8,8 +8,8 @@
  * 为什么先开空白页：取票据是异步的，等 await 回来再 window.open 会被浏览器当弹窗拦掉。
  */
 
-/** 未配置时的默认地址：本机开发环境的对话页 */
-export const AI_ASSISTANT_FALLBACK_URL = "http://localhost:18091/chat";
+/** 未配置时的默认地址：新版 AI 工作台（:18092）的待办首页 */
+export const AI_ASSISTANT_FALLBACK_URL = "http://localhost:18092/#/todos";
 
 /** 环境变量兜底读取：浏览器读 import.meta.env，Node 单测里没有这个对象 */
 function envUrl() {
@@ -74,7 +74,7 @@ export async function resolveEntryUrl(getTicket, fallback, context) {
 }
 
 /**
- * 新标签进入 AI 数字员工。
+ * 新标签进入 AI 助理。
  * @param {Function} getTicket 取票据的函数（通常是 apiGetAiSsoTicket）
  * @param {Object} deps 可注入依赖：{ openWindow, context }
  *   context = { panelCode, formNo, user }，带上当前页面上下文，AI 首轮就知道你在看哪张单

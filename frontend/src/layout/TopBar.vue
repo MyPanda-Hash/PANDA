@@ -3,7 +3,7 @@
     <!-- ===== 左：汉堡（移动端）+ Logo + 分隔线 + 账套（工厂）切换 ===== -->
     <div class="t-left">
       <el-icon class="hamburger" @click="app.toggleMobileNav()"><Menu /></el-icon>
-      <div class="logo">轻<span>MES</span></div>
+      <div class="logo">{{ brand.name }}</div>
       <div class="t-split"></div>
       <el-dropdown @command="(f) => user.switchFactory(f)">
         <span
@@ -12,7 +12,8 @@
           :title="user.factoryName || tt('选择工厂')"
         >
           <el-icon><OfficeBuilding /></el-icon>
-          <span class="factory-name">{{ user.factoryName || tt('选择工厂') }}</span>
+          <span class="factory-name">{{ user.factoryName || tt('选择账套') }}</span>
+          <span class="factory-tag">{{ tt('账套') }}</span>
           <el-icon class="caret"><ArrowDown /></el-icon>
         </span>
         <template #dropdown>
@@ -44,11 +45,11 @@
 
     <!-- ===== 右：搜索 / 移动端 / 待办·消息·预警 / 全屏 / 语言 / 帮助 / 用户 ===== -->
     <div class="t-right">
-      <!-- AI 数字员工入口：新标签打开独立的 AI 对话服务（后续接账号单点登录） -->
-      <el-tooltip :content="tt('打开 AI 数字员工')" placement="bottom">
+      <!-- AI 助理入口：新标签打开独立的 AI 对话服务（已接账号单点登录） -->
+      <el-tooltip :content="tt('打开 AI 助理')" placement="bottom">
         <button type="button" class="ai-entry" @click="goAiAssistant">
           <el-icon class="ai-entry-ic"><MagicStick /></el-icon>
-          <span class="ai-entry-label">{{ tt('AI 数字员工') }}</span>
+          <span class="ai-entry-label">{{ tt('AI 助理') }}</span>
         </button>
       </el-tooltip>
 
@@ -89,30 +90,38 @@
         <span class="bar-icon"><el-icon><Iphone /></el-icon></span>
       </el-tooltip>
 
-      <!-- 待办 / 消息 / 预警（含数字员工的待办与群聊消息） -->
-      <NoticeCenter />
+      <!-- 通知 + 全屏 + 语言：共用一个描边框（2026-11-17 用户要求） -->
+      <NoticeCenter>
+        <!-- 全屏 -->
+        <el-tooltip :content="app.fullscreen ? tt('退出全屏') : tt('全屏')" placement="bottom">
+          <span
+            class="nc-slot-item"
+            role="button"
+            tabindex="0"
+            :aria-label="tt('全屏')"
+            @click="app.toggleFullscreen"
+          >
+            <el-icon><FullScreen /></el-icon>
+          </span>
+        </el-tooltip>
 
-      <!-- 全屏 -->
-      <el-tooltip :content="app.fullscreen ? tt('退出全屏') : tt('全屏')" placement="bottom">
-        <span class="bar-icon" @click="app.toggleFullscreen"><el-icon><FullScreen /></el-icon></span>
-      </el-tooltip>
-
-      <!-- 界面语言（阶段 A：tt() 显示层翻译，纯前端热切换） -->
-      <el-dropdown @command="(l) => locale.set(l)" popper-class="t-dropdown-popper">
-        <span class="bar-icon lang-icon" tabindex="0" :title="tt('切换语言')">{{ locale.currentShort }}</span>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item
-              v-for="l in locale.available"
-              :key="l.locale"
-              :command="l.locale"
-              :disabled="l.locale === locale.current"
-            >
-              {{ l.nameNative }}（{{ l.nameZh }}）
-            </el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
+        <!-- 界面语言（阶段 A：tt() 显示层翻译，纯前端热切换） -->
+        <el-dropdown @command="(l) => locale.set(l)" popper-class="t-dropdown-popper">
+          <span class="nc-slot-item lang" tabindex="0" :title="tt('切换语言')">{{ locale.currentShort }}</span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item
+                v-for="l in locale.available"
+                :key="l.locale"
+                :command="l.locale"
+                :disabled="l.locale === locale.current"
+              >
+                {{ l.nameNative }}（{{ l.nameZh }}）
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </NoticeCenter>
 
       <!-- 帮助下拉 -->
       <el-dropdown @command="onHelpCommand" popper-class="t-dropdown-popper">
@@ -138,11 +147,13 @@
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item v-if="user.isAdmin" command="org"><el-icon><OfficeBuilding /></el-icon>{{ tt('组织架构') }}</el-dropdown-item>
+            <el-dropdown-item v-if="user.isAdmin" command="usage"><el-icon><View /></el-icon>{{ tt('使用权限查看') }}</el-dropdown-item>
             <el-dropdown-item command="account"><el-icon><User /></el-icon>{{ tt('账号管理') }}</el-dropdown-item>
             <el-dropdown-item command="pwd"><el-icon><Key /></el-icon>{{ tt('修改密码') }}</el-dropdown-item>
             <el-dropdown-item command="ui"><el-icon><Setting /></el-icon>{{ tt('界面设置') }}</el-dropdown-item>
             <el-dropdown-item command="dark"><el-icon><Brush /></el-icon>{{ app.dark ? tt('切换亮色') : tt('换肤（暗色）') }}</el-dropdown-item>
             <el-dropdown-item command="desk"><el-icon><Monitor /></el-icon>{{ tt('工作台设置') }}</el-dropdown-item>
+            <el-dropdown-item v-if="user.isAdmin" command="brand"><el-icon><EditPen /></el-icon>{{ tt('系统名称') }}</el-dropdown-item>
             <el-dropdown-item command="init"><el-icon><MagicStick /></el-icon>{{ tt('初始化向导') }}</el-dropdown-item>
             <el-dropdown-item command="logout" divided><el-icon><SwitchButton /></el-icon>{{ tt('退出') }}</el-dropdown-item>
           </el-dropdown-menu>
@@ -182,14 +193,58 @@
     </el-dialog>
 
     <!-- 关于 -->
-    <el-dialog v-model="aboutVisible" :title="tt('关于轻MES')" width="420px" append-to-body>
+    <el-dialog v-model="aboutVisible" :title="tt('关于') + ' ' + brand.name" width="460px" append-to-body>
       <div class="about">
-        <div class="about-logo">轻<span>MES</span></div>
+        <div class="about-logo">{{ brand.name.slice(0, 1) }}<span>{{ brand.name.slice(1) }}</span></div>
         <div class="about-row">{{ tt('版本：v0.2.0（门户壳 T+ 形态）') }}</div>
-        <div class="about-row">{{ tt('参考：畅捷通 T+ 门户（h2t.chanjet.com）') }}</div>
         <div class="about-row">{{ tt('技术栈：Vue3 + Element Plus / Spring Boot 3 + PostgreSQL') }}</div>
-        <div class="about-row about-copy">{{ tt('© 2026 轻MES 项目组') }}</div>
+
+        <!-- 系统名可改：只有管理员看得到，改完即时生效（存在本机浏览器） -->
+        <div v-if="user.isAdmin" class="about-brand">
+          <div class="about-brand__title">{{ tt('系统名称') }}</div>
+          <div class="about-brand__row">
+            <el-input
+              v-model="brandDraft.name"
+              maxlength="24"
+              show-word-limit
+              :placeholder="brand.name"
+              @keyup.enter="saveBrand"
+            />
+            <el-button type="primary" @click="saveBrand">{{ tt('保存') }}</el-button>
+            <el-button v-if="brandDraft.name !== defaultBrandName" text @click="resetBrand">
+              {{ tt('恢复默认') }}
+            </el-button>
+          </div>
+          <div class="about-brand__hint">{{ tt('改的是左侧品牌、登录页与页面标题；存在本机浏览器，换设备需重设。') }}</div>
+        </div>
+
+        <div class="about-row about-copy">{{ tt('© 2026') }} {{ brand.name }}</div>
       </div>
+    </el-dialog>
+
+    <!-- 系统名称：从用户菜单直接打开，改的是左上角品牌、登录页与页面标题 -->
+    <el-dialog v-model="brandVisible" :title="tt('系统名称')" width="440px" append-to-body>
+      <div class="brand-form">
+        <p class="brand-form__note">
+          {{ tt('改的是左上角品牌、登录页标题与浏览器标题。存在本机浏览器，换设备需重设。') }}
+        </p>
+        <el-input
+          v-model="brandDraft.name"
+          maxlength="24"
+          show-word-limit
+          :placeholder="brand.name"
+          @keyup.enter="saveBrand"
+        />
+        <div class="brand-form__preview">
+          <span class="brand-form__label">{{ tt('预览') }}</span>
+          <span class="brand-form__mock">{{ brandDraft.name || brand.name }}</span>
+        </div>
+      </div>
+      <template #footer>
+        <el-button v-if="brandDraft.name !== defaultBrandName" text @click="resetBrand">{{ tt('恢复默认') }}</el-button>
+        <el-button @click="brandVisible = false">{{ tt('取消') }}</el-button>
+        <el-button type="primary" @click="saveBrand">{{ tt('保存') }}</el-button>
+      </template>
     </el-dialog>
 
     <UiSettingsDialog v-model="uiSettingVisible" />
@@ -198,10 +253,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
+import { useBrandStore } from '@/stores/brand'
 import { useTabsStore } from '@/stores/tabs'
 import { useLocaleStore } from '@/stores/locale'
 import { tt } from '@/i18n'
@@ -212,9 +268,39 @@ import { ElMessage } from 'element-plus'
 import NoticeCenter from './NoticeCenter.vue'
 import UiSettingsDialog from './UiSettingsDialog.vue'
 import DeskSettingsDialog from './DeskSettingsDialog.vue'
+import request from '@/core/request'
 
 const app = useAppStore()
 const user = useUserStore()
+const brand = useBrandStore()
+
+// 系统改名：输入框先存草稿，点保存才落到 store，避免边打字边改标题
+const defaultBrandName = '轻MES'
+const brandDraft = reactive({ name: brand.name })
+const brandVisible = ref(false)
+
+function openBrandDialog() {
+  brandDraft.name = brand.name
+  brandVisible.value = true
+}
+
+function saveBrand() {
+  const next = String(brandDraft.name || '').trim()
+  if (!next) {
+    brandDraft.name = brand.name
+    return
+  }
+  brand.setBrand({ name: next })
+  brandDraft.name = brand.name
+  brandVisible.value = false
+  ElMessage.success(tt('系统名称已更新'))
+}
+
+function resetBrand() {
+  brand.reset()
+  brandDraft.name = brand.name
+  ElMessage.success(tt('已恢复默认名称'))
+}
 const tabs = useTabsStore()
 const locale = useLocaleStore()
 const router = useRouter()
@@ -270,7 +356,7 @@ async function refreshFactories() {
   ElMessage.success(tt('企业信息已刷新'))
 }
 
-// ---------- AI 数字员工入口 ----------
+// ---------- AI 助理入口 ----------
 // 向后端要 60 秒票据后免密进入；后端没配密钥就退回只打开对话页。
 // 带上当前面板与单号，AI 首轮就能按「你正在看哪张单」作答（L2 只读融合）
 function aiContext() {
@@ -302,10 +388,12 @@ const pwdForm = ref({ old: '', next: '', confirm: '' })
 function onUserCommand(cmd) {
   if (cmd === 'account') accountVisible.value = true
   else if (cmd === 'org') router.push('/sys/org')
+  else if (cmd === 'usage') router.push('/sys/usage')
   else if (cmd === 'pwd') pwdVisible.value = true
   else if (cmd === 'ui') uiSettingVisible.value = true
   else if (cmd === 'dark') app.toggleDark()
   else if (cmd === 'desk') deskSettingVisible.value = true
+  else if (cmd === 'brand') openBrandDialog()
   else if (cmd === 'init') app.openInitWizard()
   else if (cmd === 'logout') {
     user.logout()
@@ -313,15 +401,22 @@ function onUserCommand(cmd) {
   }
 }
 
-function changePwd() {
+async function changePwd() {
   const f = pwdForm.value
   if (!f.old || !f.next || !f.confirm) return ElMessage.warning(tt('请填写完整'))
-  if (f.old !== '123456') return ElMessage.error(tt('原密码不正确（演示账号原密码 123456）'))
   if (f.next.length < 6) return ElMessage.warning(tt('新密码至少 6 位'))
   if (f.next !== f.confirm) return ElMessage.warning(tt('两次输入的新密码不一致'))
-  pwdVisible.value = false
-  pwdForm.value = { old: '', next: '', confirm: '' }
-  ElMessage.success(tt('密码修改成功（演示环境不落库）'))
+  // 以前这里是纯前端假实现：硬编码校验 123456、提示「演示环境不落库」，
+  // 库里一个字节都不动 —— 用户以为改了，其实旧密码还能登。
+  // 现在走后端 POST /api/auth/password，真校验、真落库。
+  try {
+    await request.post('/auth/password', { old: f.old, next: f.next })
+    pwdVisible.value = false
+    pwdForm.value = { old: '', next: '', confirm: '' }
+    ElMessage.success(tt('密码修改成功，请用新密码重新登录'))
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || e?.message || tt('修改密码失败'))
+  }
 }
 </script>
 
@@ -434,7 +529,7 @@ function changePwd() {
   flex-shrink: 0;
 }
 
-/* AI 数字员工入口：设计库规格（控件高 32 / 圆角 6 / 图标 16 / 间距 6），品牌绿浅色底做唯一记忆点 */
+/* AI 助理入口：设计库规格（控件高 32 / 圆角 6 / 图标 16 / 间距 6），品牌绿浅色底做唯一记忆点 */
 .ai-entry {
   height: 32px;
   padding: 0 12px;
@@ -725,6 +820,59 @@ function changePwd() {
 .about-copy {
   margin-top: 8px;
   color: var(--t-text-3);
+}
+
+/* 系统改名区：与上面的只读信息用一条细线隔开 */
+.about-brand {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--t-border);
+  text-align: left;
+}
+.about-brand__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--t-text-1);
+  margin-bottom: 8px;
+}
+.about-brand__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.about-brand__row .el-input { flex: 1; }
+.about-brand__hint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--t-text-3);
+}
+
+/* 系统名称对话框 */
+.brand-form { display: flex; flex-direction: column; gap: 12px; }
+.brand-form__note { margin: 0; font-size: 12px; line-height: 18px; color: var(--t-text-3); }
+.brand-form__preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--t-border);
+  border-radius: 6px;
+  background: var(--t-bg-2, #fafafa);
+}
+.brand-form__label { font-size: 12px; color: var(--t-text-3); }
+.brand-form__mock { font-size: 15px; font-weight: 700; color: var(--t-primary); }
+
+/* 当前账套标识：切换是「换一套账」，不只是换个部门视图，所以明确标出 */
+.factory-tag {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--t-primary);
+  color: #fff;
+  font-size: 11px;
+  line-height: 18px;
+  font-weight: 500;
 }
 
 /* ===== 移动端（≤768px）：汉堡按钮 + 顶栏精简 ===== */

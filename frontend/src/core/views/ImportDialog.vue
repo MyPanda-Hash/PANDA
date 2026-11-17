@@ -31,7 +31,13 @@
 import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
-import * as XLSX from 'xlsx'
+// xlsx 约 800KB，只有用户真的选了 Excel 才需要。
+// 静态 import 会把它打进首屏包（实测 vendor 一度到 783KB），改成用到时再加载。
+let XLSX = null
+async function ensureXlsx() {
+  if (!XLSX) XLSX = await import('xlsx')
+  return XLSX
+}
 import { tt } from '@/i18n'
 
 const props = defineProps({
@@ -74,8 +80,9 @@ function onFile(e) {
   fileName.value = file.name
   error.value = ''
   const reader = new FileReader()
-  reader.onload = (ev) => {
+  reader.onload = async (ev) => {
     try {
+      await ensureXlsx()
       const wb = XLSX.read(ev.target.result, { type: 'array' })
       const ws = wb.Sheets[wb.SheetNames[0]]
       if (!ws) throw new Error(tt('Excel 无工作表'))

@@ -28,9 +28,11 @@ import jakarta.annotation.PostConstruct;
 @Component
 public class SalePanelRegistry {
 
-    static final String VERSION = "SL1.0";
+    static final String VERSION = "SL1.1";
     static final String ACTION = "生成委外加工单";
     static final String GROUP = "生单";
+    /** 直接生成加工单的老入口：它会绕过「排产」，2026-11-16 起去掉。 */
+    static final String DIRECT_MANU_ACTION = "生成生产加工单";
 
     private final PanelConfigMapper panelMapper;
     private final ObjectMapper json;
@@ -51,7 +53,7 @@ public class SalePanelRegistry {
         } catch (Exception e) {
             throw new IllegalStateException("销售订单配置解析失败", e);
         }
-        ensureOutsourceAction(config);
+        patch(config);
         try {
             row.setConfig(json.writeValueAsString(config));
             row.setVersion(VERSION);
@@ -60,6 +62,39 @@ public class SalePanelRegistry {
         } catch (Exception e) {
             throw new IllegalStateException("销售订单委外入口补齐失败", e);
         }
+    }
+
+    /** 一次补全：补委外入口、摘掉绕过排产的直接生单入口。幂等。 */
+    static void patch(Map<String, Object> config) {
+        ensureOutsourceAction(config);
+        removeDirectManuAction(config);
+    }
+
+    /**
+     * 幂等摘掉「生成生产加工单」：加工单只能由销售订单「排产」按订单行生成。
+     *
+     * <p>直接生单会跳过排产（不建批次、不占可排数量），现场拿不到批次就没法报工，
+     * 与「报工必须按批次」的规则冲突，所以顶部按钮与生单分组里都不再保留这个入口。
+     */
+    @SuppressWarnings("unchecked")
+    static void removeDirectManuAction(Map<String, Object> config) {
+        Map<String, Object> metadata = config.get("metadata") instanceof Map<?, ?> m
+                ? (Map<String, Object>) m : new LinkedHashMap<>();
+
+        List<Map<String, Object>> groups = metadata.get("buttonGroups") instanceof List<?> list
+                ? (List<Map<String, Object>>) list : new ArrayList<>();
+        for (Map<String, Object> group : groups) {
+            if (!(group.get("actions") instanceof List<?> a)) continue;
+            List<Object> actions = new ArrayList<>((List<Object>) a);
+            if (actions.removeIf(DIRECT_MANU_ACTION::equals)) group.put("actions", actions);
+        }
+        metadata.put("buttonGroups", groups);
+
+        List<Map<String, Object>> buttons = metadata.get("panelButtons") instanceof List<?> list
+                ? (List<Map<String, Object>>) list : new ArrayList<>();
+        buttons.removeIf(b -> DIRECT_MANU_ACTION.equals(String.valueOf(b.get("buttonName"))));
+        metadata.put("panelButtons", buttons);
+        config.put("metadata", metadata);
     }
 
     /** 幂等把「生成委外加工单」加进生单分组与顶部按钮（已有则跳过）。 */

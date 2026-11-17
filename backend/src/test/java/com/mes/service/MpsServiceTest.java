@@ -91,6 +91,27 @@ class MpsServiceTest {
     }
 
     @Test
+    void aggregateFallsBackToOrderNoWhenSalesOrderNoAbsent() {
+        // 真实 analyze() 接口把订单号放在 order.no 里，顶层没有 salesOrderNo。
+        // 早期只认顶层键，导致聚合行的「来源订单」永远是空数组，
+        // 下游生成请购单时拿不到来源，只能瞎挂到别的单据上并触发超量校验。
+        Map<String, Object> analysis = Map.of(
+                "order", Map.of("no", "SO-20261116-002"),
+                "products", List.of(Map.of("code", "CP002", "name", "铝板", "unit", "件",
+                        "demandQty", 100, "stockQty", 0, "shortQty", 100)),
+                "materials", List.of(Map.of("level", 1, "code", "CL002", "name", "6061铝锭", "unit", "kg",
+                        "grossQty", 120, "stockQty", 0, "netQty", 120, "supplyType", "外购")));
+
+        List<Map<String, Object>> rows = MpsService.aggregate(List.of(analysis));
+
+        Map<String, Object> material = rows.stream()
+                .filter(r -> "CL002".equals(r.get("存货编码")))
+                .findFirst().orElseThrow();
+        assertEquals(List.of("SO-20261116-002"), material.get("来源订单"),
+                "订单号要从 order.no 兜底取到，不能是空数组");
+    }
+
+    @Test
     void suggestionFollowsSupplyType() {
         assertEquals("请购", MpsService.suggestOf("外购"));
         assertEquals("委外加工", MpsService.suggestOf("委外"));

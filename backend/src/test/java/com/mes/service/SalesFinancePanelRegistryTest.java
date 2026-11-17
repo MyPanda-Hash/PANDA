@@ -57,6 +57,72 @@ class SalesFinancePanelRegistryTest {
         assertEquals("分摊金额", select.get("targetQuantityField"));
     }
 
+    /**
+     * 费用分摊闭环的字段与按钮必须写进 SF2.0 模板本身。
+     *
+     * <p>此前这些是 `SaleCostLoopRegistry` 在启动时往旧配置上补的，而 SF2.0 每次启动都会用模板
+     * 整体重建这三个面板——两个 @PostConstruct 的执行顺序不确定，模板一旦后跑就把补丁抹掉，
+     * 表现为分摊单上既没有「分摊状态」字段、也没有「执行分摊」按钮（用户根本没法分摊）。
+     */
+    @Test
+    void keepsCostAllocationLoopFieldsAndButton() throws Exception {
+        new SalesFinancePanelRegistry(panelMapper, json).syncPanelConfigs();
+
+        ArgumentCaptor<PanelConfig> inserted = ArgumentCaptor.forClass(PanelConfig.class);
+        verify(panelMapper, times(3)).insert(inserted.capture());
+        Map<String, PanelConfig> configs = inserted.getAllValues().stream()
+                .collect(Collectors.toMap(PanelConfig::getPanelCode, Function.identity()));
+
+        Map<String, Object> alloc = parse(configs.get("SALE_COST_ALLOC"));
+        List<String> allocFields = headFields(alloc);
+        assertTrue(allocFields.contains("分摊状态"), "分摊单要有分摊状态字段：" + allocFields);
+        assertTrue(allocFields.contains("执行时间"), "分摊单要有执行时间字段：" + allocFields);
+        List<String> toolActions = groups(alloc).stream()
+                .filter(group -> "工具".equals(group.get("name")))
+                .flatMap(group -> strings(group.get("actions")).stream()).toList();
+        assertTrue(toolActions.contains("执行分摊"), "「工具」分组里要有执行分摊：" + toolActions);
+        assertTrue(panelButtons(alloc).contains("执行分摊"), "面板按钮清单也要有：" + panelButtons(alloc));
+
+        Map<String, Object> invoice = parse(configs.get("SALE_INVOICE"));
+        List<String> invoiceFields = headFields(invoice);
+        assertTrue(invoiceFields.contains("分摊费用"), "发票要有分摊费用字段：" + invoiceFields);
+        assertTrue(invoiceFields.contains("分摊单号"), "发票要有分摊单号字段：" + invoiceFields);
+
+        // 查询条要能按分摊单号捞票（默认只取表头前 6 个，摊费用的票会搜不到）
+        Map<String, Object> table = maps(map(map(invoice.get("metadata")).get("panelPageDto")).get("tablePages")).get(0);
+        List<String> queryFields = maps(table.get("queryFields")).stream()
+                .map(field -> String.valueOf(field.get("dataName"))).toList();
+        assertTrue(queryFields.contains("分摊单号"), "发票查询条要有分摊单号：" + queryFields);
+    }
+
+    /** 模板已经自带时，启动补丁不能再补一遍（不能出现两个「执行分摊」）。 */
+    @Test
+    void costLoopPatchDoesNotDuplicateOnTemplateConfig() throws Exception {
+        new SalesFinancePanelRegistry(panelMapper, json).syncPanelConfigs();
+
+        ArgumentCaptor<PanelConfig> inserted = ArgumentCaptor.forClass(PanelConfig.class);
+        verify(panelMapper, times(3)).insert(inserted.capture());
+        Map<String, Object> alloc = parse(inserted.getAllValues().stream()
+                .filter(row -> "SALE_COST_ALLOC".equals(row.getPanelCode())).findFirst().orElseThrow());
+
+        SaleCostLoopRegistry.upgradeAlloc(alloc);
+
+        long count = groups(alloc).stream()
+                .flatMap(group -> strings(group.get("actions")).stream())
+                .filter("执行分摊"::equals).count();
+        assertEquals(1, count, "执行分摊只能出现一次");
+    }
+
+    private List<String> headFields(Map<String, Object> config) {
+        return maps(map(config.get("dataSchema")).get("fields")).stream()
+                .map(field -> String.valueOf(field.get("dataName"))).toList();
+    }
+
+    private List<String> panelButtons(Map<String, Object> config) {
+        return maps(map(config.get("metadata")).get("panelButtons")).stream()
+                .map(button -> String.valueOf(button.get("buttonName"))).toList();
+    }
+
     private void assertPanel(PanelConfig row, String name, String detailField, String selectAction) throws Exception {
         assertNotNull(row);
         assertEquals(name, row.getPanelName());

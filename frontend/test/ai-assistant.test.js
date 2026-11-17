@@ -10,7 +10,7 @@ import {
 } from "../src/business/ai-assistant.js";
 
 test("默认指向本机 AI 数字员工 /chat", () => {
-  assert.equal(AI_ASSISTANT_FALLBACK_URL, "http://localhost:18091/chat");
+  assert.equal(AI_ASSISTANT_FALLBACK_URL, "http://localhost:18092/#/todos");
   assert.equal(resolveAiAssistantUrl(), AI_ASSISTANT_FALLBACK_URL);
   assert.equal(resolveAiAssistantUrl(""), AI_ASSISTANT_FALLBACK_URL);
   assert.equal(resolveAiAssistantUrl("   "), AI_ASSISTANT_FALLBACK_URL);

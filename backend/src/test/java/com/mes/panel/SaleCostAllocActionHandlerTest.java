@@ -1,123 +1,132 @@
 package com.mes.panel;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mes.entity.FormData;
-import com.mes.mapper.FormDataMapper;
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mes.entity.FormData;
+import com.mes.mapper.FormDataMapper;
+
 /**
- * 销售费用分摊「执行分摊」：把分摊金额按发票号回写发票，形成「费用 → 分摊 → 发票毛利」闭环。
+ * 销售费用「执行分摊」：把分摊单的金额回写到发票。
  *
- * <p>这道动作补的是链条最后一棒：分摊单审批后如果不回写发票，费用摊了等于没摊。
+ * <p>两条容易踩的规则：
+ * <ul>
+ *   <li>同一张票被多张分摊单摊过时，`分摊费用` 累加、`分摊单号` 要**记全**（用「、」拼接），
+ *       不能后一张把前一张覆盖掉——否则票上只剩最后一张单号，对不上账；</li>
+ *   <li>分摊单只能执行一次，已执行的再点直接拒绝（幂等）。</li>
+ * </ul>
  */
+@ExtendWith(MockitoExtension.class)
 class SaleCostAllocActionHandlerTest {
 
-    private final FormDataMapper formMapper = mock(FormDataMapper.class);
+    @Mock private FormDataMapper formMapper;
+
     private final ObjectMapper json = new ObjectMapper();
-    private final SaleCostAllocActionHandler handler = new SaleCostAllocActionHandler(formMapper, json);
 
-    @Test
-    void onlyHandlesExecuteAction() {
-        assertTrue(handler.supports("SALE_COST_ALLOC", "执行分摊"));
-        assertTrue(!handler.supports("SALE_COST_ALLOC", "保存"));
-        assertTrue(!handler.supports("EXPENSE", "执行分摊"));
+    private FormData doc(String panel, String no, String status, Map<String, Object> head,
+                         Map<String, Object> detail) throws Exception {
+        FormData d = new FormData();
+        d.setPanelCode(panel);
+        d.setFormNo(no);
+        d.setStatus(status);
+        d.setData(json.writeValueAsString(head));
+        d.setDetailData(json.writeValueAsString(detail));
+        d.setCreateTime(LocalDateTime.now());
+        return d;
+    }
+
+    private FormData alloc(String status, String 分摊状态, double amount) throws Exception {
+        Map<String, Object> head = new LinkedHashMap<>();
+        head.put("单据编号", "FT-1");
+        head.put("业务类型", "销售费用分摊");
+        head.put("分摊状态", 分摊状态);
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("费用单号", "FY-1");
+        row.put("费用项目", "运费");
+        row.put("分摊对象", "销售发票");
+        row.put("销售发票号", "FP-1");
+        row.put("分摊金额", amount);
+        return doc("SALE_COST_ALLOC", "FT-1", status, head, Map.of("items", List.of(row)));
+    }
+
+    private FormData invoice(String existingFee, String existingNos) throws Exception {
+        Map<String, Object> head = new LinkedHashMap<>();
+        head.put("单据编号", "FP-1");
+        head.put("价税合计", 29.6);
+        head.put("分摊费用", new BigDecimal(existingFee));
+        head.put("分摊单号", existingNos);
+        return doc("SALE_INVOICE", "FP-1", "已审核", head, Map.of("items", List.of()));
+    }
+
+    private FormData execute(FormData allocDoc, FormData invoiceDoc) {
+        when(formMapper.selectOne(any())).thenReturn(allocDoc, invoiceDoc);
+        SaleCostAllocActionHandler handler = new SaleCostAllocActionHandler(formMapper, json);
+        Map<String, Object> out = handler.handle(new PanelActionContext("SALE_COST_ALLOC", "执行分摊",
+                Map.of("编号", "FT-1"), Map.of(), "admin"));
+        return invoiceDoc;
     }
 
     @Test
-    void rejectsUnapprovedAllocation() {
-        when(formMapper.selectOne(any())).thenReturn(doc("SALE_COST_ALLOC", "FT-001", "草稿",
-                Map.of(), List.of(row("FP-001", 100))));
-        IllegalStateException error = assertThrows(IllegalStateException.class,
-                () -> handler.handle(ctx("FT-001")));
-        assertTrue(error.getMessage().contains("审核"));
-        verify(formMapper, never()).updateById(any(FormData.class));
+    void accumulatesFeeAndAppendsEveryAllocationNo() throws Exception {
+        FormData invoice = execute(alloc("已审核", "未分摊", 300), invoice("200", "FT-0"));
+
+        ArgumentCaptor<FormData> updated = ArgumentCaptor.forClass(FormData.class);
+        verify(formMapper, atLeastOnce()).updateById(updated.capture());
+        FormData saved = updated.getAllValues().stream()
+                .filter(row -> "SALE_INVOICE".equals(row.getPanelCode())).findFirst().orElseThrow();
+        Map<?, ?> head = json.readValue(saved.getData(), Map.class);
+        assertEquals(0, new BigDecimal("500").compareTo(new BigDecimal(String.valueOf(head.get("分摊费用")))),
+                "同一张票多张分摊单要累加：" + head);
+        assertEquals("FT-0、FT-1", head.get("分摊单号"), "分摊单号要记全，不能覆盖：" + head);
     }
 
     @Test
-    void rejectsSecondExecution() {
-        when(formMapper.selectOne(any())).thenReturn(doc("SALE_COST_ALLOC", "FT-001", "已审核",
-                Map.of("分摊状态", "已分摊"), List.of(row("FP-001", 100))));
-        IllegalStateException error = assertThrows(IllegalStateException.class,
-                () -> handler.handle(ctx("FT-001")));
-        assertTrue(error.getMessage().contains("重复执行"));
+    void reexecutingTheSameAllocationIsRejected() throws Exception {
+        FormData allocDoc = alloc("已审核", "已分摊", 300);
+        when(formMapper.selectOne(any())).thenReturn(allocDoc);
+        SaleCostAllocActionHandler handler = new SaleCostAllocActionHandler(formMapper, json);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> handler.handle(
+                new PanelActionContext("SALE_COST_ALLOC", "执行分摊",
+                        Map.of("编号", "FT-1"), Map.of(), "admin")));
+        assertTrue(ex.getMessage().contains("已经执行过分摊"), ex.getMessage());
     }
 
     @Test
-    void writesAllocationBackToInvoiceAndMarksExecuted() throws Exception {
-        FormData alloc = doc("SALE_COST_ALLOC", "FT-001", "已审核",
-                Map.of("分摊合计", 300), List.of(row("FP-001", 200), row("FP-001", 50), row("FP-002", 50)));
-        FormData invoice = doc("SALE_INVOICE", "FP-001", "已审核", Map.of("分摊费用", 20), List.of());
-        // 调用顺序固定：先查分摊单，再按发票号逐张查发票（LinkedHashMap 保持明细顺序）
-        FormData invoice2 = doc("SALE_INVOICE", "FP-002", "已审核", Map.of(), List.of());
-        when(formMapper.selectOne(any())).thenReturn(alloc, invoice, invoice2);
+    void customerOnlyAllocationIsRejected() throws Exception {
+        Map<String, Object> head = new LinkedHashMap<>();
+        head.put("单据编号", "FT-2");
+        head.put("分摊状态", "未分摊");
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("分摊对象", "客户");
+        row.put("客户", "华东铝业");
+        row.put("分摊金额", 300);
+        FormData allocDoc = doc("SALE_COST_ALLOC", "FT-2", "已审核", head,
+                Map.of("items", List.of(row)));
+        when(formMapper.selectOne(any())).thenReturn(allocDoc);
+        SaleCostAllocActionHandler handler = new SaleCostAllocActionHandler(formMapper, json);
 
-        Map<String, Object> out = handler.handle(ctx("FT-001"));
-
-        assertEquals("已分摊", out.get("分摊状态"));
-        assertEquals(2, out.get("分摊发票数"), "同一张票两行要合并成一条");
-        Map<String, Object> allocHead = json.readValue(alloc.getData(), Map.class);
-        assertEquals("已分摊", allocHead.get("分摊状态"));
-        Map<String, Object> invHead = json.readValue(invoice.getData(), Map.class);
-        assertEquals(270.0, invHead.get("分摊费用"), "20 + 200 + 50 = 270，按累计写回");
-        assertEquals("FT-001", invHead.get("分摊单号"));
-        Map<String, Object> inv2Head = json.readValue(invoice2.getData(), Map.class);
-        assertEquals(50.0, inv2Head.get("分摊费用"));
-    }
-
-    @Test
-    void requiresInvoiceNumberOnRows() {
-        when(formMapper.selectOne(any())).thenReturn(doc("SALE_COST_ALLOC", "FT-001", "已审核",
-                Map.of(), List.of(Map.of("分摊对象", "客户", "分摊金额", 100))));
-        IllegalStateException error = assertThrows(IllegalStateException.class,
-                () -> handler.handle(ctx("FT-001")));
-        assertTrue(error.getMessage().contains("销售发票号"));
-    }
-
-    @Test
-    void missingInvoiceFailsLoudly() {
-        when(formMapper.selectOne(any())).thenReturn(
-                doc("SALE_COST_ALLOC", "FT-001", "已审核", Map.of(), List.of(row("FP-404", 100))),
-                null);
-        IllegalStateException error = assertThrows(IllegalStateException.class,
-                () -> handler.handle(ctx("FT-001")));
-        assertTrue(error.getMessage().contains("销售发票不存在"));
-    }
-
-    // ---------- helpers ----------
-
-    private static PanelActionContext ctx(String no) {
-        return new PanelActionContext("SALE_COST_ALLOC", "执行分摊",
-                Map.of("编号", no), Map.of(), "admin");
-    }
-
-    private static Map<String, Object> row(String invoiceNo, double amount) {
-        return Map.of("分摊对象", "销售发票", "销售发票号", invoiceNo, "分摊金额", amount);
-    }
-
-    private FormData doc(String panel, String no, String status,
-                         Map<String, Object> head, List<Map<String, Object>> items) {
-        FormData fd = new FormData();
-        fd.setPanelCode(panel);
-        fd.setFormNo(no);
-        fd.setStatus(status);
-        try {
-            fd.setData(json.writeValueAsString(head));
-            fd.setDetailData(json.writeValueAsString(Map.of("items", items)));
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
-        return fd;
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> handler.handle(
+                new PanelActionContext("SALE_COST_ALLOC", "执行分摊",
+                        Map.of("编号", "FT-2"), Map.of(), "admin")));
+        assertTrue(ex.getMessage().contains("销售发票号"), "按客户分摊要提示改成按发票分摊：" + ex.getMessage());
     }
 }

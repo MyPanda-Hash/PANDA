@@ -1,9 +1,15 @@
 export const menuTree = [
   {
-    code: 'dashboard',
-    title: '我的桌面',
-    path: '/dashboard',
-    icon: 'HomeFilled',
+    // 「我的桌面」并进 AI 助理、改叫「数据看板」：
+    // 看板是 AI 助理的第一件事（看数据 → 出结论 → 给建议），不再单独占一个顶层入口。
+    code: 'assistant',
+    title: 'AI 助理',
+    desc: '数据看板 · 智能工作台',
+    icon: 'MagicStick',
+    children: [
+      { code: 'dataBoard', title: '数据看板', path: '/dashboard', icon: 'DataBoard' },
+      { code: 'assistantDesk', title: '智能工作台', path: '/assistant', icon: 'ChatDotRound' },
+    ],
   },
   {
     code: 'businessOverview',
@@ -35,6 +41,9 @@ export const menuTree = [
           { code: 'stats', title: '统计表', children: [{ code: 'salesOrderStats', title: '销售订单统计表', path: '/panelx/list/SALES_ORDER_STATS', panelCode: 'SALES_ORDER_STATS', icon: 'Histogram' }] },
           { code: 'exec', title: '执行表', children: [{ code: 'salesOrderExec', title: '销售订单执行表', path: '/panelx/list/SALES_ORDER_EXEC', panelCode: 'SALES_ORDER_EXEC', icon: 'Operation' }] },
           { code: 'more', title: '更多', children: [{ code: 'salesOrderProgress', title: '销售订单生产进度表', path: '/panelx/list/SALES_ORDER_PROGRESS', panelCode: 'SALES_ORDER_PROGRESS', icon: 'TrendCharts' }] },
+          { code: 'profit', title: '毛利表', children: [
+              { code: 'saleProfit', title: '销售毛利表', path: '/panelx/list/SALE_PROFIT', panelCode: 'SALE_PROFIT', icon: 'TrendCharts' },
+            ] },
         ],
       },
       {
@@ -162,6 +171,19 @@ export const menuTree = [
               { code: 'accountingEntry', title: '凭证查询', path: '/panelx/list/ACCOUNTING_ENTRY', icon: 'Tickets', panelCode: 'ACCOUNTING_ENTRY' },
               { code: 'accountBalance', title: '科目余额表', path: '/panelx/list/ACCOUNT_BALANCE', icon: 'Histogram', panelCode: 'ACCOUNT_BALANCE' },
               { code: 'accountDetail', title: '明细账', path: '/panelx/list/ACCOUNT_DETAIL', icon: 'List', panelCode: 'ACCOUNT_DETAIL' },
+              { code: 'accountPeriod', title: '会计期间', path: '/panelx/list/ACCOUNT_PERIOD', icon: 'Calendar', panelCode: 'ACCOUNT_PERIOD' },
+            ],
+          },
+          {
+            code: 'statement', title: '财务报表', children: [
+              { code: 'balanceSheet', title: '资产负债表', path: '/panelx/list/BALANCE_SHEET', icon: 'Document', panelCode: 'BALANCE_SHEET' },
+              { code: 'incomeStatement', title: '利润表', path: '/panelx/list/INCOME_STATEMENT', icon: 'TrendCharts', panelCode: 'INCOME_STATEMENT' },
+              { code: 'cashFlow', title: '现金流量表', path: '/panelx/list/CASH_FLOW', icon: 'Money', panelCode: 'CASH_FLOW' },
+            ],
+          },
+          {
+            code: 'asset', title: '固定资产', children: [
+              { code: 'faCard', title: '固定资产卡片', path: '/panelx/list/FA_CARD', icon: 'Box', panelCode: 'FA_CARD' },
             ],
           },
         ],
@@ -427,17 +449,6 @@ export const menuTree = [
     ],
   },
   {
-    code: 'dc',
-    title: '设备数采',
-    desc: '网关 · 采集点 · 报警 · 在线率',
-    icon: 'Connection',
-    children: [
-      { code: 'dcConfig', title: 'IOT设备配置', path: '/mes/dc/config', icon: 'Connection' },
-      { code: 'dcMonitor', title: '数据监控', path: '/mes/dc/monitor', icon: 'Monitor' },
-      { code: 'dcStats', title: '状态统计', path: '/mes/dc/stats', icon: 'TrendCharts' },
-    ],
-  },
-  {
     code: 'foundation',
     title: '基础设置',
     desc: '组织与档案 · 单据编码 · 初始化',
@@ -454,6 +465,8 @@ export const menuTree = [
               { code: 'dept', title: '部门', path: '/panelx/list/DEPT', icon: 'OfficeBuilding', panelCode: 'DEPT' },
               { code: 'employee', title: '员工', path: '/panelx/list/EMP', icon: 'User', panelCode: 'EMP' },
               { code: 'partner', title: '往来单位', path: '/panelx/list/PARTNER', icon: 'OfficeBuilding', panelCode: 'PARTNER' },
+              // 往来单位存货设置：客户/供应商口径的存货对照与开票信息，原本只有数据没有入口
+              { code: 'partnerInv', title: '往来单位存货设置', path: '/panelx/list/PARTNER_INV', icon: 'Files', panelCode: 'PARTNER_INV' },
               { code: 'uom', title: '计量单位', path: '/panelx/list/UOM', icon: 'ScaleToOriginal', panelCode: 'UOM' },
               { code: 'warehouse', title: '仓库', path: '/panelx/list/WH', icon: 'House', panelCode: 'WH' },
               { code: 'region', title: '地区', path: '/panelx/list/REGION', icon: 'Location', panelCode: 'REGION' },
@@ -475,6 +488,12 @@ export const menuTree = [
         title: '系统管理',
         icon: 'Tools',
         children: [
+          {
+            // 系统功能入口：账号信息 / 修改密码 / 显示设置 + 管理员功能跳转。
+            // 从 yinjia 项目搬过来，补上「普通账号没有轮换自己口令出口」这个缺口。
+            code: 'console', title: '系统管理平台',
+            path: '/sys/console', icon: 'Setting',
+          },
           {
             // 只保留有真实实现支撑的两项：自动编号规则、打印模板。
             // 原「选项设置/看板授权/单据设计/移动单据/移动模板/打印出厂值/预警/任务/大屏×2」
@@ -510,24 +529,31 @@ export const menuTree = [
           },
         ],
       },
-    ],
-  },
-  {
-    code: 'top',
-    title: 'TOP应用',
-    desc: '方案中心',
-    icon: 'Platform',
-    children: [
+      // 设备数采与插件扩展都归到「基础设置」下：它们都是「系统怎么接、怎么扩」，
+      // 不是日常业务流（销售/生产/仓储）。放在顶层会和业务模块抢注意力。
       {
-        code: 'solution',
-        title: '方案中心',
-        icon: 'Compass',
+        code: 'dc',
+        title: '设备数采',
+        desc: '网关 · 采集点 · 报警 · 在线率',
+        icon: 'Connection',
+        children: [
+          { code: 'dcConfig', title: 'IOT设备配置', path: '/mes/dc/config', icon: 'Connection' },
+          { code: 'dcMonitor', title: '数据监控', path: '/mes/dc/monitor', icon: 'Monitor' },
+          { code: 'dcStats', title: '状态统计', path: '/mes/dc/stats', icon: 'TrendCharts' },
+        ],
+      },
+      {
+        // 原名「TOP应用」，改成「插件扩展」：说清楚这里放的是可插拔的能力扩展
+        code: 'top',
+        title: '插件扩展',
+        desc: '方案中心 · 扩展能力',
+        icon: 'Platform',
         children: [
           { code: 'solutionCenter', title: '方案中心', path: '/top/solution', icon: 'Compass' },
         ],
       },
     ],
-  }
+  },
 ]
 
 function walk(node, fn) {

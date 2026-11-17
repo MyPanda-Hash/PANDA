@@ -48,14 +48,35 @@ const user = useUserStore()
 const tabs = useTabsStore()
 const route = useRoute()
 
+/**
+ * 嵌入模式：AI 助理页（/assistant）把外部工作台整个嵌进来，
+ * 上面再盖一层「系统初始化」向导会把它挡得没法用，所以这一页不弹。
+ *
+ * 只影响「要不要自动弹」，不改 initDone —— 换个页面（我的桌面/业务总览）
+ * 照样会弹，初始化该做还是得做。
+ */
+const EMBED_PATHS = ['/assistant']
+
+function isEmbedPage(path) {
+  return EMBED_PATHS.some((base) => path === base || path.startsWith(base + '/'))
+}
+
 onMounted(() => {
   if (app.dark) document.documentElement.classList.add('dark')
   // Login data is cached for fast startup; refresh it so server-side corrections
   // and permission changes replace stale localStorage values on the next load.
   Promise.allSettled([user.fetchUserInfo(), user.fetchFactories()])
-  // T+ 行业化配置向导：首次登录自动弹出
-  if (!app.initDone) app.openInitWizard()
+  // T+ 行业化配置向导：首次登录自动弹出（嵌入页除外）
+  if (!app.initDone && !isEmbedPage(route.path)) app.openInitWizard()
 })
+
+// 已经弹着的时候切到嵌入页，也要让路：否则用户从桌面点进 AI 助理还是被挡住
+watch(
+  () => route.path,
+  (path) => {
+    if (app.initWizardVisible && isEmbedPage(path)) app.closeInitWizard(false)
+  }
+)
 
 /**
  * 外部深链补页签。

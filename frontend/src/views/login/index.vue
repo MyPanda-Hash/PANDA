@@ -9,7 +9,7 @@
           <span></span>
           MANUFACTURING OPERATIONS
         </p>
-        <h1><strong>轻 MES</strong> {{ tt('让生产现场') }}<br />{{ tt('有序运转') }}</h1>
+        <h1><strong>{{ brand.name }}</strong> {{ tt('让生产现场') }}<br />{{ tt('有序运转') }}</h1>
         <p class="scene-subtitle">{{ tt('生产制造执行系统') }}</p>
       </div>
 
@@ -27,7 +27,7 @@
             <el-icon><DataLine /></el-icon>
           </div>
           <div>
-            <div class="brand-name">轻 MES</div>
+            <div class="brand-name">{{ brand.name }}</div>
             <div class="brand-subtitle">{{ tt('制造协同工作台') }}</div>
           </div>
         </header>
@@ -141,11 +141,13 @@ import {
 } from '@element-plus/icons-vue'
 import { tt } from '@/i18n'
 import { useUserStore } from '@/stores/user'
+import { useBrandStore } from '@/stores/brand'
 import manufacturingImage from '@/assets/login-manufacturing.png'
 
 const REMEMBERED_ACCOUNT_KEY = 'mes_login_account'
 const router = useRouter()
 const user = useUserStore()
+const brand = useBrandStore()
 const formRef = ref(null)
 const loading = ref(false)
 const factoryLoading = ref(false)
@@ -178,7 +180,9 @@ async function doLogin() {
     if (selectedFactory) user.switchFactory(selectedFactory)
     if (rememberAccount.value) localStorage.setItem(REMEMBERED_ACCOUNT_KEY, form.userName)
     else localStorage.removeItem(REMEMBERED_ACCOUNT_KEY)
-    await router.replace('/dashboard')
+    // 登录后进「智能工作台」：先看今日简报/待办。
+    // 具体展示简报还是待办由岗位决定（stores/user.js 的 syncDeskRole 写 dnx-role）。
+    await router.replace('/assistant')
   } catch (error) {
     errorMessage.value = error.response?.data?.message || error.message || tt('登录失败，请稍后重试')
   } finally {

@@ -7505,11 +7505,73 @@ public class PxService implements PanelRuntimeService {
     }
 
     @SuppressWarnings("unchecked")
+    /**
+     * 取派工单的明细行，兼容两种持久化结构：
+     * <ul>
+     *   <li>{@code {items:[...]}} —— 现有单据与生单链路的规范结构；</li>
+     *   <li>{@code {tabs:[{key,rows:[...]}]}} —— 面板编辑器提交的结构。</li>
+     * </ul>
+     * 不能直接用 firstDetailRows：它的兜底分支会把 tabs 数组本身当成行，
+     * 结果班组/工人被写进 tab 对象里（2026-11-17 实测踩过）。
+     */
+    private List<Map<String, Object>> dispatchRowsOf(Map<String, Object> detail) {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (String key : List.of("items", "products", "rows")) {
+            Object value = detail.get(key);
+            if (value instanceof List<?> list) {
+                for (Object item : list) {
+                    if (item instanceof Map<?, ?> map) {
+                        rows.add((Map<String, Object>) map);
+                    }
+                }
+            }
+        }
+        Object tabs = detail.get("tabs");
+        if (tabs instanceof List<?> tabList) {
+            for (Object tab : tabList) {
+                if (tab instanceof Map<?, ?> tabMap && tabMap.get("rows") instanceof List<?> inner) {
+                    for (Object item : inner) {
+                        if (item instanceof Map<?, ?> map) {
+                            rows.add((Map<String, Object>) map);
+                        }
+                    }
+                }
+            }
+        }
+        return rows;
+    }
+
+    /**
+     * 派工单：把表头的「班组 / 工人」填到明细的空行上。
+     *
+     * <p>只填空值，不覆盖明细里单独指定的行——一张单允许按行派给不同的人，
+     * 表头只是「本单默认值」。
+     */
+    private void backfillDispatchAssignees(Map<String, Object> detail, Map<String, Object> head) {
+        String team = textOf(head.get("班组")).trim();
+        String worker = textOf(head.get("工人")).trim();
+        if (team.isEmpty() && worker.isEmpty()) return;
+        for (Map<String, Object> row : dispatchRowsOf(detail)) {
+            if (!team.isEmpty() && textOf(row.get("班组")).trim().isEmpty()) {
+                row.put("班组", team);
+            }
+            if (!worker.isEmpty() && textOf(row.get("工人")).trim().isEmpty()) {
+                row.put("工人", worker);
+            }
+        }
+    }
+
     private Map<String, Object> save(String panelCode, Map<String, Object> formData, String userName) {
         Object detail = formData.remove("detail");
         // 工艺路线主从结构：工序顺序以行序为准，表头字段不再冗余写进每行
         if ("ROUTE".equals(panelCode) && detail instanceof Map<?, ?> dm) {
             normalizeRouteDetail((Map<String, Object>) dm);
+        }
+        // 派工单：表头选了班组/工人就带到还空着的明细行。
+        // 不这么做的话，派活只能逐行填（实际没人填），下推报工时「工人名称」带出来也是空，
+        // 一线看板永远算不出「我的产量」。
+        if ("DISPATCH".equals(panelCode) && detail instanceof Map<?, ?> dm) {
+            backfillDispatchAssignees((Map<String, Object>) dm, formData);
         }
         FormData fd;
         Object no = formData.get("编号");
@@ -8011,12 +8073,25 @@ public class PxService implements PanelRuntimeService {
     }
 
     /** 审核通过时生成会计凭证分录（借贷平衡校验在服务内完成）。 */
-    private void postAccounting(String panelCode, String formNo, Map<String, Object> head,
-                                Map<String, Object> detail) {
+    // 包内可见：让单测能直接验证「金额口径真的接到了凭证上」。
+    // 只测 accountingAmount 本身不够 —— 之前它就是「函数对、但没人调」，
+    // 单测全绿而生产按销售额记了 13 倍的成本。
+    void postAccounting(String panelCode, String formNo, Map<String, Object> head,
+                        Map<String, Object> detail) {
         if (accountingService == null) return;
         // 红字发票不重复生成会计凭证（退货单已按 借应付/贷库存 冲销）
         if (isReturnInvoice(panelCode, head)) return;
-        java.math.BigDecimal amount = java.math.BigDecimal.valueOf(settlementAmount(detail));
+        // 用 accountingAmount 而不是 settlementAmount：
+        // 销售出库要按「成本金额」结转（借 主营业务成本 / 贷 库存商品），
+        // 按销售金额会把它记成收入口径（实测：成本 45.77 元被记成 600 元销售金额，
+        // 主营业务成本虚增 13 倍，库存与利润同时失真）。
+        // accountingAmount 早就写好了也有单测，但这里一直没接线，等于没生效。
+        java.math.BigDecimal amount = java.math.BigDecimal.valueOf(accountingAmount(panelCode, detail));
+        // 收款/付款这类单据没有明细行，金额直接记在表头（实测 detail={} 而 data={"金额":937.8}）。
+        // 只按明细汇总会让它们算成 0，凭证被静默跳过 —— 收付款因此从来不进账。
+        if (amount.signum() == 0) {
+            amount = headAmount(head);
+        }
         if (amount.signum() == 0) return;
         // 委外费用单把往来单位记在「委外供应商」，漏掉它分录就没有往来单位，账龄按供应商对不上
         String partner = textOf(firstValue(head, "客户", "供应商", "委外供应商", "往来单位"));
@@ -8029,6 +8104,24 @@ public class PxService implements PanelRuntimeService {
             return;
         }
         accountingService.post(panelCode, formNo, amount, partner, summary, java.time.LocalDate.now());
+    }
+
+    /** 从单据头取金额：无明细行的单据（收付款、费用）金额记在表头。 */
+    private java.math.BigDecimal headAmount(Map<String, Object> head) {
+        if (head == null) return java.math.BigDecimal.ZERO;
+        for (String key : new String[]{"金额", "实收金额", "实付金额", "价税合计", "含税金额", "合计金额", "总金额"}) {
+            Object v = head.get(key);
+            if (v == null) continue;
+            try {
+                String s = String.valueOf(v).replace(",", "").trim();
+                if (s.isEmpty()) continue;
+                java.math.BigDecimal d = new java.math.BigDecimal(s);
+                if (d.signum() != 0) return d;
+            } catch (NumberFormatException ignored) {
+                // 非数字，试下一个键
+            }
+        }
+        return java.math.BigDecimal.ZERO;
     }
 
     /** 弃审时冲销会计凭证。 */
@@ -11017,6 +11110,66 @@ public class PxService implements PanelRuntimeService {
     }
 
     /**
+     * 加工单「选销售订单」弹窗的候选：已审核销售订单 + 每张单的排产进度。
+     *
+     * <p>弹窗要一眼看出「哪张订单还排得动」，所以每行给订单数量 / 已排数量 / 可排数量 / 排产状态，
+     * 日期区间按「单据日期」闭区间、客户名按包含匹配（都为空就不过滤）。
+     * 占用数量复用 {@link #occupiedQtyByLine}，与真正排产时的口径完全一致，避免弹窗说能排、点进去却排不出。
+     *
+     * @param dateFrom 单据日期下限（含），yyyy-MM-dd，可空
+     * @param dateTo   单据日期上限（含），yyyy-MM-dd，可空
+     * @param customer 客户名称关键字，可空
+     */
+    @Override
+    public List<Map<String, Object>> saleOrderPlanCandidates(String dateFrom, String dateTo, String customer) {
+        String from = dateFrom == null ? "" : dateFrom.trim();
+        String to = dateTo == null ? "" : dateTo.trim();
+        String keyword = customer == null ? "" : customer.trim();
+        List<FormData> orders = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "SO_ORDER")
+                .eq(FormData::getStatus, "已审核")
+                .orderByDesc(FormData::getId));
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (FormData order : orders) {
+            Map<String, Object> head;
+            try {
+                head = parseData(order.getData());
+            } catch (Exception e) {
+                continue;
+            }
+            String date = str(head.get("单据日期"));
+            String cust = str(head.get("客户"));
+            if (!from.isEmpty() && date.compareTo(from) < 0) continue;
+            if (!to.isEmpty() && date.compareTo(to) > 0) continue;
+            if (!keyword.isEmpty() && !cust.contains(keyword)) continue;
+            List<Map<String, Object>> items = saleOrderItems(order);
+            if (items.isEmpty()) continue;
+            double[] occupied = occupiedQtyByLine(order.getFormNo(), items);
+            double orderQty = 0;
+            double plannedQty = 0;
+            double plannableQty = 0;
+            for (int i = 0; i < items.size(); i++) {
+                double qty = num(items.get(i).get("数量"));
+                double done = i < occupied.length ? occupied[i] : 0;
+                orderQty += qty;
+                plannedQty += Math.min(qty, done);
+                plannableQty += SaleOrderPlanRules.plannable(qty, done);
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("单据编号", order.getFormNo());
+            row.put("单据日期", date);
+            row.put("客户", cust);
+            row.put("明细", items);
+            row.put("订单数量", round2(orderQty));
+            row.put("已排数量", round2(plannedQty));
+            row.put("可排数量", round2(plannableQty));
+            row.put("排产状态", SaleOrderPlanRules.planStatus(plannedQty, plannableQty));
+            out.add(row);
+        }
+        return out;
+    }
+
+    /**
      * 销售订单排产：按订单行生成生产加工单（单号 = 销售订单号-行号），并直接把首道工序排成批次。
      *
      * <p>排产不审批：加工单与批次生成即「已审核」，可以直接领料、报工。下道工序仍要等上道
@@ -11152,23 +11305,9 @@ public class PxService implements PanelRuntimeService {
             for (Map<String, Object> p : products) {
                 String code = str(p.get("产品编码"));
                 double qty = num(p.get("数量"));
-                int target = -1;
-                if (!lineField.isEmpty()) {
-                    int lineNo = (int) Math.round(num(lineField));
-                    if (lineNo >= 1 && lineNo <= items.size()
-                            && code.equals(str(items.get(lineNo - 1).get("存货编码")))) {
-                        target = lineNo - 1;
-                    }
-                }
-                if (target < 0) {
-                    // 老数据：按产品编码占，优先占还有余量的行
-                    for (int i = 0; i < items.size(); i++) {
-                        if (!code.equals(str(items.get(i).get("存货编码")))) continue;
-                        if (occupied[i] + 1e-6 >= num(items.get(i).get("数量"))) continue;
-                        target = i;
-                        break;
-                    }
-                }
+                // 归属规则统一走 SaleOrderPlanRules.targetLine（有单测），
+                // 不再在这里内联一份 —— 两处各写一套时，测试保护的往往是没被调用的那份。
+                int target = SaleOrderPlanRules.targetLine(lineField, code, items, occupied);
                 if (target >= 0) occupied[target] += qty;
             }
         }

@@ -26,10 +26,48 @@ public class PxController {
 
     private final PanelRuntimeService service;
     private final RoleService roleService;
+    private final com.mes.service.UsageLogService usageLog;
 
-    public PxController(PanelRuntimeService service, RoleService roleService) {
+    public PxController(PanelRuntimeService service, RoleService roleService,
+                        com.mes.service.UsageLogService usageLog) {
         this.service = service;
         this.roleService = roleService;
+        this.usageLog = usageLog;
+    }
+
+    /**
+     * 取真实客户端 IP：直接 getRemoteAddr 在反代后面永远是 127.0.0.1，
+     * 日志里就分不清是谁在哪儿操作。按 X-Forwarded-For 第一个地址兜底。
+     */
+    private static String clientIp(jakarta.servlet.http.HttpServletRequest req) {
+        if (req == null) return null;
+        String xff = req.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) {
+            String first = xff.split(",")[0].trim();
+            if (!first.isEmpty()) return first;
+        }
+        return req.getRemoteAddr();
+    }
+
+    /** 面板编码 → 展示名；从面板配置里取，查不到就退回编码本身，不让日志出现空白。 */
+    @SuppressWarnings("unchecked")
+    private String panelNameOf(String panelCode) {
+        try {
+            Map<String, Object> config = service.getPanelConfig(panelCode);
+            if (config != null) {
+                // 面板名在 metadata.panelName 里（顶层只有 metadata/dataSchema/detail 等块）
+                Object meta = config.get("metadata");
+                if (meta instanceof Map<?, ?> m) {
+                    Object name = m.get("panelName");
+                    if (name != null && !String.valueOf(name).isBlank()) return String.valueOf(name);
+                }
+                Object direct = config.get("panelName");
+                if (direct != null && !String.valueOf(direct).isBlank()) return String.valueOf(direct);
+            }
+        } catch (Exception ignored) {
+            // 取不到就用编码，日志不该因为查名字而失败
+        }
+        return panelCode;
     }
 
     // ---------- 服务端权限校验（此前仅靠前端过滤，任何登录用户可越权读写任意面板） ----------
@@ -131,7 +169,8 @@ public class PxController {
     }
 
     @PostMapping("/callButton")
-    public ApiResult<Map<String, Object>> callButton(Authentication auth, @RequestBody Map<String, Object> body) {
+    public ApiResult<Map<String, Object>> callButton(Authentication auth, @RequestBody Map<String, Object> body,
+                                                     jakarta.servlet.http.HttpServletRequest request) {
         String panelCode = String.valueOf(body.getOrDefault("panelCode", ""));
         String buttonName = String.valueOf(body.getOrDefault("buttonName", ""));
         requireVisible(auth, panelCode);
@@ -140,16 +179,60 @@ public class PxController {
         Map<String, Object> formData = (Map<String, Object>) body.getOrDefault("formData", Map.of());
         @SuppressWarnings("unchecked")
         Map<String, Object> buttonParam = (Map<String, Object>) body.getOrDefault("buttonParam", Map.of());
-        return ApiResult.ok(service.callButton(panelCode, buttonName, formData, buttonParam));
+        // 业务动作留痕要在 try/finally 里做：失败的提交同样要留痕。
+        // 「谁试图提交但被状态校验挡回去」本身就是审计要点，
+        // 只在成功路径埋点会丢掉这一类记录（实测踩到：提交非草稿单返回 409，日志里什么都没有）。
+        boolean audit = isBusinessAction(buttonName);
+        try {
+            Map<String, Object> result = service.callButton(panelCode, buttonName, formData, buttonParam);
+            if (audit) {
+                usageLog.recordAction(auth.getName(), null, panelCode, panelNameOf(panelCode),
+                        buttonName, docNoOf(formData), clientIp(request));
+            }
+            return ApiResult.ok(result);
+        } catch (RuntimeException ex) {
+            if (audit) {
+                // 失败也留痕：动作名后面标记失败原因，页面上一眼能分出「做了」和「试了没成」
+                usageLog.recordAction(auth.getName(), null, panelCode, panelNameOf(panelCode),
+                        buttonName + "（失败）", docNoOf(formData), clientIp(request));
+            }
+            throw ex;
+        }
+    }
+
+    /** 纯浏览类动作不记日志；其余（提交/审批/生单/弃审/删除…）都记。 */
+    private static final java.util.Set<String> READONLY_ACTIONS = java.util.Set.of(
+            "查询", "刷新", "查找", "重置", "导出", "打印", "预览", "翻页", "全部", "高级查询");
+
+    private static boolean isBusinessAction(String buttonName) {
+        if (buttonName == null || buttonName.isBlank()) return false;
+        for (String readonly : READONLY_ACTIONS) {
+            if (buttonName.contains(readonly)) return false;
+        }
+        return true;
+    }
+
+    /** 从表单数据里取单据号：不同面板的键名不统一，按常见顺序兜底。 */
+    private static String docNoOf(Map<String, Object> formData) {
+        if (formData == null) return null;
+        for (String key : new String[]{"编号", "单据编号", "记录编号", "面板单号", "单号"}) {
+            Object v = formData.get(key);
+            if (v != null && !String.valueOf(v).isBlank()) return String.valueOf(v);
+        }
+        return null;
     }
 
     @PostMapping("/deleteForms")
-    public ApiResult<Void> deleteForms(Authentication auth, @RequestBody Map<String, Object> body) {
+    public ApiResult<Void> deleteForms(Authentication auth, @RequestBody Map<String, Object> body,
+                                       jakarta.servlet.http.HttpServletRequest request) {
         String panelCode = String.valueOf(body.getOrDefault("panelCode", ""));
         requireVisible(auth, panelCode);
         @SuppressWarnings("unchecked")
         List<String> rowCodes = (List<String>) body.getOrDefault("rowCodes", List.of());
         service.deleteForms(panelCode, rowCodes);
+        // 删除是高风险动作，必须留痕
+        usageLog.recordAction(auth.getName(), null, panelCode, panelNameOf(panelCode),
+                "删除单据", String.join(",", rowCodes), clientIp(request));
         return ApiResult.ok(null);
     }
 
@@ -359,6 +442,15 @@ public class PxController {
     /**
      * 销售订单排产看板：一行一个订单行，含订单数量、已排、可排与预计加工单号。
      */
+    /** 加工单「选销售订单」候选：已审核销售订单 + 排产进度（未排产 / 部分排产 / 已排产），可按日期与客户筛。 */
+    @GetMapping("/saleOrderPlanCandidates")
+    public ApiResult<List<Map<String, Object>>> saleOrderPlanCandidates(
+            @RequestParam(value = "dateFrom", required = false) String dateFrom,
+            @RequestParam(value = "dateTo", required = false) String dateTo,
+            @RequestParam(value = "customer", required = false) String customer) {
+        return ApiResult.ok(service.saleOrderPlanCandidates(dateFrom, dateTo, customer));
+    }
+
     @GetMapping("/saleOrderPlanBoard")
     public ApiResult<List<Map<String, Object>>> saleOrderPlanBoard(@RequestParam("saleOrderNo") String saleOrderNo) {
         return ApiResult.ok(service.saleOrderPlanBoard(saleOrderNo));

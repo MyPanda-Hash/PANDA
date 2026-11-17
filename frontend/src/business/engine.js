@@ -294,11 +294,44 @@ export async function archiveIndex(panelCode, keyField) {
 
 // ==================== SQL 后端接口 ====================
 
+/**
+ * 面板配置内存缓存。
+ *
+ * 原实现每次调用都带 _t=Date.now() 强制穿透缓存，且没有内存缓存——
+ * 打开一个列表页实测请求了 19 次同一个 panelCode 的配置（每次几十 KB JSON + 解析）。
+ * 面板配置在一次会话里几乎不变，缓存后只发一次。
+ *
+ * 失效时机：用户改了字段布局/自定义字段时调 clearPanelConfigCache(panelCode)，
+ * 否则会看不到自己刚改的东西。
+ */
+const panelConfigCache = new Map()
+
+/** 清掉某个面板的缓存；不传则全清。改配置后必须调，否则界面还是旧定义。 */
+export function clearPanelConfigCache(panelCode) {
+  if (panelCode) panelConfigCache.delete(panelCode)
+  else panelConfigCache.clear()
+}
+
 export async function getPanelConfig(panelCode) {
-  // 配置可能在后端启动时被 Registry 重写；加时间戳避免浏览器/代理缓存旧 panel_config。
-  return normalizeApprovalConfig(unwrap(await request.get('/px/getPanelConfig', {
-    params: { panelCode, _t: Date.now() },
-  })))
+  const key = String(panelCode || '')
+  if (!key) return normalizeApprovalConfig(unwrap(await request.get('/px/getPanelConfig', { params: { panelCode: key } })))
+  // 命中缓存直接返回；正在请求中则复用同一个 Promise（并发去重）
+  const hit = panelConfigCache.get(key)
+  if (hit) return hit
+  const task = (async () => {
+    const data = normalizeApprovalConfig(unwrap(await request.get('/px/getPanelConfig', {
+      params: { panelCode: key },
+    })))
+    return data
+  })()
+  panelConfigCache.set(key, task)
+  try {
+    return await task
+  } catch (e) {
+    // 失败不要缓存，否则一次网络抖动会让这个面板整个会话都打不开
+    panelConfigCache.delete(key)
+    throw e
+  }
 }
 
 /**
@@ -372,8 +405,47 @@ export async function getFormDescriptor({ panelCode, code }) {
   )
 }
 
+/**
+ * 「整表读取」结果缓存（短 TTL）。
+ *
+ * 病灶：PanelxList 为了做参照/选单，会为 WH / ROUTE / BOM 各拉 100-200 条，
+ * 每次进列表页都重来一遍（实测单次开页 17 个 queryFormDataList）。
+ * 这些是基础档案，几十秒内不会变，重复拉纯属浪费。
+ *
+ * 只缓存「无搜索词、无业务条件、第一页、量不大」的整表读取：
+ * 带条件的查询是用户主动筛选，必须实时；翻页也不该命中。
+ */
+const LIST_CACHE_TTL_MS = 30000
+const listCache = new Map()
+
+/** 清空整表读缓存（保存档案后调用）。 */
+export function clearListCache() {
+  listCache.clear()
+}
+
+function listCacheKey(params) {
+  if (!params) return ''
+  const { panelCode, keyword, condition, pageNo, pageSize } = params
+  // 只要带筛选条件或翻页就不缓存，避免把「筛选后的结果」当成整表返回
+  const condEmpty = !condition || Object.keys(condition).length === 0
+  if (!condEmpty || keyword) return ''
+  if (Number(pageNo || 1) !== 1) return ''
+  const size = Number(pageSize || 20)
+  // 缓存「整表读取」的量级（>=50 条）：参照/选单/基础档案都是这类。
+  // 普通分页列表（20 条）不缓存，保证用户点翻页/刷新看到最新。
+  if (size < 50 || size > 1000) return ''
+  return `${panelCode}|${size}`
+}
+
 export async function queryFormDataList(params) {
-  return unwrap(await request.post('/px/queryFormDataList', params))
+  const key = listCacheKey(params)
+  if (key) {
+    const hit = listCache.get(key)
+    if (hit && Date.now() - hit.at < LIST_CACHE_TTL_MS) return hit.data
+  }
+  const data = unwrap(await request.post('/px/queryFormDataList', params))
+  if (key) listCache.set(key, { at: Date.now(), data })
+  return data
 }
 
 /**
@@ -553,6 +625,11 @@ export async function planBoard(manuOrderNo) {
   return unwrap(await request.get('/px/planBoard', { params: { manuOrderNo } }))
 }
 
+/** 加工单「选销售订单」候选：带每张单的排产进度，可按单据日期与客户名筛。 */
+export async function saleOrderPlanCandidates(params) {
+  return unwrap(await request.get('/px/saleOrderPlanCandidates', { params }))
+}
+
 /** 销售订单排产看板：一行一个订单行，带订单数量/已排/可排与预计加工单号。 */
 export async function saleOrderPlanBoard(saleOrderNo) {
   return unwrap(await request.get('/px/saleOrderPlanBoard', { params: { saleOrderNo } }))
@@ -615,7 +692,13 @@ export async function previewFinishIn({ docNo }) {
 export async function callButton({ panelCode, buttonName, formData, buttonParam }) {
   // 按钮名对齐 SQL 后端（中止执行/整单中止→中止、草稿→取消中止、保存类→提交）
   const apiName = buttonName === '中止执行' || buttonName === '整单中止' ? '中止' : buttonName === '草稿' ? '取消中止' : buttonName === '保存' || buttonName === '保存为草稿' || buttonName === '保存新增' ? '提交' : buttonName
-  return unwrap(await request.post('/px/callButton', { panelCode, buttonName: apiName, formData, buttonParam }))
+  const result = unwrap(await request.post('/px/callButton', { panelCode, buttonName: apiName, formData, buttonParam }))
+  // 任何业务动作成功后都清档案缓存与整表缓存：
+  // 否则「刚保存的档案」在 30-60 秒内仍从缓存里读到旧值，
+  // 表现为「明明改了，参照里还是老的」——这类问题最难排查。
+  clearArchiveCache()
+  clearListCache()
+  return result
 }
 
 // ==================== 采购发票：行级选入库单/退货单行 ====================

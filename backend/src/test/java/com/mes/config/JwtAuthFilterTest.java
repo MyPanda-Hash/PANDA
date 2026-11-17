@@ -54,8 +54,34 @@ class JwtAuthFilterTest {
         verify(chain).doFilter(request, response);
     }
 
+    /**
+     * 账套上下文：过滤器要从 X-Factory-Code 取当前账套，并在请求结束后清理。
+     *
+     * <p>这条测试是补的回归保护：加账套隔离后过滤器多了一次 getHeader，
+     * 原有测试没 stub 它，Mockito 严格模式直接把两个既有用例打红了。
+     */
+    @Test
+    void setsFactoryContextDuringChainAndClearsItAfter() throws Exception {
+        configureToken();
+        when(request.getHeader("X-Factory-Code")).thenReturn("F02");
+        when(userMapper.selectOne(any())).thenReturn(user(1));
+        String[] seen = new String[1];
+        org.mockito.Mockito.doAnswer(invocation -> {
+            seen[0] = FactoryContext.current();
+            return null;
+        }).when(chain).doFilter(request, response);
+
+        new JwtAuthFilter(jwtUtil, userMapper).doFilterInternal(request, response, chain);
+
+        assertEquals("F02", seen[0], "链路执行期间应当读到请求头里的账套");
+        assertEquals(FactoryContext.DEFAULT_CODE, FactoryContext.current(),
+                "请求结束后必须清理，否则线程复用会把账套串到下一个请求");
+    }
+
     private void configureToken() {
         when(request.getHeader("Authorization")).thenReturn("Bearer token");
+        // 过滤器会读账套头；不 stub 会触发 Mockito 严格模式报错
+        when(request.getHeader("X-Factory-Code")).thenReturn(null);
         when(jwtUtil.validate("token")).thenReturn(true);
         when(jwtUtil.parseUserName("token")).thenReturn("worker");
     }

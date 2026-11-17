@@ -3,6 +3,7 @@ package com.mes.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mes.entity.AccountingEntry;
 import com.mes.mapper.AccountingEntryMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,8 +67,47 @@ public class AccountingService {
 
     private final AccountingEntryMapper entryMapper;
 
+    /** 期间服务：封账后禁止写凭证。可为空（单测只验分录构造时不需要）。 */
+    private AccountingPeriodService periodService;
+
     public AccountingService(AccountingEntryMapper entryMapper) {
         this.entryMapper = entryMapper;
+    }
+
+    @Autowired(required = false)
+    public void setPeriodService(AccountingPeriodService periodService) {
+        this.periodService = periodService;
+    }
+
+    /** 取期并校验：期间已封账就抛错，杜绝「往已结的账里补单」。 */
+    private String periodOf(LocalDate bizDate, String action) {
+        if (periodService == null) return null;
+        String period = periodService.resolvePeriod(bizDate);
+        periodService.requireOpen(period, action);
+        return period;
+    }
+
+    /** 分录落库：两处写入口共用，避免各写一遍导致一边忘了带期间。 */
+    private void insertEntries(String panelCode, String sourceNo, List<Entry> entries, String partner,
+                               String summary, LocalDate bizDate, String period) {
+        String voucherNo = buildVoucherNo(panelCode, sourceNo);
+        LocalDateTime now = LocalDateTime.now();
+        for (Entry e : entries) {
+            AccountingEntry entity = new AccountingEntry();
+            entity.setVoucherNo(voucherNo);
+            entity.setSourcePanel(panelCode);
+            entity.setSourceNo(sourceNo);
+            entity.setAccountCode(e.accountCode());
+            entity.setAccountName(e.accountName());
+            entity.setDirection(e.direction());
+            entity.setAmount(e.amount());
+            entity.setPartner(e.partner());
+            entity.setSummary(summary);
+            entity.setBizDate(bizDate);
+            entity.setPeriod(period);
+            entity.setCreateTime(now);
+            entryMapper.insert(entity);
+        }
     }
 
     /** 面板对应的凭证模板；非会计面板返回 null。 */
@@ -125,22 +165,8 @@ public class AccountingService {
                 .eq(AccountingEntry::getSourceNo, sourceNo));
         if (entries.isEmpty()) return 0;
         assertBalanced(entries);
-        String voucherNo = buildVoucherNo(panelCode, sourceNo);
-        for (Entry e : entries) {
-            AccountingEntry entity = new AccountingEntry();
-            entity.setVoucherNo(voucherNo);
-            entity.setSourcePanel(panelCode);
-            entity.setSourceNo(sourceNo);
-            entity.setAccountCode(e.accountCode());
-            entity.setAccountName(e.accountName());
-            entity.setDirection(e.direction());
-            entity.setAmount(e.amount());
-            entity.setPartner(e.partner());
-            entity.setSummary(summary);
-            entity.setBizDate(bizDate);
-            entity.setCreateTime(LocalDateTime.now());
-            entryMapper.insert(entity);
-        }
+        insertEntries(panelCode, sourceNo, entries, partner, summary, bizDate,
+                periodOf(bizDate, "记账"));
         return entries.size();
     }
 
@@ -175,29 +201,80 @@ public class AccountingService {
         List<Entry> entries = buildEntries(panelCode, sourceNo, amount, partner, summary);
         if (entries.isEmpty()) return 0;
         assertBalanced(entries);
-        String voucherNo = buildVoucherNo(panelCode, sourceNo);
-        for (Entry e : entries) {
-            AccountingEntry entity = new AccountingEntry();
-            entity.setVoucherNo(voucherNo);
-            entity.setSourcePanel(panelCode);
-            entity.setSourceNo(sourceNo);
-            entity.setAccountCode(e.accountCode());
-            entity.setAccountName(e.accountName());
-            entity.setDirection(e.direction());
-            entity.setAmount(e.amount());
-            entity.setPartner(e.partner());
-            entity.setSummary(summary);
-            entity.setBizDate(bizDate);
-            entity.setCreateTime(LocalDateTime.now());
-            entryMapper.insert(entity);
-        }
+        insertEntries(panelCode, sourceNo, entries, partner, summary, bizDate,
+                periodOf(bizDate, "记账"));
         return entries.size();
+    }
+
+    /**
+     * 期末结转损益：把损益类科目余额转入本年利润 4103。
+     *
+     * <p>凭证来源固定为 PERIOD_CLOSE + 期间号，重复结转先删旧分录，保证幂等。
+     * 期间已封账时拒绝（封账后不该再产生新凭证）。
+     */
+    @Transactional
+    public int postCarryForward(String period, LocalDate bizDate, List<Entry> entries, String summary) {
+        if (entries.isEmpty()) return 0;
+        if (periodService != null) periodService.requireOpen(period, "结转损益");
+        entryMapper.delete(new LambdaQueryWrapper<AccountingEntry>()
+                .eq(AccountingEntry::getSourcePanel, "PERIOD_CLOSE")
+                .eq(AccountingEntry::getSourceNo, period));
+        assertBalanced(entries);
+        insertEntries("PERIOD_CLOSE", period, entries, "", summary, bizDate, period);
+        return entries.size();
+    }
+
+    /**
+     * 计提折旧：按期间生成折旧凭证（借 折旧费用 / 贷 累计折旧）。
+     * 幂等：source_no = 期间，重复计提先清旧分录。期间已封账时拒绝。
+     */
+    @Transactional
+    public int postDepreciation(String period, List<Entry> entries, String summary) {
+        if (entries.isEmpty()) return 0;
+        if (periodService != null) periodService.requireOpen(period, "计提折旧");
+        entryMapper.delete(new LambdaQueryWrapper<AccountingEntry>()
+                .eq(AccountingEntry::getSourcePanel, "FA_DEPRECIATION")
+                .eq(AccountingEntry::getSourceNo, period));
+        assertBalanced(entries);
+        java.time.LocalDate bizDate = java.time.LocalDate.parse(period + "-01");
+        bizDate = bizDate.withDayOfMonth(bizDate.lengthOfMonth());
+        insertEntries("FA_DEPRECIATION", period, entries, "", summary, bizDate, period);
+        return entries.size();
+    }
+
+    /**
+     * 某往来对象（这里用作资产编码）已提折旧：从 1602 累计折旧的分录反查。
+     *
+     * <p>不另存一张「卡片累计折旧」字段，避免卡片与账簿两套数对不上。
+     */
+    public BigDecimal depreciatedOf(String sourcePanel, String partnerCode) {
+        List<AccountingEntry> rows = entryMapper.selectList(new LambdaQueryWrapper<AccountingEntry>()
+                .eq(AccountingEntry::getSourcePanel, sourcePanel)
+                .eq(AccountingEntry::getPartner, partnerCode)
+                .eq(AccountingEntry::getAccountCode, "1602"));
+        BigDecimal total = BigDecimal.ZERO;
+        for (AccountingEntry entry : rows) {
+            if (entry.getAmount() != null) total = total.add(entry.getAmount());
+        }
+        return total;
     }
 
     /** 冲销该来源单据的全部分录。 */
     @Transactional
     public int reverse(String panelCode, String sourceNo) {
         if (templateOf(panelCode) == null) return 0;
+        // 冲销同样受封账约束：已结的账不能靠「弃审」把分录删掉
+        if (periodService != null) {
+            List<AccountingEntry> existing = entryMapper.selectList(new LambdaQueryWrapper<AccountingEntry>()
+                    .eq(AccountingEntry::getSourcePanel, panelCode)
+                    .eq(AccountingEntry::getSourceNo, sourceNo));
+            for (AccountingEntry entry : existing) {
+                String period = entry.getPeriod() != null
+                        ? entry.getPeriod()
+                        : periodService.resolvePeriod(entry.getBizDate());
+                periodService.requireOpen(period, "冲销凭证");
+            }
+        }
         return entryMapper.delete(new LambdaQueryWrapper<AccountingEntry>()
                 .eq(AccountingEntry::getSourcePanel, panelCode)
                 .eq(AccountingEntry::getSourceNo, sourceNo));

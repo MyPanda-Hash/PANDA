@@ -8,8 +8,25 @@ const request = axios.create({
 request.interceptors.request.use((config) => {
   const token = localStorage.getItem('mes_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
+  // 账套：后端从 X-Factory-Code 取当前账套，所有业务查询按它过滤。
+  // 放在统一拦截器里而不是各个 api 调用里传，否则 12000 行面板代码迟早漏一个，
+  // 漏掉的那个请求会静默读到别的账套数据。
+  const factory = readFactoryCode()
+  if (factory) config.headers['X-Factory-Code'] = factory
   return config
 })
+
+/** 当前账套编码；取 user store 存的当前工厂，没选过就用后端默认。 */
+function readFactoryCode() {
+  try {
+    const raw = localStorage.getItem('mes_factory')
+    if (!raw) return ''
+    const parsed = JSON.parse(raw)
+    return (parsed && parsed.code) || ''
+  } catch (_) {
+    return ''
+  }
+}
 
 export function unwrapApiResponse(res) {
   const body = res.data

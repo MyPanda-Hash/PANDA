@@ -157,6 +157,11 @@ public interface PanelRuntimeService {
         return List.of();
     }
 
+    /** 加工单「选销售订单」候选：已审核销售订单 + 排产进度，可按单据日期与客户筛。默认返回空表。 */
+    default List<Map<String, Object>> saleOrderPlanCandidates(String dateFrom, String dateTo, String customer) {
+        return List.of();
+    }
+
     /** 销售订单排产：按订单行生成生产加工单，生成即已审核。 */
     default Map<String, Object> planFromSalesOrder(String saleOrderNo, List<Map<String, Object>> lines) {
         throw new UnsupportedOperationException("销售订单排产未实现");

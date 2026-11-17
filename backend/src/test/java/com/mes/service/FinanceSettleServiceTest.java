@@ -142,30 +142,4 @@ class FinanceSettleServiceTest {
         assertNull(service.typeOf("SO_ORDER"));
     }
 
-    @Test
-    void settleMatchesWriteOffAgainstOutstanding() {
-        FinanceSettleService.SettleResult r = service.computeSettle(
-                new BigDecimal("100"), new BigDecimal("250"));
-
-        assertEquals(0, new BigDecimal("100").compareTo(r.settled()));
-        assertEquals(0, new BigDecimal("150").compareTo(r.outstanding()));
-    }
-
-    @Test
-    void settleCannotExceedOutstanding() {
-        FinanceSettleService.SettleResult r = service.computeSettle(
-                new BigDecimal("500"), new BigDecimal("250"));
-
-        assertEquals(0, new BigDecimal("250").compareTo(r.settled()));
-        assertEquals(0, BigDecimal.ZERO.compareTo(r.outstanding()));
-    }
-
-    @Test
-    void fullySettledOutstandingIsZero() {
-        FinanceSettleService.SettleResult r = service.computeSettle(
-                new BigDecimal("250"), new BigDecimal("250"));
-
-        assertEquals(0, BigDecimal.ZERO.compareTo(r.outstanding()));
-        assertTrue(r.settledCoversAll());
-    }
 }

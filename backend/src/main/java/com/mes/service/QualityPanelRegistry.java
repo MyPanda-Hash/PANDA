@@ -210,6 +210,13 @@ public class QualityPanelRegistry {
         ensureDetailField(config, "含税单价", "小数", false, false);
         ensureDetailField(config, "记录样本明细", "是否", false, true);
         ensureDetailField(config, "样本明细个数", "整数", false, true);
+        // SPC 取数与过程能力输入（与生产过程检验单保持一致的口径）
+        ensureDetailField(config, "实测值", "小数", false, true);
+        ensureDetailField(config, "规格下限", "小数", false, true);
+        ensureDetailField(config, "规格上限", "小数", false, true);
+        ensureColumnAfter(config, "检验数量", "实测值");
+        ensureColumnAfter(config, "实测值", "规格下限");
+        ensureColumnAfter(config, "规格下限", "规格上限");
         ensureColumnAfter(config, "检验日期", "检验方案");
         ensureColumnAfter(config, "检验方案", "记录样本明细");
         ensureColumnAfter(config, "记录样本明细", "样本明细个数");
@@ -564,6 +571,10 @@ public class QualityPanelRegistry {
                 optionalSelect("班组", "下料班", "车工班", "铣工班", "热处理班", "质检班"),
                 field("工人", "文本", false),
                 reference("不合格原因", "REJECT", "不合格原因"),
+                // SPC 取数与过程能力（Cp/Cpk）的输入：实测值是该行的实际测量值，
+                // 上下限是该特性的规格公差。缺任一项只能画控制图，算不出过程能力。
+                field("实测值", "小数", false),
+                field("规格下限", "小数", false), field("规格上限", "小数", false),
                 field("备注", "文本", false));
         addSourceFieldsTo(out);
         return out;

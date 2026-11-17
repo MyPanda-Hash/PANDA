@@ -11,7 +11,8 @@ import {
   hasSelectConfig,
   isApprovalGroup,
   primaryActionOf,
-  supportsAudit,
+  menuActionsOf,
+  supportsAudit
 } from '../src/core/button-groups.js'
 
 test('adds scan fill to an editable sales document with an old toolbar config', () => {
@@ -231,4 +232,21 @@ test('审批中把「审批驳回」并列露出，其它状态不露出', () =>
   const draftPrimary = primaryActionOf(approvalGroup, disabledByStatus('草稿'))
   assert.deepEqual(approvalSecondaryOf(approvalGroup, draftPrimary, disabledByStatus('草稿')), [])
   assert.deepEqual(approvalSecondaryOf({ name: '保存', actions: ['保存'] }, '保存', () => false), [])
+})
+
+test('收纳组（工具/更多/设置/智能）的下拉要列出全部动作——否则组里只有一个动作时永远点不到', () => {
+  // 真实故障：销售费用分摊单的「工具」组只有「执行分摊」，主按钮只展开菜单、
+  // 下拉又排除了主按钮那个动作，结果按钮点了没反应，分摊根本执行不了
+  assert.deepEqual(menuActionsOf({ name: '工具', actions: ['执行分摊'] }, () => false), ['执行分摊'])
+  assert.deepEqual(menuActionsOf({ name: '更多', actions: ['刷新'] }, () => false), ['刷新'])
+  assert.deepEqual(menuActionsOf({ name: '设置', actions: ['单据设置', '工具栏设置'] }, () => false),
+    ['单据设置', '工具栏设置'])
+})
+
+test('普通组的下拉仍然排除主按钮（避免同一个动作出现两次）', () => {
+  assert.deepEqual(menuActionsOf({ name: '保存', actions: ['保存', '保存新增'] }, () => false), ['保存新增'])
+})
+
+test('审批组下拉排除主按钮与并列露出的次要动作，且不列禁用动作', () => {
+  assert.deepEqual(menuActionsOf(approvalGroup, disabledByStatus('审批中')), ['审批情况'])
 })

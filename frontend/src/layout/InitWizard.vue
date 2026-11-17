@@ -267,6 +267,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { Loading } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@core/request'
+import { toBlob, assertFileBlob, saveBlob } from '@core/download'
 import { useAppStore } from '@/stores/app'
 import { tt } from '@/i18n'
 
@@ -330,16 +331,10 @@ async function loadState() {
 async function downloadTemplate(m, format) {
   try {
     const query = format ? `?format=${format}` : ''
-    const res = await request.get(`/init/template/${m.code}${query}`, { responseType: 'blob' })
-    const blob = res.data instanceof Blob ? res.data : new Blob([res.data])
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = format === 'xls' ? m.fileName.replace(/\.xlsx$/, '.xls') : m.fileName
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    setTimeout(() => URL.revokeObjectURL(url), 2000)
+    const raw = await request.get(`/init/template/${m.code}${query}`, { responseType: 'blob' })
+    // 响应拦截器已解包，raw 就是 Blob；assertFileBlob 拦下「200 + JSON 错误」
+    const blob = await assertFileBlob(toBlob(raw))
+    saveBlob(blob, format === 'xls' ? m.fileName.replace(/\.xlsx$/, '.xls') : m.fileName)
   } catch (e) {
     ElMessage.error(tt('下载模板失败') + '：' + (e?.message || ''))
   }

@@ -48,6 +48,26 @@ export const useUserStore = defineStore('user', {
       this.visiblePanels = Array.isArray(u?.visiblePanels) ? u.visiblePanels : []
       this.approvePanels = Array.isArray(u?.approvePanels) ? u.approvePanels : []
       this.panelPerms = (u && typeof u.panelPerms === 'object' && u.panelPerms) || {}
+      this.syncDeskRole()
+    },
+    /**
+     * 把 MES 的账号等级映射成 AI 工作台的默认视角，写进同源 localStorage。
+     *
+     * 为什么由 MES 写：合并账号体系后 AI 不再有自己的登录与角色来源，
+     * 「进来先看简报还是先看待办」必须按 MES 的岗位决定，而不是让用户自己选。
+     * desk 侧读 dnx-role（见 frontend-desk/js/main.js 的 currentRole）。
+     */
+    syncDeskRole() {
+      const role = this.isAdmin
+        ? 'manager'
+        : ['FOREMAN', 'WORKER', 'PLANNER'].includes(this.roleCode)
+          ? 'supervisor'
+          : 'staff'
+      try {
+        localStorage.setItem('dnx-role', role)
+      } catch (_) {
+        /* 隐私模式下写不了就按 desk 默认走 */
+      }
     },
     // 刷新权限（角色/面板配置变更后调用）
     async fetchPerms() {
@@ -90,9 +110,21 @@ export const useUserStore = defineStore('user', {
         localStorage.setItem('mes_factory', JSON.stringify(this.factory))
       }
     },
+    /**
+     * 切换账套。
+     *
+     * 必须整页重载：面板数据、页签、看板、图表都是上一个账套的，
+     * 只换内存里的 factory 而不重新取数，界面会继续显示旧账套的内容
+     * ——这正是改之前「切换没反应」的根源。重载后请求头带新账套，
+     * 后端按新账套返回数据。
+     */
     switchFactory(r) {
+      if (!r || (this.factory && this.factory.code === r.code)) return
       this.factory = r
       localStorage.setItem('mes_factory', JSON.stringify(r))
+      // 用 replace 避免在浏览器历史里堆一串「切换账套」记录
+      location.replace('/#/dashboard')
+      location.reload()
     },
     logout() {
       this.token = ''

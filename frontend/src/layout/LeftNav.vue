@@ -217,7 +217,7 @@
     <div v-if="app.mobileNav" class="mobile-nav">
       <div class="mn-head">
         <span v-if="mStack.length" class="mn-back" @click="mBack">‹ {{ tt('返回') }}</span>
-        <span v-else class="mn-brand">轻MES</span>
+        <span v-else class="mn-brand">{{ brand.name }}</span>
         <span class="mn-title">{{ tt(mnTitle) }}</span>
         <span class="mn-close" @click="app.toggleMobileNav()">✕</span>
       </div>
@@ -254,12 +254,14 @@ import { useLocaleStore } from '@/stores/locale'
 import { useTabsStore } from '@/stores/tabs'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
+import { useBrandStore } from '@/stores/brand'
 
 const route = useRoute()
 const router = useRouter()
 const tabs = useTabsStore()
 const app = useAppStore()
 const user = useUserStore()
+const brand = useBrandStore()
 const localeStore = useLocaleStore()
 const navRef = ref(null)
 const cardRef = ref(null)
@@ -665,36 +667,80 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
 .leftnav.collapsed .nav-scroll {
   height: calc(100% - 118px);
 }
+/* ===== 一级导航：压平、去块、选中用左侧色条 =====
+   清爽的关键不是配色，是「少三层叠加」：原来一级有常驻箭头、二级整块换底色、
+   二级还有一枚常驻右箭头，三层信号同时在响。改为：
+     · 箭头降为提示（默认 45% 不透明，悬停/选中才实）
+     · 二级不再铺灰底，改用一条 1px 导引线表达从属
+     · 选中态 = 左侧 3px 主色条 + 浅主色底，纵向位置一眼可读 */
 .nav-group {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 14px;
+  gap: 10px;
+  margin: 2px 6px;
+  padding: 10px 10px 10px 12px;
   font-size: 14px;
   color: var(--t-text-1);
+  border-radius: 6px;
   cursor: pointer;
   user-select: none;
+  transition: background-color 0.15s, color 0.15s;
+}
+.nav-group::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 7px;
+  bottom: 7px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: transparent;
+  transition: background-color 0.15s;
 }
 .dark .nav-group {
   color: #ccc;
 }
-.nav-group:hover,
-.nav-group.active {
-  color: var(--t-primary);
+.nav-group:hover {
   background: var(--t-hover-bg);
 }
-.dark .nav-group:hover,
+.nav-group.active {
+  color: var(--t-primary);
+  background: var(--t-primary-tint);
+}
+.nav-group.active::before {
+  background: var(--t-primary);
+}
+.dark .nav-group:hover {
+  background: var(--t-hover-bg);
+}
 .dark .nav-group.active {
   background: var(--t-hover-bg);
   color: var(--t-primary);
 }
 .gi {
   font-size: 16px;
+  color: var(--t-text-2);
+  transition: color 0.15s;
 }
+.nav-group:hover .gi,
+.nav-group.active .gi {
+  color: var(--t-primary);
+}
+.dark .gi {
+  color: #9aa39f;
+}
+/* 箭头只是「可展开」的提示，不该和标题一样重 */
 .arrow {
   margin-left: auto;
   font-size: 12px;
-  transition: transform 0.2s;
+  color: var(--t-text-3);
+  opacity: 0.45;
+  transition: opacity 0.15s, transform 0.2s;
+}
+.nav-group:hover .arrow,
+.nav-group.active .arrow {
+  opacity: 1;
 }
 .arrow.down {
   transform: rotate(180deg);
@@ -705,39 +751,65 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateCardPosition))
 }
 .leftnav.collapsed .nav-group {
   justify-content: center;
-  padding: 12px 0;
+  padding: 10px 0;
+  margin: 2px 8px;
 }
+.leftnav.collapsed .nav-group::before {
+  left: -8px;
+}
+
+/* ===== 二级：用导引线表达从属，不铺底色 ===== */
 .nav-modules {
-  background: var(--t-card-bg);
+  background: transparent;
+  margin: 0 6px 6px;
+  padding-left: 8px;
+  border-left: 1px solid var(--t-border-light);
+  margin-left: 20px;
 }
 .dark .nav-modules {
-  background: #2c2d35;
+  border-left-color: #3a3b42;
 }
 .nav-module {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 9px 12px 9px 36px;
+  gap: 6px;
+  padding: 7px 8px;
+  margin: 1px 0;
   font-size: 13px;
   color: var(--t-text-2);
+  border-radius: 5px;
   cursor: pointer;
   white-space: nowrap;
+  transition: background-color 0.15s, color 0.15s;
 }
 .dark .nav-module {
   color: #bbb;
 }
-.nav-module:hover,
-.nav-module.active {
-  color: var(--t-primary);
+.nav-module:hover {
   background: var(--t-hover-bg);
+  color: var(--t-text-1);
+}
+.nav-module.active {
+  background: var(--t-primary-tint);
+  color: var(--t-primary);
+  font-weight: 500;
 }
 .dark .nav-module:hover,
 .dark .nav-module.active {
   background: var(--t-hover-bg);
   color: var(--t-primary);
 }
+/* 二级右箭头同理：悬停才露 */
 .mi {
   font-size: 12px;
+  color: var(--t-text-3);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.nav-module:hover .mi,
+.nav-module.active .mi {
+  opacity: 1;
 }
 /* ===== 悬浮层：按设计库（antd Popover / Menu）重排 =====
    - 卡片：白底 + 1px 边框 + 弹层阴影，圆角 8

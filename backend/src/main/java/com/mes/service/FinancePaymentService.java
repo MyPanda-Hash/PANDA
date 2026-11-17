@@ -56,25 +56,6 @@ public class FinancePaymentService {
         return plan;
     }
 
-    /**
-     * 限额核销：收款额超过未结合计时拒绝，避免把预收当成核销吞掉。
-     * 需要预收场景应单独录预收款单，而非超额核销。
-     * 注意与 allocate 的区别：allocate 只按可用余额分配（余额耗尽即停），
-     * 本方法额外校验总额，超额直接抛错。
-     */
-    public List<Allocation> allocateWithinLimit(BigDecimal payment, List<FinanceVoucher> vouchers) {
-        BigDecimal openTotal = BigDecimal.ZERO;
-        if (vouchers != null) {
-            for (FinanceVoucher v : vouchers) {
-                openTotal = openTotal.add(remaining(nz(v.getAmount()), nz(v.getSettledAmount())));
-            }
-        }
-        if (nz(payment).compareTo(openTotal) > 0) {
-            throw new IllegalStateException("核销金额超出未结合计：本次 " + nz(payment) + "，未结 " + openTotal);
-        }
-        return allocate(payment, vouchers);
-    }
-
     /** 未结金额 = 原始金额 - 已核销，不为负。 */
     public BigDecimal remaining(BigDecimal amount, BigDecimal settled) {
         BigDecimal left = nz(amount).subtract(nz(settled));

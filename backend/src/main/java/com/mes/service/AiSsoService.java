@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * AI 数字员工单点登录票据。
+ * AI 助理单点登录票据。
  *
  * <p>协议与 doc-nexus-ai 的 {@code app/services/mes_sso.py} 一一对应：
  * <pre>
@@ -63,6 +63,10 @@ public class AiSsoService {
         payload.put("name", realName == null || realName.isBlank() ? userName : realName);
         payload.put("role", admin ? "admin" : "user");
         payload.put("admin", admin);
+        // 账套：AI 侧据此只展示该账套的待办与发现。
+        // 从 Filter 写好的 FactoryContext 取，与当前请求看到的账套严格一致，
+        // 不额外传参——避免「MES 显示 F01、AI 却按 F02 过滤」这种错位。
+        payload.put("factory", com.mes.config.FactoryContext.current());
         payload.put("iat", issuedAt);
         payload.put("exp", issuedAt + ttlSeconds);
         payload.put("jti", UUID.randomUUID().toString().replace("-", ""));

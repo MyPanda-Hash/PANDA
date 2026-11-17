@@ -121,7 +121,11 @@ public class SalesFinancePanelRegistry {
                 field("销货单号", "文本", false),
                 field("来源单据", "文本", false),
                 field("来源单号", "文本", false),
-                decimal("价税合计", false), field("备注", "文本", false));
+                decimal("价税合计", false),
+                // 费用分摊的落点：执行分摊时按发票号把金额累加进来，毛利口径要用
+                defaultValue(decimal("分摊费用", false), 0),
+                field("分摊单号", "文本", false),
+                field("备注", "文本", false));
 
         List<Map<String, Object>> items = fields(
                 inventoryReference("存货编码", "存货编码", false),
@@ -152,8 +156,11 @@ public class SalesFinancePanelRegistry {
                 "数量", "数量", Map.of());
 
         List<Map<String, Object>> groups = voucherGroups(List.of("选销货单"), List.of());
-        return voucherConfig("SALE_INVOICE", "销售发票", head, List.of(tab), groups,
+        Map<String, Object> config = voucherConfig("SALE_INVOICE", "销售发票", head, List.of(tab), groups,
                 selects("选销货单", select));
+        // 列表查询条默认只取前 6 个表头字段；分摊后要能按「分摊单号」直接捞票，这里点名指定
+        withQueryFields(config, List.of("单据日期", "单据编号", "客户", "销货单号", "分摊单号"));
+        return config;
     }
 
     private Map<String, Object> expenseConfig() {
@@ -192,7 +199,11 @@ public class SalesFinancePanelRegistry {
                 reference("经手人", "EMP", "员工名称", false),
                 reference("项目", "PROJ", "项目名称", false),
                 field("来源单据", "文本", false), field("来源单号", "文本", false),
-                decimal("分摊合计", false), field("备注", "文本", false));
+                decimal("分摊合计", false),
+                // 执行状态：审核后点「工具 → 执行分摊」回写发票，执行过就不许再执行
+                defaultValue(field("分摊状态", "文本", false), "未分摊"),
+                field("执行时间", "文本", false),
+                field("备注", "文本", false));
 
         List<Map<String, Object>> items = fields(
                 field("费用单号", "文本", false),
@@ -219,6 +230,8 @@ public class SalesFinancePanelRegistry {
                 "金额", "分摊金额", Map.of("费用类型", "销售费用"));
 
         List<Map<String, Object>> groups = voucherGroups(List.of("选费用单"), List.of());
+        // 执行分摊是分摊单上的人工动作（PanelActionHandler），放在「工具」组里，排在「更多」之前
+        groups.add(groups.size() - 1, group("工具", "执行分摊"));
         return voucherConfig("SALE_COST_ALLOC", "销售费用分摊单", head, List.of(tab), groups,
                 selects("选费用单", select));
     }
@@ -278,6 +291,39 @@ public class SalesFinancePanelRegistry {
             config.put("selectConfig", selectConfigs.values().iterator().next());
         }
         return config;
+    }
+
+    /** 点名指定列表查询条字段（默认是表头前 6 个，摊了费用的单号容易被挤掉）。 */
+    @SuppressWarnings("unchecked")
+    private void withQueryFields(Map<String, Object> config, List<String> names) {
+        Object metadataValue = config.get("metadata");
+        if (!(metadataValue instanceof Map<?, ?> rawMeta)) return;
+        Map<String, Object> metadata = (Map<String, Object>) rawMeta;
+        Object pageValue = metadata.get("panelPageDto");
+        if (!(pageValue instanceof Map<?, ?> rawPage)) return;
+        Map<String, Object> page = (Map<String, Object>) rawPage;
+        Object tablesValue = page.get("tablePages");
+        if (!(tablesValue instanceof List<?> rawTables) || rawTables.isEmpty()) return;
+        Object schemaValue = config.get("dataSchema");
+        List<Map<String, Object>> head = schemaValue instanceof Map<?, ?> rawSchema
+                && ((Map<String, Object>) rawSchema).get("fields") instanceof List<?> rawFields
+                ? (List<Map<String, Object>>) rawFields : List.of();
+
+        List<Map<String, Object>> picked = new ArrayList<>();
+        for (String name : names) {
+            for (Map<String, Object> field : head) {
+                if (name.equals(field.get("dataName"))) {
+                    picked.add(field);
+                    break;
+                }
+            }
+        }
+        Map<String, Object> table = new LinkedHashMap<>((Map<String, Object>) rawTables.get(0));
+        table.put("queryFields", picked);
+        // voucherConfig 用 Map.of 造的不可变结构，改之前先拷一层
+        Map<String, Object> patchedPage = new LinkedHashMap<>(page);
+        patchedPage.put("tablePages", List.of(table));
+        metadata.put("panelPageDto", patchedPage);
     }
 
     private List<Map<String, Object>> voucherGroups(List<String> selectActions, List<String> generateActions) {

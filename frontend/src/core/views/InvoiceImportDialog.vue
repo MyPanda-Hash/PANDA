@@ -124,7 +124,12 @@
 import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
-import * as XLSX from 'xlsx'
+// xlsx 约 800KB，只在用户真的选了 Excel 时才需要，改成用到再加载（避免进首屏包）
+let XLSX = null
+async function ensureXlsx() {
+  if (!XLSX) XLSX = await import('xlsx')
+  return XLSX
+}
 import { usePanelRuntime } from '@core/panel-runtime'
 import { tt } from '@/i18n'
 
@@ -288,8 +293,9 @@ function onFile(event) {
   totalRows.value = 0
   failureRows.value = []
   const reader = new FileReader()
-  reader.onload = (ev) => {
+  reader.onload = async (ev) => {
     try {
+      await ensureXlsx()
       const workbook = XLSX.read(ev.target.result, { type: 'array', cellDates: true })
       const sheet = workbook.Sheets[workbook.SheetNames[0]]
       if (!sheet) throw new Error(tt('Excel 无工作表'))

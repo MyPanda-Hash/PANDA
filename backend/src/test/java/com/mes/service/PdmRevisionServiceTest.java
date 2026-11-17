@@ -137,28 +137,6 @@ class PdmRevisionServiceTest {
         assertEquals("不变", diff.changeType());
     }
 
-    // ---------- 影响分析 ----------
-
-    @Test
-    void impactListsAffectedDocuments() {
-        // 引用去重：同一单号被多次引用只算一行
-        List<String> affected = service.impactOf("BOM-001", List.of("BOM-001", "BOM-001", "BOM-002"));
-
-        assertEquals(1, affected.size());
-        assertEquals("BOM-001", affected.get(0));
-    }
-
-    @Test
-    void impactIsEmptyWhenNoReference() {
-        assertTrue(service.impactOf("BOM-999", List.of("BOM-001", "BOM-002")).isEmpty());
-    }
-
-    @Test
-    void impactIgnoresNullOrEmpty() {
-        assertTrue(service.impactOf(null, List.of("BOM-001")).isEmpty());
-        assertTrue(service.impactOf("BOM-001", List.of()).isEmpty());
-    }
-
     // ---------- 变更单号 ----------
 
     @Test

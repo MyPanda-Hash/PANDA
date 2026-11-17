@@ -198,10 +198,18 @@ public class MpsService {
         Map<String, Object> head = parse(plan.getData());
         List<Map<String, Object>> analyses = new ArrayList<>();
         Set<String> orders = new LinkedHashSet<>();
+        // 计划里引用的订单可能已被删除或中止（实测踩到：MPS 明细留着 SO-20261110-001，
+        // 单据却已不存在）。原来直接 analyze 会抛错让整次 MRP 运算中断，
+        // 一个坏引用拖垮全部计划。改成跳过并记录，其余订单照常算。
+        List<String> missing = new ArrayList<>();
         for (Map<String, Object> row : rows(parse(plan.getDetailData()))) {
             String soNo = text(first(row, "来源销售订单"));
             if (soNo.isBlank() || !orders.add(soNo)) continue;
-            analyses.add(analyzeQuery.analyze(soNo));
+            try {
+                analyses.add(analyzeQuery.analyze(soNo));
+            } catch (RuntimeException ex) {
+                missing.add(soNo + "（" + ex.getMessage() + "）");
+            }
         }
         List<Map<String, Object>> lines = aggregate(analyses);
         Map<String, Object> summary = new LinkedHashMap<>();
@@ -209,6 +217,8 @@ public class MpsService {
         summary.put("计划期", text(head.get("计划期")));
         summary.put("来源订单", new ArrayList<>(orders));
         summary.put("物料行", lines.size());
+        // 让调用方看得见「哪些订单没算进去」，而不是悄悄少算
+        if (!missing.isEmpty()) summary.put("缺失订单", missing);
         summary.put("需采购", lines.stream().filter(r -> "请购".equals(r.get("建议"))).count());
         summary.put("需生产", lines.stream().filter(r -> "生产".equals(r.get("建议"))).count());
         summary.put("需委外", lines.stream().filter(r -> "委外加工".equals(r.get("建议"))).count());
@@ -221,6 +231,126 @@ public class MpsService {
     }
 
     /**
+     * MRP 净需求 → 生成请购单（草稿）。
+     *
+     * <p>这是补上的链路断点：MRP 只算不写，AI 看到「建议请购 5 个物料」却没有任何入口
+     * 把它变成单据，采购员得照着屏幕手工新建。这里把「建议=请购」且净需求>0 的行
+     * 直接落成一张请购单草稿，下游 PU_ORDER 可以选单过来。
+     *
+     * <p>只生成草稿不自动审核：请购涉及预算与审批责任，必须由人确认后走审核流。
+     *
+     * @return 新单号；没有需要请购的行时返回 null
+     */
+    @Transactional
+    public String createPurchaseReq(String mpsNo, String factoryCode) {
+        Map<String, Object> mrp = mrp(mpsNo);
+        List<Map<String, Object>> rows = castRows(mrp.get("rows"));
+        List<Map<String, Object>> needBuy = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            if (!"请购".equals(text(row.get("建议")))) continue;
+            BigDecimal net = decimal(row.get("净需求"));
+            if (net.signum() <= 0) continue;
+            needBuy.add(row);
+        }
+        if (needBuy.isEmpty()) return null;
+
+        // 单号：CG + 日期 + 3 位流水，与 DocNoRules 的 PU_REQ 前缀一致
+        String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String prefix = "CG-" + date + "-";
+        long used = formMapper.selectCount(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, "PU_REQ")
+                .likeRight(FormData::getFormNo, prefix));
+        String no = prefix + String.format("%03d", used + 1);
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        BigDecimal total = BigDecimal.ZERO;
+        int rowIndex = 0;
+        for (Map<String, Object> row : needBuy) {
+            rowIndex += 1;
+            BigDecimal qty = decimal(row.get("净需求"));
+            BigDecimal price = decimal(row.get("单价"));
+            BigDecimal amount = price.signum() > 0
+                    ? price.multiply(qty).setScale(2, java.math.RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+            total = total.add(amount);
+            Map<String, Object> item = new LinkedHashMap<>();
+            // 字段名以 MRP 返回的聚合行为准（存货编码/存货名称），
+            // 之前按「物料编码」取，生成出来的请购单存货编码是空的。
+            item.put("存货编码", text(first(row, "存货编码", "物料编码")));
+            item.put("存货名称", text(first(row, "存货名称", "物料名称")));
+            item.put("规格型号", text(row.get("规格型号")));
+            item.put("采购单位", text(first(row, "计量单位", "采购单位")));
+            item.put("数量", qty);
+            item.put("单价", price);
+            item.put("金额", amount);
+            item.put("需求日期", LocalDate.now().plusDays(7).toString());
+            // 这里刻意不写「来源面板/来源单号/来源行号」三件套。
+            //
+            // 原因：请购行是 BOM 展开后的子件（CL002×15102.8 kg），而 MPS/销售订单行是
+            // 成品（CP002×100 件）。两者不是同一张单据的同一行，单位与数量口径都不同，
+            // 硬挂上去必然触发「来源明细超量」校验（实测踩到：可执行 100 件 vs 本次 15102.8 kg）。
+            //
+            // validateSourceLinks 的规则是「来源面板与来源单号同时为空就跳过校验」，
+            // 所以只保留人可读的来源说明，不伪造单据行引用。
+            item.put("来源单据", "主生产计划");
+            item.put("来源说明", "MRP 按 BOM 展开计算的净需求（计划 " + mpsNo + "）");
+            Object rawSources = row.get("来源订单");
+            if (rawSources instanceof List<?> list && !list.isEmpty()) {
+                item.put("来源订单", String.join("、", list.stream().map(String::valueOf).toList()));
+            }
+            item.put("现存量", decimal(first(row, "现存量", "现存")));
+            items.add(item);
+        }
+
+        Map<String, Object> head = new LinkedHashMap<>();
+        head.put("单据编号", no);
+        head.put("单据日期", LocalDate.now().toString());
+        head.put("请购人", "系统（MRP）");
+        head.put("需求日期", LocalDate.now().plusDays(7).toString());
+        head.put("来源单据", "主生产计划");
+        head.put("来源单号", mpsNo);
+        head.put("含税总金额", total);
+        head.put("备注", "由 MRP 运算按净需求自动生成");
+        head.put("单据状态", "草稿");
+
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("items", items);
+
+        FormData fd = new FormData();
+        fd.setPanelCode("PU_REQ");
+        fd.setFormNo(no);
+        try {
+            fd.setData(json.writeValueAsString(head));
+            fd.setDetailData(json.writeValueAsString(detail));
+        } catch (Exception e) {
+            throw new IllegalStateException("请购单序列化失败：" + e.getMessage(), e);
+        }
+        fd.setStatus("草稿");
+        // 账套不在这里 set：FormData 没有该字段，由 MyBatis-Plus 租户拦截器
+        // 按当前请求的 X-Factory-Code 自动注入 factory_code。
+        fd.setCreateTime(java.time.LocalDateTime.now());
+        fd.setUpdateTime(java.time.LocalDateTime.now());
+        formMapper.insert(fd);
+        return no;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> castRows(Object value) {
+        return value instanceof List<?> list ? (List<Map<String, Object>>) list : List.of();
+    }
+
+    private static BigDecimal decimal(Object value) {
+        if (value == null) return BigDecimal.ZERO;
+        if (value instanceof BigDecimal b) return b;
+        if (value instanceof Number n) return BigDecimal.valueOf(n.doubleValue());
+        try {
+            return new BigDecimal(String.valueOf(value).trim());
+        } catch (NumberFormatException e) {
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
      * 多张订单的分析结果按物料编码汇总。纯函数：不碰库，便于单测。
      *
      * <p>成品行（level 0）缺口按「自制 → 生产」建议；物料行按供应类型给「请购 / 生产 / 委外加工」。
@@ -229,7 +359,16 @@ public class MpsService {
     public static List<Map<String, Object>> aggregate(List<Map<String, Object>> analyses) {
         Map<String, Map<String, Object>> merged = new LinkedHashMap<>();
         for (Map<String, Object> analysis : analyses == null ? List.<Map<String, Object>>of() : analyses) {
+            // 订单号在 analysis.order.no 里，顶层没有 salesOrderNo 这个键 ——
+            // 之前取错键，导致聚合行「来源订单」永远是空数组，
+            // 下游生成请购单时拿不到真实来源，只能瞎挂到 MPS 行上并触发超量校验。
+            // 订单号在 analysis.order.no 里，顶层没有 salesOrderNo 这个键 ——
+            // 之前取错键，导致聚合行「来源订单」永远是空数组，
+            // 下游生成请购单时拿不到真实来源，只能瞎挂到 MPS 行上并触发超量校验。
             String soNo = text(analysis.get("salesOrderNo"));
+            if (soNo.isBlank() && analysis.get("order") instanceof Map<?, ?> order) {
+                soNo = text(order.get("no"));
+            }
             for (Map<String, Object> product : listOf(analysis.get("products"))) {
                 BigDecimal net = number(product.get("shortQty"));
                 if (net.signum() <= 0) continue;

@@ -42,13 +42,16 @@ class PxServiceCostTest {
     @Mock private FormApprovalMapper approvalMapper;
     @Mock private ReportQueryService reportQueryService;
     @Mock private StockTxnService stockTxnService;
+    @Mock private AccountingService accountingService;
 
     private PxService service;
 
     @BeforeEach
     void setUp() {
+        // 用完整构造器：凭证相关行为需要 accountingService 非空，否则 postAccounting 直接返回
         service = new PxService(panelMapper, formMapper, approvalMapper, reportQueryService,
-                new PanelActionRegistry(List.of()), null, null, stockTxnService);
+                new PanelActionRegistry(List.of()), null, null, stockTxnService,
+                null, null, null, accountingService, null);
     }
 
     @Test
@@ -97,6 +100,45 @@ class PxServiceCostTest {
                 Map.of("存货编码", "CP004", "数量", 5, "含税金额", 565, "成本价", 30)));
 
         assertEquals(565.0, service.accountingAmount("SALE_INV", detail), 0.001);
+    }
+
+    /**
+     * 接线测试：销售出库的凭证金额必须走成本口径。
+     *
+     * <p>这是补上真正漏掉的那一环 —— accountingAmount 的三个单测一直是绿的，
+     * 但生产代码调用的是通用 settlementAmount，于是成本 45.77 元被记成销售金额 600 元。
+     * 本用例盯的是 postAccounting 的调用参数，函数本身算对不算数。
+     */
+    @Test
+    void postAccountingSendsCostAmountForSaleOut() {
+        Map<String, Object> head = Map.of("客户", "华东铝业", "备注", "销售出库");
+        Map<String, Object> detail = Map.of("items", List.of(
+                Map.of("存货编码", "CP005", "数量", 10, "成本价", 4.58, "成本金额", 45.77,
+                        "销售金额", 600, "含税销售金额", 678)));
+
+        service.postAccounting("SALE_OUT", "CK-TEST-001", head, detail);
+
+        org.mockito.ArgumentCaptor<BigDecimal> amount = org.mockito.ArgumentCaptor.forClass(BigDecimal.class);
+        verify(accountingService).post(eq("SALE_OUT"), eq("CK-TEST-001"), amount.capture(),
+                any(), any(), any());
+        assertEquals(0, new BigDecimal("45.77").compareTo(amount.getValue()),
+                "凭证金额应为成本金额 45.77，而不是销售金额 600");
+    }
+
+    /** 反向保护：其它单据仍按单据金额入账，不能被成本口径带偏。 */
+    @Test
+    void postAccountingKeepsInvoiceAmountForSaleInvoice() {
+        Map<String, Object> head = Map.of("客户", "华东铝业");
+        Map<String, Object> detail = Map.of("items", List.of(
+                Map.of("存货编码", "CP005", "数量", 10, "含税金额", 678, "成本价", 4.58)));
+
+        service.postAccounting("SALE_INV", "XS-TEST-001", head, detail);
+
+        org.mockito.ArgumentCaptor<BigDecimal> gross = org.mockito.ArgumentCaptor.forClass(BigDecimal.class);
+        verify(accountingService).postSaleInvoice(eq("XS-TEST-001"), gross.capture(),
+                any(), any(), any(), any());
+        assertEquals(0, new BigDecimal("678").compareTo(gross.getValue()),
+                "销货单按含税金额确认应收，不走成本口径");
     }
 
     private FormData doc(String panel, String no, String status, Map<String, Object> head, Map<String, Object> detail)

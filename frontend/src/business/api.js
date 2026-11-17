@@ -42,9 +42,27 @@ export async function apiMarkNoticeRead(type, groupId) {
   return res?.data ?? res
 }
 
-/** AI 数字员工免密入口：后端签 60 秒票据，返回 { ticket, url } */
+/** AI 助理免密入口：后端签 60 秒票据，返回 { ticket, url } */
 export async function apiGetAiSsoTicket() {
   const res = await request.get('/ai/sso-ticket')
+  return res?.data ?? res
+}
+
+/** 我的桌面「AI 助理」卡片：今日简报摘要（AI 侧不可用时 available=false） */
+/** 车间大屏：当前生产要素（在制工单进度/车间分布/异常/最新报工） */
+export async function apiGetProdBoard() {
+  const res = await request.get('/dashboard/prod-board')
+  return res?.data ?? res
+}
+
+export async function apiGetAiBrief() {
+  const res = await request.get('/ai/brief')
+  return res?.data ?? res
+}
+
+/** 数据看板「AI 数据分析」：把看板指标交给 AI，换回增长点与建议 */
+export async function apiRunAiAnalysis(metrics) {
+  const res = await request.post('/ai/analysis', { metrics }, { timeout: 90000 })
   return res?.data ?? res
 }
 

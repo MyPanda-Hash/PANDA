@@ -36,7 +36,7 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item v-for="a in dropOf(g)" :key="a" :command="a" :disabled="isDisabled(a)">
+                <el-dropdown-item v-for="a in menuActionsOf(g, isDisabled)" :key="a" :command="a" :disabled="isDisabled(a)">
                   <span class="act-name">{{ tt(a) }}</span><span v-if="SHORTCUTS[a]" class="act-sc">{{ SHORTCUTS[a] }}</span>
                 </el-dropdown-item>
               </el-dropdown-menu>
@@ -60,11 +60,11 @@
           </el-dropdown>
           <span v-else class="tb-group">
             <span class="tb-main" :class="{ disabled: isDisabled(primaryOf(g)) }" @click="onButton(primaryOf(g))">{{ groupLabel(g) }}</span>
-            <el-dropdown v-if="dropOf(g).length" @command="(a) => onButton(a)" trigger="click">
+            <el-dropdown v-if="menuActionsOf(g, isDisabled).length" @command="(a) => onButton(a)" trigger="click">
               <span class="tb-caret"><el-icon><ArrowDown /></el-icon></span>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item v-for="a in dropOf(g)" :key="a" :command="a" :disabled="isDisabled(a)">
+                  <el-dropdown-item v-for="a in menuActionsOf(g, isDisabled)" :key="a" :command="a" :disabled="isDisabled(a)">
                     <span class="act-name">{{ tt(a) }}</span><span v-if="SHORTCUTS[a]" class="act-sc">{{ SHORTCUTS[a] }}</span>
                   </el-dropdown-item>
                 </el-dropdown-menu>
@@ -467,13 +467,14 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Back, Plus, Delete, ArrowDown, Search, TopRight } from '@element-plus/icons-vue'
 import { usePanelRuntime } from '@core/panel-runtime'
 import { clampInspectionQty } from '@core/inspection-qty.js'
-import { ensureScanFillAction, ensureSelectAction, hasSelectConfig, isApprovalGroup, isCatchAllGroup, primaryActionOf, approvalSecondaryOf } from '@core/button-groups'
+import { ensureScanFillAction, ensureSelectAction, hasSelectConfig, isApprovalGroup, isCatchAllGroup, primaryActionOf, approvalSecondaryOf, menuActionsOf } from '@core/button-groups'
 import { INVOICE_IMPORT_ACTION, INVOICE_LINE_ACTION, filterSupportedActions } from '@core/action-support'
 import { isDocApproved, docStatusStamp } from '@core/doc-status'
 import { hasUnqualifiedTab, syncUnqualifiedRow } from '@core/inspection-unqualified.js'
 import { applyHeaderCalc } from '@core/views/doc-calc.js'
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
+import { useBrandStore } from '@/stores/brand'
 import RefPickDialog from './RefPickDialog.vue'
 import RouteFlowPickDialog from './RouteFlowPickDialog.vue'
 import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
@@ -1630,7 +1631,7 @@ async function load() {
       const cur = tabsStore.tabs.find((x) => x.path === route.path)
       if (cur) cur.title = (payload.panelName || '表单') + '-' + no
       // 页面标题 = 真实面板名（路由 meta.title 是通用占位，配置加载后覆盖）
-      document.title = (payload.panelName || '表单') + ' · 轻MES'
+      document.title = (payload.panelName || '表单') + ' · ' + useBrandStore().name
     }
   } catch (e) {
     ElMessage.error(engine.errMsg(e) || tt('加载失败'))

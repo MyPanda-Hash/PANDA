@@ -64,6 +64,9 @@ try {
   run(process.execPath, ['tools/docs-audit.mjs'], root)
   run(process.execPath, ['tools/architecture-audit.mjs'], root)
   run(process.execPath, ['tools/action-support-audit.mjs'], root)
+  // 接线门禁：防止「有实现、有单测、但生产从不调用」的函数再次漏网
+  // （accountingAmount 就是这样让销售出库成本凭证按销售额记账的）
+  run(process.execPath, ['tools/wiring-audit.mjs'], root)
   run(command('npm'), ['run', 'build'], frontend)
 
   const java = findJavaHome()

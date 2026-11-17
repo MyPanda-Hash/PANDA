@@ -91,19 +91,6 @@ public class PdmRevisionService {
         return new Diff(itemCode, before.qty(), after.qty(), same ? "不变" : "改");
     }
 
-    /** 影响分析：哪些下游单据引用了该修订。去重且保持顺序。 */
-    public List<String> impactOf(String formNo, List<String> references) {
-        List<String> out = new ArrayList<>();
-        if (formNo == null || formNo.isBlank() || references == null) return out;
-        Set<String> seen = new LinkedHashSet<>();
-        for (String ref : references) {
-            if (ref == null || !ref.equals(formNo)) continue;
-            seen.add(ref);
-        }
-        out.addAll(seen);
-        return out;
-    }
-
     /** 变更单号：ECN-根单号-V版本号。 */
     public String changeNoOf(String rootFormNo, int version) {
         if (rootFormNo == null || rootFormNo.isBlank()) return null;

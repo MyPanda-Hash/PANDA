@@ -11,11 +11,11 @@
           <span class="tb-main" :class="{ disabled: !isCatchAllGroup(g) && isDisabled(btnName(g)) }" @click.stop="onGroupMain(gi, g)">
             <span class="act-name">{{ groupLabel(g) }}</span>
           </span>
-          <span v-if="dropItems(g).length" class="tb-caret" @click.stop="toggleGroup(gi)">▼</span>
+          <span v-if="menuActionsOf(g, isDisabled).length" class="tb-caret" @click.stop="toggleGroup(gi)">▼</span>
           <div v-if="openGroup === gi" class="tb-menu">
-            <!-- 下拉排除主按钮；纯菜单组（主按钮只展开）要列出全部动作，否则第一个动作永远点不到 -->
+            <!-- 收纳组（更多/工具/设置/智能）主按钮只展开，下拉必须列全部动作；普通组排除主按钮 -->
             <div
-              v-for="a in (menuOnlyGroup(g) ? (g.actions || []) : dropItems(g))"
+              v-for="a in menuActionsOf(g, isDisabled)"
               :key="a"
               class="ctx-item"
               :class="{ disabled: isDisabled(a) }"
@@ -816,8 +816,31 @@
     </el-dialog>
 
     <!-- 加工单「选销售订单」：先在这张弹窗里挑订单，再进该订单的排产界面勾行生成 -->
-    <el-dialog v-model="soPickVisible" :title="tt('选销售订单')" width="840px" append-to-body>
-      <div class="sel-tip">{{ tt('选一张已审核的销售订单，进入订单排产后勾选要生产的行') }}</div>
+    <el-dialog v-model="soPickVisible" :title="tt('选销售订单')" width="960px" append-to-body>
+      <div class="sel-tip">{{ tt('选一张已审核的销售订单，进入订单排产后勾选要生产的行；已排完的订单标「已排产」，进去排不出东西') }}</div>
+      <div class="so-pick-filter">
+        <el-date-picker
+          v-model="soFilterDates"
+          type="daterange"
+          size="small"
+          value-format="YYYY-MM-DD"
+          :start-placeholder="tt('单据日期起')"
+          :end-placeholder="tt('单据日期止')"
+          style="width: 240px"
+          @change="loadSaleOrderCandidates"
+        />
+        <el-input
+          v-model="soFilterCustomer"
+          size="small"
+          clearable
+          :placeholder="tt('客户名称')"
+          style="width: 180px"
+          @keyup.enter="loadSaleOrderCandidates"
+          @clear="loadSaleOrderCandidates"
+        />
+        <el-button size="small" type="primary" @click="loadSaleOrderCandidates">{{ tt('筛选') }}</el-button>
+        <el-button size="small" @click="resetSoPickFilter">{{ tt('重置') }}</el-button>
+      </div>
       <el-table
         :data="soPickRows"
         v-loading="soPickLoading"
@@ -828,15 +851,27 @@
         @current-change="onSoPick"
       >
         <el-table-column label="销售订单号" width="170">
-          <template #default="{ row }">{{ row['编号'] || row['单据编号'] }}</template>
+          <template #default="{ row }">{{ row['单据编号'] || row['编号'] }}</template>
         </el-table-column>
         <el-table-column label="单据日期" prop="单据日期" width="110" />
-        <el-table-column label="客户" prop="客户" min-width="150" show-overflow-tooltip />
-        <el-table-column label="产品" min-width="280" show-overflow-tooltip>
+        <el-table-column label="客户" prop="客户" min-width="140" show-overflow-tooltip />
+        <el-table-column label="产品" min-width="240" show-overflow-tooltip>
           <template #default="{ row }">{{ soPickProducts(row) }}</template>
         </el-table-column>
-        <el-table-column label="订单数量" width="100" align="right">
+        <el-table-column label="订单数量" width="90" align="right">
           <template #default="{ row }">{{ soPickQty(row) }}</template>
+        </el-table-column>
+        <el-table-column :label="tt('已排/可排')" width="110" align="right">
+          <template #default="{ row }">
+            <span class="so-pick-num">{{ row['已排数量'] ?? '—' }} / {{ row['可排数量'] ?? '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="tt('排产状态')" width="96" align="center">
+          <template #default="{ row }">
+            <el-tag size="small" :type="soPickStatusType(row['排产状态'])" disable-transitions>
+              {{ tt(row['排产状态'] || '未排产') }}
+            </el-tag>
+          </template>
         </el-table-column>
       </el-table>
       <template #footer>
@@ -891,13 +926,14 @@ import { useTabsStore } from '@/stores/tabs'
 import { useUserStore } from '@/stores/user'
 import { usePanelRuntime } from '@core/panel-runtime'
 import { INVOICE_IMPORT_ACTION, INVOICE_LINE_ACTION, filterSupportedActions } from '@core/action-support'
-import { ensureAuditAction, ensureFieldManageAction, ensureScanFillAction, ensureColumnPrefsAction, ensureSelectAction, hasSelectConfig, isApprovalGroup, isCatchAllGroup, primaryActionOf, approvalSecondaryOf, supportsAudit } from '@core/button-groups'
+import { ensureAuditAction, ensureFieldManageAction, ensureScanFillAction, ensureColumnPrefsAction, ensureSelectAction, hasSelectConfig, isApprovalGroup, isCatchAllGroup, primaryActionOf, approvalSecondaryOf, supportsAudit, menuActionsOf } from '@core/button-groups'
 import { isDocApproved, docStatusStamp } from '@core/doc-status'
 import { routeFlowChips, routeFlowSummary } from '@core/route-flow'
 import { computeSums, summaryColumnsOf } from './report-sums.js'
 import { hasUnqualifiedTab, syncUnqualifiedRow } from '@core/inspection-unqualified.js'
 import { tt } from '@/i18n'
 import { useLocaleStore } from '@/stores/locale'
+import { useBrandStore } from '@/stores/brand'
 import RefPickDialog from './RefPickDialog.vue'
 import RouteFlowPickDialog from './RouteFlowPickDialog.vue'
 import NewVoucherDialog from './NewVoucherDialog.vue'
@@ -1395,10 +1431,20 @@ const soPickVisible = ref(false)
 const soPickRows = ref([])
 const soPickLoading = ref(false)
 const soPicked = ref(null)
+/** 弹窗顶部筛选：单据日期区间 + 客户名（发给后端，不在前端过滤） */
+const soFilterDates = ref(null)
+const soFilterCustomer = ref('')
 
-/** 销售订单明细是 items，字段 存货名称/数量/销售单位 */
+/** 排产状态标签配色：已排产=成功、部分排产=警告、未排产=中性 */
+function soPickStatusType(status) {
+  if (status === '已排产') return 'success'
+  if (status === '部分排产') return 'warning'
+  return 'info'
+}
+
+/** 销售订单明细：候选接口直接给「明细」，兼容老的表单数据形态 detail.items */
 function soPickItems(row) {
-  const list = row?.detail?.items
+  const list = row?.['明细'] ?? row?.detail?.items
   return Array.isArray(list) ? list : []
 }
 function soPickProducts(row) {
@@ -1407,6 +1453,7 @@ function soPickProducts(row) {
   return items.map((it) => `${it['存货名称'] || it['存货编码']} ×${qtyText(it['数量'])}${it['销售单位'] || ''}`).join('、')
 }
 function soPickQty(row) {
+  if (row?.['订单数量'] != null) return Number(row['订单数量'])
   return soPickItems(row).reduce((sum, it) => sum + Number(it['数量'] || 0), 0)
 }
 function qtyText(value) {
@@ -1419,16 +1466,35 @@ async function openSaleOrderPicker() {
   soPickVisible.value = true
   soPicked.value = null
   soPickRows.value = []
+  await loadSaleOrderCandidates()
+}
+
+/**
+ * 拉候选项：后端直接给「已审核订单 + 已排/可排数量 + 排产状态」，
+ * 日期与客户筛选也交给后端，避免前端拿 200 条再自己过滤导致分页看不见的老问题。
+ */
+async function loadSaleOrderCandidates() {
   soPickLoading.value = true
   try {
-    const res = await engine.queryFormDataList({ panelCode: 'SO_ORDER', pageNo: 1, pageSize: 200 })
-    soPickRows.value = (res?.list || []).filter((r) => (r['单据状态'] || '') === '已审核')
-    if (!soPickRows.value.length) ElMessage.info(tt('没有已审核的销售订单可排产'))
+    const [dateFrom, dateTo] = Array.isArray(soFilterDates.value) ? soFilterDates.value : ['', '']
+    const rows = await engine.saleOrderPlanCandidates({
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+      customer: (soFilterCustomer.value || '').trim() || undefined,
+    })
+    soPickRows.value = Array.isArray(rows) ? rows : []
+    if (!soPickRows.value.length) ElMessage.info(tt('没有符合条件的已审核销售订单'))
   } catch (e) {
     ElMessage.error(engine.errMsg(e) || tt('加载销售订单失败'))
   } finally {
     soPickLoading.value = false
   }
+}
+
+function resetSoPickFilter() {
+  soFilterDates.value = null
+  soFilterCustomer.value = ''
+  loadSaleOrderCandidates()
 }
 
 function onSoPick(row) {
@@ -3157,7 +3223,7 @@ async function loadCrg() {
   const tp = cfg?.metadata?.panelPageDto?.tablePages?.[0]
   panelName.value = cfg?.metadata?.panelName || panelCode.value
   // 页面标题 = 真实面板名（路由 meta.title 是通用占位，配置加载后覆盖）
-  document.title = panelName.value + ' · 轻MES'
+  document.title = panelName.value + ' · ' + useBrandStore().name
   // 页签标题同步（生单直接跳转/页签替换后显示真实面板名）
   const curTab = tabs.tabs.find((x) => x.path === route.path)
   if (curTab) curTab.title = panelName.value
@@ -5224,5 +5290,17 @@ onUnmounted(() => {
   font-size: 12px;
   line-height: 20px;
   color: var(--d-text-3);
+}
+
+.so-pick-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.so-pick-num {
+  font-variant-numeric: tabular-nums;
+  color: rgba(0, 0, 0, 0.65);
 }
 </style>

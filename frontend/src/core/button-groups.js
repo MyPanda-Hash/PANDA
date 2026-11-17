@@ -20,6 +20,28 @@ const APPROVAL_SECONDARY = ['审批驳回', '驳回审批']
  */
 const CATCH_ALL_GROUPS = ['更多', '工具', '设置', '智能']
 
+/**
+ * 一个组在下拉里应该列出的动作。
+ *
+ * <p>收纳组（更多/工具/设置/智能）的主按钮只展开菜单、不执行动作，所以下拉必须列出**全部**动作；
+ * 此前只列「主按钮以外的动作」，组里恰好只有一个动作时下拉就是空的——按钮点了没反应
+ * （真实故障：销售费用分摊单「工具 → 执行分摊」点不动，分摊执行不了）。
+ * 普通组仍排除主按钮，避免同一个动作出现两次；审批组再排除并列露出的次要动作与禁用动作。
+ *
+ * @param {{name?: string, actions?: string[], items?: string[]}} group
+ * @param {(action: string) => boolean} isDisabled
+ */
+export function menuActionsOf(group, isDisabled = () => false) {
+  const actions = actionsOf(group)
+  if (!actions.length) return []
+  if (isCatchAllGroup(group)) return [...actions]
+  const primary = primaryActionOf(group, isDisabled)
+  const rest = actions.filter((action) => action !== primary)
+  if (!isApprovalGroup(group)) return rest
+  const secondary = approvalSecondaryOf(group, primary, isDisabled)
+  return rest.filter((action) => !isDisabled(action) && !secondary.includes(action))
+}
+
 export function isCatchAllGroup(group) {
   return CATCH_ALL_GROUPS.includes(String(group?.name ?? '').trim())
 }

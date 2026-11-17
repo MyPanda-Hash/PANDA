@@ -18,12 +18,16 @@ import com.mes.mapper.StockTxnMapper;
 import com.mes.mapper.SysDeptMapper;
 import com.mes.mapper.SysRoleMapper;
 import com.mes.mapper.SysUserMapper;
+import com.mes.service.OnTimeService;
+import com.mes.service.ProdBoardService;
 import com.mes.service.RoleService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -87,12 +91,15 @@ public class DashboardController {
     private final StockBalanceMapper stockBalanceMapper;
     private final StockTxnMapper stockTxnMapper;
     private final RoleService roleService;
+    private final OnTimeService onTimeService;
+    private final ProdBoardService prodBoardService;
     private static final ObjectMapper json = new ObjectMapper();
 
     public DashboardController(FormDataMapper formMapper, PanelConfigMapper panelConfigMapper,
                                SysUserMapper userMapper, SysDeptMapper deptMapper, SysRoleMapper roleMapper,
                                StockBalanceMapper stockBalanceMapper, StockTxnMapper stockTxnMapper,
-                               RoleService roleService) {
+                               RoleService roleService, OnTimeService onTimeService,
+                               ProdBoardService prodBoardService) {
         this.formMapper = formMapper;
         this.panelConfigMapper = panelConfigMapper;
         this.userMapper = userMapper;
@@ -101,6 +108,8 @@ public class DashboardController {
         this.stockBalanceMapper = stockBalanceMapper;
         this.stockTxnMapper = stockTxnMapper;
         this.roleService = roleService;
+        this.onTimeService = onTimeService;
+        this.prodBoardService = prodBoardService;
     }
 
     @GetMapping("/stats")
@@ -779,4 +788,258 @@ public class DashboardController {
     private int countByPanel(String panelCode) {
         return formMapper.selectCount(new LambdaQueryWrapper<FormData>().eq(FormData::getPanelCode, panelCode)).intValue();
     }
+
+    // ---------------------------------------------------------------- 周期对比
+
+    /** 支持的周期粒度。周从周一开始，与看板「近 7 天」口径一致。 */
+    private static final java.util.Set<String> PERIODS = java.util.Set.of("week", "month", "quarter");
+
+    /**
+     * 周期对比：当前周期 vs 上一周期（环比），以及 vs 去年同期（同比）。
+     *
+     * 为什么单独一个接口而不是塞进 /stats：
+     * /stats 是「当前快照」，一次要算十几个业务域，调用频繁；
+     * 对比要按周期反复扫表，两者负载差一个量级，混在一起会让首页变慢。
+     *
+     * 同比在本系统多数情况下取不到数据（业务数据 2026-11 才开始），
+     * 这时返回 available=false 而不是 0，前端才能区分「没数据」和「真的是 0」。
+     */
+    /**
+     * 按期率：订单按期交付率 + 工单按期完工率（管理者简报的两个核心指标）。
+     *
+     * @param period 月份 yyyy-MM；不传表示全部历史
+     */
+    @GetMapping("/on-time")
+    public ApiResult<Map<String, Object>> onTime(@RequestParam(required = false) String period) {
+        return ApiResult.ok(onTimeService.onTime(period));
+    }
+
+    /**
+     * 车间大屏：当前生产要素（在制工单进度、车间分布、异常、最新报工）。
+     *
+     * <p>单独一个接口而不是复用 /stats：大屏要的是「少而大」的聚合值，
+     * 和桌面看板的明细统计不是同一套口径与体量。
+     */
+    @GetMapping("/prod-board")
+    public ApiResult<Map<String, Object>> prodBoard() {
+        return ApiResult.ok(prodBoardService.board());
+    }
+
+    @GetMapping("/compare")
+    public ApiResult<Map<String, Object>> compare(
+            Authentication auth,
+            @RequestParam(value = "period", defaultValue = "week") String period) {
+        String p = PERIODS.contains(period) ? period : "week";
+        Map<String, Object> permissions = auth == null ? Map.of() : roleService.getPerms(auth.getName());
+        boolean isAdmin = Boolean.TRUE.equals(permissions.get("isAdmin"));
+        Set<String> visible = new LinkedHashSet<>();
+        if (permissions.get("visiblePanels") instanceof Iterable<?> panels) {
+            for (Object panel : panels) visible.add(String.valueOf(panel));
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate curStart;
+        LocalDate curEnd = today;
+        if ("week".equals(p)) {
+            curStart = today.with(java.time.DayOfWeek.MONDAY);
+        } else if ("month".equals(p)) {
+            curStart = today.withDayOfMonth(1);
+        } else {
+            curStart = today.withMonth(((today.getMonthValue() - 1) / 3) * 3 + 1).withDayOfMonth(1);
+        }
+        // 对比必须按「完整周期」对齐，不能用「本周已过几天」当前一期长度：
+        // 周一当天算出来是 1 天，上期就退化成「上周日一天」，环比毫无意义。
+        // 周比完整 7 天、月比整月、季比整季，再按同长度取上一期。
+        long periodDays;
+        if ("week".equals(p)) {
+            periodDays = 7;
+        } else if ("month".equals(p)) {
+            periodDays = curStart.lengthOfMonth();
+        } else {
+            periodDays = curStart.lengthOfMonth() + curStart.plusMonths(1).lengthOfMonth()
+                    + curStart.plusMonths(2).lengthOfMonth();
+        }
+        long spanDays = periodDays;
+        // 上期取「同样天数」而不是整段：本周过了 1 天就对上期第 1 天，
+        // 否则拿 1 天 vs 7 天做环比，等于必输。
+        long elapsedDaysForCompare = java.time.temporal.ChronoUnit.DAYS.between(curStart, curEnd) + 1;
+        LocalDate prevStart = curStart.minusDays(periodDays);
+        LocalDate prevEnd = prevStart.plusDays(elapsedDaysForCompare - 1);
+        LocalDate yoyStart = curStart.minusYears(1);
+        LocalDate yoyEnd = curStart.minusYears(1).plusDays(periodDays - 1);
+
+        // 数据实际覆盖区间：对比必须有基线才有意义。
+        // 本系统业务数据从 2026-11-04 开始，如果不管这个，
+        // 「上月」永远 0 单，环比会算成 +100%，比不显示更误导。
+        LocalDate dataFirst = null;
+        LocalDate dataLast = null;
+
+        // 一次扫表在内存分桶：数据量小（数百条），比三次分组查询更省往返
+        Map<String, Integer> cur = new LinkedHashMap<>();
+        Map<String, Integer> prev = new LinkedHashMap<>();
+        Map<String, Integer> yoy = new LinkedHashMap<>();
+        Map<String, Double> curAmt = new LinkedHashMap<>();
+        Map<String, Double> prevAmt = new LinkedHashMap<>();
+        int curDocs = 0;
+        int prevDocs = 0;
+        int yoyDocs = 0;
+
+        for (FormData fd : formMapper.selectList(null)) {
+            String code = fd.getPanelCode();
+            if (!visible.contains(code)) continue;
+            LocalDate day = fd.getCreateTime() == null ? null : fd.getCreateTime().toLocalDate();
+            if (day == null) continue;
+            if (dataFirst == null || day.isBefore(dataFirst)) dataFirst = day;
+            if (dataLast == null || day.isAfter(dataLast)) dataLast = day;
+            double amount = readAmount(fd);
+            if (!day.isBefore(curStart) && !day.isAfter(curEnd)) {
+                cur.merge(code, 1, Integer::sum);
+                curAmt.merge(code, amount, Double::sum);
+                curDocs++;
+            } else if (!day.isBefore(prevStart) && !day.isAfter(prevEnd)) {
+                prev.merge(code, 1, Integer::sum);
+                prevAmt.merge(code, amount, Double::sum);
+                prevDocs++;
+            } else if (!day.isBefore(yoyStart) && !day.isAfter(yoyEnd)) {
+                yoy.merge(code, 1, Integer::sum);
+                yoyDocs++;
+            }
+        }
+
+        // 产出按业务域汇总：一线关心的不是「14 类单据各几张」，而是生产/销售/采购/质量各推进了多少
+        Map<String, Object> domains = new LinkedHashMap<>();
+        for (Map.Entry<String, String> g : DOMAIN_GROUPS.entrySet()) {
+            String key = g.getKey();
+            List<String> panels = DOMAIN_PANELS.getOrDefault(key, List.of());
+            int c = 0, pr = 0, y = 0;
+            double ca = 0, pa = 0;
+            for (String panel : panels) {
+                c += cur.getOrDefault(panel, 0);
+                pr += prev.getOrDefault(panel, 0);
+                y += yoy.getOrDefault(panel, 0);
+                ca += curAmt.getOrDefault(panel, 0.0);
+                pa += prevAmt.getOrDefault(panel, 0.0);
+            }
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("key", key);
+            m.put("name", g.getValue());
+            m.put("current", c);
+            m.put("previous", pr);
+            m.put("yoy", y);
+            m.put("amountCurrent", round2(ca));
+            m.put("amountPrevious", round2(pa));
+            // 用 Object 显式声明：三元里混 0.0 与 null 时 Java 会按 double 拆箱，
+            // 那正是上一次 500 的来源（NullPointerException: doubleValue）。
+            Object delta = (pr == 0) ? (c == 0 ? (Object) 0.0 : null) : (Object) round2((c - pr) * 100.0 / pr);
+            m.put("delta", delta);
+            m.put("yoyAvailable", yoyDocs > 0);
+            m.put("yoyDelta", y == 0 ? null : (Object) round2((c - y) * 100.0 / y));
+            domains.put(key, m);
+        }
+
+        // 按天序列：当前周期与上一周期各一条，长度对齐才能画在同一张图上
+        // 序列只画到「今天」为止：完整周期里还没到的日子画出来是一串 0，
+        // 看起来像业务掉了，实际只是时间没到。
+        long elapsedDays = java.time.temporal.ChronoUnit.DAYS.between(curStart, curEnd) + 1;
+        List<Map<String, Object>> series = new ArrayList<>();
+        for (int i = 0; i < elapsedDays; i++) {
+            LocalDate d1 = curStart.plusDays(i);
+            LocalDate d2 = prevStart.plusDays(i);
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("index", i);
+            row.put("currentLabel", d1.getMonthValue() + "-" + d1.getDayOfMonth());
+            row.put("prevLabel", d2.getMonthValue() + "-" + d2.getDayOfMonth());
+            row.put("current", 0);
+            row.put("previous", 0);
+            series.add(row);
+        }
+        // 第二遍只统计总量，避免上面按面板分桶时重复加总
+        for (FormData fd : formMapper.selectList(null)) {
+            String code = fd.getPanelCode();
+            if (!visible.contains(code)) continue;
+            LocalDate day = fd.getCreateTime() == null ? null : fd.getCreateTime().toLocalDate();
+            if (day == null) continue;
+            if (!day.isBefore(curStart) && !day.isAfter(curEnd)) {
+                int idx = (int) java.time.temporal.ChronoUnit.DAYS.between(curStart, day);
+                if (idx >= 0 && idx < series.size()) {
+                    Map<String, Object> row = series.get(idx);
+                    row.put("current", ((Number) row.get("current")).intValue() + 1);
+                }
+            } else if (!day.isBefore(prevStart) && !day.isAfter(prevEnd)) {
+                int idx = (int) java.time.temporal.ChronoUnit.DAYS.between(prevStart, day);
+                if (idx >= 0 && idx < series.size()) {
+                    Map<String, Object> row = series.get(idx);
+                    row.put("previous", ((Number) row.get("previous")).intValue() + 1);
+                }
+            }
+        }
+
+        // 环比是否可信：上期必须真的落在数据覆盖区间内。
+        // 否则「上期 0 单」不是业务事实，而是系统刚开始用。
+        boolean prevCovered = dataFirst != null
+                && !prevEnd.isBefore(dataFirst)
+                && !prevStart.isAfter(dataLast == null ? today : dataLast);
+        boolean yoyCovered = dataFirst != null
+                && !yoyEnd.isBefore(dataFirst)
+                && !yoyStart.isAfter(dataLast == null ? today : dataLast);
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("period", p);
+        out.put("currentRange", curStart + " ~ " + curEnd);
+        out.put("previousRange", prevStart + " ~ " + prevEnd);
+        out.put("yoyRange", yoyStart + " ~ " + yoyEnd);
+        out.put("dataRange", (dataFirst == null ? "" : dataFirst + " ~ " + (dataLast == null ? "" : dataLast)));
+        out.put("currentDocs", curDocs);
+        out.put("previousDocs", prevDocs);
+        out.put("yoyDocs", yoyDocs);
+        // 无基线时不给百分比：0 → 4 单说成 +100% 会让人误以为暴涨
+        Object totalDelta = !prevCovered ? null
+                : (prevDocs == 0 ? (Object) (curDocs == 0 ? 0.0 : 100.0) : (Object) round2((curDocs - prevDocs) * 100.0 / prevDocs));
+        out.put("totalDelta", totalDelta);
+        out.put("prevAvailable", prevCovered);
+        out.put("yoyAvailable", yoyCovered && yoyDocs > 0);
+        Object yoyDelta = (!yoyCovered || yoyDocs == 0) ? null : (Object) round2((curDocs - yoyDocs) * 100.0 / yoyDocs);
+        out.put("yoyDelta", yoyDelta);
+        out.put("domains", domains);
+        out.put("series", series);
+        return ApiResult.ok(out);
+    }
+
+    /**
+     * 业务域归口：与 AI 侧的 domain 口径保持一致，
+     * 免得同一个业务在 MES 看板和 AI 工作台里被算进不同的框。
+     */
+    private static final Map<String, String> DOMAIN_GROUPS = new LinkedHashMap<>();
+    private static final Map<String, List<String>> DOMAIN_PANELS = new LinkedHashMap<>();
+    static {
+        DOMAIN_GROUPS.put("production", "生产");
+        DOMAIN_GROUPS.put("warehouse", "仓储");
+        DOMAIN_GROUPS.put("sales", "销售");
+        DOMAIN_GROUPS.put("purchase", "采购");
+        DOMAIN_GROUPS.put("quality", "质量");
+        DOMAIN_PANELS.put("production", List.of("MANU_ORDER", "PROCESS_REPORT", "DISPATCH"));
+        DOMAIN_PANELS.put("warehouse", List.of("PURCHASE_IN", "MATERIAL_OUT", "SALE_OUT", "FINISH_IN", "OTHER_IN"));
+        DOMAIN_PANELS.put("sales", List.of("SO_ORDER", "SALE_INV", "RECEIPT"));
+        DOMAIN_PANELS.put("purchase", List.of("PU_ORDER", "ARRIVAL_IN", "PURCHASE_IN"));
+        DOMAIN_PANELS.put("quality", List.of("FIRST_INSPECT", "FINISH_INSPECT", "INSPECTION",
+                "PROCESS_INSPECT_APPLY", "PROCESS_INSPECTION"));
+    }
+
+    /** 从表单头里读金额；读不到按 0 计，不让一条坏数据把整张图带偏。 */
+    private double readAmount(FormData fd) {
+        try {
+            Map<String, Object> head = parse(fd.getData());
+            for (String key : new String[]{"含税金额", "金额", "价税合计", "总金额"}) {
+                Object v = head.get(key);
+                if (v != null) {
+                    String s = String.valueOf(v).replace(",", "").trim();
+                    if (!s.isEmpty()) return Double.parseDouble(s);
+                }
+            }
+        } catch (Exception ignored) {
+            // 金额不是关键路径，解析失败按 0 处理
+        }
+        return 0.0;
+    }
+
 }

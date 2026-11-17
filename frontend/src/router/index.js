@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useBrandStore } from '@/stores/brand'
 import { flatMenus } from '@/business/menus'
 
 const ModuleView = () => import('@/views/modules/ModuleView.vue')
@@ -11,17 +12,21 @@ const routes = [
   {
     path: '/',
     component: () => import('@/layout/PortalLayout.vue'),
-    redirect: '/dashboard',
+    // 默认进「智能工作台」：登录后先看今日简报/待办，数据看板变成第二落点。
+    // 具体展示简报还是待办由 MES 岗位决定（见 stores/user.js 的 syncDeskRole）。
+    redirect: '/assistant',
     children: [
-      { path: 'dashboard', component: () => import('@/views/dashboard/index.vue'), meta: { title: '我的桌面' } },
+      { path: 'dashboard', component: () => import('@/views/dashboard/index.vue'), meta: { title: '数据看板' } },
+      { path: 'assistant', component: () => import('@/views/ai/Assistant.vue'), meta: { title: 'AI 助理', code: 'assistant' } },
       { path: 'prod/manufacture/order', redirect: '/panelx/list/MANU_ORDER' },
       { path: 'prod/manufacture/orderForm', redirect: '/panelx/form/MANU_ORDER' },
       { path: 'prod/manufacture/board', component: () => import('@/views/modules/board/ManufactureBoard.vue'), meta: { title: '生产看板', code: 'manufactureBoard' } },
       { path: 'prod/shop/reworkDesk', component: () => import('@/views/modules/rework/ReworkDesk.vue'), meta: { title: '返修工作台', code: 'reworkDesk' } },
       { path: 'top/solution', component: () => import('@/views/modules/solution/SolutionCenter.vue'), meta: { title: '方案中心', code: 'solutionCenter' } },
+      { path: 'sys/console', component: () => import('@/views/sys/SystemConsole.vue'), meta: { title: '系统管理平台', code: 'sysConsole' } },
       { path: 'sys/org', component: () => import('@/views/sys/OrgAdmin.vue'), meta: { title: '组织架构', requireAdmin: true } },
       { path: 'sys/backup', component: () => import('@/views/sys/DbBackup.vue'), meta: { title: '数据备份', requireAdmin: true } },
-      { path: 'sys/usage', component: () => import('@/views/sys/UsageLog.vue'), meta: { title: '使用日志', requireAdmin: true } },
+      { path: 'sys/usage', component: () => import('@/views/sys/UsageLog.vue'), meta: { title: '使用权限查看', requireAdmin: true } },
       { path: 'scm/businessOverview', component: () => import('@/views/scm/BusinessOverview.vue'), meta: { title: '业务总览', code: 'businessOverview' } },
       { path: 'scm/invoiceWorkbench', component: () => import('@/views/scm/InvoiceWorkbench.vue'), meta: { title: '销售开票', code: 'invoiceWorkbench' } },
       { path: 'mes/productionBoard', component: () => import('@/views/mes/ProductionBoard.vue'), meta: { title: '生产进度看板', code: 'productionBoard' } },
@@ -62,11 +67,12 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  document.title = `${to.meta.title || ''} · 轻MES`
+  document.title = `${to.meta.title || ''} · ${useBrandStore().name}`
   const user = useUserStore()
   if (to.path !== '/login' && !user.isLogin) return '/login'
-  if (to.meta.requireAdmin && !user.isAdmin) return '/dashboard'
-  if (to.path === '/login' && user.isLogin) return '/dashboard'
+  if (to.meta.requireAdmin && !user.isAdmin) return '/assistant'
+  // 已登录再访问登录页：也回工作台，保持「进来先看简报/待办」的一致落点
+  if (to.path === '/login' && user.isLogin) return '/assistant'
   return true
 })
 

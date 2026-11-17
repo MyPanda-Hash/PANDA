@@ -38,4 +38,27 @@ public class MpsController {
         if (no == null) throw new IllegalArgumentException("缺少主生产计划编号");
         return ApiResult.ok(service.mrp(String.valueOf(no)));
     }
+
+    /**
+     * MRP 建议请购的物料 → 生成请购单草稿。
+     *
+     * <p>补的是链路断点：此前 MRP 只算不写，看到「建议请购」也没有入口变成单据。
+     * 只生成草稿，审核仍由人走审批流（请购涉及预算责任）。
+     */
+    @PostMapping("/createPurchaseReq")
+    public ApiResult<Map<String, Object>> createPurchaseReq(@RequestBody Map<String, Object> body) {
+        Object no = body.get("编号");
+        if (no == null) throw new IllegalArgumentException("缺少主生产计划编号");
+        String factory = body.get("账套") == null ? null : String.valueOf(body.get("账套"));
+        String created = service.createPurchaseReq(String.valueOf(no), factory);
+        Map<String, Object> out = new java.util.LinkedHashMap<>();
+        if (created == null) {
+            out.put("created", null);
+            out.put("message", "没有「建议请购」且净需求大于 0 的物料，未生成请购单");
+        } else {
+            out.put("created", created);
+            out.put("message", "已生成请购单草稿：" + created);
+        }
+        return ApiResult.ok(out);
+    }
 }

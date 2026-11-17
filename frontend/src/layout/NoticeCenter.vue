@@ -51,6 +51,9 @@
       </div>
     </el-popover>
 
+    <!-- 外部塞进来的图标（全屏、语言）：共用这一圈描边，省得顶栏散着一排独立框 -->
+    <slot />
+
     <!-- 群聊消息弹窗：按群查看未读消息，宽度固定、高度限 60vh，不铺满屏幕 -->
     <el-dialog
       v-model="groupDialogVisible"
@@ -139,9 +142,11 @@ import { tt } from '@/i18n'
 const router = useRouter()
 const user = useUserStore()
 
+// 2026-11-17 用户要求：顶栏去掉「待办」「消息」两个入口，只留「预警」。
+// 为什么只删这里：模板是 v-for="cfg in types"，删掉即不再渲染图标；
+// 取数、未读合计、群聊弹窗那些 message 专属分支留着不动 —— 它们按 type 判断，
+// 没有对应的 type 就不会执行，将来要恢复只把这两行加回来即可。
 const types = [
-  { type: 'todo', title: '待办', icon: 'Bell' },
-  { type: 'message', title: '消息', icon: 'Message' },
   { type: 'alarm', title: '预警', icon: 'Warning' },
 ]
 
@@ -169,8 +174,9 @@ function toggle(type) {
   const next = visible.value === type ? null : type
   visible.value = next
   // 只负责拉列表：未读在「点开某个群」时才清（见 openDetail），
-  // 否则一开弹层就把所有群的未读清掉，与「按群分类」的口径矛盾
-  if (next) load(next)
+  // 否则一开弹层就把所有群的未读清掉，与「按群分类」的口径矛盾。
+  // 首屏不再预载，所以这里首次打开必须拉一次。
+  if (next && !listMap[next]) load(next)
 }
 
 async function load(type, options = {}) {
@@ -294,10 +300,14 @@ function step(dir) {
 let refreshTimer = null
 
 onMounted(() => {
-  // 只预取列表与角标，不标已读——「点开才算看过」由弹层的 @show 负责
-  Promise.all(types.map((type) => load(type.type)))
+  // 首屏只取角标，不预载三份列表：
+  // 原来 types.map(load) 会在每次进页面时发 3 个「完整通知列表」请求，
+  // 但首屏真正要显示的只是数字角标。列表等用户点开弹层再拉（见 toggle），
+  // 省掉 3 次请求 + 3 份 JSON 解析，这是首屏最直接的一笔开销。
+  refreshBadge()
   refreshTimer = window.setInterval(() => {
     refreshBadge()
+    // 弹层开着才刷新明细，关着就没必要拉列表
     if (visible.value) load(visible.value)
   }, 60_000)
 })
@@ -310,14 +320,44 @@ onBeforeUnmount(() => {
 <style scoped>
 .notice-center {
   height: 34px;
-  display: inline-grid;
-  grid-template-columns: repeat(3, 34px);
+  /* 原先是固定 3 列（待办/消息/预警）；2026-11-17 只留预警后，那两格空着，
+     框看起来比图标宽。改成 flex 按内容排，外部塞进来的全屏、语言也走同一圈描边。 */
+  display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
   overflow: visible;
   border: 1px solid var(--t-border);
   border-radius: 6px;
   background: var(--t-sidebar-bg);
+}
+
+/* 顶栏塞进来的图标：和通知按钮同尺寸、同分隔线语言 */
+.notice-center :deep(.nc-slot-item) {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--t-navbar-text);
+}
+.notice-center :deep(.nc-slot-item)::before {
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 0;
+  width: 1px;
+  background: var(--t-border);
+  content: "";
+}
+.notice-center :deep(.nc-slot-item:hover) {
+  color: var(--t-primary);
+}
+.notice-center :deep(.nc-slot-item.lang) {
+  width: auto;
+  min-width: 44px;
+  padding: 0 8px;
+  font-size: 13px;
 }
 
 .nc-ref {

@@ -48,11 +48,6 @@ public class FinanceSettleService {
     public record Settlement(String type, String partner, String sourcePanel, String sourceNo,
                              BigDecimal amount, LocalDate bizDate, String remark) {}
 
-    /** 核销结果：本次核销额与剩余未结额。 */
-    public record SettleResult(BigDecimal settled, BigDecimal outstanding) {
-        public boolean settledCoversAll() { return outstanding.signum() == 0; }
-    }
-
     private final FinanceVoucherMapper voucherMapper;
     private final StockTxnService stockTxnService; // 与库存落账共享事务边界，保留注入位
 
@@ -87,16 +82,6 @@ public class FinanceSettleService {
         if (amount.signum() == 0) return null;
         return new Settlement(type, partner, panelCode, formNo, amount,
                 date(first(head, "单据日期")), text(first(head, "备注")));
-    }
-
-    /** 核销运算：本次核销额不超过未结额，剩余额不出现负数。 */
-    public SettleResult computeSettle(BigDecimal writeOff, BigDecimal outstanding) {
-        BigDecimal remain = nz(outstanding);
-        BigDecimal want = nz(writeOff);
-        if (remain.signum() <= 0) return new SettleResult(BigDecimal.ZERO, BigDecimal.ZERO);
-        if (want.signum() <= 0) return new SettleResult(BigDecimal.ZERO, remain);
-        BigDecimal settled = want.compareTo(remain) >= 0 ? remain : want;
-        return new SettleResult(settled, remain.subtract(settled));
     }
 
     /**
