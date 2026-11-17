@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Response
+from pydantic import BaseModel
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -112,6 +113,9 @@ def setup(
 
 
 def set_refresh_cookie(response: Response, token: str) -> None:
+    # path 必须是 "/"：浏览器按「请求路径是否以 cookie path 开头」决定发不发。
+    # 前端刷新会话调的是 /api/auth/refresh，写死 "/auth" 的话这个 cookie
+    # 永远不会被带上，表现就是 15 分钟后 access token 过期 → 刷新必然 401。
     response.set_cookie(
         "doc_nexus_refresh",
         token,
@@ -119,7 +123,7 @@ def set_refresh_cookie(response: Response, token: str) -> None:
         httponly=True,
         secure=False,
         samesite="lax",
-        path="/auth",
+        path="/",
     )
 
 
@@ -150,9 +154,51 @@ def login(
     return TokenResponse(access_token=access, user=user)
 
 
+class MesSsoTokenRequest(BaseModel):
+    """MES 侧服务端换 token 的入参（票据由 MES 用共享密钥签发）。"""
+
+    ticket: str
+
+
+@router.post("/mes-sso-token", response_model=None)
+def mes_sso_token(payload: MesSsoTokenRequest) -> dict:
+    """服务端换 token：给 light-mes 的看板卡片取简报数据用。
+
+    与 /auth/mes-sso 的区别：那个是浏览器跳转（302 + Cookie），
+    这个是服务到服务的 JSON 交换（返回 access_token）—— MES 后端要拿它
+    去调 /assistant/briefing/board，而浏览器跨源带不上这个站点的 Cookie。
+    """
+    try:
+        identity = mes_sso.verify_ticket(payload.ticket)
+    except mes_sso.MesSsoError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+    from app.services import mes_auth
+
+    with transaction() as db:
+        user = mes_auth.sync_user(
+            db,
+            {
+                "userName": identity["username"],
+                "realName": identity["real_name"],
+                "roleCode": identity["role_code"],
+                "isAdmin": identity["is_admin"],
+            },
+        )
+        token = create_access_token(user.id, user.role, user.auth_version)
+        audit.record(db, user.id, "login_mes_sso_token", user.id, "success")
+        username = user.username
+        display_name = user.display_name
+
+    return {
+        "access_token": token,
+        "user": {"username": username, "display_name": display_name},
+    }
+
+
 @router.get("/mes-sso", response_model=None)
 def mes_sso_login(ticket: str) -> RedirectResponse:
-    """light-mes 点「AI 数字员工」跳进来：验票据 → 镜像用户 → 建会话 → 回对话页。
+    """light-mes 点「AI 助理」跳进来：验票据 → 镜像用户 → 建会话 → 回对话页。
 
     浏览器直接跳转的入口，所以不返回 JSON：成功 302 到 CONFIG 里的对话页，
     失败抛 401 由浏览器显示文本。票据由 light-mes 用共享密钥签发，见
@@ -185,6 +231,18 @@ def mes_sso_login(ticket: str) -> RedirectResponse:
     response = RedirectResponse(url=settings.mes_sso_redirect or "/chat", status_code=302)
     set_refresh_cookie(response, refresh)
     set_access_cookie(response, access)
+    # 账套写进 Cookie：前端 JS 读它来决定请求头，页面刷新也能保持，
+    # 且与登录态同源（AI 工作台和 MES 是不同的源，localStorage 不共享）。
+    factory_code = (identity.get("factory_code") or "").strip()
+    if factory_code:
+        response.set_cookie(
+            "doc_nexus_factory",
+            factory_code,
+            max_age=7 * 24 * 3600,
+            httponly=False,   # 前端要读它
+            samesite="lax",
+            path="/",
+        )
     return response
 
 
@@ -233,6 +291,8 @@ def logout(
         managed.linkmind_login_status = "logged_out"
         linkmind.sync_user(db, managed)
         audit.record(db, managed.id, "logout", managed.id, "success")
+    response.delete_cookie("doc_nexus_refresh", path="/")
+    # 兼容历史版本写在 /auth 路径下的旧 cookie，避免清不干净
     response.delete_cookie("doc_nexus_refresh", path="/auth")
     response.delete_cookie(ACCESS_COOKIE, path="/")
 

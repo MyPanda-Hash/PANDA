@@ -8,6 +8,7 @@
 """
 
 from __future__ import annotations
+import json
 
 import logging
 import os
@@ -79,6 +80,201 @@ def resolve_chat_target(db: Session):
     if target is None:
         raise LlmUnavailable("尚未配置对话模型端点")
     return target
+
+
+
+
+def _mask_payload_keeping_tools(session, payload: dict) -> dict:
+    """脱敏 payload，但保留 role=tool 的消息原样。
+
+    工具结果要么是公开网页信息（联网检索），要么是已经按账号权限裁剪过的
+    MES 数据（mes_* 工具），再套一层 PII/金额脱敏只会把可用信息毁掉。
+    """
+    masked = session.mask_payload(payload)
+    if not isinstance(masked, dict):
+        return masked
+    original_messages = payload.get("messages") or []
+    masked_messages = masked.get("messages") or []
+    if len(original_messages) != len(masked_messages):
+        return masked
+
+    merged = []
+    for raw, done in zip(original_messages, masked_messages):
+        if isinstance(raw, dict) and str(raw.get("role")) == "tool":
+            merged.append(raw)
+        else:
+            merged.append(done)
+    masked["messages"] = merged
+    return masked
+
+async def complete_with_tools(
+    target,
+    messages: list[dict],
+    *,
+    tools: list[dict] | None = None,
+    temperature: float = 0.6,
+    max_tokens: int = 2048,
+    timeout_seconds: float | None = None,
+):
+    """一次非流式调用，支持 OpenAI tools；返回 (文本, 工具调用列表, token 用量)。
+
+    Anthropic 的 tool_use 与 OpenAI 的 tool_calls 结构不同，转换放在调用方，
+    这里只做「把 tools 交给上游、把 tool_calls 取回来」这一件事。
+    """
+    request_url = chat_completions_url(target.endpoint_url)
+    payload: dict = {
+        "model": target.model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "stream": False,
+    }
+    if tools:
+        payload["tools"] = tools
+    session = data_guard.session_for_endpoint(target.endpoint_url)
+    # 工具结果**不做脱敏**：
+    # - 联网检索拿到的是公开网页摘要，本来就不含本系统的业务数据；
+    # - 脱敏规则里的 MONEY（「2.68万亿」「180元」）会把公开数据误伤成〔MONEY_1〕，
+    #   模型只能回「金额被脱敏」，等于白检索（2026-11-17 实测）。
+    # 系统内部数据走的是 MES 工具，那条链路自己按账号权限裁剪，不依赖这里。
+    payload = _mask_payload_keeping_tools(session, payload)
+
+    headers = {"Content-Type": "application/json"}
+    secret = _resolve_secret(getattr(target.endpoint, "secret_ref", None))
+    if secret:
+        headers["Authorization"] = f"Bearer {secret}"
+
+    endpoint_timeout = (getattr(target.endpoint, "timeout_ms", 0) or 0) / 1000.0
+    timeout = timeout_seconds or endpoint_timeout or 120.0
+
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        response = await client.post(request_url, json=payload, headers=headers)
+        if response.status_code >= 400:
+            raise LlmCallFailed(
+                f"上游返回 {response.status_code}：{response.text[:300]}"
+            )
+        body = response.json()
+
+    choices = body.get("choices") or []
+    message = (choices[0].get("message") or {}) if choices else {}
+    text = str(message.get("content") or "")
+    calls = message.get("tool_calls") or []
+    # 把上游的真实 usage 带出去：以前这里直接丢了，导致「AI 用量」无从统计
+    # （input_tokens 全是 0，算不出钱）。字段名按 OpenAI 兼容格式。
+    usage = body.get("usage") or {}
+    return text, calls, {
+        "input_tokens": int(usage.get("prompt_tokens") or 0),
+        "output_tokens": int(usage.get("completion_tokens") or 0),
+        "cache_read_tokens": int((usage.get("prompt_tokens_details") or {}).get("cached_tokens") or 0),
+    }
+
+async def stream_chat_with_target(
+    target,
+    messages: list[dict],
+    *,
+    temperature: float = 0.6,
+    max_tokens: int = 2048,
+    timeout_seconds: float | None = None,
+):
+    """与 stream_chat 相同的流式调用，但用已解析好的端点。
+
+    流式响应可能持续几十秒；数据库会话不应被它一直占着，
+    所以调用方先用 transaction() 解析出 target，再把它传进来。
+    """
+    request_url = chat_completions_url(target.endpoint_url)
+    payload = {
+        "model": target.model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "stream": True,
+    }
+    session = data_guard.session_for_endpoint(target.endpoint_url)
+    payload = session.mask_payload(payload)
+
+    headers = {"Content-Type": "application/json"}
+    secret = _resolve_secret(getattr(target.endpoint, "secret_ref", None))
+    if secret:
+        headers["Authorization"] = f"Bearer {secret}"
+
+    endpoint_timeout = (getattr(target.endpoint, "timeout_ms", 0) or 0) / 1000.0
+    timeout = timeout_seconds or endpoint_timeout or 120.0
+
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        async with client.stream("POST", request_url, json=payload, headers=headers) as response:
+            if response.status_code >= 400:
+                detail = (await response.aread()).decode("utf-8", "ignore")[:400]
+                raise LlmCallFailed(f"上游返回 {response.status_code}：{detail}")
+            async for line in response.aiter_lines():
+                if not line or not line.startswith("data:"):
+                    continue
+                raw = line[5:].strip()
+                if not raw or raw == "[DONE]":
+                    continue
+                try:
+                    chunk = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                for choice in chunk.get("choices") or []:
+                    delta = (choice.get("delta") or {})
+                    piece = delta.get("content")
+                    if piece:
+                        yield piece
+
+
+async def stream_chat(
+    db: Session,
+    messages: list[dict],
+    *,
+    temperature: float = 0.6,
+    max_tokens: int = 2048,
+    timeout_seconds: float | None = None,
+):
+    """流式调用对话端点，逐段产出文本增量。
+
+    与 complete_chat 共用同一套端点解析与密钥读取；区别只在于上游开 stream=True，
+    并把 OpenAI 的 SSE 增量拆出来。给 Anthropic 兼容层用。
+    """
+    target = resolve_chat_target(db)
+    request_url = chat_completions_url(target.endpoint_url)
+    payload = {
+        "model": target.model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "stream": True,
+    }
+    session = data_guard.session_for_endpoint(target.endpoint_url)
+    payload = session.mask_payload(payload)
+
+    headers = {"Content-Type": "application/json"}
+    secret = _resolve_secret(getattr(target.endpoint, "secret_ref", None))
+    if secret:
+        headers["Authorization"] = f"Bearer {secret}"
+
+    endpoint_timeout = (getattr(target.endpoint, "timeout_ms", 0) or 0) / 1000.0
+    timeout = timeout_seconds or endpoint_timeout or 120.0
+
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        async with client.stream("POST", request_url, json=payload, headers=headers) as response:
+            if response.status_code >= 400:
+                detail = (await response.aread()).decode("utf-8", "ignore")[:400]
+                raise LlmCallFailed(f"上游返回 {response.status_code}：{detail}")
+            async for line in response.aiter_lines():
+                if not line or not line.startswith("data:"):
+                    continue
+                raw = line[5:].strip()
+                if not raw or raw == "[DONE]":
+                    continue
+                try:
+                    chunk = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                for choice in chunk.get("choices") or []:
+                    delta = (choice.get("delta") or {})
+                    piece = delta.get("content")
+                    if piece:
+                        yield piece
 
 
 async def complete_chat(

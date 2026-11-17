@@ -1,0 +1,66 @@
+/* 车间现场看板：在制工单进度 + 今日报工 + 卡点。
+   比简报更「铺开」：主任要一眼看到每张单做到哪，所以用进度条而不是纯数字。 */
+
+.floor { max-width: 960px; margin: 0 auto; padding: 4px 0 40px; }
+.floor__head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.floor__hello { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -.01em; }
+.floor__meta { font-size: 12px; color: var(--ant-color-text-tertiary); }
+
+.floor__headline {
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 8px; padding: 16px 20px;
+  font-size: 14px; line-height: 24px; margin-bottom: 8px;
+}
+
+.floor__stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 8px 0 20px; }
+.floor__stat { background: var(--ant-color-bg-container); border: 1px solid var(--ant-color-border-secondary); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.floor__stat-n { font-size: 24px; line-height: 32px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.floor__stat-n[data-tone="warn"] { color: #c84d3f; }
+.floor__stat-n[data-tone="ok"] { color: var(--ant-color-primary); }
+.floor__stat-n[data-tone="muted"] { color: var(--ant-color-text-tertiary); }
+.floor__stat-l { font-size: 12px; color: var(--ant-color-text-tertiary); margin-top: 2px; }
+.floor__stat-h { font-size: 11px; color: var(--ant-color-text-quaternary); margin-top: 5px; }
+
+.floor__sect { margin-bottom: 18px; }
+.floor__sect-h {
+  display: flex; align-items: baseline; gap: 8px;
+  font-size: 13px; font-weight: 600; color: var(--ant-color-text-secondary);
+  margin: 0 0 8px 2px;
+}
+.floor__sect-h span:last-child { font-weight: 400; font-size: 12px; color: var(--ant-color-text-tertiary); }
+
+/* 卡点：比普通行更醒目，但不喧哗——左边一条红条 */
+.floor__alert {
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border-secondary);
+  border-left: 3px solid #c84d3f;
+  border-radius: 8px; padding: 12px 16px; margin-bottom: 8px;
+}
+.floor__alert-t { font-size: 14px; line-height: 22px; font-weight: 600; }
+.floor__alert-d { font-size: 12px; line-height: 20px; color: var(--ant-color-text-secondary); margin-top: 2px; }
+
+/* 工单行：左信息右进度 */
+.floor__row {
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 8px; padding: 12px 16px; margin-bottom: 8px;
+  display: flex; gap: 16px; align-items: center;
+}
+.floor__row.is-late { border-left: 3px solid #c84d3f; }
+.floor__row-main { flex: 1; min-width: 0; }
+.floor__row-t { font-size: 14px; line-height: 22px; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.floor__row-s { font-size: 12px; line-height: 20px; color: var(--ant-color-text-tertiary); margin-top: 2px; }
+.floor__tag { font-size: 11px; line-height: 18px; padding: 0 6px; border-radius: 4px; }
+.floor__tag--late { background: rgba(200, 77, 63, .1); color: #c84d3f; }
+
+.floor__progress { width: 190px; flex: none; display: flex; align-items: center; gap: 10px; }
+.floor__bar { flex: 1; height: 6px; border-radius: 3px; background: var(--ant-color-fill-secondary); overflow: hidden; }
+.floor__bar-fill { height: 100%; background: var(--ant-color-primary); border-radius: 3px; }
+.floor__progress-n { font-size: 12px; color: var(--ant-color-text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+@media (max-width: 760px) {
+  .floor__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .floor__row { flex-direction: column; align-items: stretch; }
+  .floor__progress { width: auto; }
+}

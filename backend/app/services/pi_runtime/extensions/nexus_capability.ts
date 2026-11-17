@@ -1002,6 +1002,24 @@ function isInjectedPriorTopic(item: unknown): boolean {
 }
 
 
+// 周期报表：日报/周报/月报。产出 Markdown 并投递到本人对话，
+// 与简报页上的「本期报表」按钮走同一条服务路径（period_reports）。
+const generatePeriodReport = defineTool({
+	name: "nexus_generate_period_report",
+	label: "周期报表",
+	description: "生成日报/周报/月报并投递到当前用户的对话。用户在对话或语音里说「生成本周周报」「出个日报」时调用。报表数字由系统口径产出，不要自己心算或改写数字；返回的 text 是完整报表正文，可按用户要求转述要点或念结论。kind 取 daily/weekly/monthly，默认 weekly；用户明确指定日期时传 anchor(yyyy-MM-dd)，否则不传表示当前周期。",
+	parameters: Type.Object({
+		kind: Type.Optional(Type.Union([
+			Type.Literal("daily"),
+			Type.Literal("weekly"),
+			Type.Literal("monthly"),
+		])),
+		anchor: Type.Optional(Type.String({ maxLength: 10 })),
+	}),
+	async execute(callId, params) {
+		return mesText(await callCapability("generate_period_report", params as Record<string, unknown>, callId));
+	},
+});
 const CAPABILITY_GROUPS: Record<string, { description: string; tools: readonly string[] }> = {
 	knowledge: {
 		description: "查询授权资料、检索证据、展开原文和项目背景",
@@ -1021,8 +1039,8 @@ const CAPABILITY_GROUPS: Record<string, { description: string; tools: readonly s
 		tools: ["nexus_get_system_overview", "nexus_list_system_users", "nexus_get_user_usage"],
 	},
 	mes: {
-		description: "查询 MES 单据、追踪单据流程与工序、看明细和库存",
-		tools: ["nexus_mes_query_panel", "nexus_mes_trace_doc", "nexus_mes_doc_detail", "nexus_mes_stock", "nexus_mes_today_plan", "nexus_mes_owner_profile", "nexus_mes_weekly_review", "nexus_mes_root_cause"],
+		description: "查询 MES 单据、追踪单据流程与工序、看明细和库存、生成周期报表",
+		tools: ["nexus_mes_query_panel", "nexus_mes_trace_doc", "nexus_mes_doc_detail", "nexus_mes_stock", "nexus_mes_today_plan", "nexus_mes_owner_profile", "nexus_mes_weekly_review", "nexus_mes_root_cause", "nexus_generate_period_report"],
 	},
 	schedule_read: { description: "查看指定定时任务及已有结果", tools: ["nexus_get_schedule_summary"] },
 	schedule_create: { description: "创建待本人确认的提醒或定时任务草稿", tools: ["nexus_propose_schedule"] },
@@ -1260,6 +1278,8 @@ export default function nexusCapabilityExtension(pi: ExtensionAPI) {
 		mesOwnerProfile,
 		mesWeeklyReview,
 		mesRootCause,
+		// 周期报表：对话/语音里「生成周报」靠它落地
+		generatePeriodReport,
 	]) {
 		pi.registerTool(tool);
 	}

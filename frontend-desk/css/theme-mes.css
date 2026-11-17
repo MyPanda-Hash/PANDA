@@ -1,0 +1,85 @@
+/* 轻 MES 主题色覆盖（AI 数字员工工作台）
+ *
+ * 目的：让工作台与 MES 主体同一套配色 —— 制造绿 #116a5b + 中性钢灰。
+ *
+ * 为什么单独一个文件而不是改 tokens.css：
+ *   tokens.css 是 antd@6.6.8 theme.getDesignToken() 的生成产物，手改会在下次
+ *   重新生成时被覆盖。这里只覆盖「品牌与中性面」这一层，其余 token 保持生成值。
+ *
+ * 口径与 light-mes/frontend/src/styles/index.css 完全一致：
+ *   明色 primary #116a5b、暗色 primary #58b09e，中性面/边框/文字逐项对应。
+ * 语义色（success/warning/error）保持 antd 原值：它们是语义不是品牌，
+ *   MES 侧同样使用 Element 默认的 success/danger，两边本来就一致。
+ */
+
+/* ---------------- 明色 ---------------- */
+:root,
+html:not([data-theme="dark"]) {
+  /* 品牌主色：制造绿 */
+  --ant-color-primary: #116a5b;
+  --ant-color-primary-hover: #58958a;
+  --ant-color-primary-active: #0d584c;
+  --ant-color-primary-text: #116a5b;
+  --ant-color-primary-text-hover: #0d584c;
+  --ant-color-primary-text-active: #0a4a40;
+  --ant-color-primary-bg: #e8f1ef;
+  --ant-color-primary-bg-hover: #d7e7e3;
+  --ant-color-primary-border: #b8d3ce;
+  --ant-color-primary-border-hover: #88b4ac;
+  /* 链接与信息色跟随品牌，避免整页只剩一个蓝色按钮 */
+  --ant-color-link: #116a5b;
+  --ant-color-link-hover: #0d584c;
+  --ant-color-info: #116a5b;
+  --ant-color-info-bg: #e8f1ef;
+  --ant-color-info-border: #b8d3ce;
+  --ant-color-info-text: #0d584c;
+
+  /* 中性面：钢灰带一点绿调，与 MES 侧栏/内容底一致 */
+  --ant-color-bg-layout: #f2f5f4;
+  --ant-color-bg-container: #ffffff;
+  --ant-color-bg-elevated: #ffffff;
+  --ant-color-border: #dce4e1;
+  --ant-color-border-secondary: #edf1ef;
+  --ant-color-split: #edf1ef;
+
+  /* 文字层级 */
+  --ant-color-text: #1e2b27;
+  --ant-color-text-secondary: #5d6c67;
+  --ant-color-text-tertiary: #8b9893;
+  --ant-color-text-quaternary: #b3bfba;
+}
+
+/* ---------------- 暗色 ---------------- */
+[data-theme="dark"],
+.ant-dark,
+html.dark {
+  --ant-color-primary: #58b09e;
+  --ant-color-primary-hover: #76c2b2;
+  --ant-color-primary-active: #48a08f;
+  --ant-color-primary-text: #58b09e;
+  --ant-color-primary-text-hover: #76c2b2;
+  --ant-color-primary-text-active: #48a08f;
+  /* 深色下用主色半透明叠加，浅色实底在深色面板里会发白 */
+  --ant-color-primary-bg: rgba(88, 176, 158, 0.16);
+  --ant-color-primary-bg-hover: rgba(88, 176, 158, 0.26);
+  --ant-color-primary-border: rgba(88, 176, 158, 0.42);
+  --ant-color-primary-border-hover: rgba(88, 176, 158, 0.55);
+  --ant-color-link: #76c2b2;
+  --ant-color-link-hover: #8fd0c2;
+  --ant-color-info: #58b09e;
+  --ant-color-info-bg: rgba(88, 176, 158, 0.16);
+  --ant-color-info-border: rgba(88, 176, 158, 0.42);
+  --ant-color-info-text: #76c2b2;
+
+  --ant-color-bg-layout: #18201d;
+  --ant-color-bg-container: #222c28;
+  --ant-color-bg-elevated: #27322e;
+  --ant-color-border: #35423d;
+  --ant-color-border-secondary: #303c37;
+  --ant-color-split: #303c37;
+
+  --ant-color-text: #e2e8e5;
+  --ant-color-text-secondary: #b3bfba;
+  --ant-color-text-tertiary: #7f8e88;
+  --ant-color-text-quaternary: #6b7a74;
+}

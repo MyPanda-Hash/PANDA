@@ -1,0 +1,29 @@
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 2px;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--dsw-alias-label-tertiary, rgba(128, 128, 128, 0.7));
+}
+
+.toggle {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  border-radius: 3px;
+}
+
+.toggle:hover { color: var(--dsw-alias-label-secondary, rgba(128, 128, 128, 0.95)); }
+.toggle:focus-visible { outline: 1px solid currentColor; outline-offset: 1px; }
+
+.detail {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

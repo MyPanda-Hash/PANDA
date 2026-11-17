@@ -4,7 +4,18 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>小缔 · 语音</title>
-<link rel="stylesheet" href="/pod/pod.css" />
+<link rel="stylesheet" href="pod.css" />
+<script>
+  // ?embed=1：给新版工作台的语音页 / 对话页右侧面板内嵌用（铺满容器、隐藏窗口按钮）。
+  // 解析放在 head 里先跑，避免先画一遍带圆角的窗口再跳到嵌入形态。
+  // 不带参数时什么都不做，18091 的独立小窗行为与原来完全一致。
+  (() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("embed") !== "1") return;
+    document.documentElement.dataset.embed = "1";
+    if (params.get("theme") === "dark") document.documentElement.dataset.theme = "dark";
+  })();
+</script>
 </head>
 <body>
 <div id="pod" data-state="idle">
@@ -59,7 +70,7 @@
 
   <div class="login-gate" id="loginGate" hidden>
     <p>还没登录</p>
-    <a class="link-btn" href="/" target="_blank" rel="noopener">打开门户登录</a>
+    <a class="link-btn" href="../" target="_blank" rel="noopener">打开门户登录</a>
     <button class="ghost-btn" id="btnRetry">已登录，重试</button>
   </div>
 </div>
@@ -75,7 +86,7 @@
   <p class="pod-orb__caption" id="orbCaption">小缔 · 已最小化 · 点击展开</p>
   <p class="pod-orb__hint" id="orbHint" hidden>把窗口拖小，球会自动居中填满</p>
 </div>
-<script src="/pod/pod.js" defer></script>
-  <script src="/notify-bubble.js" defer></script>
+<script src="pod.js" defer></script>
+  <script src="../notify-bubble.js" defer></script>
 </body>
 </html>

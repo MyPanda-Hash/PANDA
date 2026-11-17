@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import time
+import traceback
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -69,9 +71,16 @@ def SessionLocal() -> Session:
     return _session_local()
 
 
+# 事务持有时长告警线：SQLite 是库级写锁，一个长事务会挡住所有人。
+# 超过这个秒数就留一条带调用栈的告警，下次排查不必再猜。
+SLOW_TRANSACTION_SECONDS = 5.0
+
+
 @contextmanager
 def transaction():
     db = SessionLocal()
+    started = time.monotonic()
+    stack = ""
     try:
         yield db
         db.commit()
@@ -79,6 +88,14 @@ def transaction():
         db.rollback()
         raise
     finally:
+        elapsed = time.monotonic() - started
+        if elapsed >= SLOW_TRANSACTION_SECONDS:
+            stack = stack or "".join(traceback.format_stack()[-8:])
+            logger.warning(
+                "slow transaction held the write lock for %.1fs\n%s",
+                elapsed,
+                stack,
+            )
         db.close()
 
 
@@ -108,7 +125,20 @@ def initialize_database() -> None:
         _ensure_sqlite_user_api_keys_table(engine)
         _ensure_sqlite_group_todo_columns(engine)
         _ensure_sqlite_assistant_event_columns(engine)
+        _ensure_sqlite_factory_scope_columns(engine)
     _load_rule_threshold_overrides()
+    _load_voice_config_overrides()
+
+
+def _load_voice_config_overrides() -> None:
+    """界面改过的语音配置在启动时也要生效，否则重启后回到 .env 的旧值。"""
+    from app.services import voice_config
+
+    try:
+        with SessionLocal() as db:
+            voice_config.apply_overrides(db)
+    except Exception:  # noqa: BLE001 - 配置读不出来不该阻止启动
+        pass
 
 
 def _load_rule_threshold_overrides() -> None:
@@ -976,3 +1006,36 @@ def _ensure_sqlite_assistant_event_columns(engine: Engine) -> None:
         conn.execute(
             text("UPDATE assistant_events SET first_seen_at = created_at WHERE first_seen_at IS NULL")
         )
+
+def _ensure_sqlite_factory_scope_columns(engine: Engine) -> None:
+    """账套隔离：待办与主动发现加 factory_code。
+
+    MES 是账套权威源，AI 只镜像。存量数据归默认账套 F01，
+    与 MES 侧 V8 迁移的回填口径一致——否则历史待办会在切账套后消失。
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    with engine.begin() as conn:
+        for table in ("group_todos", "assistant_events"):
+            if table not in tables:
+                continue
+            columns = {item["name"] for item in inspector.get_columns(table)}
+            if "factory_code" not in columns:
+                conn.execute(
+                    text(f"ALTER TABLE {table} ADD COLUMN factory_code VARCHAR(20)")
+                )
+            conn.execute(
+                text(
+                    f"CREATE INDEX IF NOT EXISTS ix_{table}_factory "
+                    f"ON {table} (factory_code)"
+                )
+            )
+            conn.execute(
+                text(
+                    f"UPDATE {table} SET factory_code = :code "
+                    f"WHERE factory_code IS NULL OR factory_code = ''"
+                ),
+                {"code": "F01"},
+            )

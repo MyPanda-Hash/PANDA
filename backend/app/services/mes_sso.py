@@ -100,6 +100,9 @@ def verify_ticket(ticket: str) -> dict:
         "real_name": str(payload.get("name") or username).strip() or username,
         "role_code": str(payload.get("role") or "").strip(),
         "is_admin": bool(payload.get("admin")),
+        # 账套：MES 点进来时带上的当前账套，AI 侧据此过滤待办/发现。
+        # 老版本 MES 不传这个字段时为空串，AI 侧按「不限制账套」处理，保持兼容。
+        "factory_code": str(payload.get("factory") or "").strip().upper(),
     }
 
 

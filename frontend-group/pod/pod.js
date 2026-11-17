@@ -12,7 +12,27 @@
 (() => {
   "use strict";
 
-  const WS_PATH = "/api/assistant/voice/ws";
+  // 同源部署时本页可能在 /ai/pod/ 下：接口与 WS 都要走 /ai-api（MES 反代到 AI 后端）。
+// 直接写 /api 会打到 MES 自己的接口上，表现为「还没登录」。
+const API_BASE = location.pathname.startsWith("/ai/") ? "/ai-api" : "/api";
+const WS_PATH = API_BASE + "/assistant/voice/ws";
+
+/** MES 是唯一身份源：浏览器只存 mes_token，语音页同源也要带它。
+ *  之前这里只用 credentials:include（cookie），同源后 cookie 不存在，
+ *  于是 fetch /auth/me 拿到 401，语音窗一直显示「还没登录」。 */
+function mesToken() {
+  try {
+    const value = localStorage.getItem("mes_token");
+    return value && value !== "undefined" ? value : "";
+  } catch (_) {
+    return "";
+  }
+}
+
+function authHeaders() {
+  const token = mesToken();
+  return token ? { Authorization: "Bearer " + token } : {};
+}
   const SAMPLE_RATE = 16000;
   const FRAME_SAMPLES = 320; // 20 ms
 
@@ -342,7 +362,9 @@
     if (state.ctx) return;
     const ctx = new AudioContext({ sampleRate: SAMPLE_RATE, latencyHint: "interactive" });
     await ctx.resume();
-    await ctx.audioWorklet.addModule("/pod/pcm-worklet.js");
+    // 相对路径：本页可能挂在 /ai/pod/ 下，绝对 /pod/ 会打到 MES 上 404，
+    // 表现为「麦克风初始化失败」（addModule 抛错，与权限无关）。
+    await ctx.audioWorklet.addModule("pcm-worklet.js");
 
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -388,7 +410,10 @@
   function connectSocket() {
     return new Promise((resolve, reject) => {
       const proto = location.protocol === "https:" ? "wss:" : "ws:";
-      const ws = new WebSocket(`${proto}//${location.host}${WS_PATH}`);
+      const ticket = mesToken();
+      // WebSocket 带不了 Authorization 头，后端支持 ?token= 复用同一枚 JWT
+      const wsUrl = `${proto}//${location.host}${WS_PATH}` + (ticket ? `?token=${encodeURIComponent(ticket)}` : "");
+      const ws = new WebSocket(wsUrl);
       ws.binaryType = "arraybuffer";
       let settled = false;
 
@@ -618,7 +643,7 @@
 
   async function checkLogin() {
     try {
-      const res = await fetch("/api/auth/me", { credentials: "include" });
+      const res = await fetch(API_BASE + "/auth/me", { credentials: "include", headers: authHeaders() });
       return res.ok;
     } catch (_) {
       return false;
@@ -634,7 +659,7 @@
   async function loadBriefing() {
     if (!el.briefing) return;
     try {
-      const res = await fetch("/api/assistant/briefing", { credentials: "include" });
+      const res = await fetch(API_BASE + "/assistant/briefing", { credentials: "include", headers: authHeaders() });
       if (!res.ok) return;
       const payload = await res.json();
       const data = payload.data || {};
@@ -666,7 +691,7 @@
       showGate();
       return;
     }
-    const res = await fetch("/api/assistant/voice/status", { credentials: "include" });
+    const res = await fetch(API_BASE + "/assistant/voice/status", { credentials: "include", headers: authHeaders() });
     if (!res.ok) return;
     const payload = await res.json();
     const info = payload.data || {};
@@ -702,7 +727,7 @@
       // 样式与字体要复制过去，否则窗口里是无样式裸 DOM
       const link = pip.document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/pod/pod.css";
+      link.href = "pod.css";
       pip.document.head.append(link);
       pip.document.body.style.margin = "0";
       pip.document.title = "小缔 · 语音";

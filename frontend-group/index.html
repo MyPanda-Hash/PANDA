@@ -19,11 +19,23 @@
         }
       })();
     </script>
-    <link rel="stylesheet" href="/group/app.css" />
+    <link rel="stylesheet" href="app.css" />
+      <script>
+      (function () {
+        if (new URLSearchParams(location.search).get('embed') === '1') {
+          document.documentElement.dataset.embed = '1';
+        }
+      })();
+    </script>
+    <style>
+    /* 嵌入模式（?embed=1）：外层已有导航与标题，隐藏本页顶栏，避免同一屏出现三套头部 */
+    html[data-embed="1"] header.topbar { display: none; }
+    html[data-embed="1"] .layout { padding-top: 8px; }
+    </style>
   </head>
   <body>
     <header class="topbar">
-      <a class="back" href="/chat" aria-label="返回对话">←</a>
+      <a class="back" href="../" aria-label="返回对话">←</a>
       <h1>项目群聊</h1>
       <div class="topbar__right">
         <button class="tool" id="btnStaff" type="button" title="员工知识库（仅管理员）"
@@ -147,7 +159,13 @@
           </button>
         </div>
         <div class="tab-body" id="tabMembers">
-          <ul class="member-list" id="memberList" role="list"></ul>
+          <div class="org-switch" role="group" aria-label="成员视图">
+            <button class="org-switch__btn is-on" data-view="map" type="button" aria-pressed="true">人力地图</button>
+            <button class="org-switch__btn" data-view="list" type="button" aria-pressed="false">平铺</button>
+          </div>
+          <div class="org-map" id="orgMap" role="list" aria-label="按部门分组的成员"></div>
+          <ul class="member-list" id="memberList" role="list" hidden></ul>
+          <p class="org-empty" id="orgEmpty" hidden></p>
         </div>
         <div class="tab-body" id="tabTodos" hidden>
           <ul class="todo-list" id="todoList" role="list"></ul>
@@ -305,31 +323,54 @@
       </div>
     </section>
 
-    <dialog id="dialogEvents" class="dialog dialog--wide">
-      <div class="dialog__form">
-        <h2>MES 待处理事件</h2>
-        <p class="dialog__hint">AI 助手定时扫描 MES，按单据和角色派发；处理完可在 MES 里操作。</p>
-        <p class="event-summary" id="eventsSummary"></p>
-        <div class="watch-health" id="watchHealth" hidden>
-          <span class="health-dot" id="healthDot"></span>
-          <span class="health-text" id="healthText"></span>
-          <span class="health-sla" id="healthSla"></span>
-        </div>
-        <div class="event-filters" role="group" aria-label="筛选待办事件">
-          <div class="filter-row" id="ackedFilters">
-            <button class="chip is-on" data-acked="any" type="button">全部</button>
-            <button class="chip" data-acked="none" type="button">未认领 <span class="chip__n"></span></button>
-            <button class="chip" data-acked="me" type="button">我认领的 <span class="chip__n"></span></button>
-            <button class="chip" data-acked="others" type="button">他人认领 <span class="chip__n"></span></button>
+    <dialog id="dialogEvents" class="dialog dialog--wide dialog--sheet" aria-label="MES 待处理事件">
+      <div class="sheet" id="eventsSheet">
+        <header class="sheet__bar" id="eventsBar">
+          <span class="sheet__title">MES 待处理事件</span>
+          <span class="sheet__tools">
+            <button class="sheet__tool" id="btnEventsPin" type="button"
+                    aria-pressed="false" aria-label="固定窗口" title="固定窗口（点页面别处不收起）">
+              <svg viewBox="64 64 896 896" width="14" height="14" aria-hidden="true" fill="currentColor">
+                <path d="M878.3 392.1L631.9 145.7c-6.5-6.5-15-9.7-23.5-9.7s-17 3.2-23.5 9.7L423.8 306.9c-12.2-1.4-24.5-2-36.8-2-73.2 0-146.4 24.1-206.5 72.3a33.23 33.23 0 00-2.7 49.4l181.7 181.7-215.4 215.2a15.8 15.8 0 00-4.6 9.8l-3.4 37.2c-.9 9.4 6.6 17.4 15.9 17.4.5 0 1 0 1.5-.1l37.2-3.4c3.7-.3 7.2-2 9.8-4.6l215.4-215.4 181.7 181.7c6.5 6.5 15 9.7 23.5 9.7 9.7 0 19.3-4.2 25.9-12.4 56.3-70.3 79.7-158.3 70.2-243.4l161.1-161.1c12.9-12.8 12.9-33.8 0-46.8zM666.2 549.3l-24.5 24.5 3.8 34.4a259.92 259.92 0 01-30.4 153.9L262 408.8c12.9-7.1 26.3-13.1 40.3-17.9 27.2-9.4 55.7-14.1 84.7-14.1 9.6 0 19.3.5 28.9 1.6l34.4 3.8 24.5-24.5L608.5 224 800 415.5 666.2 549.3z" />
+              </svg>
+            </button>
+            <button class="sheet__tool" id="btnEventsClose" type="button" aria-label="关闭" title="关闭（Esc）">
+              <svg viewBox="64 64 896 896" width="14" height="14" aria-hidden="true" fill="currentColor">
+                <path d="M799.86 166.31c.02 0 .04 0 .06 0l68.02 68.02c.02.02.02.04.02.06 0 .02 0 .04-.02.06L567.96 535.96 867.9 835.9c.02.02.02.04.02.06 0 .02 0 .04-.02.06l-68.02 68.02c-.02.02-.04.02-.06.02-.02 0-.04 0-.06-.02L500 604.04 200.06 903.98c-.02.02-.04.02-.06.02-.02 0-.04 0-.06-.02L131.92 835.9c-.02-.02-.02-.04-.02-.06 0-.02 0-.04.02-.06L431.9 535.96 132 236.02c-.02-.02-.02-.04-.02-.06 0-.02 0-.04.02-.06l68.02-68.02c.02-.02.04-.02.06-.02.02 0 .04 0 .06.02L500 467.82 799.8 166.31z" />
+              </svg>
+            </button>
+          </span>
+        </header>
+        <div class="dialog__form sheet__body">
+          <p class="dialog__hint">AI 助手定时扫描 MES，按单据和角色派发；处理完可在 MES 里操作。</p>
+          <p class="event-summary" id="eventsSummary"></p>
+          <div class="watch-health" id="watchHealth" hidden>
+            <span class="health-dot" id="healthDot"></span>
+            <span class="health-text" id="healthText"></span>
+            <span class="health-sla" id="healthSla"></span>
           </div>
-          <div class="filter-row" id="assigneeFilters"></div>
-        </div>
-        <ul class="event-list" id="eventList" role="list"></ul>
-        <p class="empty" id="eventsEmpty">暂时没有需要你处理的事。</p>
-        <div class="dialog__actions">
-          <button class="btn btn--ghost" id="btnEventsClose" type="button">关闭</button>
+          <div class="event-filters" role="group" aria-label="筛选待办事件">
+            <div class="filter-row" id="ackedFilters">
+              <button class="chip is-on" data-acked="any" type="button">全部</button>
+              <button class="chip" data-acked="none" type="button">未认领 <span class="chip__n"></span></button>
+              <button class="chip" data-acked="me" type="button">我认领的 <span class="chip__n"></span></button>
+              <button class="chip" data-acked="others" type="button">他人认领 <span class="chip__n"></span></button>
+            </div>
+            <div class="filter-row" id="assigneeFilters"></div>
+          </div>
+          <ul class="event-list" id="eventList" role="list"></ul>
+          <p class="empty" id="eventsEmpty">暂时没有需要你处理的事。</p>
         </div>
       </div>
+
+        <span class="sheet__resize" data-resize="n"></span>
+        <span class="sheet__resize" data-resize="s"></span>
+        <span class="sheet__resize" data-resize="w"></span>
+        <span class="sheet__resize" data-resize="e"></span>
+        <span class="sheet__resize" data-resize="nw"></span>
+        <span class="sheet__resize" data-resize="ne"></span>
+        <span class="sheet__resize" data-resize="sw"></span>
+        <span class="sheet__resize" data-resize="se"></span>
     </dialog>
 
     <div class="emoji-panel" id="emojiPanel" hidden></div>
@@ -352,7 +393,7 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="/group/app.js"></script>
-    <script src="/notify-bubble.js" defer></script>
+    <script type="module" src="app.js"></script>
+    <script src="notify-bubble.js" defer></script>
 </body>
 </html>

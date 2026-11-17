@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""本地版组织架构图解析服务（不出网）。
+"""组织架构图解析服务（本机或云端 OpenAI 兼容端点都能用）。
 
-MES 的初始化向导把图片 POST 到这里，这里再交给**本机**视觉模型（Ollama /
-LM Studio / vLLM 等任何 OpenAI 兼容端点，默认 `http://127.0.0.1:11434/v1`），
-用的仍是数字员工里那套提示词与结果归一化（直接 import `app.services.init_org_chart`），
-所以云端与本地两条路不会各写一份解析逻辑。
+MES 的初始化向导把图片 POST 到这里，这里再交给视觉模型：
+默认云端 DashScope `qwen3-vl-plus`（2026-11-16 经用户确认，组织架构图允许出网），
+也可以指回本机 Ollama 等端点。提示词与结果归一化仍复用数字员工那套
+（直接 import `app.services.init_org_chart`），不会各写一份解析逻辑。
 
 启动：
     cd doc-nexus-ai/backend
@@ -12,8 +12,10 @@ LM Studio / vLLM 等任何 OpenAI 兼容端点，默认 `http://127.0.0.1:11434/
 
 需要的环境变量：
     ORGCHART_TOKEN     必填，与 MES 的 MES_INIT_AI_TOKEN 相同（未设则拒绝启动）
-    LOCAL_VLM_URL      本机模型地址，默认 http://127.0.0.1:11434/v1
-    LOCAL_VLM_MODEL    模型名，默认 qwen2.5vl:7b
+    LOCAL_VLM_URL      模型地址，默认 http://127.0.0.1:11434/v1
+                       （云端用 https://dashscope.aliyuncs.com/compatible-mode/v1）
+    LOCAL_VLM_MODEL    模型名，默认 qwen2.5vl:7b；云端用 qwen3-vl-plus
+    LOCAL_VLM_API_KEY  云端必填（Bearer），本机端点留空即可
     ORGCHART_PORT      监听端口，默认 18093
 
 为什么单独一个进程：图片不能脱敏，云端默认被数据策略拦截；把解析固定在本机
@@ -46,7 +48,9 @@ PORT = int(os.environ.get("ORGCHART_PORT", "18093"))
 TOKEN = (os.environ.get("ORGCHART_TOKEN") or "").strip()
 VLM_URL = (os.environ.get("LOCAL_VLM_URL") or "http://127.0.0.1:11434/v1").rstrip("/")
 VLM_MODEL = os.environ.get("LOCAL_VLM_MODEL") or "qwen2.5vl:7b"
+VLM_API_KEY = (os.environ.get("LOCAL_VLM_API_KEY") or "").strip()
 VLM_TIMEOUT = float(os.environ.get("LOCAL_VLM_TIMEOUT") or 300)
+VLM_IS_CLOUD = not any(h in VLM_URL for h in ("127.0.0.1", "localhost", "0.0.0.0"))
 MAX_BODY = 32 * 1024 * 1024
 
 
@@ -94,10 +98,13 @@ def _call_local_vlm(image_bytes: bytes, media_type: str, hint: str) -> dict:
         "max_tokens": 3000,
         "stream": False,
     }
+    headers = {"Content-Type": "application/json"}
+    if VLM_API_KEY:
+        headers["Authorization"] = f"Bearer {VLM_API_KEY}"
     request = urllib.request.Request(
         VLM_URL + "/chat/completions",
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
+        headers=headers,
     )
     try:
         with urllib.request.urlopen(request, timeout=VLM_TIMEOUT) as response:
@@ -105,23 +112,23 @@ def _call_local_vlm(image_bytes: bytes, media_type: str, hint: str) -> dict:
     except urllib.error.URLError as exc:
         raise OrgChartError(
             "local_vlm_unreachable",
-            f"连不上本机视觉模型 {VLM_URL}（{exc.reason}）："
-            f"先把模型跑起来，例如 ollama serve 后 ollama pull {VLM_MODEL}",
+            f"连不上视觉模型 {VLM_URL}（{exc.reason}）："
+            f"本机端点需先起 ollama serve，云端端点需检查 LOCAL_VLM_API_KEY",
         ) from exc
     except (TimeoutError, OSError) as exc:
-        raise OrgChartError("local_vlm_timeout", f"本机视觉模型超时：{exc}") from exc
+        raise OrgChartError("local_vlm_timeout", f"视觉模型超时：{exc}") from exc
     try:
         text = data["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError) as exc:
-        raise OrgChartError("bad_reply", "本机模型返回结构不符合 OpenAI 兼容格式") from exc
+        raise OrgChartError("bad_reply", "视觉模型返回结构不符合 OpenAI 兼容格式") from exc
     if not isinstance(text, str) or not text.strip():
         raise OrgChartError(
             "vision_blind",
-            f"本机模型 {VLM_MODEL} 没有返回内容，可能不是视觉模型（换 qwen2.5vl 之类支持图片的）",
+            f"模型 {VLM_MODEL} 没有返回内容，可能不是视觉模型（换 qwen3-vl-plus / qwen2.5vl 之类支持图片的）",
         )
     parsed = parse_reply(text)
     parsed["model"] = VLM_MODEL
-    parsed["endpoint"] = "local"
+    parsed["endpoint"] = "cloud" if VLM_IS_CLOUD else "local"
     return parsed
 
 
@@ -166,7 +173,13 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:  # noqa: N802 - 标准库签名
         if self.path.split("?")[0] == "/health":
-            self._json(200, {"status": "ok", "model": VLM_MODEL, "vlm": VLM_URL})
+            self._json(200, {
+                "status": "ok",
+                "model": VLM_MODEL,
+                "vlm": VLM_URL,
+                "mode": "cloud" if VLM_IS_CLOUD else "local",
+                "keyed": bool(VLM_API_KEY),
+            })
             return
         self._json(404, {"message": "not found"})
 
@@ -218,7 +231,8 @@ def main() -> int:
         print("未设置 ORGCHART_TOKEN（必须与 MES 的 MES_INIT_AI_TOKEN 一致），拒绝启动", file=sys.stderr)
         return 2
     server = ThreadingHTTPServer((HOST, PORT), Handler)
-    print(f"本地组织架构解析已启动：http://{HOST}:{PORT} → 本机模型 {VLM_URL} ({VLM_MODEL})", flush=True)
+    mode = "云端" if VLM_IS_CLOUD else "本机"
+    print(f"组织架构解析已启动：http://{HOST}:{PORT} → {mode}模型 {VLM_URL} ({VLM_MODEL})", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

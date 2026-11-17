@@ -56,3 +56,8 @@ tmp/
 *.sqlite3-shm
 *.db
 restart.out
+
+# chat-demo 构建产物：由 frontend-group/chat-deepseek-src 构建而来（约 4.5 MB minified bundle）。
+# 源码在、注入脚本也已固化到 src/index.html，构建一次即可（见根目录 AGENTS.md §4）。
+# 不提交是为了不让压缩后的 bundle 反复进入 git 历史。
+frontend-group/chat-deepseek/

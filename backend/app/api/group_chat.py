@@ -19,8 +19,10 @@ from typing import Annotated
 from fastapi import (
     APIRouter,
     BackgroundTasks,
+    Cookie,
     Depends,
     File,
+    Header,
     HTTPException,
     Query,
     UploadFile,
@@ -61,10 +63,11 @@ from app.schemas.group_chat import (
     MessageCreateRequest,
     MessageListResponse,
     MessageResponse,
+    OrgMapResponse,
     TodoResponse,
     TodoStatusRequest,
 )
-from app.services import asr, group_assistant, group_chat
+from app.services import asr, group_assistant, group_chat, org_map
 
 logger = logging.getLogger(__name__)
 
@@ -203,6 +206,8 @@ def _member_response(db: Session, member: ProjectGroupMember) -> GroupMemberResp
     user = db.get(User, member.user_id)
     from app.api.user_avatar import avatar_url as avatar_of
 
+    org = org_map.fields_of(db, user) if user is not None else dict(org_map.NO_DEPARTMENT)
+
     return GroupMemberResponse(
         user_id=member.user_id,
         display_name=(user.display_name if user else member.user_id),
@@ -210,6 +215,7 @@ def _member_response(db: Session, member: ProjectGroupMember) -> GroupMemberResp
         username=(user.username if user else ""),
         role=member.role,
         joined_at=as_utc(member.joined_at),
+        **org,
     )
 
 
@@ -383,15 +389,43 @@ def directory_users(
     limit: int = Query(default=50, ge=1, le=200),
 ) -> list[DirectoryUserResponse]:
     with transaction() as db:
-        return [
-            DirectoryUserResponse(
-                id=item.id,
-                display_name=item.display_name,
-                username=item.username,
-                email=item.email,
+        snap = org_map.snapshot()
+        out: list[DirectoryUserResponse] = []
+        for item in users.list_directory(db, q, limit):
+            out.append(
+                DirectoryUserResponse(
+                    id=item.id,
+                    display_name=item.display_name,
+                    username=item.username,
+                    email=item.email,
+                    **org_map.fields_of(db, item, snap=snap),
+                )
             )
-            for item in users.list_directory(db, q, limit)
-        ]
+        return out
+
+
+@router.get("/{group_id}/org-map", response_model=OrgMapResponse)
+def group_org_map(
+    group_id: str, user: User = Depends(current_user_from_bearer_or_cookie)
+) -> OrgMapResponse:
+    """群成员的人力地图：MES 部门树 + 每个成员挂在哪。
+
+    部门数据来自 MES；MES 不可用时返回空树 + 全员未分配，成员列表不受影响。
+    """
+    with transaction() as db:
+        try:
+            group, _member = group_chat.require_member(db, group_id, user)
+        except group_chat.GroupChatError as exc:
+            raise _translate(exc) from exc
+        member_ids = list(
+            db.scalars(
+                select(ProjectGroupMember.user_id).where(
+                    ProjectGroupMember.group_id == group.id
+                )
+            )
+        )
+        payload = org_map.group_map(db, member_ids)
+    return OrgMapResponse(**payload)
 
 
 @router.get("/{group_id}", response_model=GroupDetailResponse)
@@ -1009,10 +1043,19 @@ def list_todos(
     user: User = Depends(current_user_from_bearer_or_cookie),
     status: str | None = Query(default=None, max_length=16),
     limit: int = Query(default=100, ge=1, le=200),
+    x_factory_code: str = Header(default="", alias="X-Factory-Code"),
+    factory_cookie: str = Cookie(default="", alias="doc_nexus_factory"),
 ) -> list[TodoResponse]:
+    # 账套来源：请求头优先（切换后立即生效），其次 SSO 写下的 Cookie。
+    # 只看请求头会让「刚 SSO 进来、前端还没发请求头」的第一屏拿到全量数据。
+    factory = (x_factory_code or factory_cookie or "").strip().upper()
     with transaction() as db:
         rows = group_assistant.list_my_todos(
-            db, user_id=user.id, status=status, limit=limit
+            db,
+            user_id=user.id,
+            status=status,
+            limit=limit,
+            factory_code=factory,
         )
         return [_todo_response(db, item) for item in rows]
 

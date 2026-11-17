@@ -12,14 +12,20 @@ from sqlalchemy import func, select
 from datetime import datetime, timezone
 from urllib.parse import quote
 
-from app.api.deps import current_user_from_bearer_or_cookie
+from app.api.deps import admin_user, current_user_from_bearer_or_cookie
 from app.core.config import settings
 from app.core.database import transaction
 from app.core.timeutil import as_utc
 from app.models.assistant_watch import AssistantEvent
 from app.models.auth import User
 from app.models.group_chat import GroupTodo
+from app.models.mes_binding import MesUserBinding
 from app.services import assistant_watch
+from app.services.assistant_watch import (
+    DOMAIN_LABELS as _DOMAIN_LABELS,
+    KIND_LABELS as _KIND_LABELS,
+    domain_of as _domain_of,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +65,12 @@ class EventResponse(BaseModel):
     monday_url: str | None = None
     note: str = ""
     acked_by: str | None = None
+    # 认领时间：认领后界面要显示「谁 + 什么时候」，否则只剩一个 handle 状态看不出进展
+    acked_at: str | None = None
+    # 业务域与展示名：前端按域分组，kind_label 直接可显示
+    domain: str = ""
+    domain_label: str = ""
+    kind_label: str = ""
 
 
 class ScanResponse(BaseModel):
@@ -99,6 +111,10 @@ def _acked_name(db, event: AssistantEvent) -> str | None:
 def _serialize_with_user(db, event: AssistantEvent) -> EventResponse:
     response = _serialize(event)
     response.acked_by = _acked_name(db, event)
+    # 认领时 ack_event 会更新 updated_at，用它当认领时间（事件本身没有单独字段）
+    if event.acked_by_user_id and event.updated_at:
+        stamp = as_utc(event.updated_at)
+        response.acked_at = stamp.isoformat() if stamp else None
     return response
 
 
@@ -125,6 +141,11 @@ def _serialize(event: AssistantEvent, *, mine: str | None = None) -> EventRespon
         # /#/panelx/form/<panelCode>?code=<单据号>（见 light-mes router/index.js）
         note=event.note or "",
         acked_by=None,   # 由调用方按需填充（见 _serialize_with_user）
+        domain=_domain_of(event.kind, event.panel_code or ""),
+        domain_label=_DOMAIN_LABELS.get(
+            _domain_of(event.kind, event.panel_code or ""), ""
+        ),
+        kind_label=_KIND_LABELS.get(event.kind, event.kind or ""),
         monday_url=(
             f"{(settings.mes_watch_ui_url or settings.mes_watch_base_url).rstrip('/')}"
             f"/#/panelx/form/{event.panel_code}"
@@ -346,6 +367,60 @@ def stats(user: User = Depends(current_user_from_bearer_or_cookie)) -> dict:
             "stale_over_24h": stale,
             "enabled": settings.mes_watch_enabled,
         }
+
+
+@router.get("/role-audit", response_model=list[dict])
+def role_audit(_: User = Depends(admin_user)) -> list[dict]:
+    """按角色自检：每个岗位实际收到多少条待办 / 发现，都落在哪些域。
+
+    为什么需要它：2026-11-17 做过一次人工审查，发现「销售员一条也收不到」
+    这种派发断链，光看界面是看不出来的 —— 每个人只能看到自己那份。
+    这个接口让管理员一眼看到全貌，配置完角色权限后可以立刻核对。
+    """
+    with transaction() as db:
+        bindings = db.scalars(select(MesUserBinding)).all()
+        role_of = {row.user_id: (row.mes_role_code or "?") for row in bindings}
+
+        open_events = db.scalars(
+            select(AssistantEvent).where(AssistantEvent.status.in_(("open", "handled")))
+        ).all()
+        todos = db.scalars(
+            select(GroupTodo).where(
+                # 和前端「待处理」同一口径：只算还要干的，
+                # 把 done/dismissed 算进来会得到「111 条」这种看不出问题的数
+                GroupTodo.status.in_(("pending", "accepted", "doing"))
+            )
+        ).all()
+
+        buckets: dict[str, dict] = {}
+        for event in open_events:
+            domain = _domain_of(event.kind, event.panel_code or "")
+            for uid in json.loads(event.target_user_ids_json or "[]"):
+                role = role_of.get(uid, "未绑定")
+                slot = buckets.setdefault(
+                    role, {"role": role, "events": 0, "todos": 0, "domains": {}}
+                )
+                slot["events"] += 1
+                slot["domains"][domain] = slot["domains"].get(domain, 0) + 1
+
+        for todo in todos:
+            role = role_of.get(todo.assignee_user_id, "未绑定")
+            slot = buckets.setdefault(
+                role, {"role": role, "events": 0, "todos": 0, "domains": {}}
+            )
+            slot["todos"] += 1
+
+        # 角色顺序固定，方便对比两次配置的结果
+        order = ["ADMIN", "FOREMAN", "PLANNER", "SALES", "KEEPER", "QC", "WORKER", "未绑定"]
+        out = sorted(
+            buckets.values(),
+            key=lambda s: (order.index(s["role"]) if s["role"] in order else len(order), s["role"]),
+        )
+        for slot in out:
+            slot["domainText"] = " · ".join(
+                "%s %d" % (k, v) for k, v in sorted(slot["domains"].items(), key=lambda x: -x[1])
+            ) or "—"
+        return out
 
 
 @router.post("/scan", response_model=ScanResponse)

@@ -1,0 +1,291 @@
+/* =====================================================================
+   待办工作台（todos.js 专用）
+   只写本视图需要的类，统一 todo- 前缀；通用类与设计变量来自 desk.css / tokens.css。
+   硬规则同 desk.css：卡片 0 层边框、8pt 间距、控件高 32、圆角 6、正文 14/22。
+   ===================================================================== */
+
+.todo-page { min-width: 0; gap: 16px; }
+
+/* ---------------------------------------------------------------- 统计卡 */
+/* 四张统计卡可点，直接跳到对应视图；仍是 0 层卡片（边框，无阴影） */
+.todo-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color .15s, background-color .15s;
+}
+.todo-stat:hover { border-color: var(--ant-color-primary-border); }
+.todo-stat:active { background: var(--ant-color-fill-quaternary); }
+.todo-stat .stat__label .icon { color: var(--ant-color-text-tertiary); }
+.todo-stat__foot { display: block; margin-top: 8px; font-size: 13px; line-height: 22px; min-height: 20px; }
+.todo-skel { display: block; }
+.todo-skel--stat { width: 64px; height: 34px; margin-top: 6px; }
+
+/* ---------------------------------------------------------------- AI 生产概况 */
+.todo-brief__text { font-size: 14px; line-height: 22px; overflow-wrap: anywhere; }
+.todo-brief__items { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.todo-brief__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 6px;
+  background: var(--ant-color-fill-quaternary);
+  font-size: 14px;
+  line-height: 22px;
+}
+.todo-brief__item-label { color: var(--ant-color-text-secondary); }
+.todo-brief__item-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+.todo-brief__foot { margin-top: 8px; font-size: 13px; line-height: 22px; overflow-wrap: anywhere; }
+.todo-brief__speak[aria-pressed="true"] {
+  border-color: var(--ant-color-primary-border);
+  background: var(--ant-color-primary-bg);
+  color: var(--ant-color-primary-text);
+}
+.todo-skel--brief { width: 100%; height: 22px; }
+.todo-skel--brief-sm { width: 46%; height: 20px; margin-top: 12px; }
+
+.todo-inline-error {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--ant-color-text-secondary);
+}
+.todo-inline-error__text { min-width: 0; flex: 1; }
+
+/* ---------------------------------------------------------------- 双栏：列表 + 详情 */
+.todo-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; min-width: 0; }
+
+/* 窄屏不出详情栏，改走抽屉 */
+.todo-detail { display: none; }
+
+@media (min-width: 1024px) {
+  .todo-split { grid-template-columns: minmax(0, 1fr) 368px; align-items: start; }
+  .todo-detail {
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    /* 让底部操作按钮始终可见：头部/脚注固定，中间滚动 */
+    max-height: calc(100dvh - 120px);
+  }
+}
+
+.todo-detail__head { padding-bottom: 12px; }
+.todo-detail__headmain { min-width: 0; flex: 1; }
+.todo-detail__title { font-size: 16px; line-height: 24px; font-weight: 600; overflow-wrap: anywhere; }
+.todo-detail__tags { margin-top: 8px; gap: 6px; }
+.todo-detail__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 20px;
+}
+.todo-detail__foot { flex: none; }
+.todo-detail__placeholder { padding: 40px 24px; text-align: center; color: var(--ant-color-text-secondary); }
+.todo-detail__placeholder h3 { font-size: 14px; line-height: 22px; color: var(--ant-color-text); margin-bottom: 4px; }
+.todo-detail__placeholder p { font-size: 14px; line-height: 22px; }
+
+.todo-block + .todo-block,
+.todo-detail__body > * + .todo-block { margin-top: 16px; }
+.todo-block__label {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+  color: var(--ant-color-text-secondary);
+  margin-bottom: 8px;
+}
+.todo-detail__text { font-size: 14px; line-height: 22px; white-space: pre-line; overflow-wrap: anywhere; }
+.todo-detail__note { font-size: 14px; line-height: 22px; color: var(--ant-color-text-tertiary); overflow-wrap: anywhere; }
+.todo-detail__notes { display: flex; flex-direction: column; gap: 4px; }
+
+/* 要做的事：编号独立成列，说明另起一行，避免整段堆在一起 */
+.todo-steps { display: flex; flex-direction: column; gap: 8px; }
+.todo-step { display: flex; gap: 8px; min-width: 0; }
+.todo-step__no {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 10px;
+  background: var(--ant-color-fill-quaternary);
+  color: var(--ant-color-text-secondary);
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.todo-step__body { display: block; min-width: 0; flex: 1; }
+.todo-step__title { display: block; font-size: 14px; line-height: 22px; overflow-wrap: anywhere; }
+.todo-step__note { display: block; font-size: 14px; line-height: 22px; color: var(--ant-color-text-tertiary); margin-top: 2px; overflow-wrap: anywhere; }
+
+/* 关联单据 */
+.todo-refs { display: flex; flex-direction: column; gap: 8px; }
+.todo-ref {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 6px;
+  background: var(--ant-color-bg-container);
+  color: var(--ant-color-link);
+  font-size: 14px;
+  line-height: 22px;
+}
+a.todo-ref:hover { border-color: var(--ant-color-primary-border-hover); color: var(--ant-color-link-hover); }
+.todo-ref--plain { color: var(--ant-color-text-secondary); }
+.todo-ref .icon { flex: none; color: var(--ant-color-text-tertiary); }
+.todo-ref__label { flex: none; color: var(--ant-color-text-secondary); }
+.todo-ref__no { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 元信息：两列成对，条目多时不会把详情撑长 */
+.todo-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px 16px; }
+.todo-meta-pair { display: flex; align-items: baseline; gap: 8px; min-width: 0; font-size: 14px; line-height: 22px; }
+.todo-meta-grid dt,
+.todo-meta-grid dd { margin: 0; }
+.todo-meta-grid__key { flex: none; width: 58px; color: var(--ant-color-text-tertiary); }
+.todo-meta-grid__val { min-width: 0; color: var(--ant-color-text); overflow-wrap: anywhere; }
+
+/* ---------------------------------------------------------------- 待办列表 */
+.todo-list__body { min-width: 0; }
+.todo-list__total { flex: none; }
+.todo-list__foot { padding-top: 8px; padding-bottom: 8px; }
+.todo-list__foot .btn--sm { height: 24px; }
+.todo-list__foot-text { font-size: 13px; line-height: 22px; }
+
+.todo-row { align-items: flex-start; }
+.todo-row__title { display: block; overflow-wrap: anywhere; }
+.todo-row__meta { margin-top: 6px; }
+.todo-row__side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; }
+
+.todo-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: var(--ant-color-text-tertiary);
+  font-size: 13px;
+  line-height: 22px;
+}
+.todo-meta .icon { width: 13px; height: 13px; opacity: .8; }
+.todo-meta--group { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.todo-row--skeleton { cursor: default; }
+.todo-row--skeleton:hover { background: transparent; }
+.todo-skel--title { width: 58%; height: 14px; }
+.todo-skel--meta { width: 38%; height: 12px; margin-top: 8px; }
+.todo-skel--time { width: 48px; height: 12px; flex: none; }
+
+.todo-search-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+  background: var(--ant-color-fill-quaternary);
+  color: var(--ant-color-text-secondary);
+  font-size: 14px;
+  line-height: 22px;
+}
+.todo-search-note .icon { flex: none; }
+.todo-search-note__text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.todo-search-note .btn { flex: none; margin-left: auto; }
+
+.todo-empty { padding: 40px 24px; }
+.todo-empty h3 { font-weight: 600; }
+
+/* ---------------------------------------------------------------- AI 发现 */
+.todo-events__status {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 22px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.todo-event {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+  min-width: 0;
+}
+.todo-event:last-child { border-bottom: 0; }
+.todo-event__main { min-width: 0; flex: 1; }
+.todo-event__head { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+.todo-event__head .tag { flex: none; }
+.todo-event__title { font-size: 14px; line-height: 22px; font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+.todo-event__detail {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--ant-color-text-secondary);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.todo-event__action {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+.todo-event__action .icon { flex: none; margin-top: 2px; color: var(--ant-color-primary); }
+.todo-event__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--ant-color-text-tertiary);
+  font-size: 13px;
+  line-height: 22px;
+}
+.todo-event__doc { min-width: 0; overflow-wrap: anywhere; }
+.todo-event__actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; flex: none; }
+
+/* ---------------------------------------------------------------- 窄屏 */
+@media (max-width: 1023px) {
+  .todo-detail { display: none; }
+}
+
+@media (max-width: 720px) {
+  /* 卡片头在窄屏换行：标题+标签一行，动作一行，避免挤爆 */
+  .todo-brief .card__head,
+  .todo-list-card .card__head,
+  .todo-events .card__head { flex-wrap: wrap; row-gap: 8px; }
+  .todo-brief .card__head-actions,
+  .todo-list-card .card__head-actions { margin-left: auto; }
+  .todo-events__status { order: 3; width: 100%; margin-left: 0; white-space: normal; }
+  .todo-events .card__head-actions { margin-left: auto; }
+
+  .todo-tabs { padding: 0 8px; }
+  .todo-tabs .tabbar__btn { padding: 0 8px; gap: 4px; }
+  .todo-brief__items { gap: 6px; }
+  .todo-event { flex-direction: column; gap: 8px; padding-left: 16px; padding-right: 16px; }
+  .todo-event__actions { flex-direction: row; flex-wrap: wrap; }
+  .todo-search-note { padding-left: 16px; padding-right: 16px; }
+  .todo-meta-grid { grid-template-columns: minmax(0, 1fr); }
+  .todo-drawer__panel { width: 100%; }
+}

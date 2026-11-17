@@ -1,0 +1,21 @@
+/* 报表标题：渲染成按钮而不是链接——它打开的是工作台的查看器，不是跳转页面。
+   样式贴近正文里的强调文字，加下划线和主色，让人知道能点。 */
+.reportLink {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--dsw-alias-brand-primary, #4d6bfe);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.reportLink:hover {
+  text-decoration-thickness: 2px;
+}
+.reportLink:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary, #4d6bfe);
+  outline-offset: 2px;
+  border-radius: 2px;
+}

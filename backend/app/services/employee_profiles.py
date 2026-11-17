@@ -743,6 +743,9 @@ async def extract_from_groups(
 
     created: list[ProjectExperience] = []
     for group in groups:
+        # 先把上一轮可能挂起的写入提交掉：模型调用要几十秒，攥着 SQLite 写锁
+        # 别人连登录都写不进去（历史故障：database is locked）。
+        db.commit()
         messages = list(
             db.scalars(
                 select(ProjectGroupMessage)
@@ -814,6 +817,8 @@ async def extract_from_groups(
         )
         if record is not None:
             created.append(record)
+        # 写完立刻提交：下一个群还要调模型，不能带着写锁去等
+        db.commit()
     return created
 
 

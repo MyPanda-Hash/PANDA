@@ -243,6 +243,8 @@ class GroupTodo(Base):
     created_by_user_id: Mapped[str | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
+    # 账套：MES 是权威源，待办跟着它产生时的账套走，切换账套后只看到对应那套
+    factory_code: Mapped[str] = mapped_column(String(20), default="F01", index=True)
     origin: Mapped[str] = mapped_column(String(16), default="ai")
     title: Mapped[str] = mapped_column(String(255))
     detail: Mapped[str] = mapped_column(Text, default="")

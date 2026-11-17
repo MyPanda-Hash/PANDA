@@ -1,0 +1,115 @@
+
+/* =====================================================================
+   顶栏胶囊按钮 + 品牌设置面板（main.js）
+   外观按钮要「一眼看得出是干什么的」：图标 + 文字，而不是一个语意不明的图标。
+   设置面板是浮层，按设计库规范可以带阴影（页面卡片仍然 0 层）。
+   ===================================================================== */
+
+.pill-btn {
+  display: inline-flex;
+  align-items: center;
+  /* 内容水平居中：按钮有固定宽度，缺了这条文字会靠左、看着像没居中 */
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--ant-color-border);
+  border-radius: 999px;
+  background: var(--ant-color-bg-container);
+  color: var(--ant-color-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: border-color .12s ease, color .12s ease, background-color .12s ease;
+}
+.pill-btn:hover {
+  border-color: var(--ant-color-primary-border);
+  color: var(--ant-color-primary-text);
+  background: var(--ant-color-primary-bg);
+}
+.pill-btn .icon { width: 14px; height: 14px; }
+.pill-btn__label { white-space: nowrap; }
+
+@media (max-width: 767px) {
+  .pill-btn__label { display: none; }
+  .pill-btn { padding: 0 8px; }
+}
+
+/* 设置面板 */
+.settings-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.settings-panel__mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .35);
+}
+.settings-panel__body {
+  position: relative;
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 10px;
+  box-shadow: var(--ant-box-shadow);
+  padding: 20px;
+}
+.settings-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.settings-panel__title { font-size: 16px; line-height: 24px; font-weight: 600; }
+
+.settings-form { display: flex; flex-direction: column; gap: 14px; }
+.settings-field { display: flex; flex-direction: column; gap: 4px; }
+.settings-field__label { font-size: 12px; line-height: 18px; font-weight: 500; color: var(--ant-color-text-secondary); }
+.settings-field__hint { font-size: 11px; line-height: 17px; }
+.settings-theme { display: flex; flex-direction: column; gap: 6px; }
+.settings-hint { font-size: 12px; line-height: 18px; min-height: 18px; color: var(--ant-color-error-text); }
+.settings-form .btn { align-self: flex-end; }
+
+/* 账套切换（AI 工作台顶栏） */
+.factory-slot { display: inline-flex; align-items: center; gap: 6px; }
+.factory-tag {
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--ant-color-primary);
+  color: #fff;
+  font-size: 11px;
+  line-height: 18px;
+  font-weight: 500;
+}
+.factory-menu { display: flex; flex-direction: column; gap: 2px; }
+.factory-menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.factory-menu__item:hover { background: var(--ant-color-fill-quaternary); }
+.factory-menu__item[aria-current="true"] { color: var(--ant-color-primary-text); font-weight: 500; }
+.factory-menu__item .icon { width: 14px; height: 14px; }
+
+@media (max-width: 767px) {
+  .factory-slot .factory-tag { display: none; }
+}

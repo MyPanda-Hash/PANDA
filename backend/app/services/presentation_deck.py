@@ -800,7 +800,9 @@ def _render_cover(prs, slide: Mapping[str, Any], ctx: RenderContext):
     _add_text(
         current,
         ctx.region("cover_brand"),
-        "PROPOSAL / MANAGEMENT BRIEF",
+        # 默认可写成提案口径（历史导出保持字节稳定）；报表等场景可用
+        # brand_kicker 覆盖成自己的抬头。
+        str(slide.get("brand_kicker") or "PROPOSAL / MANAGEMENT BRIEF"),
         ctx=ctx,
         size=9,
         color=ctx.theme.accent,

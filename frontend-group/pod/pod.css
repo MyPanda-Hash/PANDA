@@ -594,3 +594,206 @@ html[data-orb="1"].is-inline .pod-orb__hint { display: block; }
 :root[data-theme="dark"] .briefing__item { color: rgba(255,255,255,.65); }
 .briefing__hint { margin: 8px 0 0; font-size: 11px; color: #7a8087; }
 :root[data-theme="dark"] .briefing__hint { color: rgba(255,255,255,.45); }
+
+/* ---------- 嵌入模式（?embed=1） ----------
+   给新版工作台的内嵌用：窗口装饰全部去掉，铺满容器；关闭/折叠/置顶交给外层。
+   整段只在 html[data-embed="1"] 下生效，不带参数时上面的规则原样不变，
+   18091 门户里的独立小窗行为不受影响。 */
+html[data-embed="1"] body { background: var(--panel); }
+
+html[data-embed="1"] #pod {
+  max-width: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--panel);
+}
+
+html[data-embed="1"] #btnPin,
+html[data-embed="1"] #btnFold,
+html[data-embed="1"] #btnClose { display: none; }
+
+/* 嵌入时外层页面已经有「生产概况 + 朗读」，再画一遍就是两段一样的字 */
+html[data-embed="1"] #podBriefing { display: none; }
+
+/* 头部在自适应高度里不再是窗口拖拽条，别让鼠标显示成「可拖」 */
+html[data-embed="1"] .pod-head {
+  -webkit-app-region: no-drag;
+  cursor: default;
+}
+
+/* 深色主题由外层带进来（?embed=1&theme=dark），取值对齐 antd 深色容器：
+   --panel 与 --bg 都等于外层卡片底色，嵌入时看不到接缝。
+   独立小窗没有 data-embed，下面这些变量不会生效。 */
+html[data-embed="1"][data-theme="dark"] {
+  --bg: #141414;
+  --panel: #141414;
+  --line: #303030;
+  --line-strong: #424242;
+  --ink: rgba(255, 255, 255, .88);
+  --ink-2: rgba(255, 255, 255, .72);
+  --muted: rgba(255, 255, 255, .45);
+  --accent: #4c9a80;
+  --accent-weak: #1b2a24;
+  --warn: #d0913f;
+  --warn-weak: #2b2114;
+  --danger: #d2685f;
+}
+html[data-embed="1"][data-theme="dark"] .tool-card { background: #1f1f1f; }
+html[data-embed="1"][data-theme="dark"] .briefing { background: var(--panel); border-color: var(--line); }
+html[data-embed="1"][data-theme="dark"] .empty-orb {
+  background: radial-gradient(circle at 50% 45%, var(--accent-weak) 0%, #1a1a1a 72%);
+}
+
+/* ================================================================
+   语音助手形态（?embed=1 时由外层工作台承载）
+   ----------------------------------------------------------------
+   手机上语音助手的样子：一颗大球占主视觉，球底下是圆形主按钮，
+   其余信息（标题/时钟/状态/提示）压到边缘。
+   只改视觉，不动 pod.js 依赖的任何 id。
+   ================================================================ */
+html[data-embed="1"] #pod {
+  max-width: none;
+  border: 0;
+  border-radius: 0;
+  background: radial-gradient(120% 80% at 50% 0%, var(--accent-weak) 0%, var(--panel) 62%);
+}
+
+/* 顶栏压成一条细栏，按钮收小 */
+html[data-embed="1"] .pod-head {
+  height: 40px; flex: 0 0 40px;
+  border-bottom: 0;
+  padding: 0 10px 0 14px;
+  background: transparent;
+  cursor: default;
+  -webkit-app-region: no-drag;
+}
+html[data-embed="1"] .pod-head .title { font-size: 13px; letter-spacing: .04em; }
+html[data-embed="1"] .pod-head .icon-btn { opacity: .5; }
+html[data-embed="1"] .pod-head .icon-btn:hover { opacity: 1; }
+
+/* 主体：球居中 */
+html[data-embed="1"] .pod-body {
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  gap: 0;
+}
+html[data-embed="1"] .empty {
+  align-items: center;
+  text-align: center;
+  gap: 0;
+}
+
+/* 大圆球：主视觉 */
+html[data-embed="1"] .empty-orb {
+  width: clamp(140px, 34vh, 210px);
+  height: clamp(140px, 34vh, 210px);
+  margin: 0 0 22px;
+  border: 0;
+  background: radial-gradient(circle at 50% 38%, #ffffff 0%, var(--accent-weak) 46%, var(--accent) 130%);
+  box-shadow: 0 18px 48px -18px rgba(17, 106, 91, .45), inset 0 0 0 1px rgba(255, 255, 255, .5);
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+html[data-embed="1"] .empty-orb::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-weak);
+  opacity: .7;
+}
+html[data-embed="1"] .empty-orb { position: relative; }
+html[data-embed="1"] .empty-title {
+  font-size: 17px; line-height: 26px; font-weight: 600;
+  color: var(--ink);
+}
+html[data-embed="1"] .empty-hint {
+  margin-top: 6px; font-size: 13px; line-height: 21px; color: var(--muted);
+}
+
+/* 通话中：球按语音节奏呼吸 */
+html[data-embed="1"] #pod[data-state="live"] .empty-orb {
+  animation: orb-breathe 2.6s ease-in-out infinite;
+}
+@keyframes orb-breathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 18px 48px -18px rgba(17, 106, 91, .45), inset 0 0 0 1px rgba(255,255,255,.5); }
+  50% { transform: scale(1.045); box-shadow: 0 22px 60px -16px rgba(17, 106, 91, .62), inset 0 0 0 1px rgba(255,255,255,.7); }
+}
+
+/* 底部：状态 + 圆形主按钮，像手机上的那颗麦克风 */
+html[data-embed="1"] .pod-foot {
+  flex: 0 0 auto;
+  border-top: 0;
+  background: transparent;
+  padding: 0 24px 28px;
+  align-items: center;
+  gap: 12px;
+}
+html[data-embed="1"] .pod-foot .status {
+  font-size: 12px; color: var(--muted); letter-spacing: .04em;
+}
+html[data-embed="1"] .call-btn {
+  width: clamp(64px, 9vh, 76px);
+  height: clamp(64px, 9vh, 76px);
+  border-radius: 50%;
+  padding: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  box-shadow: 0 14px 32px -12px rgba(17, 106, 91, .7);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+html[data-embed="1"] .call-btn:hover { transform: translateY(-1px); box-shadow: 0 18px 38px -12px rgba(17, 106, 91, .78); }
+html[data-embed="1"] .call-btn:active { transform: scale(.97); }
+html[data-embed="1"] .call-btn #callLabel { display: none; }
+html[data-embed="1"] .call-btn .call-icon { font-size: 26px; line-height: 1; }
+html[data-embed="1"] .call-btn[data-state="live"] { background: var(--danger, #c84d3f); }
+html[data-embed="1"] .foot-row { gap: 10px; }
+html[data-embed="1"] .foot-row .hint { font-size: 11px; color: var(--muted); opacity: .7; }
+
+/* 生产概况在语音页里变成一条窄卡片，不抢球的视觉 */
+html[data-embed="1"] .briefing {
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+/* —— 深色主题下的语音球：深底上要发光，不能只是一圈浅描边 —— */
+html[data-theme="dark"][data-embed="1"] .empty-orb {
+  background: radial-gradient(circle at 50% 36%, #7fd6c2 0%, #2f8f7c 42%, #123a33 100%);
+  box-shadow: 0 24px 64px -20px rgba(88, 176, 158, .55), inset 0 0 40px rgba(255, 255, 255, .06);
+}
+html[data-theme="dark"][data-embed="1"] .empty-orb::after {
+  border-color: rgba(88, 176, 158, .35);
+}
+
+/* 主按钮必须是正圆：不设 flex:none 时会被 flex 拉伸成胶囊 */
+html[data-embed="1"] .call-btn {
+  flex: 0 0 auto;
+  aspect-ratio: 1 / 1;
+  width: clamp(64px, 9vh, 76px) !important;
+  height: clamp(64px, 9vh, 76px) !important;
+  min-width: 0;
+  border-radius: 50% !important;
+}
+html[data-embed="1"] .pod-foot { justify-content: center; }
+html[data-embed="1"] .pod-foot .status { text-align: center; width: 100%; }
+html[data-embed="1"] .foot-row { justify-content: center; width: 100%; }
+
+/* 终版微调：球与文案、文案与按钮之间收一点，底部留白不过分 */
+html[data-embed="1"] .empty-orb { margin-bottom: 18px; }
+html[data-embed="1"] .empty-title { font-size: 16px; line-height: 24px; }
+html[data-embed="1"] .empty-hint { margin-top: 4px; font-size: 12px; line-height: 19px; opacity: .8; }
+html[data-embed="1"] .pod-foot { padding: 0 24px 18px; gap: 8px; }
+html[data-embed="1"] .pod-foot .status { margin-bottom: 2px; }
+
+/* 嵌入到工作台/悬浮球面板里时，外层已有标题栏：
+   隐藏语音窗自己的标题条，避免「语音助手 / 小缔 · 语音」两层标题。 */
+html[data-embed="1"] .pod-head { display: none; }
+html[data-embed="1"] .pod-body { padding-top: 12px; }

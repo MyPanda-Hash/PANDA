@@ -26,6 +26,12 @@ class GroupMemberResponse(BaseModel):
     username: str
     role: str
     joined_at: datetime
+    # 组织归属取自 MES（员工在哪个部门、什么岗位）。取不到时是空值，
+    # 前端显示「未分配部门」，绝不因为查不到部门就让成员列表失败。
+    dept_id: int | None = None
+    dept_name: str = ""
+    dept_path: str = ""
+    position: str = ""
 
 
 class GroupSummaryResponse(BaseModel):
@@ -143,3 +149,37 @@ class DirectoryUserResponse(BaseModel):
     avatar_url: str | None = None
     username: str
     email: str | None = None
+    # 邀请成员时要能看清「这个人是哪个部门的」，免得同名/同角色选错。
+    dept_id: int | None = None
+    dept_name: str = ""
+    dept_path: str = ""
+    position: str = ""
+
+
+class OrgDepartmentResponse(BaseModel):
+    """人力地图上的一个部门节点。"""
+
+    id: int
+    parent_id: int = 0
+    name: str = ""
+    path: str = ""
+    depth: int = 0
+    sort: int = 0
+    member_ids: list[str] = []
+
+
+class OrgMemberFields(BaseModel):
+    """成员在组织里的位置（部门 + 岗位）。"""
+
+    dept_id: int | None = None
+    dept_name: str = ""
+    dept_path: str = ""
+    position: str = ""
+
+
+class OrgMapResponse(BaseModel):
+    """群的人力地图：部门树上挂成员，另有未分配名单。"""
+
+    departments: list[OrgDepartmentResponse] = []
+    unassigned: list[str] = []
+    members: dict[str, OrgMemberFields] = {}

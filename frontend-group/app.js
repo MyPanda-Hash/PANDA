@@ -2,8 +2,18 @@
 // 全部数据走 /api/*，由 serve-ai-web.mjs 反代到 FastAPI。
 
 import { concatChunks, encodeWav, resampleTo } from './audio-wav.js';
+import {
+  ASSISTANT_LABEL,
+  UNASSIGNED_LABEL,
+  buildOrgTree,
+  deptLine,
+  groupByDeptPath,
+} from './org-view.js';
 
-const API = '/api';
+// 合并到 MES 同源后，群聊页可能挂在 /ai/group/ 下：
+// 此时接口要走 /ai-api（MES 反代到 AI 后端），直接写 /api 会打到 MES 自己身上。
+// 用路径前缀判断，同构建产物两种部署都成立。
+const API = window.location.pathname.startsWith('/ai/') ? '/ai-api' : '/api';
 const POLL_MS = 5000;
 
 const state = {
@@ -27,6 +37,10 @@ const state = {
   readUpToId: null,
   ackedFilter: 'any',     // any / none / me / others
   assigneeFilter: '',     // '' 或用户名
+  orgMap: null,           // 人力地图：MES 部门树 + 成员归属（接口不可用时为 null）
+  memberView: localStorage.getItem('group.memberView') === 'list' ? 'list' : 'map',
+  // 组织架构树里被手动折叠的部门（记住这一个人的看法，不写服务端）
+  orgCollapsed: new Set(JSON.parse(localStorage.getItem('group.orgCollapsed') || '[]')),
   facets: null,
   staffTab: 'profiles',
   staffSelected: null,
@@ -50,8 +64,20 @@ class ApiError extends Error {
   }
 }
 
+/** MES 是唯一身份源：同源时要显式带上它的 token，否则 /auth/me 一律 401。 */
+function mesToken() {
+  try {
+    const value = localStorage.getItem('mes_token');
+    return value && value !== 'undefined' ? value : '';
+  } catch (_) {
+    return '';
+  }
+}
+
 async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
+  const token = mesToken();
+  if (token) headers.Authorization = 'Bearer ' + token;
   let body = options.body;
   if (body && !(body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';
@@ -97,7 +123,7 @@ function initials(name) {
 function avatarNode(className, name, url, { ai = false } = {}) {
   const node = el('span', className);
   if (ai) {
-    node.classList.add(`${className}--ai`);
+    node.classList.add(`${String(className).split(' ')[0]}--ai`);
     node.textContent = 'AI';
     return node;
   }
@@ -144,7 +170,10 @@ async function boot() {
     state.me = await api('/auth/me');
   } catch (error) {
     if (error.status === 401) {
-      window.location.replace('/chat');
+      // 同源部署下 /chat 打到 MES 会被 SPA fallback 成整个 MES 页面（MES 套 MES）；
+      // 必须指回工作台自己的对话页。
+      const chatUrl = location.pathname.startsWith('/ai/') ? '/ai/#/chat' : '/chat';
+      window.location.replace(chatUrl);
       return;
     }
     toast(error.message);
@@ -260,8 +289,17 @@ async function selectGroup(groupId) {
   renderGroups();
   try {
     state.detail = await api(`/groups/${groupId}`);
+    // 人力地图是独立接口：组织数据取不到也要把群聊正常打开，只是没有部门分组
+    try {
+      state.orgMap = await api(`/groups/${groupId}/org-map`);
+    } catch (error) {
+      state.orgMap = null;
+    }
     const listed = await api(`/groups/${groupId}/messages?limit=80`);
     state.messages = listed.messages || [];
+    // 首屏拉了 80 条：满页说明上面还有，给「加载更早」入口
+    state.hasMoreHistory = (listed.messages || []).length >= 80;
+    state.loadingHistory = false;
     state.latestId = listed.latest_message_id || null;
     state.unreadFromId = listed.unread_from_id || null;
     state.readUpToId = listed.read_up_to_id || null;
@@ -304,19 +342,178 @@ function renderRoom() {
   if (analyze) analyze.hidden = archived;
 }
 
-function renderMembers() {
-  const list = $('memberList');
-  list.innerHTML = '';
-  for (const member of (state.detail && state.detail.members) || []) {
-    const row = el('li', 'member-row');
-    row.appendChild(avatarNode('member-avatar', member.display_name, member.avatar_url,
-      { ai: member.role === 'assistant' }));
-    row.appendChild(el('span', null, member.display_name));
-    if (member.role === 'assistant') row.classList.add('member-row--ai');
+/**
+ * 成员行：头像 + 姓名 + 可选副标题（部门/岗位）+ 群角色。
+ * 副标题由调用方决定：平铺看部门，人力地图里部门已在分组标题上、这里只补岗位。
+ */
+function memberRow(member, sub, { compact = false } = {}) {
+  const row = el('li', compact ? 'member-row member-row--compact' : 'member-row');
+  if (member.role === 'assistant') row.classList.add('member-row--ai');
+  row.appendChild(
+    avatarNode('member-avatar', member.display_name, member.avatar_url, {
+      ai: member.role === 'assistant',
+    }),
+  );
+  const main = el('span', 'member-row__main');
+  main.appendChild(el('span', 'member-row__name', member.display_name));
+  if (sub) {
+    const line = el('span', 'member-row__dept', sub);
+    if (member.dept_path) line.title = member.dept_path;
+    main.appendChild(line);
+  }
+  row.appendChild(main);
+  // 树里只在「不是普通成员」时给角色标：一排「成员」标签只是噪音
+  if (!compact || member.role !== 'member') {
     const role = el('span', 'member-row__role', roleLabel(member.role));
     role.dataset.role = member.role;
     row.appendChild(role);
-    list.appendChild(row);
+  }
+  return row;
+}
+
+// 折叠箭头用设计库里的 CaretRightFilled / CaretDownFilled（assets/icons/filled/）
+const CARET_PATH =
+  'M715.8 493.5L335 165.1c-14.2-12.2-35-1.2-35 18.5v656.8c0 19.7 20.8 30.7 35 18.5l380.8-328.4c10.9-9.4 10.9-27.6 0-37z';
+
+// 部门图标：设计库 ApartmentOutlined（assets/icons/outlined/apartment.svg）
+const DEPT_ICON_PATH =
+  'M908 640H804V488c0-4.4-3.6-8-8-8H548v-96h108c8.8 0 16-7.2 16-16V80c0-8.8-7.2-16-16-16H368c-8.8 0-16 7.2-16 16v288c0 8.8 7.2 16 16 16h108v96H228c-4.4 0-8 3.6-8 8v152H116c-8.8 0-16 7.2-16 16v288c0 8.8 7.2 16 16 16h288c8.8 0 16-7.2 16-16V656c0-8.8-7.2-16-16-16H292v-88h440v88H620c-8.8 0-16 7.2-16 16v288c0 8.8 7.2 16 16 16h288c8.8 0 16-7.2 16-16V656c0-8.8-7.2-16-16-16zm-564 76v168H176V716h168zm84-408V140h168v168H428zm420 576H680V716h168v168z';
+
+function svgIcon(path, className, size = 12) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', path.viewBox);
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('class', className);
+  const node = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  node.setAttribute('d', path.d);
+  svg.appendChild(node);
+  return svg;
+}
+
+function caretNode(open) {
+  const span = el('span', open ? 'org-row__switcher is-open' : 'org-row__switcher');
+  span.appendChild(svgIcon({ viewBox: '0 0 1024 1024', d: CARET_PATH }, 'org-row__caret', 8));
+  return span;
+}
+
+/**
+ * 组织架构树的一个部门节点，按设计库 Tree(showLine) 的语义画：
+ * 左侧折叠箭头 + 缩进连线 + 名称，人数右对齐、tabular-nums。
+ * 人数是含下级的合计，父部门才看得出「这个体系一共几个人」。
+ */
+function orgTreeNode(node) {
+  const key = String(node.id);
+  const collapsed = state.orgCollapsed.has(key);
+  const expandable = node.children.length > 0 || node.members.length > 0;
+
+  const wrap = el('div', 'org-tree__node');
+  if (node.total === 0) wrap.classList.add('is-empty');
+  const row = el('button', 'org-tree__row');
+  row.type = 'button';
+  row.setAttribute('role', 'treeitem');
+  row.setAttribute('aria-level', String(node.depth + 1));
+  row.setAttribute('aria-expanded', expandable ? String(!collapsed) : 'false');
+  if (expandable) {
+    row.classList.add('is-toggle');
+    if (!collapsed) row.classList.add('is-open');
+    row.appendChild(caretNode(!collapsed));
+    row.addEventListener('click', () => {
+      if (state.orgCollapsed.has(key)) state.orgCollapsed.delete(key);
+      else state.orgCollapsed.add(key);
+      localStorage.setItem('group.orgCollapsed', JSON.stringify([...state.orgCollapsed]));
+      renderOrgMap();
+    });
+  } else {
+    row.appendChild(el('span', 'org-row__switcher org-row__switcher--leaf'));
+    row.disabled = true;
+  }
+  row.appendChild(svgIcon({ viewBox: '64 64 896 896', d: DEPT_ICON_PATH }, 'org-tree__icon', 12));
+  const name = el('span', 'org-tree__name', node.name);
+  if (node.path) name.title = node.path;
+  row.appendChild(name);
+  row.appendChild(el('span', 'org-tree__count', String(node.total)));
+  wrap.appendChild(row);
+
+  if (expandable && !collapsed) {
+    const body = el('div', 'org-tree__children');
+    // 先列本部门的人，再列下级单位：反过来的话，最后一个子部门会把人「认领」走
+    if (node.members.length) {
+      const leaves = el('ul', 'org-tree__leaves');
+      for (const member of node.members) {
+        leaves.appendChild(memberRow(member, member.position || '', { compact: true }));
+      }
+      body.appendChild(leaves);
+    }
+    for (const child of node.children) body.appendChild(orgTreeNode(child));
+    wrap.appendChild(body);
+  }
+  return wrap;
+}
+
+/** 常驻助手 / 未分配部门：不是部门节点，用一行小标签 + 成员列表。 */
+function orgFlatSection(name, rows) {
+  const wrap = el('section', 'org-section');
+  const head = el('div', 'org-section__head');
+  head.appendChild(el('span', 'org-section__name', name));
+  head.appendChild(el('span', 'org-section__count', String(rows.length)));
+  wrap.appendChild(head);
+  const list = el('ul', 'org-section__list');
+  for (const member of rows) {
+    list.appendChild(memberRow(member, member.position || '', { compact: true }));
+  }
+  wrap.appendChild(list);
+  return wrap;
+}
+
+function renderOrgMap() {
+  const members = (state.detail && state.detail.members) || [];
+  const orgMap = $('orgMap');
+  const tree = buildOrgTree(state.orgMap, members);
+  orgMap.innerHTML = '';
+  if (tree.assistants.length) orgMap.appendChild(orgFlatSection(ASSISTANT_LABEL, tree.assistants));
+  if (tree.roots.length) {
+    const wrap = el('div', 'org-tree');
+    wrap.setAttribute('role', 'tree');
+    for (const root of tree.roots) wrap.appendChild(orgTreeNode(root));
+    orgMap.appendChild(wrap);
+  }
+  if (tree.unassigned.length) {
+    orgMap.appendChild(orgFlatSection(UNASSIGNED_LABEL, tree.unassigned));
+  }
+}
+
+function renderMembers() {
+  const members = (state.detail && state.detail.members) || [];
+  const list = $('memberList');
+  list.innerHTML = '';
+  for (const member of members) {
+    list.appendChild(memberRow(member, member.role === 'assistant' ? '' : deptLine(member)));
+  }
+  renderOrgMap();
+  const empty = $('orgEmpty');
+  if (empty) {
+    empty.textContent =
+      members.length > 0 ? '' : '还没有成员。点右上角「邀请成员」把人拉进来。';
+  }
+  applyMemberView();
+}
+
+/** 人力地图 / 平铺 的显隐与按钮态；选择存在 state.memberView。 */
+function applyMemberView() {
+  const view = state.memberView === 'list' ? 'list' : 'map';
+  const orgMap = $('orgMap');
+  const list = $('memberList');
+  const empty = $('orgEmpty');
+  const members = (state.detail && state.detail.members) || [];
+  if (orgMap) orgMap.hidden = view !== 'map';
+  if (list) list.hidden = view !== 'list';
+  if (empty) empty.hidden = view !== 'map' || members.length > 0;
+  for (const button of document.querySelectorAll('.org-switch__btn')) {
+    const on = button.dataset.view === view;
+    button.classList.toggle('is-on', on);
+    button.setAttribute('aria-pressed', on ? 'true' : 'false');
   }
 }
 
@@ -369,18 +566,78 @@ function needTimeSeparator(prev, cur) {
   return b - a > 5 * 60 * 1000;
 }
 
-function renderMessages() {
+/**
+ * 瞬时滚到底。
+ *
+ * 消息流有 scroll-behavior: smooth，直接赋值 scrollTop 会变成平滑动画：
+ * 进群时先渲染 80 条再滚，用户看到的就是「从头一段段滑到最新」，很累。
+ * 这里临时关掉平滑，赋值后立刻还原，只影响这一次跳转。
+ */
+function jumpToBottom(node) {
+  if (!node) return;
+  const previous = node.style.scrollBehavior;
+  node.style.scrollBehavior = 'auto';
+  node.scrollTop = node.scrollHeight;
+  node.style.scrollBehavior = previous;
+}
+
+
+
+/**
+ * 消息流的渲染策略（2026-11-17 性能改造）。
+ *
+ * 原来的做法是「每次全量重建」：每 5 秒轮询到一条新消息，就 innerHTML 清空、
+ * 把全部历史重新构造一遍。实测 DOM 节点数到 1.3 万时单次重建已 60ms+，
+ * 而且 state.messages 只增不减，几个月就会进入明显卡顿区间。
+ *
+ * 现在两条策略：
+ * 1. **窗口化**：只渲染最近 WINDOW_SIZE 条，更早的用顶部「加载更早」按钮翻；
+ * 2. **增量**：轮询到新消息只 append，不重建已有节点。
+ */
+const WINDOW_SIZE = 200;
+const PAGE_SIZE = 50;
+
+/** 渲染一行消息并打上 id，供「补历史后锚回原位」使用。 */
+/** 群聊页自己的 window（app.js 就在这个文档里跑）。 */
+function gd() {
+  return typeof window === 'undefined' ? null : window;
+}
+
+
+function rowNode(message, prev) {
+  const node = renderMessage(message, prev);
+  if (message && message.id) node.dataset.msgId = message.id;
+  return node;
+}
+
+/** 当前视口顶部那条消息的 id（补历史前记下来，补完锚回去）。 */
+function firstVisibleId(stream) {
+  const top = stream.getBoundingClientRect().top;
+  for (const row of stream.querySelectorAll('[data-msg-id]')) {
+    if (row.getBoundingClientRect().top >= top - 1) return row.dataset.msgId;
+  }
+  return '';
+}
+/** 只在整体重排（切群 / 加载更早 / 需要重算分组）时调用。 */
+function renderMessages(options = {}) {
   const stream = $('stream');
   const atBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 48;
   stream.innerHTML = '';
-  if (!state.messages.length) {
+
+  const visible = state.messages.slice(-WINDOW_SIZE);
+  if (!visible.length) {
     stream.appendChild(el('p', 'empty', '还没有消息，说第一句吧。'));
     return;
   }
 
+  // 上面还有没加载/没显示的历史：给一个入口，而不是一次全画出来
+  if (state.hasMoreHistory) {
+    stream.appendChild(historyButton());
+  }
+
   let prev = null;
   let unreadMarked = false;
-  for (const message of state.messages) {
+  for (const message of visible) {
     if (needTimeSeparator(prev, message)) {
       stream.appendChild(el('div', 'time-sep', formatChatTime(message.created_at)));
     }
@@ -388,14 +645,130 @@ function renderMessages() {
       stream.appendChild(el('div', 'unread-divider', '以下为新消息'));
       unreadMarked = true;
     }
-    stream.appendChild(renderMessage(message, prev));
+    stream.appendChild(rowNode(message, prev));
     prev = message;
   }
 
-  if (atBottom) stream.scrollTop = stream.scrollHeight;
+  // keepScroll：往顶部补历史时由调用方自己补偿滚动位置，
+  // 这里再跳底就会把用户视线拽到最新一条（2026-11-17 实测踩到）。
+  if (!options.keepScroll && atBottom) jumpToBottom(stream);
 }
 
+/** 顶部「加载更早」按钮。 */
+function historyButton() {
+  const wrap = el('div', 'history-more');
+  const button = el('button', 'history-more__btn', state.loadingHistory ? '加载中…' : '加载更早消息');
+  button.type = 'button';
+  button.disabled = Boolean(state.loadingHistory);
+  button.addEventListener('click', () => {
+    loadHistory().catch(() => {});
+  });
+  wrap.appendChild(button);
+  return wrap;
+}
 
+/**
+ * 往顶部补一页历史。
+ *
+ * 补完要**保住视口**：用户正在看的位置不能因为顶插而跳动，
+ * 所以在插入前后补偿 scrollTop（新内容高度 = 插入后的 scrollHeight - 插入前的）。
+ */
+async function loadHistory() {
+  if (state.loadingHistory || !state.groupId || !state.messages.length) return;
+  const stream = $('stream');
+  state.loadingHistory = true;
+  try {
+    const firstId = state.messages[0].id;
+    const listed = await api(
+      `/groups/${state.groupId}/messages?before=${encodeURIComponent(firstId)}&limit=${PAGE_SIZE}`
+    );
+    const older = listed.messages || [];
+    if (!older.length) {
+      state.hasMoreHistory = false;
+      const btn = stream.querySelector('.history-more');
+      if (btn) btn.remove();
+      return;
+    }
+
+    state.messages = [...older, ...state.messages];
+    state.hasMoreHistory = older.length >= PAGE_SIZE;
+
+    // 用**前插**而不是整体重建：
+    // 整体重建（innerHTML 清空再画）会让滚动位置失去锚点，
+    // 而 insertBefore 前插时浏览器自己会保持视口（overflow-anchor），
+    // 用户视线停在原处，不需要手动补偿（实测前插后 scrollTop 自动 +2425）。
+    const frag = document.createDocumentFragment();
+    let prev = null;
+    for (const message of older) {
+      if (needTimeSeparator(prev, message)) {
+        frag.appendChild(el('div', 'time-sep', formatChatTime(message.created_at)));
+      }
+      frag.appendChild(rowNode(message, prev));
+      prev = message;
+    }
+    const before = stream.querySelector('.history-more');
+    if (before) stream.insertBefore(frag, before.nextSibling);
+    else stream.insertBefore(frag, stream.firstChild);
+
+    if (!state.hasMoreHistory && before) before.remove();
+
+    // 补完把视口带到新加载的那一段（就是顶部）。
+    // 必须同步关掉平滑再滚：CSS 的 scroll-behavior:smooth 会让赋值变动画，
+    // 异步补偿又会被轮询打断，同步瞬时是唯一稳定的做法。
+    const prevBehavior = stream.style.scrollBehavior;
+    stream.style.scrollBehavior = 'auto';
+    stream.scrollTop = 0;
+    stream.style.scrollBehavior = prevBehavior;
+
+
+  } catch (error) {
+    // 失败要能看见原因，不要静默吞掉
+    window.__historyError = {
+      message: String((error && error.message) || error),
+      stack: String((error && error.stack) || '').slice(0, 400),
+    };
+    toast(error.message);
+  } finally {
+    state.loadingHistory = false;
+  }
+}
+/**
+ * 增量追加：轮询到新消息时走这里，不碰已有节点。
+ *
+ * 前提：state.messages 的尾部就是「当前已渲染的最后一条」，所以可以直接续画；
+ * 如果这次拿到的比窗口还多（很久没轮询），退回整体重排一次。
+ */
+function appendMessages(fresh) {
+  const stream = $('stream');
+  const atBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 48;
+
+  // 空态占位要清掉，否则新消息会接在「还没有消息」下面
+  const empty = stream.querySelector('.empty');
+  if (empty) empty.remove();
+
+  const before = state.messages.length - fresh.length;
+  let prev = before > 0 ? state.messages[before - 1] : null;
+  let unreadMarked = Boolean(stream.querySelector('.unread-divider'));
+
+  for (const message of fresh) {
+    if (needTimeSeparator(prev, message)) {
+      stream.appendChild(el('div', 'time-sep', formatChatTime(message.created_at)));
+    }
+    if (!unreadMarked && state.unreadFromId && message.id === state.unreadFromId) {
+      stream.appendChild(el('div', 'unread-divider', '以下为新消息'));
+      unreadMarked = true;
+    }
+    stream.appendChild(rowNode(message, prev));
+    prev = message;
+  }
+
+  // 超出窗口就整体重排一次（偶尔发生，成本可接受）
+  if (state.messages.length > WINDOW_SIZE * 2) {
+    renderMessages();
+    return;
+  }
+  if (atBottom) jumpToBottom(stream);
+}
 /**
  * AI 消息的结构化渲染。
  *
@@ -597,10 +970,16 @@ async function pollMessages() {
     const query = state.latestId ? `?after=${encodeURIComponent(state.latestId)}` : '?limit=80';
     const listed = await api(`/groups/${state.groupId}/messages${query}`);
     if (!listed.messages || !listed.messages.length) return;
-    state.messages = state.latestId ? [...state.messages, ...listed.messages] : listed.messages;
+    if (state.latestId) {
+      // 增量续画：只 append 新来的，不重建已渲染的节点
+      state.messages = [...state.messages, ...listed.messages];
+      appendMessages(listed.messages);
+    } else {
+      state.messages = listed.messages;
+      renderMessages();
+    }
     state.latestId = listed.latest_message_id || state.latestId;
     state.unreadFromId = listed.unread_from_id || state.unreadFromId;
-    renderMessages();
     reportRead();
   } catch {
     /* 轮询失败不打扰用户 */
@@ -632,7 +1011,7 @@ async function sendMessage(event) {
     state.latestId = created.id;
     renderMessages();
     // 服务端会在命中「问项目情况 / @AI」时自己让助手接话，这里只负责把它拉回来
-    $('stream').scrollTop = $('stream').scrollHeight;
+    jumpToBottom($('stream'));
     $('composerHint').textContent = 'AI 正在看…';
     scheduleFastPoll();
     setTimeout(() => {
@@ -1305,7 +1684,7 @@ async function loadEvents({ silent = true } = {}) {
   // 只有「需要处理/紧急」才主动弹窗，普通提示只亮铃铛，避免打断输入
   if (urgent && !silent && !$('dialogEvents').open && !state.recording) {
     renderEvents();
-    $('dialogEvents').showModal();
+    openSheet($('dialogEvents'));
   }
 }
 
@@ -1544,13 +1923,252 @@ async function loadHealth() {
   $('healthSla').textContent = parts.join(' · ');
 }
 
+/**
+ * 待办弹层：类 macOS 窗口（可拖动 / 可缩放 / 可固定 / 双击标题栏最大化）。
+ *
+ * 为什么不是 showModal()：模态会吞掉页面交互、还带一层遮罩，和「像页面一样
+ * 随手拖到旁边边看边操作」冲突。这里用非模态 show()，位置与尺寸自己管，
+ * 关掉只走动画（原生 dialog 一 close() 就 display:none，看不到收起过程）。
+ */
+const SHEET_ANIM_MS = 360;
+const SHEET_KEY = "group.eventsSheet";
+const SHEET_MIN = { w: 420, h: 340 };
+
+function sheetSaved() {
+  try {
+    return JSON.parse(localStorage.getItem(SHEET_KEY) || "null") || {};
+  } catch {
+    return {};
+  }
+}
+
+function sheetSave(patch) {
+  const next = { ...sheetSaved(), ...patch };
+  localStorage.setItem(SHEET_KEY, JSON.stringify(next));
+  return next;
+}
+
+/** 默认落在右上角（铃铛那一侧），留出顶栏高度。 */
+function sheetDefaultRect() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  // 手机上不做浮窗：铺满可视宽度，留出顶栏和底部安全边
+  if (vw < 640) {
+    return { left: 8, top: 56, width: vw - 16, height: vh - 72 };
+  }
+  const width = Math.min(560, vw - 32);
+  const height = Math.min(760, vh - 120);
+  return { left: Math.max(16, vw - width - 24), top: 64, width, height };
+}
+
+/**
+ * 夹在视口内：整窗（含右下角的缩放手柄）必须可见。
+ * 只夹左上角是不够的——拖动/缩放后右下角跑出屏幕，手柄就点不到了。
+ */
+function sheetClampRect(rect) {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  // 视口比最小尺寸还窄时（手机），最小尺寸跟着视口让路，不能撑出屏幕
+  const maxW = Math.max(240, vw - 16);
+  const maxH = Math.max(240, vh - 16);
+  const width = Math.max(Math.min(SHEET_MIN.w, maxW), Math.min(Math.round(rect.width), maxW));
+  const height = Math.max(Math.min(SHEET_MIN.h, maxH), Math.min(Math.round(rect.height), maxH));
+  const maxLeft = Math.max(8, vw - width - 8);
+  const maxTop = Math.max(8, vh - height - 8);
+  const left = Math.min(Math.max(rect.left, 8), maxLeft);
+  const top = Math.min(Math.max(rect.top, 8), maxTop);
+  return { left: Math.round(left), top: Math.round(top), width, height };
+}
+
+function sheetRectOf(dialog = $("dialogEvents")) {
+  const r = dialog.getBoundingClientRect();
+  return { left: r.left, top: r.top, width: r.width, height: r.height };
+}
+
+function sheetApplyRect(rect) {
+  const dialog = $("dialogEvents");
+  const safe = sheetClampRect(rect);
+  dialog.style.left = `${safe.left}px`;
+  dialog.style.top = `${safe.top}px`;
+  dialog.style.width = `${safe.width}px`;
+  dialog.style.height = `${safe.height}px`;
+  return safe;
+}
+
+function sheetPinned() {
+  return sheetSaved().pinned === true;
+}
+
+function sheetSetPinned(on) {
+  sheetSave({ pinned: on });
+  const button = $("btnEventsPin");
+  if (!button) return;
+  button.setAttribute("aria-pressed", String(on));
+  button.title = on ? "已固定：点页面别处不收起" : "固定窗口（点页面别处不收起）";
+}
+
+function openSheet(dialog) {
+  if (!dialog || dialog.open) return;
+  const saved = sheetSaved();
+  // 手机直接铺满，桌面才沿用上次拖好的位置
+  const geom = saved.width && window.innerWidth >= 640 ? saved : sheetDefaultRect();
+  dialog.classList.remove("is-closing");
+  sheetApplyRect(geom);           // 先定位再显示，避免从屏幕中间跳过来
+  dialog.show();                   // 非模态：页面还能点
+  dialog.classList.add("is-opening");
+  sheetSetPinned(saved.pinned === true);
+  const settle = () => {
+    dialog.classList.remove("is-opening");
+    dialog.removeEventListener("animationend", settle);
+  };
+  dialog.addEventListener("animationend", settle);
+  setTimeout(settle, SHEET_ANIM_MS + 120);
+  // 侧栏「待办」按钮和角落的关闭按钮共用同一套关闭逻辑
+}
+
+function closeSheet(dialog) {
+  if (!dialog || !dialog.open || dialog.classList.contains("is-closing")) return;
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    dialog.removeEventListener("animationend", finish);
+    dialog.classList.remove("is-closing");
+    if (dialog.open) dialog.close();
+  };
+  dialog.classList.add("is-closing");
+  dialog.addEventListener("animationend", finish);
+  setTimeout(finish, SHEET_ANIM_MS);
+}
+
+/** 拖动标题栏移动窗口。 */
+function sheetBeginDrag(event) {
+  if (event.button !== 0) return;
+  const dialog = $("dialogEvents");
+  const start = sheetRectOf(dialog);
+  const origin = { x: event.clientX, y: event.clientY };
+  document.body.classList.add("sheet-dragging");
+  const move = (ev) => {
+    sheetApplyRect({
+      ...start,
+      left: start.left + ev.clientX - origin.x,
+      top: start.top + ev.clientY - origin.y,
+    });
+  };
+  const up = () => {
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", up);
+    document.body.classList.remove("sheet-dragging");
+    const rect = sheetRectOf(dialog);
+    sheetSave({ ...rect, maximized: false });
+  };
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", up);
+}
+
+/** 八向缩放（macOS 窗口的四边四角）。 */
+function sheetBeginResize(event, dir) {
+  if (event.button !== 0) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const dialog = $("dialogEvents");
+  const start = sheetRectOf(dialog);
+  const origin = { x: event.clientX, y: event.clientY };
+  document.body.classList.add("sheet-resizing");
+  const move = (ev) => {
+    const dx = ev.clientX - origin.x;
+    const dy = ev.clientY - origin.y;
+    let left = start.left;
+    let top = start.top;
+    let width = start.width;
+    let height = start.height;
+    if (dir.includes("e")) width = start.width + dx;
+    if (dir.includes("s")) height = start.height + dy;
+    if (dir.includes("w")) width = start.width - dx;
+    if (dir.includes("n")) height = start.height - dy;
+    const applied = sheetApplyRect({ left, top, width, height });
+    // 往左/上拉时，被夹住的那一段要回推左上角，否则窗口会自己漂移
+    if (dir.includes("w")) left = start.left + start.width - applied.width;
+    if (dir.includes("n")) top = start.top + start.height - applied.height;
+    if (dir.includes("w") || dir.includes("n")) sheetApplyRect({ left, top, width: applied.width, height: applied.height });
+  };
+  const up = () => {
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", up);
+    document.body.classList.remove("sheet-resizing");
+    sheetSave({ ...sheetRectOf(dialog), maximized: false });
+  };
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", up);
+}
+
+/** 双击标题栏：最大化 / 还原（macOS 的 zoom）。 */
+function sheetToggleMaximize() {
+  const dialog = $("dialogEvents");
+  const saved = sheetSaved();
+  if (saved.maximized) {
+    sheetApplyRect(saved.restore || sheetDefaultRect());
+    sheetSave({ maximized: false });
+    return;
+  }
+  const restore = sheetRectOf(dialog);
+  sheetSave({ maximized: true, restore });
+  sheetApplyRect({ left: 8, top: 8, width: window.innerWidth - 16, height: window.innerHeight - 16 });
+}
+
+/** 弹层的窗口行为：拖标题栏、八向缩放、固定、双击最大化、点外部收起。 */
+function bindSheetWindow() {
+  const dialog = $('dialogEvents');
+  const bar = $('eventsBar');
+  const pin = $('btnEventsPin');
+  const closeTop = $('btnEventsClose');
+
+  closeTop.addEventListener('click', () => closeSheet(dialog));
+
+  pin.addEventListener('click', () => sheetSetPinned(!sheetPinned()));
+
+  bar.addEventListener('pointerdown', (event) => {
+    // 标题栏上的按钮不触发拖动
+    if (event.target.closest('button')) return;
+    sheetBeginDrag(event);
+  });
+  bar.addEventListener('dblclick', (event) => {
+    if (event.target.closest('button')) return;
+    sheetToggleMaximize();
+  });
+
+  for (const handle of dialog.querySelectorAll('.sheet__resize')) {
+    handle.addEventListener('pointerdown', (event) => sheetBeginResize(event, handle.dataset.resize || 'se'));
+  }
+
+  // 点页面别处收起；固定住（图钉按下）时不动
+  document.addEventListener('pointerdown', (event) => {
+    if (!dialog.open || sheetPinned()) return;
+    if (dialog.contains(event.target)) return;
+    if (event.target.closest('#btnBell')) return;
+    closeSheet(dialog);
+  });
+
+  // 非模态 dialog 不触发 cancel，Esc 自己接
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !dialog.open) return;
+    event.preventDefault();
+    closeSheet(dialog);
+  });
+
+  // 视口变小（旋转 / 分屏）时把窗口夹回可见区
+  window.addEventListener('resize', () => {
+    if (dialog.open) sheetApplyRect(sheetRectOf(dialog));
+  });
+}
+
 async function openEvents() {
   await loadEvents({ silent: false });
   await loadHealth();
   renderFilters();
   renderEvents();
   loadStats();
-  $('dialogEvents').showModal();
+  openSheet($('dialogEvents'));
 }
 
 // ---------------- 表情 / @ / 右键菜单 / 已读 ----------------
@@ -2170,19 +2788,30 @@ async function searchDirectory(query) {
   list.innerHTML = '';
   const rows = await api(`/groups/directory-users?q=${encodeURIComponent(query || '')}`);
   const inGroup = new Set(((state.detail && state.detail.members) || []).map((item) => item.user_id));
-  for (const user of rows) {
-    const row = el('li', 'member-row');
-    row.appendChild(el('span', 'msg__avatar', initials(user.display_name)));
-    row.appendChild(el('span', null, `${user.display_name}（${user.username}）`));
-    if (inGroup.has(user.id)) {
-      row.appendChild(el('span', 'member-row__role', '已加入'));
-    } else {
-      const add = el('button', 'btn btn--ghost', '邀请');
-      add.type = 'button';
-      add.addEventListener('click', () => invite(user.id));
-      row.appendChild(add);
+  // 按部门分组：同名同角色的人靠部门才分得清，这也是「邀请不够清晰」的主因
+  for (const group of groupByDeptPath(rows)) {
+    const head = el('li', 'invite-group__head');
+    head.appendChild(el('span', 'invite-group__name', group.label));
+    head.appendChild(el('span', 'invite-group__count', String(group.members.length)));
+    list.appendChild(head);
+    for (const user of group.members) {
+      const row = el('li', 'member-row');
+      row.appendChild(el('span', 'msg__avatar', initials(user.display_name)));
+      const main = el('span', 'member-row__main');
+      main.appendChild(el('span', 'member-row__name', `${user.display_name}（${user.username}）`));
+      const sub = [user.dept_name, user.position].filter(Boolean).join(' · ');
+      if (sub) main.appendChild(el('span', 'member-row__dept', sub));
+      row.appendChild(main);
+      if (inGroup.has(user.id)) {
+        row.appendChild(el('span', 'member-row__role', '已加入'));
+      } else {
+        const add = el('button', 'btn btn--ghost', '邀请');
+        add.type = 'button';
+        add.addEventListener('click', () => invite(user.id));
+        row.appendChild(add);
+      }
+      list.appendChild(row);
     }
-    list.appendChild(row);
   }
   if (!rows.length) list.appendChild(el('li', 'empty', '没有匹配的账号'));
 }
@@ -2194,6 +2823,11 @@ async function invite(userId) {
       method: 'POST',
       body: { user_id: userId, role: 'member' },
     });
+    try {
+      state.orgMap = await api(`/groups/${state.groupId}/org-map`);
+    } catch (error) {
+      // 组织接口不可用时保留原图，成员本身已经进群了
+    }
     renderRoom();
     renderMembers();
     await searchDirectory($('inviteSearch').value);
@@ -2325,8 +2959,13 @@ function bindEvents() {
     clearTimeout(loadStaff.timer);
     loadStaff.timer = setTimeout(() => loadStaff().catch(() => {}), 250);
   });
-  $('btnBell').addEventListener('click', openEvents);
-  $('btnEventsClose').addEventListener('click', () => $('dialogEvents').close());
+  // 铃铛是开关：开着再点就收起，而不是「什么都没发生」
+  $('btnBell').addEventListener('click', () => {
+    const dialog = $('dialogEvents');
+    if (dialog.open) closeSheet(dialog);
+    else openEvents();
+  });
+  bindSheetWindow();
   $('btnMicClose').addEventListener('click', () => $('dialogMic').close());
   $('btnMicRetry').addEventListener('click', async () => {
     $('dialogMic').close();
@@ -2339,6 +2978,15 @@ function bindEvents() {
 
   document.querySelectorAll('.tab').forEach((tab) => {
     tab.addEventListener('click', () => showTab(tab.dataset.tab));
+  });
+
+  // 成员视图：人力地图 / 平铺，选择记在本地，下次打开还是同一种看法
+  document.querySelectorAll('.org-switch__btn').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.memberView = button.dataset.view === 'list' ? 'list' : 'map';
+      localStorage.setItem('group.memberView', state.memberView);
+      applyMemberView();
+    });
   });
 
   const draftEl = $('draft');

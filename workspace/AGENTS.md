@@ -129,5 +129,9 @@ curl -s http://127.0.0.1:8000/health
 ## 谨慎区域
 
 - `_scratch/` 是浏览器实测产物（截图、探针脚本），不是源码，不要索引或改动。
-- `doc-nexus-ai/frontend/` 只有构建产物 `dist/`，**没有前端源码**；改 AI 界面要回原仓库。
+- **AI 侧界面分两处，「能不能改」取决于改哪处**：
+  - `doc-nexus-ai/frontend/` 只有构建产物 `dist/`，**没有前端源码**；主应用界面要改回原仓库。
+  - `doc-nexus-ai/frontend-group/` 是**群聊页的源码**（原生 ES 模块 + CSS，无构建步骤），
+    由根目录 `serve-ai-web.mjs` 按文件直接提供，改完刷新即生效（`cache-control: no-cache`，
+    不用强刷）。群聊、成员面板、待办事件弹层都在这里改。
 - 凭据在根目录 `.env.local` 与 `doc-nexus-ai/.env`，不进 git、不回显。

@@ -26,6 +26,8 @@ from app.models.chat import (
     ChatSession,
     ChatSessionPublication,
 )
+from app.models.chat_archive import ChatArchiveSession
+from app.models.library import LibraryFile
 from app.models.chat_deck_render import ChatDeckRender
 from app.models.chat_control import ChatControlOperation
 from app.models.chat_search import (
@@ -38,6 +40,7 @@ from app.models.document_uploads import DocumentUploadSession
 from app.models.document_pages import DocumentPage, DocumentPageBlock
 from app.models.external_object_cleanup import ExternalObjectCleanupOutbox
 from app.models.employee_profile import EmployeeProfile, ProjectExperience
+from app.models.session_memory import SessionMemory
 from app.models.inapp_notification import InappNotification
 from app.models.rule_threshold import RuleThresholdChange
 from app.models.execution_admission import (

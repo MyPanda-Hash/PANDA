@@ -237,6 +237,11 @@ class Settings(BaseSettings):
     # ---- MES 单点登录（免密进场）----
     # light-mes 用同一密钥签发 60 秒票据，本服务验签后直接建立会话。
     # 留空 = 关闭，GET /api/auth/mes-sso 返回 401。
+    # MES 与 AI 合并成一套账号体系后，AI 直接验 MES 签发的 JWT（HS256，同一密钥）。
+    # 注意别名：本类统一加 DOC_NEXUS_ 前缀，而这个密钥是 MES 与 AI 共用的既有变量，
+    # 名字必须还是 MES_JWT_SECRET，否则两边对不上。
+    # 留空时回落到原来的 ticket/自建会话路径，保证老部署还能起来。
+    mes_jwt_secret: str = Field(default="", validation_alias="MES_JWT_SECRET")
     mes_sso_secret: str = ""
     mes_sso_redirect: str = "/chat"
 
@@ -269,6 +274,38 @@ class Settings(BaseSettings):
     mes_watch_password: str = Field(
         default="",
         validation_alias=AliasChoices("MES_WATCH_PASSWORD", "DOC_NEXUS_MES_WATCH_PASSWORD"),
+    )
+
+    # ---- 联网检索 ----------------------------------------------------------
+    # 为什么不用 DeepSeek 的 key 做搜索：它的 API 没有搜索能力（没有内置搜索工具，
+    # enable_search 参数会被静默忽略），联网只在官方 App/网页版里有。
+    # 这里用阿里云百炼的搜索增强（qwen + enable_search），实测能返回带来源的结论。
+    search_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("SEARCH_API_KEY", "LOCAL_VLM_API_KEY"),
+    )
+    search_api_url: str = Field(
+        default="https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation",
+        validation_alias=AliasChoices("SEARCH_API_URL"),
+    )
+    # AnySearch：给 AI 用的搜索基础设施，MCP 协议。实测 3 秒返回带 URL + 日期的结构化结果，
+    # 比百炼的「模型总结」和 360 的「标题列表」都更适合当检索源。
+    anysearch_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("ANYSEARCH_API_KEY"),
+    )
+    # 联网检索总开关：关掉后模型不会调 web_search，只回本系统数据
+    search_enabled: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("SEARCH_ENABLED"),
+    )
+    anysearch_api_url: str = Field(
+        default="https://api.anysearch.com/mcp",
+        validation_alias=AliasChoices("ANYSEARCH_API_URL"),
+    )
+    search_api_model: str = Field(
+        default="qwen-plus",
+        validation_alias=AliasChoices("SEARCH_API_MODEL"),
     )
     # ---- 检测阈值 ----------------------------------------------------------
     # 规则的门槛集中在这里，见 app/services/rule_thresholds.py。
@@ -320,6 +357,15 @@ class Settings(BaseSettings):
         default=True,
         validation_alias=AliasChoices("MES_MORNING_PLAN_ENABLED", "DOC_NEXUS_MES_MORNING_PLAN_ENABLED"),
     )
+    # 每日简报推送时间（本地时区的整点）。0 表示关闭推送。
+    # 选择「几点」而不是 cron 表达式：目前只有一个日报任务，表达式徒增理解成本。
+    brief_push_hour: int = Field(
+        default=8,
+        ge=0,
+        le=23,
+        description="每日简报推送小时（本地时间），0 表示关闭",
+    )
+
     mes_watch_interval_seconds: float = Field(
         default=120.0,
         validation_alias=AliasChoices("MES_WATCH_INTERVAL_SECONDS", "DOC_NEXUS_MES_WATCH_INTERVAL_SECONDS"),

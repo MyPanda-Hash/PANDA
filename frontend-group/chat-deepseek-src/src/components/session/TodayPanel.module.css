@@ -1,0 +1,125 @@
+/* 新会话顶部数据卡：一块面板说清楚，靠留白与细线分区，不堆装饰。
+   字体与对话正文严格同一套：正文 14/22、辅助 13/20、数字 22/30，
+   字体族一律 inherit（跟随 body 的 system-ui 栈），避免自成一套。
+   颜色用「继承 + 半透明中性色」：主题变量本包未必解析得到，半透明在明暗下都稳。
+   每个格子都是 button：点一下切到工作台对应视图看明细。 */
+.panel {
+  width: 100%;
+  max-width: var(--message-list-max-width, 720px);
+  box-sizing: border-box;
+  margin: 0 0 20px;
+  padding: 18px 20px 16px;
+  border: 1px solid rgba(128, 128, 128, 0.22);
+  border-radius: 14px;
+  background: rgba(128, 128, 128, 0.055);
+  color: inherit;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+/* 摘要：与对话正文同字号行高，只是稍重一点；整行可点 */
+.headline {
+  display: block;
+  width: 100%;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+  color: inherit;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  padding-top: 14px;
+  border-top: 1px solid rgba(128, 128, 128, 0.18);
+}
+
+.stat {
+  display: block;
+  padding: 8px 16px;
+  margin: -8px 0;
+  min-width: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+}
+
+.stat:first-child { padding-left: 8px; margin-left: -8px; }
+
+/* 数字：比正文大一档，行高按 22/30 比例，与正文同一字体 */
+.value {
+  font-family: inherit;
+  font-size: 22px;
+  line-height: 30px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+}
+
+/* 需要人动手的数字才上色，其余保持中性，免得满屏彩色 */
+.value[data-tone='warn'] { color: #d97757; }
+
+.label {
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 20px;
+  color: inherit;
+  opacity: 0.62;
+}
+
+.hint {
+  font-size: 13px;
+  line-height: 20px;
+  color: inherit;
+  opacity: 0.42;
+}
+
+.next {
+  display: block;
+  width: 100%;
+  margin: 14px 0 0;
+  padding: 12px 0 0;
+  border: 0;
+  border-top: 1px solid rgba(128, 128, 128, 0.18);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  color: inherit;
+  opacity: 0.62;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 悬停：只做轻微底色，别用位移或阴影，避免整块在欢迎页上跳 */
+.headline:hover,
+.next:hover { opacity: 0.92; }
+.stat:hover { background: rgba(128, 128, 128, 0.07); }
+.headline:focus-visible,
+.next:focus-visible,
+.stat:focus-visible {
+  outline: 2px solid rgba(128, 128, 128, 0.5);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .panel { padding: 14px 14px 12px; }
+  .value { font-size: 20px; line-height: 28px; }
+  .stat { padding: 8px 10px; }
+}

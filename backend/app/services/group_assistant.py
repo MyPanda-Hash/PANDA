@@ -888,9 +888,18 @@ def _finish_failed(db: Session, run: ProjectGroupAiRun, error: str) -> None:
 
 
 def list_my_todos(
-    db: Session, *, user_id: str, status: str | None = None, limit: int = 100
+    db: Session,
+    *,
+    user_id: str,
+    status: str | None = None,
+    limit: int = 100,
+    factory_code: str = "",
 ) -> list[GroupTodo]:
     stmt = select(GroupTodo).where(GroupTodo.assignee_user_id == user_id)
+    # 账套过滤：MES 停在二号工厂时，这里只应看到二号工厂的待办。
+    # 空值表示调用方没带账套（老客户端），退回不过滤，避免历史数据突然空掉。
+    if factory_code:
+        stmt = stmt.where(GroupTodo.factory_code == factory_code)
     if status:
         stmt = stmt.where(GroupTodo.status == status)
     else:

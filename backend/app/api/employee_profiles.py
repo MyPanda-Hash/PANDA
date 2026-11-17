@@ -15,6 +15,7 @@ from app.core.timeutil import as_utc
 from app.models.auth import User
 from app.models.employee_profile import EmployeeProfile
 from app.services import employee_profiles as profiles
+from app.services import session_memory
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,15 @@ class ExperienceResponse(BaseModel):
     source_ref: str | None = None
     contributors: list[str] = []
     created_at: str
+
+
+def _json_raw(raw: str | None) -> list:
+    """保留原始结构（含 dict），给需要对象数组的字段用。"""
+    try:
+        value = json.loads(raw or "[]")
+    except ValueError:
+        return []
+    return value if isinstance(value, list) else []
 
 
 def _json_list(raw: str | None) -> list[str]:
@@ -275,3 +285,94 @@ async def distill_all(
         return out
 
 
+
+# ---------------------------------------------------------------- 会话记忆
+
+
+class MemoryHighlight(BaseModel):
+    title: str = ""
+    detail: str = ""
+    session_id: str = ""
+
+
+class SessionMemoryResponse(BaseModel):
+    id: str
+    user_id: str
+    display_name: str | None = None
+    period_start: str
+    period_end: str
+    headline: str = ""
+    topic: str = ""
+    highlights: list[MemoryHighlight] = []
+    lessons: list[str] = []
+    tools: list[str] = []
+    session_ids: list[str] = []
+    session_count: int = 0
+    message_count: int = 0
+    confidence: float = 0.0
+    generated_by: str = ""
+    created_at: str
+
+
+def _serialize_memory(db, row) -> SessionMemoryResponse:
+    owner = db.get(User, row.user_id)
+    raw_highlights = _json_raw(row.highlights)
+    highlights = [
+        MemoryHighlight(
+            title=str(item.get("title") or ""),
+            detail=str(item.get("detail") or ""),
+            session_id=str(item.get("session_id") or ""),
+        )
+        for item in raw_highlights
+        if isinstance(item, dict)
+    ]
+    return SessionMemoryResponse(
+        id=row.id,
+        user_id=row.user_id,
+        display_name=(owner.display_name or owner.username) if owner else None,
+        period_start=as_utc(row.period_start).isoformat() if row.period_start else "",
+        period_end=as_utc(row.period_end).isoformat() if row.period_end else "",
+        headline=row.headline or "",
+        topic=row.topic or "",
+        highlights=highlights,
+        lessons=_json_list(row.lessons),
+        tools=_json_list(row.tools),
+        session_ids=_json_list(row.session_ids),
+        session_count=row.session_count,
+        message_count=row.message_count,
+        confidence=float(row.confidence or 0.0),
+        generated_by=row.generated_by or "",
+        created_at=as_utc(row.created_at).isoformat() if row.created_at else "",
+    )
+
+
+@router.get("/{target_user_id}/memories", response_model=list[SessionMemoryResponse])
+def list_user_memories(
+    target_user_id: str,
+    user: User = Depends(current_user_from_bearer_or_cookie),
+    limit: int = Query(default=12, ge=1, le=50),
+) -> list[SessionMemoryResponse]:
+    """某位员工的 AI 会话记忆（按时间倒序）。"""
+    _require_admin(user)
+    with transaction() as db:
+        rows = session_memory.list_memories(db, user_id=target_user_id, limit=limit)
+        return [_serialize_memory(db, row) for row in rows]
+
+
+@router.post("/{target_user_id}:distill-sessions", response_model=SessionMemoryResponse)
+async def distill_user_sessions(
+    target_user_id: str,
+    user: User = Depends(current_user_from_bearer_or_cookie),
+    days: int = Query(default=7, ge=1, le=90),
+    with_model: bool = Query(default=True),
+) -> SessionMemoryResponse:
+    """把某人最近 N 天的 AI 会话蒸成一条记忆（同周期覆盖写）。"""
+    _require_admin(user)
+    with transaction() as db:
+        target = db.get(User, target_user_id)
+        if target is None:
+            raise HTTPException(status_code=404, detail="用户不存在")
+        row = await session_memory.distill_sessions(
+            db, user=target, days=days, with_model=with_model
+        )
+        return _serialize_memory(db, row)

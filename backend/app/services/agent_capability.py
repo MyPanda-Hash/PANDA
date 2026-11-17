@@ -73,6 +73,8 @@ logger = logging.getLogger(__name__)
 
 CAPABILITY_AUDIENCE = "doc-nexus:agent-capabilities"
 CHAT_CAPABILITY_TOOLS = (
+    # 周期报表：日报/周报/月报，与简报上的入口共用 period_reports 这一条路径
+    "generate_period_report",
     "list_spaces",
     "list_documents",
     "search_evidence",
@@ -2492,6 +2494,34 @@ def execute_capability(
             "causes": [cause.as_dict() for cause in causes],
         }
 
+    if tool_name == "generate_period_report":
+        # 对话/语音里「生成本周周报」走这里：产出 Markdown 报表并投递到本人对话
+        from app.services import period_reports
+
+        kind = str(arguments.get("kind") or "weekly").strip() if isinstance(arguments, dict) else "weekly"
+        anchor_raw = str(arguments.get("anchor") or "").strip() if isinstance(arguments, dict) else ""
+        anchor = None
+        if anchor_raw:
+            from datetime import date as _date
+
+            try:
+                anchor = _date.fromisoformat(anchor_raw)
+            except ValueError:
+                return {"text": f"anchor 需要 yyyy-MM-dd，收到的是：{anchor_raw}", "ok": False}
+        try:
+            # 同步版：本函数是同步调用，不能 await 模型；解读留给对话模型自己写
+            result = period_reports.generate_sync(db, user=user, kind=kind, anchor=anchor)
+        except ValueError as exc:
+            return {"text": str(exc), "ok": False}
+        return {
+            "ok": True,
+            "kind": result["kind"],
+            "title": result["title"],
+            "session_id": result["sessionId"],
+            # 正文交给模型转述：它可能被要求「念一下结论」
+            "text": result["content"],
+        }
+
     if tool_name in ("mes_owner_profile", "mes_weekly_review"):
         from app.services import owner_profile, weekly_review
 
@@ -2535,8 +2565,10 @@ def execute_capability(
             "mes_doc_detail": mes_capability.doc_detail,
             "mes_stock": mes_capability.stock,
         }[tool_name]
+        # MES 工具必须按调用者身份取数：token 由入口层放进 claims（见 anthropic_compat / chat）
+        mes_token = str((claims or {}).get("mes_token") or "")
         try:
-            return handler(arguments)
+            return handler(arguments, token=mes_token)
         except mes_capability.MesCapabilityError as exc:
             raise CapabilityGrantError(str(exc)) from exc
     if tool_name in SCHEDULE_CAPABILITY_TOOLS:

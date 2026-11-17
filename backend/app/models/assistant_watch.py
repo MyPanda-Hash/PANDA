@@ -42,6 +42,8 @@ class AssistantEvent(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     # 去重键：同一个待处理事实只留一条，例如 "so_unstarted:SO-20261112-005"
     dedupe_key: Mapped[str] = mapped_column(String(200), unique=True, index=True)
+    # 账套：主动发现是按 MES 某个账套巡出来的，切换账套后只应看到对应那套
+    factory_code: Mapped[str] = mapped_column(String(20), default="F01", index=True)
     kind: Mapped[str] = mapped_column(String(48))
     source: Mapped[str] = mapped_column(String(32), default="mes")
     panel_code: Mapped[str | None] = mapped_column(String(64), nullable=True)

@@ -4,19 +4,21 @@
 
 :root {
   /* ── 设计库：Ant Design v6.6.8 seed token（dsh-kit token 查询，明色） ── */
-  --ant-color-primary: #1677ff;
-  --ant-color-primary-hover: #4096ff;
-  --ant-color-primary-active: #0958d9;
-  --ant-color-primary-bg: #e6f4ff;
-  --ant-color-primary-border: #91caff;
+  /* 主色改用 MES 制造绿：与工作台 theme-mes.css、light-mes/index.css 同一套值。
+     改前是 antd 默认蓝 #1677ff，进群聊页会突然变蓝，和整个系统不连戏。 */
+  --ant-color-primary: #116a5b;
+  --ant-color-primary-hover: #58958a;
+  --ant-color-primary-active: #0d584c;
+  --ant-color-primary-bg: #e8f1ef;
+  --ant-color-primary-border: #b8d3ce;
   --ant-color-bg-container: #ffffff;
-  --ant-color-bg-layout: #f5f5f5;
+  --ant-color-bg-layout: #f2f5f4;
   --ant-color-bg-elevated: #ffffff;
-  --ant-color-border: #d9d9d9;
-  --ant-color-border-secondary: #f0f0f0;
-  --ant-color-text: rgba(0, 0, 0, 0.88);
-  --ant-color-text-secondary: rgba(0, 0, 0, 0.65);
-  --ant-color-text-tertiary: rgba(0, 0, 0, 0.45);
+  --ant-color-border: #dce4e1;
+  --ant-color-border-secondary: #edf1ef;
+  --ant-color-text: #1e2b27;
+  --ant-color-text-secondary: #5d6c67;
+  --ant-color-text-tertiary: #8b9893;
   --ant-color-fill-alter: rgba(0, 0, 0, 0.02);
   --ant-color-fill-tertiary: rgba(0, 0, 0, 0.04);
   --ant-color-fill-secondary: rgba(0, 0, 0, 0.06);
@@ -151,7 +153,7 @@ h2 { font-size: 15px; }
 }
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .btn--primary { background: var(--accent); color: #fff; }
-.btn--primary:hover { background: #275b4a; }
+.btn--primary:hover { background: var(--ant-color-primary-active); }
 .btn--ghost { border-color: var(--line-strong); color: var(--ink-2); }
 .btn--ghost:hover { background: var(--bg); }
 .btn[disabled] { opacity: .5; cursor: not-allowed; }
@@ -234,9 +236,16 @@ h2 { font-size: 15px; }
   align-items: flex-start;
   gap: 8px;
   padding: 6px 0;
+  /* 必须显式撑满：群聊铺满后容器有 1400+ px，
+     只靠 stretch 时自己的消息会停在中间，看着像没靠右（2026-11-17 实测 row 只有 880px）。 */
+  width: 100%;
   max-width: 100%;
 }
-.msg-row--mine { flex-direction: row-reverse; }
+.msg-row--mine {
+  flex-direction: row-reverse;
+  /* 头像留给自己的位置，气泡跟着贴右 */
+  justify-content: flex-start;
+}
 .msg-row--grouped { padding-top: 0; }
 
 .msg-avatar {
@@ -815,19 +824,19 @@ h2 { font-size: 15px; }
    用户可在右上角菜单里手动切换，选择记在 localStorage。 */
 :root[data-theme="dark"] {
   /* 同一套 token 的暗色值（dsh-kit token 查询） */
-  --ant-color-primary: #1668dc;
-  --ant-color-primary-hover: #3c89e8;
-  --ant-color-primary-active: #1554ad;
-  --ant-color-primary-bg: #15325b;
-  --ant-color-primary-border: #15325b;
-  --ant-color-bg-container: #141414;
-  --ant-color-bg-layout: #000000;
-  --ant-color-bg-elevated: #1f1f1f;
-  --ant-color-border: #424242;
-  --ant-color-border-secondary: #303030;
-  --ant-color-text: rgba(255, 255, 255, 0.85);
-  --ant-color-text-secondary: rgba(255, 255, 255, 0.65);
-  --ant-color-text-tertiary: rgba(255, 255, 255, 0.45);
+  --ant-color-primary: #58b09e;
+  --ant-color-primary-hover: #76c2b2;
+  --ant-color-primary-active: #48a08f;
+  --ant-color-primary-bg: rgba(88, 176, 158, 0.16);
+  --ant-color-primary-border: rgba(88, 176, 158, 0.42);
+  --ant-color-bg-container: #222c28;
+  --ant-color-bg-layout: #18201d;
+  --ant-color-bg-elevated: #27322e;
+  --ant-color-border: #35423d;
+  --ant-color-border-secondary: #303c37;
+  --ant-color-text: #e2e8e5;
+  --ant-color-text-secondary: #b3bfba;
+  --ant-color-text-tertiary: #7f8e88;
   --ant-color-fill-alter: rgba(255, 255, 255, 0.04);
   --ant-color-fill-tertiary: rgba(255, 255, 255, 0.08);
   --ant-color-fill-secondary: rgba(255, 255, 255, 0.12);
@@ -1720,6 +1729,17 @@ h2 { font-size: 15px; }
 .member-row__role[data-role="owner"] { color: var(--accent); border-color: var(--accent); }
 .member-row__role[data-role="assistant"] { color: var(--accent); border-color: transparent; background: var(--accent-weak); }
 
+/* 邀请弹窗按部门分组：同部门的人放一起，才看得出「我要的是哪个张仓管」 */
+.invite-group__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px 2px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.invite-group__count { margin-left: auto; }
+
 .empty {
   padding: 32px 24px;
   text-align: center;
@@ -1929,7 +1949,7 @@ h2 { font-size: 15px; }
 .room-head__text h2 { font-size: 15px; font-weight: 600; }
 .room-head__meta { font-size: var(--ant-font-size-sm); color: var(--ant-color-text-tertiary); }
 
-/* ---------- 按钮：高度 32 / 圆角 6 / 主色 #1677ff ---------- */
+/* ---------- 按钮：高度 32 / 圆角 6 / 主色跟随 --ant-color-primary（MES 制造绿） ---------- */
 .btn {
   height: var(--ant-control-height);
   min-height: var(--ant-control-height);
@@ -2221,9 +2241,13 @@ h2 { font-size: 15px; }
   .bubble { max-width: 100%; }
 }
 
-/* ---------- 宽屏：消息列居中，行宽不超过 880（长行可读性） ---------- */
+/* ---------- 宽屏：整行不设限，只限制气泡宽度 ---------- */
+/* 原来这里给 .stream > * 加了 max-width: 880px，本意是限制长行可读性，
+   但它限的是整行：自己的消息（row-reverse）因此停在中右，
+   离容器右边还差一截，看着像「没靠右」（2026-11-17 用户反馈）。
+   气泡本身已有 max-width（.msg-col 560px / 76%），行没必要再限。 */
 @media (min-width: 1025px) {
-  .stream > * { max-width: 880px; }
+  .stream > * { max-width: 100%; }
   .stream { margin: 0 auto; width: 100%; }
 }
 
@@ -2318,3 +2342,348 @@ h2 { font-size: 15px; }
   font-weight: 500;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
+
+/* ── 人力地图：组织架构树 ──────────────────────────────────────────────
+   数值全部取设计库 antd v6.6.8：
+     · Tree showLine 语义：折叠箭头 + 缩进连线 + 节点标题
+     · nodeHoverBg = colorFillTertiary，缩进 indentSize（库默认 24，侧栏压到 16）
+     · 人数右对齐 + tabular-nums（硬规则 3）
+     · 控件高 28（SM 24 / 默认 32 之间，侧栏取中间档），圆角 6，间距 8 的倍数 */
+
+/* 视图切换：对齐 Segmented —— 容器 fillTertiary，选中项白底 + 一层浅阴影 */
+.org-switch {
+  display: flex;
+  gap: 0;
+  margin-bottom: 8px;
+  padding: 2px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--ant-color-fill-tertiary);
+}
+.org-switch__btn {
+  flex: 1;
+  height: 28px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ant-color-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.org-switch__btn.is-on {
+  background: var(--ant-color-bg-container);
+  color: var(--ant-color-text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 1px 6px -1px rgba(0, 0, 0, .04);
+}
+.org-switch__btn:focus-visible {
+  outline: 2px solid var(--ant-color-primary);
+  outline-offset: 1px;
+}
+
+/* 成员行：13px 姓名 + 12px 次要信息 */
+.member-row__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.member-row__name {
+  color: var(--ant-color-text);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.member-row__dept {
+  color: var(--ant-color-text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 树里用紧凑行：24px 头像 + 姓名与岗位同排，一行一个人才看得清层级 */
+.member-row--compact { padding: 2px 8px 2px 0; gap: 8px; }
+.member-row--compact .member-avatar {
+  width: 20px; height: 20px;
+  border-radius: 6px;
+  font-size: 10px;
+}
+.member-row--compact .member-row__main {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+}
+.member-row--compact .member-row__name { flex: 0 1 auto; }
+.member-row--compact .member-row__dept { flex: 0 1 auto; }
+.member-row--compact .member-row__role {
+  font-size: 10px;
+  line-height: 16px;
+  padding: 0 4px;
+}
+
+/* 树本体 */
+.org-tree { display: flex; flex-direction: column; }
+.org-tree__node { position: relative; }
+.org-tree__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px 0 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ant-color-text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: default;
+}
+.org-tree__row.is-toggle { cursor: pointer; }
+.org-tree__row.is-toggle:hover { background: var(--ant-color-fill-tertiary); }
+.org-tree__row:focus-visible { outline: 2px solid var(--ant-color-primary); outline-offset: -2px; }
+.org-tree__row[disabled] { opacity: 1; }
+.org-row__switcher {
+  flex: 0 0 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ant-color-text-tertiary);
+}
+
+.org-row__caret { width: 8px; height: 8px; fill: currentColor; transition: transform .12s ease; }
+.org-row__switcher.is-open .org-row__caret { transform: rotate(90deg); }
+.org-tree__icon {
+  flex: 0 0 12px;
+  width: 12px; height: 12px;
+  fill: var(--ant-color-text-tertiary);
+}
+.org-tree__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.org-tree__count {
+  margin-left: auto;
+  padding-left: 8px;
+  color: var(--ant-color-text-tertiary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.org-tree__node.is-empty .org-tree__name { color: var(--ant-color-text-tertiary); }
+.org-tree__children {
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid var(--ant-color-border-secondary);
+}
+.org-tree__leaves { list-style: none; margin: 0; padding: 0; }
+.org-tree__leaves .member-row { padding-left: 16px; }
+
+/* 常驻助手 / 未分配部门：一行小标签，不做成部门节点 */
+.org-section { margin-top: 8px; }
+.org-section:first-child { margin-top: 0; }
+.org-section__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 2px 0;
+  color: var(--ant-color-text-tertiary);
+  font-size: 12px;
+}
+.org-section__name { font-weight: 400; }
+.org-section__count { margin-left: auto; font-variant-numeric: tabular-nums; }
+.org-section__list { list-style: none; margin: 0; padding: 0; }
+
+.org-empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: var(--ant-color-text-tertiary);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+/* ── macOS 式弹层展开（待办事件） ──────────────────────────────────────
+   参考 macOS Big Sur 之后的 sheet / 弹出层：从触发点方向放大落下，
+   起手圆角更大、落定收圆（12–24 的微弧度），背景轻微下沉、遮罩带模糊。
+   缓动用 Apple 的 cubic-bezier(.32,.72,0,1)，不是线性也不是 bounce。 */
+.dialog--sheet {
+  border-radius: 16px;
+  border: 1px solid var(--ant-color-border-secondary);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .04),
+    0 0 0 1px rgba(0, 0, 0, .04),
+    0 24px 60px -16px rgba(0, 0, 0, .42),
+    0 8px 24px -12px rgba(0, 0, 0, .28);
+  transform-origin: top right;
+  transform-origin: var(--sheet-origin, top right);
+  overflow: hidden;
+  will-change: transform, opacity, border-radius;
+}
+[data-theme="dark"] .dialog--sheet {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .07),
+    0 0 0 1px rgba(255, 255, 255, .06),
+    0 28px 72px -20px rgba(0, 0, 0, .7),
+    0 10px 28px -12px rgba(0, 0, 0, .5);
+}
+.dialog--sheet.is-opening { animation: sheet-in .36s cubic-bezier(.32, .72, 0, 1) both; }
+.dialog--sheet.is-closing { animation: sheet-out .2s cubic-bezier(.4, 0, 1, 1) both; pointer-events: none; }
+
+@keyframes sheet-in {
+  0% { opacity: 0; transform: scale(.9) translateY(-14px); border-radius: 30px; }
+  100% { opacity: 1; transform: none; border-radius: 16px; }
+}
+@keyframes sheet-out {
+  0% { opacity: 1; transform: none; border-radius: 16px; }
+  100% { opacity: 0; transform: scale(.95) translateY(-8px); border-radius: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dialog--sheet.is-opening,
+  .dialog--sheet.is-closing { animation-duration: .01s; }
+}
+
+/* ── 待办弹层：类 macOS 窗口（非模态 + 可拖动 + 八向缩放 + 固定） ──────
+   非模态是被要求的：要能拖着窗口、同时点页面别处。代价是没有遮罩，
+   所以层次全靠阴影 + 圆角，交互边界靠标题栏和四角八边的光标。 */
+.dialog--sheet {
+  position: fixed;
+  inset: auto;
+  z-index: 50;              /* 高于侧栏/列表，低于全屏的员工知识库（60） */
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;          /* 手柄要露在边缘外，裁剪放到 .sheet 上 */
+  display: flex;
+  flex-direction: column;
+}
+.dialog--sheet:not([open]) { display: none; }
+
+.sheet {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 16px;
+  background: var(--ant-color-bg-container);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .04),
+    0 0 0 1px rgba(0, 0, 0, .04),
+    0 24px 60px -16px rgba(0, 0, 0, .42),
+    0 8px 24px -12px rgba(0, 0, 0, .28);
+  overflow: hidden;
+}
+[data-theme="dark"] .sheet {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .07),
+    0 0 0 1px rgba(255, 255, 255, .06),
+    0 28px 72px -20px rgba(0, 0, 0, .7),
+    0 10px 28px -12px rgba(0, 0, 0, .5);
+}
+.sheet__bar {
+  flex: 0 0 auto;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 0 18px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+  background: var(--ant-color-bg-container);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+.sheet__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ant-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sheet__tools { margin-left: auto; display: flex; gap: 2px; }
+.sheet__tool {
+  width: 28px; height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ant-color-text-tertiary);
+  cursor: pointer;
+}
+.sheet__tool:hover { background: var(--ant-color-fill-tertiary); color: var(--ant-color-text); }
+.sheet__tool[aria-pressed="true"] { background: var(--ant-color-primary-bg); color: var(--ant-color-primary); }
+.sheet__tool:focus-visible { outline: 2px solid var(--ant-color-primary); outline-offset: 1px; }
+
+.sheet__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  overflow: hidden;
+}
+/* 列表吃掉剩余高度，缩放窗口时明细区跟着变 */
+.dialog--sheet .event-list { flex: 1 1 auto; min-height: 0; max-height: none; }
+
+/* 八向缩放手柄：四边 6px、四角 12px，压在窗口边缘上 */
+.sheet__resize { position: absolute; z-index: 2; }
+.sheet__resize[data-resize="n"] { top: -3px; left: 12px; right: 12px; height: 6px; cursor: ns-resize; }
+.sheet__resize[data-resize="s"] { bottom: -3px; left: 12px; right: 12px; height: 6px; cursor: ns-resize; }
+.sheet__resize[data-resize="w"] { left: -3px; top: 12px; bottom: 12px; width: 6px; cursor: ew-resize; }
+.sheet__resize[data-resize="e"] { right: -3px; top: 12px; bottom: 12px; width: 6px; cursor: ew-resize; }
+.sheet__resize[data-resize="nw"] { left: -3px; top: -3px; width: 12px; height: 12px; cursor: nwse-resize; }
+.sheet__resize[data-resize="ne"] { right: -3px; top: -3px; width: 12px; height: 12px; cursor: nesw-resize; }
+.sheet__resize[data-resize="sw"] { left: -3px; bottom: -3px; width: 12px; height: 12px; cursor: nesw-resize; }
+.sheet__resize[data-resize="se"] { right: -3px; bottom: -3px; width: 12px; height: 12px; cursor: nwse-resize; }
+
+body.sheet-dragging { user-select: none; }
+body.sheet-dragging .sheet__bar { cursor: grabbing; }
+body.sheet-resizing { user-select: none; }
+
+/* 手机上拖窗口没意义，缩放角也太小；保留拖动但不给缩放手柄 */
+@media (max-width: 640px) {
+  .sheet__resize { display: none; }
+  .sheet__bar { height: 48px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog--sheet.is-opening, .dialog--sheet.is-closing { animation-duration: .01s; }
+}
+
+/* ---------- 顶部「加载更早消息」 ---------- */
+.history-more {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 10px;
+}
+.history-more__btn {
+  padding: 4px 14px;
+  border: 1px solid var(--line, #e4e7ec);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted, #667085);
+  font-size: 12px;
+  line-height: 20px;
+  cursor: pointer;
+}
+.history-more__btn:hover:not(:disabled) {
+  border-color: var(--accent, #116a5b);
+  color: var(--accent, #116a5b);
+}
+.history-more__btn:disabled { cursor: default; opacity: .6; }

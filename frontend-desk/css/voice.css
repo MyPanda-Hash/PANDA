@@ -1,0 +1,285 @@
+/* 语音助手视图（#/voice）+ 对话页右侧语音停靠面板。
+   与 desk.css 同一套 antd token：卡片 0 层用 1px 边框，8pt 间距，控件高 32，圆角 6。
+   类名统一 voice- 前缀，避免和其他视图的样式撞车。 */
+
+/* ---------------------------------------------------------------- 整页骨架 */
+
+.voice-page { display: flex; flex-direction: column; gap: 16px; }
+
+/* 主区：≥720 左语音窗 + 右概况（侧排），<720 上下叠 */
+.voice-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.voice-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+@media (min-width: 720px) {
+  .voice-layout { grid-template-columns: minmax(0, 1fr) minmax(260px, 34%); }
+}
+
+/* 卡片头：窄列（768 档右侧概况只有 ~260px）时允许换行，
+   标题不许被挤成竖排——desk.css 的 card__head 默认单行不换行。 */
+.voice-status .card__head,
+.voice-conv .card__head,
+.voice-brief .card__head,
+.voice-notes .card__head {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+.voice-status .card__head h2,
+.voice-conv .card__head h2,
+.voice-brief .card__head h2,
+.voice-notes .card__head h2 { white-space: nowrap; }
+
+/* ---------------------------------------------------------------- 现状卡 */
+
+.voice-status__body { display: flex; flex-direction: column; gap: 12px; }
+.voice-status__ok { font-size: 14px; line-height: 22px; }
+.voice-status__reason {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--ant-color-error-text);
+}
+.voice-status__reason-label { color: var(--ant-color-text-secondary); }
+.voice-status__hint { font-size: 13px; line-height: 20px; color: var(--ant-color-text-secondary); }
+.voice-status__actions { gap: 8px; }
+
+.voice-facts { display: flex; flex-wrap: wrap; gap: 6px 20px; }
+.voice-fact { display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; line-height: 20px; }
+.voice-fact__label { color: var(--ant-color-text-tertiary); }
+.voice-fact__value { font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* 检查配置：不可用时能照着做，不是一句「服务不可用」 */
+.voice-check {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--ant-color-border-secondary);
+}
+.voice-check h3 { font-size: 14px; line-height: 22px; font-weight: 600; }
+.voice-check__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 20px;
+  list-style: decimal;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ant-color-text-secondary);
+}
+.voice-check__list li { list-style: decimal; }
+
+.voice-code {
+  padding: 0 4px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 4px;
+  background: var(--ant-color-fill-quaternary);
+  color: var(--ant-color-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+/* 加载占位：高度贴近真实内容，避免状态卡抖一下 */
+.voice-skel { display: block; height: 14px; }
+.voice-skel--text { width: 92%; }
+.voice-skel--short { width: 58%; }
+
+/* ---------------------------------------------------------------- 语音窗 */
+
+.voice-stage { position: relative; display: flex; min-width: 0; min-height: 0; }
+/* 整页：固定高度区间，内容区自己滚，外层页面不跟着长 */
+.voice-stage--page { height: clamp(480px, 62vh, 680px); }
+/* 停靠面板：吃满剩余高度 */
+.voice-stage--panel { flex: 1 1 auto; height: 100%; }
+
+.voice-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--ant-color-bg-container);
+}
+
+.voice-frame-error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--ant-color-bg-container);
+}
+.voice-frame-error .empty { padding: 16px; max-width: 520px; }
+.voice-frame-error .empty h3 { font-size: 15px; }
+.voice-frame-error .empty p { color: var(--ant-color-text-secondary); }
+
+.voice-empty { padding: 24px 12px; }
+.voice-empty__actions { justify-content: center; }
+
+.voice-conv > .voice-stage {
+  margin-top: 12px;
+  border-top: 1px solid var(--ant-color-border-secondary);
+}
+.voice-conv__foot { flex-wrap: wrap; }
+.voice-conv__hint { font-size: 12px; line-height: 18px; }
+
+/* ---------------------------------------------------------------- 生产概况 */
+
+.voice-brief__body { display: flex; flex-direction: column; gap: 12px; }
+.voice-brief__text { font-size: 14px; line-height: 22px; color: var(--ant-color-text); }
+
+.voice-brief__facts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--ant-color-border-secondary);
+}
+.voice-brief__fact { display: flex; align-items: baseline; gap: 8px; font-size: 13px; line-height: 20px; }
+.voice-brief__fact-label { color: var(--ant-color-text-secondary); }
+.voice-brief__fact-value {
+  margin-left: auto;
+  font-weight: 500;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.voice-brief__note,
+.voice-brief__meta { font-size: 12px; line-height: 18px; color: var(--ant-color-text-tertiary); }
+
+/* ---------------------------------------------------------------- 使用说明 */
+
+.voice-notes__body { display: flex; flex-direction: column; gap: 8px; }
+.voice-notes__body p { font-size: 13px; line-height: 20px; color: var(--ant-color-text-secondary); }
+
+/* ---------------------------------------------------------------- 停靠面板 */
+
+.voice-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  background: var(--ant-color-bg-container);
+}
+.voice-panel__head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 16px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+.voice-panel__title { font-size: 14px; font-weight: 600; }
+.voice-panel__state { font-size: 12px; color: var(--ant-color-text-tertiary); }
+.voice-panel__state[data-tone="accent"] { color: var(--ant-color-primary-text); }
+.voice-panel__state[data-tone="danger"] { color: var(--ant-color-error-text); }
+
+.voice-panel__body { flex: 1 1 auto; min-height: 0; display: flex; }
+
+.voice-panel__foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--ant-color-border-secondary);
+}
+.voice-panel__note { font-size: 12px; line-height: 18px; }
+
+.voice-panel__off {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  text-align: center;
+}
+.voice-panel__off-title { font-weight: 600; }
+.voice-panel__off-reason { font-size: 13px; line-height: 20px; color: var(--ant-color-text-secondary); }
+.voice-panel__off-actions { justify-content: center; }
+
+/* ---------------------------------------------------------------- 窄屏 */
+
+@media (max-width: 720px) {
+  .voice-stage--page { height: clamp(420px, 58vh, 560px); }
+  .voice-facts { gap: 4px 16px; }
+  .voice-check__list { padding-left: 18px; }
+  .voice-brief__text { font-size: 13px; line-height: 21px; }
+  .voice-conv__foot { padding-top: 10px; padding-bottom: 10px; }
+}
+
+@media (max-width: 400px) {
+  .voice-stage--page { height: 440px; }
+  .voice-status__actions .btn { flex: 1 1 auto; }
+}
+
+/* ================================================================
+   整页语音（手机语音助手形态）
+   ----------------------------------------------------------------
+   主视觉只留给语音球：pod iframe 本身就是那颗球，外层不再套卡片头。
+   状态压成顶部一条，生产概况收成右侧窄栏。
+   ================================================================ */
+.va { display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
+
+/* 与群聊视图同一套处理：让 .view__inner 撑满可用高度，
+   .va 的 height:100% 才有参照物（否则高度由内容决定，语音球会塌成一条）。 */
+.view__inner:has(> .va) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.va-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 12px; flex: none;
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 999px;
+}
+.va-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ant-color-text-quaternary); flex: none; }
+.va-dot[data-tone="accent"] { background: var(--ant-color-primary); box-shadow: 0 0 0 3px var(--ant-color-primary-bg); }
+.va-dot[data-tone="warn"] { background: var(--ant-color-warning); }
+.va-dot[data-tone="danger"] { background: var(--ant-color-error); }
+.va-state { font-size: 13px; font-weight: 500; }
+.va-meta { font-size: 12px; color: var(--ant-color-text-tertiary); font-variant-numeric: tabular-nums; }
+
+/* 主区：语音球居中占主视觉，右侧窄栏放生产概况 */
+.va-main { display: flex; gap: 16px; flex: 1 1 auto; min-height: 0; }
+.va-stage {
+  flex: 1 1 auto; min-width: 0; min-height: 0;
+  display: flex; align-items: stretch; justify-content: center;
+}
+/* 手机语音助手的比例：不铺满整屏，最大 520 宽像手机竖屏。
+   圆角与边框放在容器上，iframe 自己填满容器（放在 iframe 上会被它自己的
+   背景色盖掉圆角，且 .voice-stage 未设 flex 时会塌成 300px）。 */
+.va-stage .voice-stage {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 520px;
+  height: 100%;
+  border-radius: 24px;
+  border: 1px solid var(--ant-color-border-secondary);
+  background: var(--ant-color-bg-container);
+  overflow: hidden;
+}
+.va-stage .voice-frame { width: 100%; height: 100%; }
+.va-side {
+  width: 300px; flex: none; min-height: 0;
+  display: flex; flex-direction: column; gap: 12px; overflow: auto;
+}
+.va-side .voice-brief { flex: 0 0 auto; }
+
+/* 窄屏：概况落到下面，语音球仍占主位 */
+@media (max-width: 900px) {
+  .va-main { flex-direction: column; }
+  .va-side { width: auto; max-height: 42vh; }
+  .va-stage .voice-stage { max-width: none; border-radius: 16px; }
+}

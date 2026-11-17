@@ -24,18 +24,40 @@ from app.core.timeutil import as_utc
 from app.models.assistant_watch import AssistantEvent, WatchScanRun
 from app.models.auth import User
 from app.models.group_chat import GroupTodo, ProjectGroup, ProjectGroupMessage
+from app.models.mes_binding import MesUserBinding
 from app.services import group_chat
 
 logger = logging.getLogger(__name__)
 
 # 面板 → 默认处理角色（MES 用户名）。可在 scan() 调用时覆盖。
+# 面板 → 负责人。2026-11-17 从「用户名」改成「角色码」，按岗位找人而不是按账号名。
+#
+# 改之前写的是 planner / worker 这些小写用户名，而账号 `worker` 的角色其实是
+# FOREMAN 车间主任 —— 结果 13 条生产事件全给了中层，真一线一条收不到，
+# 销售订单的 owner 里又没有 SALES，销售员看到 0 条。
+#
+# 为什么不用 WORKER 当生产负责人：车间主任盯的是「进度、临期、停滞」，
+# 一线接的是「派给我的活」。两者分开派，见 manu_no_report。
 DEFAULT_PANEL_OWNERS: dict[str, list[str]] = {
-    "SO_ORDER": ["planner", "worker"],
-    "MANU_ORDER": ["worker", "planner"],
-    "STOCK_STATUS": ["keeper", "planner"],
-    "PU_ORDER": ["keeper"],
-    "ARRIVAL_IN": ["qc"],
-    "FINISH_INSPECT": ["qc"],
+    "SO_ORDER": ["SALES", "PLANNER"],       # 销售订单：业务员口径 + 排产口径
+    "MANU_ORDER": ["FOREMAN", "PLANNER"],   # 生产工单：车间盯进度 + 计划对排程
+    "STOCK_STATUS": ["KEEPER", "PLANNER"],  # 库存：仓管补货 + 计划备料
+    "PU_ORDER": ["KEEPER"],                 # 采购：仓管跟单
+    "ARRIVAL_IN": ["QC"],                   # 到货：质检
+    "FINISH_INSPECT": ["QC"],               # 完工检：质检
+}
+
+# 审批人兜底：审批人没配或解析不出来时，按单据所属面板找对口岗位，而不是一律丢给 admin。
+# 口径来自 GLOSSARY「生产加工单审批归车间主任」。
+APPROVER_BY_PANEL: dict[str, list[str]] = {
+    "MANU_ORDER": ["FOREMAN"],
+    "PROCESS_REPORT": ["FOREMAN"],
+    "PU_ORDER": ["KEEPER"],
+    "PU_INVOICE": ["KEEPER"],
+    "SALE_INV": ["SALES"],
+    "SO_ORDER": ["SALES"],
+    "SALE_OUT": ["KEEPER"],
+    "STOCK_STATUS": ["KEEPER"],
 }
 
 # 临期判定窗口在 rule_thresholds（MES_RULE_DUE_SOON_DAYS）
@@ -169,7 +191,7 @@ def evaluate(
                 title=f"销售订单 {doc_no} 已审核，尚未安排生产",
                 detail=f"客户：{customer}" + (f"；业务员：{salesman}" if salesman else ""),
                 suggested_action="按这张销售订单生成生产工单并排产",
-                targets=owners.get("SO_ORDER", ["planner"]),
+                targets=owners.get("SO_ORDER", ["SALES", "PLANNER"]),
                 severity="warning",
                 panel_code="SO_ORDER",
                 doc_no=doc_no,
@@ -192,7 +214,7 @@ def evaluate(
                     title=f"{panel} {doc_no} 待你审批",
                     detail=f"当前审批状态：{approval}",
                     suggested_action="在 MES 里审批或退回，避免流程卡住",
-                    targets=owners.get(panel, ["admin"]),
+                    targets=APPROVER_BY_PANEL.get(panel) or owners.get(panel) or ["ADMIN"],
                     severity="warning",
                     panel_code=panel,
                     doc_no=doc_no,
@@ -212,7 +234,7 @@ def evaluate(
                 title=f"销售订单 {doc_no} 仍是草稿",
                 detail=f"客户：{_text(row, '客户') or '未填'}",
                 suggested_action="确认信息后提交审核，否则不会进入排产",
-                targets=[salesman] if salesman else owners.get("SO_ORDER", ["planner"]),
+                targets=[salesman] if salesman else ["SALES"],
                 severity="info",
                 panel_code="SO_ORDER",
                 doc_no=doc_no,
@@ -246,7 +268,7 @@ def evaluate(
                 title=f"生产工单 {doc_no} {lead}",
                 detail=f"状态：{status}；预完工：{due.isoformat()}",
                 suggested_action="确认物料与工序进度，必要时调整排产",
-                targets=owners.get("MANU_ORDER", ["worker"]),
+                targets=owners.get("MANU_ORDER", ["FOREMAN", "PLANNER"]),
                 severity=severity,
                 panel_code="MANU_ORDER",
                 doc_no=doc_no,
@@ -343,7 +365,7 @@ def _production_problems(
                 title=problem.title,
                 detail="\n".join(line for line in detail_lines if line),
                 suggested_action=problem.suggested_action,
-                targets=problem.targets or owners.get(problem.panel_code or "", ["worker"]),
+                targets=problem.targets or owners.get(problem.panel_code or "", ["FOREMAN"]),
                 severity=problem.severity,
                 panel_code=problem.panel_code,
                 doc_no=problem.doc_no,
@@ -388,7 +410,7 @@ def _manu_missing_material(
                 detail=f"状态：{status}；开工：{started.isoformat() if started else '未填'}；"
                        f"已有领料申请但没出库记录",
                 suggested_action="确认是否漏出库，否则材料账与实物会对不上",
-                targets=owners.get("MANU_ORDER", ["keeper"]),
+                targets=["KEEPER", "FOREMAN"],
                 severity="critical",
                 panel_code="MANU_ORDER",
                 doc_no=doc_no,
@@ -437,7 +459,7 @@ def _so_shipping_overdue(
                 title=f"销售订单 {doc_no} 已 {waiting} 天仍未出库",
                 detail=f"下单 {ordered.isoformat()}；客户：{_text(row, '客户') or '未填'}",
                 suggested_action="确认是否已发货、是否需要补出库单",
-                targets=[salesman] if salesman else owners.get("SO_ORDER", ["planner"]),
+                targets=[salesman] if salesman else ["SALES"],
                 severity="critical" if waiting >= days * 2 else "warning",
                 panel_code="SO_ORDER",
                 doc_no=doc_no,
@@ -492,7 +514,7 @@ def _stock_low(
                 title=f"{_text(row, '存货', code)} 库存 {qty:g}，低于下限 {limit:g}",
                 detail=f"仓库：{warehouse or '未填'}；存货编码：{code}",
                 suggested_action="确认是否需要补采购或调拨",
-                targets=owners.get("STOCK_STATUS", ["keeper"]),
+                targets=owners.get("STOCK_STATUS", ["KEEPER", "PLANNER"]),
                 severity="warning",
                 panel_code="STOCK_STATUS",
                 doc_no=code,
@@ -525,7 +547,7 @@ def _purchase_followups(
                     title=f"采购订单 {doc_no} 仍是草稿",
                     detail=f"供应商：{supplier}",
                     suggested_action="确认后提交审批，否则不会进入采购流程",
-                    targets=[maker] if maker else owners.get("PU_ORDER", ["keeper"]),
+                    targets=[maker] if maker else owners.get("PU_ORDER", ["KEEPER"]),
                     severity="info",
                     panel_code="PU_ORDER",
                     doc_no=doc_no,
@@ -546,7 +568,7 @@ def _purchase_followups(
                 title=f"采购订单 {doc_no} " + ("已过交期仍未发货" if late else "交期临近仍未发货"),
                 detail=f"供应商：{supplier}；交货日期：{due.isoformat()}",
                 suggested_action="联系供应商确认发货，必要时调整计划",
-                targets=owners.get("PU_ORDER", ["keeper"]),
+                targets=owners.get("PU_ORDER", ["KEEPER"]),
                 severity="critical" if late else "warning",
                 panel_code="PU_ORDER",
                 doc_no=doc_no,
@@ -581,7 +603,7 @@ def _inspection_overdue(
                 title=f"到货单 {doc_no} 已 {days} 天以上未检验",
                 detail=f"到货日期：{arrived.isoformat()}；供应商：{_text(row, '供应商') or '未填'}",
                 suggested_action="安排来料检验，避免影响入库和排产",
-                targets=owners.get("ARRIVAL_IN", ["qc"]),
+                targets=owners.get("ARRIVAL_IN", ["QC"]),
                 severity="warning",
                 panel_code="ARRIVAL_IN",
                 doc_no=doc_no,
@@ -604,7 +626,7 @@ def _inspection_overdue(
                 title=f"完工报检 {doc_no} 超过 {days} 天没有检验结果",
                 detail=f"单据日期：{submitted.isoformat()}；下游状态：{downstream or '未开始'}",
                 suggested_action="安排完工检验，否则成品无法入库",
-                targets=owners.get("FINISH_INSPECT", ["qc"]),
+                targets=owners.get("FINISH_INSPECT", ["QC"]),
                 severity="warning",
                 panel_code="FINISH_INSPECT",
                 doc_no=doc_no,
@@ -652,7 +674,8 @@ def _manu_without_report(
                 title=f"生产工单 {doc_no} 已 {idle} 天没有报工",
                 detail=f"状态：{status}；开工：{started.isoformat()}；最近报工：{last_report.get(doc_no, '从未')}",
                 suggested_action="确认是否停产、待料或漏报工",
-                targets=owners.get("MANU_ORDER", ["worker"]),
+                # 一线要收到「该报工了」，车间主任要收到「谁没报」——两者都派
+                targets=["FOREMAN", "WORKER"],
                 severity="warning",
                 panel_code="MANU_ORDER",
                 doc_no=doc_no,
@@ -671,18 +694,66 @@ def _new_id(prefix: str) -> str:
     return f"{prefix}_{new_token(10)}"
 
 
-def _resolve_users(db: Session, usernames: list[str]) -> list[User]:
-    wanted = [name.strip() for name in usernames if name and name.strip()]
-    if not wanted:
+def _resolve_users(db: Session, targets: list[str]) -> list[User]:
+    """把「派给谁」的定义解析成具体用户。
+
+    支持三种写法，按顺序尝试：
+
+    1. **大写角色码**（`WORKER` / `FOREMAN` / `SALES` / `PLANNER` / `KEEPER` / `QC` / `ADMIN`）：
+       查 `mes_user_bindings.mes_role_code`。这是 2026-11-17 之后的主路径 ——
+       表里写岗位、按岗位找人，用户名改成 zhangsan 也不影响。
+    2. **用户名**：`sales` / `planner` 这种。兼容老配置，也用于显式点名某人。
+       角色码查不到人时（账号还没绑定 MES）也回退到这里：本机账号名恰好等于岗位名。
+    3. **显示名**：`王芳` / `陈强` 这种业务员姓名。MES 的「业务员」字段存的是姓名。
+
+    为什么要有第 2、3 层：绑定缺失是常态（只有完成一次 SSO 才会写绑定表），
+    直接按角色码查会查出空列表 → 事件没有接收人 → 只有管理员看得见，
+    那正是 2026-11-17 审查发现的「销售员一条也收不到」的成因。
+    """
+    want = [str(t).strip() for t in (targets or []) if str(t).strip()]
+    if not want:
         return []
-    rows = db.scalars(select(User).where(User.username.in_(wanted))).all()
-    by_name = {row.username: row for row in rows}
-    found = [by_name[name] for name in wanted if name in by_name]
-    if found:
-        return found
-    # 用户名没匹配上时，按显示名兜底（MES 的「业务员」存的是姓名）
-    display = db.scalars(select(User).where(User.display_name.in_(wanted))).all()
-    return list(display)
+
+    found: list[User] = []
+    seen: set[str] = set()
+
+    def _add(rows: list[User]) -> None:
+        for row in rows:
+            if row.id in seen:
+                continue
+            seen.add(row.id)
+            found.append(row)
+
+    roles = [t for t in want if t.isupper() and t.isalpha()]
+    others = [t for t in want if t not in roles]
+
+    # ① 角色码：先看 MES 绑定表里的真实角色
+    for role_code in roles:
+        rows = db.scalars(
+            select(User)
+            .join(MesUserBinding, MesUserBinding.user_id == User.id)
+            .where(MesUserBinding.mes_role_code == role_code)
+        ).all()
+        _add(list(rows))
+        # 角色码在绑定表里还没人 → 回退成同名用户名（本机现状：planner/worker/keeper/qc）
+        if not rows:
+            fallback = db.scalars(
+                select(User).where(User.username == role_code.lower())
+            ).all()
+            _add(list(fallback))
+
+    # ② 用户名，③ 显示名（业务员姓名）
+    if others:
+        by_name = db.scalars(select(User).where(User.username.in_(others))).all()
+        _add(list(by_name))
+        missing = [t for t in others if t not in {u.username for u in by_name}]
+        if missing:
+            by_display = db.scalars(
+                select(User).where(User.display_name.in_(missing))
+            ).all()
+            _add(list(by_display))
+
+    return found
 
 
 def ensure_feed_group(db: Session) -> ProjectGroup | None:
@@ -800,6 +871,18 @@ def scan(
             # 不刷新就等于一直挂着第一天的旧方案
             record.payload_json = json.dumps(candidate.as_payload(), ensure_ascii=False)
             record.updated_at = stamp
+            # 接收人也要跟着刷新（2026-11-17）：
+            # 负责人调整、人员换岗、派发规则改了，旧事件不能一直锁在原来那几个人手里，
+            # 否则「改完规则但历史事件还是派错人」，看起来像没改。
+            # 只在解析出非空结果时才覆盖，避免一次登录态异常把人清空。
+            try:
+                fresh_users = _resolve_users(db, candidate.targets)
+                if fresh_users:
+                    record.target_user_ids_json = json.dumps(
+                        [u.id for u in fresh_users], ensure_ascii=False
+                    )
+            except Exception:  # noqa: BLE001 - 派发失败不该中断整轮扫描
+                logger.warning("refresh targets failed: %s", candidate.dedupe_key)
             # 拖久了自动升级：最早发现是 info/warning，超过阈值提到 critical
             age_hours = (
                 (stamp - _aware(record.first_seen_at)).total_seconds() / 3600.0
@@ -925,7 +1008,66 @@ KIND_LABELS = {
     "finish_inspect_overdue": "完工报检无结果",
     "pending_approval": "待审批",
     "manu_missing_material": "生产工单材料未出库",
+    # 这三个在库里已存在但缺标签，界面上会直接显示英文枚举
+    "delivery_risk": "交期风险",
+    "material_spec": "辅料规格不符",
+    "process_stalled": "工序停滞",
 }
+
+# 业务域：把 13 种 kind 收成 6 个业务口子。
+# 前端「AI 发现」按这个分组展示，避免 24 条平铺成一片。
+# 归口依据是「谁该去处理」，不是数据来自哪张表：
+#   到货未检验 → 质量（质检的事），不是仓储。
+DOMAIN_LABELS = {
+    "production": "生产",
+    "warehouse": "仓储",
+    "sales": "销售",
+    "purchase": "采购",
+    "quality": "质量",
+    "approval": "审批",
+}
+
+KIND_DOMAIN = {
+    "so_unstarted": "sales",
+    "so_draft": "sales",
+    "so_shipping_overdue": "sales",
+    "manu_due": "production",
+    "manu_no_report": "production",
+    "manu_missing_material": "production",
+    "process_stalled": "production",
+    "rework_pending": "production",
+    "delivery_risk": "production",
+    # 缺料/规格不符是仓储要备料，不是产线的问题
+    "material_spec": "warehouse",
+    "manu_missing_material": "warehouse",
+    "stock_low": "warehouse",
+    "pu_draft": "purchase",
+    "pu_unshipped": "purchase",
+    "arrival_uninspected": "quality",
+    "finish_inspect_overdue": "quality",
+    "quality_rate": "quality",
+    "pending_approval": "approval",
+}
+
+
+def domain_of(kind: str, panel_code: str = "") -> str:
+    """事件属于哪个业务域；未知 kind 按面板兜底，再兜底到生产。"""
+    mapped = KIND_DOMAIN.get(kind or "")
+    if mapped:
+        return mapped
+    panel = (panel_code or "").upper()
+    if panel.startswith("SO_"):
+        return "sales"
+    if panel.startswith("PU_"):
+        return "purchase"
+    if panel in ("STOCK_STATUS", "OTHER_IN", "OTHER_OUT", "MATERIAL"):
+        return "warehouse"
+    if panel.startswith(("MANU_", "PROCESS")):
+        return "production"
+    if panel.startswith(("ARRIVAL", "INSPECT", "FINISH")):
+        return "quality"
+    return "production"
+
 
 KIND_SUMMARY = {
     "so_unstarted": "张销售订单待安排生产",
@@ -1731,7 +1873,9 @@ def _targets_user(row: AssistantEvent, user: User) -> bool:
     return user.username in names
 
 
-def post_morning_plan(db: Session) -> dict[str, Any]:
+def post_morning_plan(
+    db: Session, briefings: dict[str, str] | None = None
+) -> dict[str, Any]:
     """早间主动推送：给每个人推他自己今天的计划，群里发一条总览。
 
     为什么按人推：同一个「3 张单据待审批」，对审批人是今天的头等事，
@@ -1745,15 +1889,19 @@ def post_morning_plan(db: Session) -> dict[str, Any]:
     overall: list[dict[str, Any]] = []
     for user in users:
         plan = today_plan(db, user=user)
-        # 生产概况按这个人自己的 MES 权限取数：报表里不会出现他看不到的板块
-        try:
-            briefing = production_briefing.for_user(user.id)
-            # 只有真的取到数才写进推送：没绑定 MES 的人不该在每条待办前面看到一句
-            # 「请先去绑定」，那是干扰；绑定提示改由界面上的入口承担
-            briefing_text = briefing.speak() if briefing.ok else ""
-        except Exception:  # noqa: BLE001 - 汇报失败不能挡住待办推送
-            logger.exception("morning briefing failed", extra={"user_id": user.id})
-            briefing_text = ""
+        # 生产概况按这个人自己的 MES 权限取数。调用方若已在事务外算好就直接用，
+        # 否则这里现算（会连 MES，持锁期间别人写不进来——所以后台调用必须预先算）。
+        if briefings is not None:
+            briefing_text = briefings.get(user.id, "")
+        else:
+            try:
+                briefing = production_briefing.for_user(user.id)
+                # 只有真的取到数才写进推送：没绑定 MES 的人不该在每条待办前面看到
+                # 一句「请先去绑定」，那是干扰；绑定提示由界面入口承担
+                briefing_text = briefing.speak() if briefing.ok else ""
+            except Exception:  # noqa: BLE001 - 汇报失败不能挡住待办推送
+                logger.exception("morning briefing failed", extra={"user_id": user.id})
+                briefing_text = ""
         if not plan["top"] and not briefing_text:
             continue
         if plan["top"]:

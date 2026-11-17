@@ -9,8 +9,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
+    anthropic_compat,
+    chat_archive,
+    library,
+    search_config,
+    view_as,
     assistant_rules,
+    admin_voice_config,
+    ai_usage,
+    branding,
     briefing,
+    factory,
     doc_watches,
     init_wizard,
     internal_mes,
@@ -71,6 +80,7 @@ from app.repositories import audit, users
 from app.repositories import spaces as spaces_repo
 from app.repositories.access import seed_system_access
 from app.services import linkmind
+from app.services import search_config as search_settings
 from app.services.default_endpoints import (
     ensure_linkmind_default_endpoints,
     refresh_existing_default_chat_endpoint,
@@ -107,6 +117,11 @@ async def lifespan(_: FastAPI):
         initialize_database()
     with transaction() as db:
         seed_system_access(db)
+        # 界面里改过的检索配置在启动时同步进 settings，改完不用重启就能生效
+        try:
+            search_settings.apply_overrides(db)
+        except Exception:  # noqa: BLE001 - 配置坏了不该拖垮启动
+            logging.getLogger(__name__).warning("search config apply failed")
         user = users.get_bootstrap_admin(db, settings.bootstrap_username)
         if user is not None and user.role != "admin":
             raise RuntimeError(
@@ -261,6 +276,12 @@ app.add_middleware(
 )
 app.add_middleware(RequestTraceMiddleware)
 app.include_router(auth.router)
+app.include_router(anthropic_compat.router)
+app.include_router(chat_archive.router)
+app.include_router(library.router)
+app.include_router(ai_usage.router)
+app.include_router(search_config.router)
+app.include_router(view_as.router)
 app.include_router(mes_identity.router)
 app.include_router(asr.router)
 app.include_router(tts.router)
@@ -302,6 +323,9 @@ app.include_router(writing_agent_tools.router)
 app.include_router(usage.router)
 app.include_router(wecom.router)
 app.include_router(system_config.router)
+app.include_router(branding.router)
+app.include_router(factory.router)
+app.include_router(admin_voice_config.router)
 app.include_router(admin_notifications.router)
 app.include_router(notification_channels.router)
 app.include_router(schedules.router)

@@ -41,6 +41,8 @@ def test_签发的票据可以验回同一个身份():
         "real_name": "管理员",
         "role_code": "admin",
         "is_admin": True,
+        # 身份合并后票据带上账套编码，多账套切换要用
+        "factory_code": "",
     }
 
 

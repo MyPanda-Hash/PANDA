@@ -75,13 +75,18 @@ def test_tools_separate_reads_from_effects():
 def test_tool_names_are_unique_and_stable():
     names = [tool["name"] for tool in moss_voice.tool_definitions()]
     assert len(names) == len(set(names))
-    # 上游要求工具列表在同一应用内逐字稳定；改名会让缓存的调用失效
+    # 上游要求工具列表在同一应用内逐字稳定；改名会让缓存的调用失效。
+    # 新增能力只能追加，不能改动已有顺序（这条断言就是防改动的闸门）。
     assert names == [
         "query_sales_orders",
         "query_work_orders",
         "query_purchase_orders",
         "query_arrivals",
         "query_inventory",
+        "watch_doc",
+        "list_watches",
+        "cancel_watch",
+        "production_briefing",
         "list_my_todos",
         "query_todo_status",
         "trace_doc",
@@ -133,12 +138,20 @@ def test_execute_tool_tolerates_broken_arguments():
 
 
 def test_execute_inventory_without_mes_credentials(monkeypatch):
-    """没配 MES 凭据时要给模型一句可读的失败说明，而不是抛异常。"""
+    """没有 MES 身份时，要给模型一句可读的说明（去绑定 / 没凭据），而不是抛异常。"""
+    from app.services import mes_user_client
+
     monkeypatch.setattr(settings, "mes_open_api_enabled", False, raising=False)
     monkeypatch.setattr(settings, "mes_watch_password", "", raising=False)
+    monkeypatch.setattr(
+        mes_user_client,
+        "can_query",
+        lambda panel, uid: (False, "当前账号还没有绑定 MES：请先在 MES 里完成一次绑定"),
+    )
     outcome = moss_voice.execute_tool("query_inventory", '{"item": "木箱"}', "u-test")
     assert outcome["meta"]["ok"] is False
-    assert "查询" in outcome["text"]
+    assert "绑定" in outcome["text"]
+    assert outcome["meta"]["kind"] == "permission"
 
 
 # ---------------------------------------------------------------- 槽位

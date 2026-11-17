@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.services import mes_permissions
 from app.services.group_tools import QUERYABLE_PANELS, query_business
 from app.services.mes_client import MesClient, MesWatchError
 
@@ -28,8 +29,12 @@ class MesCapabilityError(Exception):
     """MES 侧不可用或参数不合法；调用方翻译成给模型看的提示。"""
 
 
-def _client() -> MesClient:
-    return MesClient()
+def _client(token: str) -> MesClient:
+    # 用调用者本人的 MES 登录态查数。不传 token 就拒绝，绝不退回系统账号：
+    # 那等于默认把管理员视角给了所有提问的人（2026-11-17 实测 worker 能查到销售订单）。
+    if not (token or "").strip():
+        raise MesCapabilityError("缺少 MES 登录态，无法按账号权限查数据")
+    return MesClient(access_token=token.strip())
 
 
 def _panel_name(panel: str) -> str:
@@ -42,7 +47,7 @@ def _safe(value: Any) -> str:
     return text or "—"
 
 
-def query_panel(arguments: dict[str, Any]) -> dict[str, Any]:
+def query_panel(arguments: dict[str, Any], *, token: str = "") -> dict[str, Any]:
     """按业务单据查列表：``panel`` 面板编码，``keyword`` 关键字（客户/供应商/单号）。"""
     panel = str(arguments.get("panel") or "").strip().upper()
     keyword = str(arguments.get("keyword") or "").strip()
@@ -53,7 +58,14 @@ def query_panel(arguments: dict[str, Any]) -> dict[str, Any]:
             )
         )
     try:
-        result = query_business(panel=panel, keyword=keyword, limit=MAX_ROWS)
+        mes_permissions.require_panel(token, panel)
+    except mes_permissions.MesUnauthorized as exc:
+        raise MesCapabilityError(str(exc)) from exc
+
+    try:
+        result = query_business(
+            panel=panel, keyword=keyword, limit=MAX_ROWS, client=_client(token)
+        )
     except MesWatchError as exc:
         raise MesCapabilityError(f"查询 MES 失败：{exc}") from exc
     if result.error:
@@ -78,7 +90,42 @@ def query_panel(arguments: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def trace_doc(arguments: dict[str, Any]) -> dict[str, Any]:
+def _probe_client() -> MesClient:
+    # 系统级身份，只用于「这个单号属于哪个面板」的判断，不返回数据。
+    return MesClient()
+
+
+def _guard_doc_no(token: str, doc_no: str) -> None:
+    # 追踪/详情接口都不按 token 裁面板，只能由 AI 侧判定这张单归属哪个面板。
+    # 规则：在「当前账号无权」的可查面板里逐个按单号搜，能搜到就说明越权，直接拒绝。
+    # 不能靠「是否生产路线」判断：销售订单同样带生产路线（实测 SO-2026-08-0004）。
+    viewer = mes_permissions.viewer_of(token)
+    if viewer.is_admin:
+        return
+    wanted = (doc_no or "").strip().upper()
+    if not wanted:
+        return
+    for panel in QUERYABLE_PANELS:
+        if viewer.can_view(panel):
+            continue
+        try:
+            # 探测归属必须用系统身份：用户自己无权查这个面板，用他的 token 只会失败，
+            # 从而误判成「不属于该面板」而放行（2026-11-17 踩过）。
+            # 这里只判断「单号在不在这个面板」，不把任何数据回给调用方。
+            res = query_business(
+                panel=panel, keyword=doc_no, limit=MAX_ROWS, client=_probe_client()
+            )
+        except Exception:  # noqa: BLE001 - 探测失败不影响主流程
+            continue
+        for row in getattr(res, "rows", []) or []:
+            for value in row.values():
+                if wanted and wanted in str(value).upper():
+                    raise MesCapabilityError(
+                        "当前账号没有「" + panel + "」的查看权限；如需查看请联系管理员开通"
+                    )
+
+
+def trace_doc(arguments: dict[str, Any], *, token: str = '') -> dict[str, Any]:
     """单据流程追踪：环节、工序、卡点、下一步。
 
     MES 已经把这个能力做在 ``/api/open/biz/trace``，和页面上的流程追踪同一份结果；
@@ -88,11 +135,17 @@ def trace_doc(arguments: dict[str, Any]) -> dict[str, Any]:
     if not doc_no:
         raise MesCapabilityError("缺少单号")
     try:
-        payload = _client().trace(doc_no)
+        payload = _client(token).trace(doc_no)
     except MesWatchError as exc:
         raise MesCapabilityError(f"追踪 MES 单据失败：{exc}") from exc
     if not payload:
         return {"text": f"没有找到单号 {doc_no} 的流程。确认单号是否完整。"}
+
+    # 追踪接口同样不按 token 裁面板：先推断面板再校验，无权限直接丢弃。
+    try:
+        _guard_doc_no(token, doc_no)
+    except mes_permissions.MesUnauthorized as exc:
+        raise MesCapabilityError(str(exc)) from exc
 
     total = payload.get("环节数")
     done = payload.get("已完成数")
@@ -178,18 +231,27 @@ def trace_doc(arguments: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def doc_detail(arguments: dict[str, Any]) -> dict[str, Any]:
+def doc_detail(arguments: dict[str, Any], *, token: str = '') -> dict[str, Any]:
     """单据详情：表头 + 明细，字段已由 MES 按面板配置过滤。"""
     panel = str(arguments.get("panel") or "").strip().upper()
     form_no = str(arguments.get("form_no") or "").strip()
     if not form_no:
         raise MesCapabilityError("缺少单号")
     try:
-        payload = _client().form(panel, form_no)
+        payload = _client(token).form(panel, form_no)
     except MesWatchError as exc:
         raise MesCapabilityError(f"读取 MES 单据失败：{exc}") from exc
     if not payload:
         return {"text": f"没有找到 {form_no}。"}
+
+    # 面板以 MES 返回的 panelCode 为准（传进来的 code 可能只是链路里的一环）。
+    # 校验放在这里：MES 的表单接口不按 token 裁面板，AI 侧必须自己挡。
+    actual = str(payload.get("panelCode") or panel or "").strip().upper()
+    if actual:
+        try:
+            mes_permissions.require_panel(token, actual)
+        except mes_permissions.MesUnauthorized as exc:
+            raise MesCapabilityError(str(exc)) from exc
 
     title = _panel_name(panel) if panel else str(payload.get("panelName") or "单据")
     # 面板名以 MES 返回的为准：传进来的 code 可能只是链路里认出的一环
@@ -218,12 +280,12 @@ def doc_detail(arguments: dict[str, Any]) -> dict[str, Any]:
     return {"text": "\n".join(lines), "panelCode": panel, "formNo": form_no, "detail": payload}
 
 
-def stock(arguments: dict[str, Any]) -> dict[str, Any]:
+def stock(arguments: dict[str, Any], *, token: str = '') -> dict[str, Any]:
     """库存结存：按存货/仓库过滤。"""
     item_code = str(arguments.get("item_code") or "").strip()
     warehouse = str(arguments.get("warehouse") or "").strip()
     try:
-        payload = _client().stock(item_code=item_code, warehouse=warehouse, limit=MAX_ROWS)
+        payload = _client(token).stock(item_code=item_code, warehouse=warehouse, limit=MAX_ROWS)
     except MesWatchError as exc:
         raise MesCapabilityError(f"读取 MES 库存失败：{exc}") from exc
     rows = payload.get("rows") or []

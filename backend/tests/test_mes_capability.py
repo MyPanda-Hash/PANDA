@@ -56,11 +56,21 @@ class FakeClient:
         return self.payload
 
 
+@pytest.fixture(autouse=True)
+def unrestricted_viewer(monkeypatch):
+    # 这些用例验证排版输出，不验证权限；统一放行以免探测逻辑干扰断言。
+    from app.services import mes_permissions
+
+    viewer = mes_permissions.MesViewer(
+        token="t", is_admin=True, panels=set(), real_name="t", loaded_at=0.0
+    )
+    monkeypatch.setattr(mes_permissions, "viewer_of", lambda token: viewer)
+
 @pytest.fixture
 def fake_client(monkeypatch):
     def install(payload=None):
         client = FakeClient(payload)
-        monkeypatch.setattr(mes_capability, "_client", lambda: client)
+        monkeypatch.setattr(mes_capability, "_client", lambda token="": client)
         return client
 
     return install
