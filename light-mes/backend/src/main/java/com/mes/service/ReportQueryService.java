@@ -1,0 +1,1968 @@
+package com.mes.service;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mes.entity.FormData;
+import com.mes.entity.StockBalance;
+import com.mes.mapper.FormDataMapper;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/** Builds read-only T+ style reports from the current form_data business rows. */
+@Service
+public class ReportQueryService {
+
+    private record Doc(FormData entity, Map<String, Object> head, Map<String, Object> detail) {}
+
+    private static final Set<String> EFFECTIVE_STATUSES = Set.of("已审核", "生产中", "已完工", "已关闭");
+    private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("HH:mm");
+
+    private final FormDataMapper formMapper;
+    private final ObjectMapper json;
+    private final StockBalanceService stockBalanceService;
+    private final AccountingService accountingService;
+    private final PickQueryService pickQueryService;
+    private final SpcQueryService spcQueryService;
+    private final FinanceStatementQueryService financeStatementQueryService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ReportQueryService(FormDataMapper formMapper, ObjectMapper json,
+                              StockBalanceService stockBalanceService,
+                              AccountingService accountingService,
+                              PickQueryService pickQueryService,
+                              SpcQueryService spcQueryService,
+                              FinanceStatementQueryService financeStatementQueryService) {
+        this.formMapper = formMapper;
+        this.json = json;
+        this.stockBalanceService = stockBalanceService;
+        this.accountingService = accountingService;
+        this.pickQueryService = pickQueryService;
+        this.spcQueryService = spcQueryService;
+        this.financeStatementQueryService = financeStatementQueryService;
+    }
+
+    /** 期间服务：会计期间面板的数据源。用 setter 注入，避免改动既有构造器签名。 */
+    private AccountingPeriodService periodService;
+
+    /** 财务报表服务：资产负债表 / 利润表 / 现金流量表。 */
+    private FinancialStatementService statementService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setPeriodService(AccountingPeriodService periodService) {
+        this.periodService = periodService;
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setStatementService(FinancialStatementService statementService) {
+        this.statementService = statementService;
+    }
+
+    /** 简化构造：无账务/库存/计划服务时报表回退到实时聚合。 */
+    public ReportQueryService(FormDataMapper formMapper, ObjectMapper json) {
+        this(formMapper, json, null, null, null, null, null);
+    }
+
+    public Map<String, Object> query(String panelCode, String keyword, Map<String, Object> condition,
+                                     int pageNo, int pageSize) {
+        List<Map<String, Object>> rows = build(panelCode, condition == null ? Map.of() : condition);
+        rows = filter(rows, keyword, condition == null ? Map.of() : condition);
+        int safePage = Math.max(1, pageNo);
+        int safeSize = Math.max(1, Math.min(pageSize, 500));
+        int from = Math.min((safePage - 1) * safeSize, rows.size());
+        int to = Math.min(from + safeSize, rows.size());
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("totalSize", rows.size());
+        result.put("list", new ArrayList<>(rows.subList(from, to)));
+        return result;
+    }
+
+    /**
+     * 单据中的「现存量」与库存状况表共用同一聚合结果，避免各面板保存静态库存快照后长期失真。
+     */
+    public List<Map<String, Object>> currentStockRows() {
+        return stockStatus();
+    }
+
+    private List<Map<String, Object>> build(String code, Map<String, Object> condition) {
+        return switch (code) {
+            case "PURCHASE_IN_DETAIL" -> inventoryDetail("PURCHASE_IN", "PURCHASE");
+            case "FINISH_IN_DETAIL" -> inventoryDetail("FINISH_IN", "FINISH");
+            case "OTHER_IN_DETAIL" -> inventoryDetail("OTHER_IN", "OTHER_IN");
+            case "SALE_OUT_DETAIL" -> inventoryDetail("SALE_OUT", "SALE");
+            case "MATERIAL_OUT_DETAIL" -> inventoryDetail("MATERIAL_OUT", "MATERIAL");
+            case "OTHER_OUT_DETAIL" -> inventoryDetail("OTHER_OUT", "OTHER_OUT");
+            case "PURCHASE_IN_STATS" -> inventoryStats("PURCHASE");
+            case "PURCHASE_INVOICE_MATCH" -> purchaseInvoiceMatchRows();
+            case "FINISH_IN_STATS" -> inventoryStats("FINISH");
+            case "OTHER_IN_STATS" -> inventoryStats("OTHER_IN");
+            case "SALE_OUT_STATS" -> inventoryStats("SALE");
+            case "SALE_PROFIT" -> saleProfitRows();
+            case "MATERIAL_OUT_STATS" -> inventoryStats("MATERIAL");
+            case "OTHER_OUT_STATS" -> inventoryStats("OTHER_OUT");
+            case "COST_MAINTAIN" -> costRows();
+            case "STOCK_STATUS" -> stockStatus();
+            case "STOCK_SUMMARY" -> stockSummary(condition);
+            case "STOCK_LEDGER" -> stockLedger(condition);
+            case "SALES_ORDER_DETAIL" -> salesOrderDetail();
+            case "SALES_ORDER_STATS" -> salesOrderStats();
+            case "SALES_ORDER_EXEC" -> salesOrderExecution();
+            case "SALES_ORDER_PROGRESS" -> salesOrderProgress();
+            case "MANU_ORDER_DETAIL" -> manufactureDetail();
+            case "MANU_ORDER_STATS" -> manufactureStats();
+            case "MANU_PROC_STATS" -> manufactureProcessStats();
+            case "PROC_DETAIL" -> processDetail();
+            case "PROC_STATS" -> processStats();
+            case "SALARY_DETAIL" -> salaryDetail();
+            case "SALARY_STATS" -> salaryStats();
+            case "REWORK_REPORT" -> reworkRows();
+            case "OUTSOURCE_ORDER_PRODUCT_DETAIL" -> outsourceOrderProductDetail();
+            case "OUTSOURCE_ORDER_MATERIAL_DETAIL" -> outsourceOrderMaterialDetail();
+            case "OUTSOURCE_FEE_DETAIL" -> outsourceFeeDetail();
+            case "OUTSOURCE_ORDER_EXEC" -> outsourceOrderExecution();
+            case "OUTSOURCE_ISSUE_BALANCE" -> outsourceIssueBalance();
+            case "OUTSOURCE_ORDER_PRODUCT_STATS" -> outsourceOrderProductStats();
+            case "OUTSOURCE_ORDER_MATERIAL_STATS" -> outsourceOrderMaterialStats();
+            case "OUTSOURCE_FEE_STATS" -> outsourceFeeStats();
+            case "MANU_ORDER_EXEC" -> manufactureOrderExecution();
+            case "MANU_ORDER_TRACKER" -> manufactureOrderTracker();
+            case "MANU_ORDER_PRODUCT_DETAIL" -> manufactureDetail();
+            case "MANU_ORDER_MATERIAL_DETAIL" -> manufactureMaterialDetail();
+            case "MANU_ORDER_PRODUCT_STATS" -> manufactureProductStats();
+            case "MANU_ORDER_MATERIAL_STATS" -> manufactureMaterialStats();
+            case "PICK_ORDER_DETAIL" -> pickOrderDetail();
+            case "PICK_ORDER_STATS" -> pickOrderStats();
+            case "PICK_ORDER_SUMMARY" -> pickOrderSummary();
+            case "ARRIVAL_IN_DETAIL" -> qualityDetail("ARRIVAL_IN");
+            case "ARRIVAL_IN_STATS" -> qualityStats(List.of("ARRIVAL_IN"));
+            case "ARRIVAL_IN_EXEC" -> qualityExecution("ARRIVAL_IN");
+            case "FINISH_INSPECT_DETAIL" -> qualityDetail("FINISH_INSPECT");
+            case "FINISH_INSPECT_STATS" -> qualityStats(List.of("FINISH_INSPECT"));
+            case "FINISH_INSPECT_EXEC" -> qualityExecution("FINISH_INSPECT");
+            case "FIRST_INSPECT_DETAIL" -> qualityDetail("FIRST_INSPECT");
+            case "FIRST_INSPECT_STATS" -> qualityStats(List.of("FIRST_INSPECT"));
+            case "FIRST_INSPECT_EXEC" -> qualityExecution("FIRST_INSPECT");
+            case "PROCESS_INSPECT_APPLY_DETAIL" -> qualityDetail("PROCESS_INSPECT_APPLY");
+            case "PROCESS_INSPECT_APPLY_STATS" -> qualityStats(List.of("PROCESS_INSPECT_APPLY"));
+            case "PROCESS_INSPECT_APPLY_EXEC" -> qualityExecution("PROCESS_INSPECT_APPLY");
+            case "INSPECTION_DETAIL" -> qualityDetail(List.of("INSPECTION", "PROCESS_INSPECTION"));
+            case "INSPECTION_STATS", "QUALITY_STATS_ANALYSIS" -> qualityStats(List.of("INSPECTION", "PROCESS_INSPECTION"));
+            case "QC_ITEM_LIST" -> qualityItemList();
+            case "QC_ITEM_STATS" -> qualityItemStats();
+            case "PRODUCT_FORWARD_TRACE" -> qualityTrace(false);
+            case "MATERIAL_REVERSE_TRACE" -> qualityTrace(true);
+            case "ACCOUNT_BALANCE" -> accountingService == null ? List.of() : accountingService.accountBalances();
+            case "ACCOUNT_DETAIL" -> accountingService == null
+                    ? List.of() : accountingService.accountDetail(text(condition.get("科目编码")));
+            case "ACCOUNTING_ENTRY" -> accountingService == null
+                    ? List.of() : accountingService.accountDetail(null);
+            case "ACCOUNT" -> accountingAccounts();
+            case "ACCOUNT_PERIOD" -> periodService == null ? List.of() : periodService.list();
+            case "BALANCE_SHEET" -> statementService == null ? List.of()
+                    : statementService.balanceSheet(statementPeriod(condition));
+            case "INCOME_STATEMENT" -> statementService == null ? List.of()
+                    : statementService.incomeStatement(statementPeriod(condition));
+            case "CASH_FLOW" -> statementService == null ? List.of()
+                    : statementService.cashFlow(statementPeriod(condition));
+            case "PICK_WORKBENCH" -> pickQueryService == null ? List.of() : pickQueryService.workbench();
+            case "SPC_CONTROL" -> spcQueryService == null ? List.of() : spcQueryService.controlCharts();
+            case "SETTLE_CUSTOMER" -> financeStatementQueryService == null
+                    ? List.of() : financeStatementQueryService.customerStatement();
+            case "SETTLE_SUPPLIER" -> financeStatementQueryService == null
+                    ? List.of() : financeStatementQueryService.supplierStatement();
+            case "AGING_ANALYSIS" -> financeStatementQueryService == null
+                    ? List.of()
+                    : financeStatementQueryService.aging(textOf(condition, "截止日期", "截止时间", "日期"));
+            default -> List.of();
+        };
+    }
+
+    /** 报表期间：优先用查询条件里的期间，缺省取最新期间（不出「全部」以免把月度表拉成累计表）。 */
+    private String statementPeriod(Map<String, Object> condition) {
+        String given = textOf(condition, "期间", "会计期间");
+        if (!given.isBlank()) return given;
+        return statementService == null ? null : statementService.latestPeriod();
+    }
+
+    /** 会计科目列表：直接读 stock_txn 同库的 accounting_account 表。 */
+    private List<Map<String, Object>> accountingAccounts() {
+        return accountingService == null ? List.of() : accountingService.listAccounts();
+    }
+
+    // ---------- inventory document reports ----------
+
+    private List<Map<String, Object>> inventoryDetail(String source, String kind) {
+        Map<String, Map<String, Object>> inventory = inventoryIndex();
+        Map<String, String> warehouses = warehouseCodes();
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Doc doc : docs(source)) {
+            for (Map<String, Object> item : detailRows(doc, source.equals("FINISH_IN") ? "items" : "items")) {
+                String name = text(first(item, doc.head(),
+                        kind.equals("MATERIAL") ? new String[]{"材料名称", "存货名称"}
+                                : kind.equals("FINISH") ? new String[]{"产品名称", "存货名称"}
+                                : new String[]{"存货名称", "存货", "产品名称"}));
+                Map<String, Object> inv = inventory.getOrDefault(name, Map.of());
+                String code = text(first(item, inv, kind.equals("MATERIAL")
+                        ? new String[]{"材料编码", "存货编码"} : new String[]{"存货编码", "产品编码"}));
+                String warehouse = text(first(item, doc.head(), "仓库"));
+                BigDecimal quantity = number(first(item, Map.of(), kind.equals("PURCHASE") || kind.equals("FINISH")
+                        ? new String[]{"实收数量", "数量"} : new String[]{"数量", "实收数量"}));
+                BigDecimal price = number(first(item, Map.of(), kind.equals("SALE")
+                        ? new String[]{"成本价", "单价"} : new String[]{"单价", "成本价"}));
+                BigDecimal amount = number(first(item, Map.of(), kind.equals("SALE")
+                        ? new String[]{"成本金额", "金额"} : new String[]{"金额", "成本金额"}));
+                if (amount.signum() == 0 && quantity.signum() != 0 && price.signum() != 0) amount = quantity.multiply(price);
+
+                Map<String, Object> row = row(
+                        "单据日期", value(doc, "单据日期"), "创建时间", created(doc),
+                        "单据编号", documentNo(doc), "业务类型", value(doc, "业务类型"),
+                        "仓库编码", warehouses.getOrDefault(warehouse, ""), "仓库", warehouse,
+                        "入库类别", value(doc, "入库类别"), "出库类别", value(doc, "出库类别"),
+                        "供应商编码", value(doc, "供应商编码"), "供应商", firstText(doc.head(), "供应商", "供应商名称"),
+                        "客户编码", value(doc, "客户编码"), "客户", value(doc, "客户"),
+                        "部门编码", value(doc, "部门编码"), "部门", value(doc, "部门"),
+                        "生产车间编码", value(doc, "生产车间编码"), "生产车间", value(doc, "生产车间"),
+                        "经手人编码", value(doc, "经手人编码"), "经手人", value(doc, "经手人"),
+                        "领用人编码", value(doc, "领用人编码"), "领用人", value(doc, "领用人"),
+                        "备注", first(item, doc.head(), "备注"), "制单人", firstText(doc.head(), "制单人", "发起人编号"),
+                        "审核人", firstText(doc.head(), "审核人"), "存货编码", code, "存货", name,
+                        "材料编码", code, "材料名称", name, "规格型号", first(item, inv, "规格型号"),
+                        "材料规格", first(item, inv, "材料规格", "规格型号"),
+                        "计量单位", first(item, inv, "计量单位", "生产单位"),
+                        "主单位", first(item, inv, "计量单位", "生产单位"), "辅单位", first(item, Map.of(), "计量单位2"),
+                        "实收数量", quantity, "数量", quantity, "应发数量", quantity,
+                        "实收数量(主单位)", quantity, "数量(主单位)", quantity,
+                        "单价", price, "单价(主单位)", price, "成本价", price,
+                        "金额", amount, "成本金额", amount, "总成本", amount,
+                        "计量单位2", first(item, Map.of(), "计量单位2"),
+                        "实收数量2", number(first(item, Map.of(), "实收数量2", "数量2")),
+                        "数量2", number(first(item, Map.of(), "数量2", "实收数量2")),
+                        "入库调整", number(first(item, Map.of(), "入库调整")),
+                        "出库调整", number(first(item, Map.of(), "出库调整")),
+                        "费用调整", number(first(item, Map.of(), "费用调整")),
+                        "费用金额", number(first(item, Map.of(), "费用金额")),
+                        "销售订单号", firstText(doc.head(), "销售订单号"), "入库单号", first(item, doc.head(), "入库单号"),
+                        "项目", first(item, doc.head(), "项目"), "单据状态", doc.entity().getStatus());
+                row.put("明细.生产车间", first(item, doc.head(), "生产车间"));
+                row.put("工作中心", first(item, doc.head(), "工作中心"));
+                row.put("班组", first(item, doc.head(), "班组"));
+                row.put("工人", first(item, doc.head(), "工人"));
+                row.put("设备", first(item, doc.head(), "设备"));
+                rows.add(row);
+            }
+        }
+        rows.sort(dateDesc());
+        return rows;
+    }
+
+    private List<Map<String, Object>> inventoryStats(String kind) {
+        List<Map<String, Object>> detail = switch (kind) {
+            case "PURCHASE" -> inventoryDetail("PURCHASE_IN", kind);
+            case "FINISH" -> inventoryDetail("FINISH_IN", kind);
+            case "OTHER_IN" -> inventoryDetail("OTHER_IN", kind);
+            case "SALE" -> inventoryDetail("SALE_OUT", kind);
+            case "MATERIAL" -> inventoryDetail("MATERIAL_OUT", kind);
+            default -> inventoryDetail("OTHER_OUT", kind);
+        };
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : detail) {
+            String itemCode = text(source.get(kind.equals("MATERIAL") ? "材料编码" : "存货编码"));
+            String key = join(source.get("仓库"), source.get("供应商"), itemCode, source.get("单据日期"));
+            Map<String, Object> target = groups.get(key);
+            if (target == null) {
+                target = new LinkedHashMap<>(source);
+                groups.put(key, target);
+            } else {
+                add(target, "实收数量(主单位)", source.get("实收数量"));
+                add(target, "数量(主单位)", source.get("数量"));
+                add(target, "金额", source.get("金额"));
+                add(target, "成本金额", source.get("成本金额"));
+                add(target, "入库调整", source.get("入库调整"));
+                add(target, "出库调整", source.get("出库调整"));
+                add(target, "费用调整", source.get("费用调整"));
+                add(target, "费用金额", source.get("费用金额"));
+            }
+        }
+        for (Map<String, Object> target : groups.values()) {
+            BigDecimal quantity = number(kind.equals("PURCHASE") || kind.equals("FINISH")
+                    ? target.get("实收数量(主单位)") : target.get("数量(主单位)"));
+            BigDecimal amount = number(kind.equals("SALE") ? target.get("成本金额") : target.get("金额"));
+            BigDecimal average = divide(amount, quantity);
+            target.put("单价", average);
+            target.put("单价(主单位)", average);
+            target.put("成本价(主单位)", average);
+            target.put("总成本", amount.add(number(target.get("入库调整"))).add(number(target.get("费用调整"))));
+            target.put("单据日期（周）", target.get("单据日期"));
+            target.put("计量单位(辅单位)", target.get("辅单位"));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> costRows() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        Map<String, String> sources = new LinkedHashMap<>();
+        sources.put("PURCHASE_IN", "采购入库单");
+        sources.put("FINISH_IN", "产成品入库单");
+        sources.put("OTHER_IN", "其他入库单");
+        sources.put("SALE_OUT", "销售出库单");
+        sources.put("MATERIAL_OUT", "材料出库单");
+        sources.put("OTHER_OUT", "其他出库单");
+        for (Map.Entry<String, String> entry : sources.entrySet()) {
+            String kind = switch (entry.getKey()) {
+                case "PURCHASE_IN" -> "PURCHASE";
+                case "FINISH_IN" -> "FINISH";
+                case "OTHER_IN" -> "OTHER_IN";
+                case "SALE_OUT" -> "SALE";
+                case "MATERIAL_OUT" -> "MATERIAL";
+                default -> "OTHER_OUT";
+            };
+            for (Map<String, Object> detail : inventoryDetail(entry.getKey(), kind)) {
+                out.add(row("单据类型", entry.getValue(), "单据编号", detail.get("单据编号"),
+                        "单据日期", detail.get("单据日期"), "仓库", detail.get("仓库"),
+                        "存货编码", first(detail, detail, "存货编码", "材料编码"),
+                        "存货类别", kind.contains("OUT") || "MATERIAL".equals(kind) ? "出库存货" : "入库存货",
+                        "存货", first(detail, detail, "存货", "材料名称"), "规格型号", first(detail, detail, "规格型号", "材料规格"),
+                        "计量单位", detail.get("计量单位"), "数量", first(detail, detail, "数量", "实收数量"),
+                        "原成本", first(detail, detail, "成本价", "单价"), "调整后成本", first(detail, detail, "成本价", "单价"),
+                        "成本金额", first(detail, detail, "成本金额", "金额"), "制单人", detail.get("制单人"),
+                        "单据状态", detail.get("单据状态")));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    // ---------- 采购发票勾稽（票到确认，2026-11-06） ----------
+
+    /**
+     * 采购发票勾稽表：按有效采购发票的明细行列出开票数量、来源入库/退货数量与已开票/未开票数量。
+     * 已开票数量按「来源面板|来源单号|来源行号」汇总有效发票 abs(数量)，红字发票行（负数）同样占用来源行额度；
+     * 未开票数量 = max(0, 入库数量 - 已开票数量)。无来源字段的发票行照常输出（来源列为空），
+     * 勾稽状态取发票表头，表头缺失时按未开票数量派生：有剩余=部分勾稽，开完=已勾稽。
+     */
+    private List<Map<String, Object>> purchaseInvoiceMatchRows() {
+        List<FormData> documents = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .in(FormData::getPanelCode, List.of("PU_INVOICE", "PURCHASE_IN", "PURCHASE_RETURN"))
+                .orderByAsc(FormData::getCreateTime)
+                .orderByAsc(FormData::getId));
+        List<Doc> invoices = new ArrayList<>();
+        Map<String, Doc> sources = new HashMap<>();
+        for (FormData entity : documents) {
+            Doc doc = new Doc(entity, parse(entity.getData()), parse(entity.getDetailData()));
+            if ("PU_INVOICE".equals(entity.getPanelCode())) invoices.add(doc);
+            else sources.put(join(entity.getPanelCode(), entity.getFormNo()), doc);
+        }
+
+        Map<String, BigDecimal> invoiced = new HashMap<>();
+        for (Doc invoice : invoices) {
+            if (!effective(invoice)) continue;
+            for (Map<String, Object> item : firstDetailRows(invoice.detail())) {
+                String sourcePanel = invoiceSourcePanel(item);
+                String sourceNo = invoiceSourceNo(item);
+                int sourceLine = invoiceSourceLine(item);
+                if (sourcePanel.isEmpty() || sourceNo.isEmpty() || sourceLine <= 0) continue;
+                BigDecimal quantity = number(item.get("数量")).abs();
+                if (quantity.signum() == 0) continue;
+                invoiced.merge(join(sourcePanel, sourceNo, sourceLine), quantity, BigDecimal::add);
+            }
+        }
+
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc invoice : invoices) {
+            if (!effective(invoice)) continue;
+            String invoiceNo = documentNo(invoice);
+            String invoiceDate = firstText(invoice.head(), "开票日期", "单据日期");
+            String headStatus = text(invoice.head().get("勾稽状态"));
+            for (Map<String, Object> item : firstDetailRows(invoice.detail())) {
+                String sourcePanel = invoiceSourcePanel(item);
+                String sourceNo = invoiceSourceNo(item);
+                int sourceLine = invoiceSourceLine(item);
+                boolean linked = !sourcePanel.isEmpty() && !sourceNo.isEmpty() && sourceLine > 0;
+                BigDecimal received = linked
+                        ? sourceQuantity(sources.get(join(sourcePanel, sourceNo)), sourcePanel, sourceLine)
+                        : BigDecimal.ZERO;
+                BigDecimal invoicedQty = linked
+                        ? invoiced.getOrDefault(join(sourcePanel, sourceNo, sourceLine), BigDecimal.ZERO)
+                        : BigDecimal.ZERO;
+                BigDecimal remaining = received.subtract(invoicedQty).max(BigDecimal.ZERO);
+                String status = headStatus;
+                if (status.isEmpty() && linked) status = remaining.signum() > 0 ? "部分勾稽" : "已勾稽";
+                out.add(row(
+                        "发票编号", invoiceNo, "开票日期", invoiceDate, "单据日期", invoiceDate,
+                        "供应商", firstText(invoice.head(), "供应商", "供应商简称"),
+                        "发票号码", text(invoice.head().get("发票号码")),
+                        "业务类型", text(invoice.head().get("业务类型")),
+                        "来源面板", sourcePanel, "来源单号", sourceNo,
+                        "来源行号", linked ? Integer.valueOf(sourceLine) : "",
+                        "存货编码", firstText(item, "存货编码", "物料编码"),
+                        "存货名称", firstText(item, "存货名称", "物料名称"),
+                        "开票数量", number(item.get("数量")),
+                        "来源数量", received, "入库数量", received,
+                        "已开票数量", invoicedQty, "未开票数量", remaining,
+                        "勾稽状态", status));
+            }
+        }
+        out.sort(Comparator.comparing((Map<String, Object> entry) -> text(entry.get("发票编号")))
+                .thenComparingInt(entry -> (int) Math.round(number(entry.get("来源行号")).doubleValue())));
+        return out;
+    }
+
+    /** 来源行数量：采购入库按实收数量、采购退货按数量；红字/负数来源行一律取绝对值。 */
+    private BigDecimal sourceQuantity(Doc source, String sourcePanel, int sourceLine) {
+        if (source == null || sourceLine <= 0) return BigDecimal.ZERO;
+        List<Map<String, Object>> rows = firstDetailRows(source.detail());
+        if (sourceLine > rows.size()) return BigDecimal.ZERO;
+        Map<String, Object> item = rows.get(sourceLine - 1);
+        Object quantity = "PURCHASE_RETURN".equals(sourcePanel)
+                ? first(item, Map.of(), "数量", "实收数量")
+                : first(item, Map.of(), "实收数量", "数量");
+        return number(quantity).abs();
+    }
+
+    /** 发票行来源面板：行级选单写「来源面板」，明细展示列「源单类型」兜底。 */
+    private String invoiceSourcePanel(Map<String, Object> item) {
+        return firstText(item, "来源面板", "源单类型");
+    }
+
+    /** 发票行来源单号：行级选单写「来源单号」，明细展示列「源单编号」兜底。 */
+    private String invoiceSourceNo(Map<String, Object> item) {
+        return firstText(item, "来源单号", "源单编号");
+    }
+
+    /** 发票行来源行号：行级选单写「来源行号」，明细展示列「源单行号」兜底。 */
+    private int invoiceSourceLine(Map<String, Object> item) {
+        return (int) Math.round(number(first(item, Map.of(), "来源行号", "源单行号")).doubleValue());
+    }
+
+    /** 明细页签：与 PxService.firstDetailRows 同口径，优先 items，再取第一个非空列表。 */
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> firstDetailRows(Map<String, Object> detail) {
+        for (String key : List.of("items", "products", "materials", "detail", "rows", "processes")) {
+            Object value = detail.get(key);
+            if (!(value instanceof List<?> list)) continue;
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (Object item : list) if (item instanceof Map<?, ?>) rows.add((Map<String, Object>) item);
+            return rows;
+        }
+        for (Object value : detail.values()) {
+            if (!(value instanceof List<?> list)) continue;
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (Object item : list) if (item instanceof Map<?, ?>) rows.add((Map<String, Object>) item);
+            if (!rows.isEmpty()) return rows;
+        }
+        return new ArrayList<>();
+    }
+
+    // ---------- stock status, summary and ledger ----------
+
+    private List<Map<String, Object>> movements() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("INIT_BALANCE")) addMovements(out, doc, "INITIAL", "期初结存");
+        for (String source : List.of("PURCHASE_IN", "FINISH_IN", "OTHER_IN")) {
+            for (Doc doc : docs(source)) if (effective(doc)) addMovements(out, doc, "IN", documentType(source));
+        }
+        for (String source : List.of("SALE_OUT", "MATERIAL_OUT", "OTHER_OUT")) {
+            for (Doc doc : docs(source)) if (effective(doc)) addMovements(out, doc, "OUT", documentType(source));
+        }
+        // 同一天按单据时分排（审核时间优先），同一分钟再按创建先后兜底
+        out.sort(Comparator.comparing((Map<String, Object> r) -> text(r.get("单据日期")))
+                .thenComparing(r -> text(r.get("单据时间")))
+                .thenComparingLong(r -> (long) number(r.get("时间序")).doubleValue()));
+        return out;
+    }
+
+    /** 单据时分（HH:mm）：审核时间优先，未审核用创建时间；都没有时留空。 */
+    private String documentClock(Doc doc) {
+        LocalDateTime time = doc.entity().getAuditTime() != null
+                ? doc.entity().getAuditTime() : doc.entity().getCreateTime();
+        return time == null ? "" : time.format(CLOCK);
+    }
+
+    private void addMovements(List<Map<String, Object>> out, Doc doc, String direction, String type) {
+        Map<String, Map<String, Object>> inventory = inventoryIndex();
+        Map<String, String> warehouseCodes = warehouseCodes();
+        for (Map<String, Object> item : detailRows(doc, "items")) {
+            String name = firstText(item, "存货名称", "产品名称", "材料名称", "存货");
+            Map<String, Object> inv = inventory.getOrDefault(name, Map.of());
+            String code = text(first(item, inv, "存货编码", "产品编码", "材料编码"));
+            String warehouse = text(first(item, doc.head(), "仓库"));
+            BigDecimal qty = number(first(item, Map.of(), "实收数量", "数量"));
+            BigDecimal price = number(first(item, Map.of(), direction.equals("OUT") ? new String[]{"成本价", "单价", "主单价"}
+                    : new String[]{"单价", "主单价", "成本价"}));
+            BigDecimal amount = number(first(item, Map.of(), direction.equals("OUT") ? new String[]{"成本金额", "金额"}
+                    : new String[]{"金额", "成本金额"}));
+            if (amount.signum() == 0 && qty.signum() != 0 && price.signum() != 0) amount = qty.multiply(price);
+            out.add(row("方向", direction, "单据日期", value(doc, "单据日期"), "单据类型", type,
+                    "时间序", doc.entity().getId(),
+                    "单据时间", documentClock(doc),
+                    "单据编号", documentNo(doc), "业务类型", value(doc, "业务类型"),
+                    "往来单位", firstText(doc.head(), "供应商", "客户", "来料客户"),
+                    "项目", first(item, doc.head(), "项目"), "仓库编码", warehouseCodes.getOrDefault(warehouse, ""),
+                    "仓库", warehouse, "存货编码", code, "存货", name,
+                    "规格型号", first(item, inv, "规格型号", "材料规格"),
+                    "主单位", first(item, inv, "计量单位", "生产单位"),
+                    "数量", qty, "单价", price, "金额", amount));
+        }
+    }
+
+    /**
+     * 库存状况表：读 stock_balance 余额表（唯一权威口径）。
+     * 余额表为空时回退到 form_data 实时聚合，保证老库升级后报表仍可用。
+     */
+    /** 仓库档案摘要（基础设置 → 仓库）。 */
+    public record WarehouseInfo(String code, String name, String category) {}
+
+    /** 存货档案摘要（存货面板）：类别与最新成本。 */
+    public record ItemInfo(String category, BigDecimal latestCost) {}
+
+    private List<Map<String, Object>> stockStatus() {
+        List<StockBalance> balances = stockBalanceService == null ? List.of() : stockBalanceService.list();
+        if (balances.isEmpty()) return stockStatusFromMovements();
+        return stockStatusRows(balances, warehouseIndex(), itemIndex());
+    }
+
+    /**
+     * 库存状况行：按「仓库类别 → 仓库 → 存货类别 → 存货」组织，一行一个存货。
+     *
+     * <p>口径（2026-11-09 定稿）：
+     * <ul>
+     *   <li>数量 = 现存量，**负数按 0 展示**（历史出库多于入库时不显示负库存）；</li>
+     *   <li>单价 = 存货档案「最新成本」，台账均价只在档案缺失时兜底；</li>
+     *   <li>金额 = 数量 × 单价，保证行内三个数字能对上。</li>
+     * </ul>
+     * 同仓库同存货的多个批次/库位合并为一行，避免同一物料散成好几行。
+     */
+    List<Map<String, Object>> stockStatusRows(List<StockBalance> balances,
+                                              Map<String, WarehouseInfo> warehouses,
+                                              Map<String, ItemInfo> items) {
+        Map<String, StockBalance> merged = new LinkedHashMap<>();
+        for (StockBalance balance : balances) {
+            String warehouse = text(balance.getWarehouse());
+            String code = text(balance.getItemCode());
+            String identity = code.isEmpty() ? "#" + text(balance.getItemName()) : code;
+            String key = warehouse + "|" + identity;
+            StockBalance target = merged.get(key);
+            if (target == null) {
+                target = balance;
+                merged.put(key, target);
+                continue;
+            }
+            target.setQuantity(nz(target.getQuantity()).add(nz(balance.getQuantity())));
+            target.setAmount(nz(target.getAmount()).add(nz(balance.getAmount())));
+        }
+
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (StockBalance balance : merged.values()) {
+            String warehouse = text(balance.getWarehouse());
+            WarehouseInfo info = warehouses == null ? null : warehouses.get(warehouse);
+            String code = text(balance.getItemCode());
+            ItemInfo item = items == null ? null : items.get(code);
+
+            BigDecimal qty = nz(balance.getQuantity());
+            if (qty.signum() < 0) qty = BigDecimal.ZERO;
+            BigDecimal cost = item == null ? null : item.latestCost();
+            BigDecimal price = cost != null && cost.signum() > 0
+                    ? cost
+                    : divide(nz(balance.getAmount()), qty);
+            BigDecimal amount = qty.multiply(price).setScale(2, RoundingMode.HALF_UP);
+
+            out.add(row(
+                    "仓库类别", info == null ? warehouse : text(info.category()).isEmpty()
+                            ? warehouse : info.category(),
+                    "仓库编码", info == null ? "" : text(info.code()),
+                    "仓库", warehouse,
+                    "存货类别", item == null ? "" : text(item.category()),
+                    "存货编码", code,
+                    "存货", text(balance.getItemName()),
+                    "规格型号", text(balance.getSpec()),
+                    "主计量", text(balance.getUnit()),
+                    "数量", qty,
+                    "单价", price,
+                    "金额", amount));
+        }
+        out.sort(Comparator
+                .comparing((Map<String, Object> r) -> warehouseRank(text(r.get("仓库类别"))))
+                .thenComparing(r -> text(r.get("仓库")))
+                .thenComparing(r -> categoryRank(text(r.get("存货类别"))))
+                .thenComparing(r -> text(r.get("存货编码"))));
+        return out;
+    }
+
+    /** 仓库类别展示顺序：原料 → 辅料 → 半成品 → 成品 → 不良品 → 其它。 */
+    private static int warehouseRank(String category) {
+        return switch (category) {
+            case "原料仓" -> 0;
+            case "辅料仓" -> 1;
+            case "半成品仓" -> 2;
+            case "成品仓" -> 3;
+            case "不良品仓" -> 4;
+            case "委外仓" -> 5;
+            default -> 6;
+        };
+    }
+
+    /** 存货类别展示顺序：原材料 → 辅助材料 → 半成品 → 产成品 → 包装物 → 其它。 */
+    private static int categoryRank(String category) {
+        return switch (category) {
+            case "原材料" -> 0;
+            case "辅助材料" -> 1;
+            case "半成品" -> 2;
+            case "产成品" -> 3;
+            case "包装物" -> 4;
+            default -> 5;
+        };
+    }
+
+    /** 仓库档案：仓库名称 → 编码/类别（基础设置 → 仓库）。 */
+    private Map<String, WarehouseInfo> warehouseIndex() {
+        Map<String, WarehouseInfo> out = new LinkedHashMap<>();
+        for (Doc doc : docs("WH")) {
+            for (Map<String, Object> store : detailRows(doc, "stores")) {
+                String name = firstText(store, "仓库名称");
+                if (name.isEmpty()) continue;
+                out.put(name, new WarehouseInfo(firstText(store, "仓库编码"), name,
+                        firstText(store, "仓库类别")));
+            }
+        }
+        return out;
+    }
+
+    /** 存货档案：存货编码 → 类别/最新成本（存货面板）。 */
+    private Map<String, ItemInfo> itemIndex() {
+        Map<String, ItemInfo> out = new LinkedHashMap<>();
+        for (Doc doc : docs("INV")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String code = firstText(item, "存货编码");
+                if (code.isEmpty()) continue;
+                out.put(code, new ItemInfo(firstText(item, "所属类别"),
+                        number(first(item, Map.of(), "最新成本"))));
+            }
+        }
+        return out;
+    }
+
+    /** 兼容路径：余额表未初始化时按出入库流水实时聚合。 */
+    private List<Map<String, Object>> stockStatusFromMovements() {
+        Map<String, Map<String, Object>> balances = new LinkedHashMap<>();
+        for (Map<String, Object> movement : movements()) {
+            String key = join(movement.get("仓库"), movement.get("存货编码"), movement.get("存货"));
+            Map<String, Object> balance = balances.computeIfAbsent(key, ignored -> row(
+                    "仓库编码", movement.get("仓库编码"), "仓库", movement.get("仓库"),
+                    "库位", "", "批次号", "",
+                    "存货编码", movement.get("存货编码"), "存货", movement.get("存货"),
+                    "规格型号", movement.get("规格型号"), "主计量", movement.get("主单位"),
+                    "现存量(主)", BigDecimal.ZERO, "结存金额", BigDecimal.ZERO));
+            BigDecimal sign = "OUT".equals(movement.get("方向")) ? BigDecimal.valueOf(-1) : BigDecimal.ONE;
+            add(balance, "现存量(主)", number(movement.get("数量")).multiply(sign));
+            add(balance, "结存金额", number(movement.get("金额")).multiply(sign));
+        }
+        for (Map<String, Object> balance : balances.values()) {
+            balance.put("结存单价(主)", divide(number(balance.get("结存金额")), number(balance.get("现存量(主)"))));
+        }
+        return new ArrayList<>(balances.values());
+    }
+
+    private List<Map<String, Object>> stockSummary(Map<String, Object> condition) {
+        LocalDate start = date(condition.get("开始日期"));
+        LocalDate end = date(condition.get("结束日期"));
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> movement : movements()) {
+            LocalDate movementDate = date(movement.get("单据日期"));
+            boolean beforeStart = start != null && movementDate != null && movementDate.isBefore(start);
+            boolean inPeriod = (start == null || movementDate == null || !movementDate.isBefore(start))
+                    && (end == null || movementDate == null || !movementDate.isAfter(end));
+            String key = join(movement.get("仓库"), movement.get("存货编码"), movement.get("存货"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "仓库编码", movement.get("仓库编码"), "仓库", movement.get("仓库"),
+                    "存货编码", movement.get("存货编码"), "存货", movement.get("存货"),
+                    "规格型号", movement.get("规格型号"), "主单位", movement.get("主单位"), "辅单位", "",
+                    "期初数量", BigDecimal.ZERO, "期初金额", BigDecimal.ZERO,
+                    "本期入库数量", BigDecimal.ZERO, "本期入库金额", BigDecimal.ZERO,
+                    "本期出库数量", BigDecimal.ZERO, "本期出库金额", BigDecimal.ZERO));
+            String direction = text(movement.get("方向"));
+            BigDecimal qty = number(movement.get("数量"));
+            BigDecimal amount = number(movement.get("金额"));
+            if ("INITIAL".equals(direction) || beforeStart) {
+                BigDecimal sign = "OUT".equals(direction) ? BigDecimal.valueOf(-1) : BigDecimal.ONE;
+                add(target, "期初数量", qty.multiply(sign));
+                add(target, "期初金额", amount.multiply(sign));
+            } else if (inPeriod && "IN".equals(direction)) {
+                add(target, "本期入库数量", qty);
+                add(target, "本期入库金额", amount);
+            } else if (inPeriod && "OUT".equals(direction)) {
+                add(target, "本期出库数量", qty);
+                add(target, "本期出库金额", amount);
+            }
+        }
+        for (Map<String, Object> target : groups.values()) {
+            BigDecimal openingQty = number(target.get("期初数量"));
+            BigDecimal openingAmount = number(target.get("期初金额"));
+            BigDecimal inQty = number(target.get("本期入库数量"));
+            BigDecimal inAmount = number(target.get("本期入库金额"));
+            BigDecimal outQty = number(target.get("本期出库数量"));
+            BigDecimal outAmount = number(target.get("本期出库金额"));
+            target.put("期初平均单价", divide(openingAmount, openingQty));
+            target.put("入库平均单价", divide(inAmount, inQty));
+            target.put("出库平均单价", divide(outAmount, outQty));
+            target.put("期末结存数量", openingQty.add(inQty).subtract(outQty));
+            target.put("期末结存金额", openingAmount.add(inAmount).subtract(outAmount));
+            target.put("期末平均单价", divide(number(target.get("期末结存金额")), number(target.get("期末结存数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    /**
+     * 库存台账：先按期初折叠，再逐行滚动结存。
+     *
+     * <p>带开始日期时，开始日期之前的移动（含期初结存行）先折叠为期初余额，结存不得漏掉期初；
+     * 不带开始日期时保持原展示：期初结存行作为台账首行出现，结存从 0 累计。
+     */
+    private List<Map<String, Object>> stockLedger(Map<String, Object> condition) {
+        LocalDate start = date(condition.get("开始日期"));
+        Map<String, BigDecimal[]> opening = new HashMap<>();
+        List<Map<String, Object>> inPeriod = new ArrayList<>();
+        for (Map<String, Object> movement : movements()) {
+            LocalDate movementDate = date(movement.get("单据日期"));
+            boolean initial = "INITIAL".equals(text(movement.get("方向")));
+            boolean beforeStart = start != null && movementDate != null && movementDate.isBefore(start);
+            if (start != null && (beforeStart || initial)) {
+                boolean outgoing = "OUT".equals(text(movement.get("方向")));
+                BigDecimal[] acc = opening.computeIfAbsent(ledgerKey(movement),
+                        k -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+                acc[0] = outgoing ? acc[0].subtract(number(movement.get("数量"))) : acc[0].add(number(movement.get("数量")));
+                acc[1] = outgoing ? acc[1].subtract(number(movement.get("金额"))) : acc[1].add(number(movement.get("金额")));
+            } else {
+                inPeriod.add(movement);
+            }
+        }
+        return ledgerRows(inPeriod, condition, opening);
+    }
+
+    /**
+     * 台账行滚动：结存按「存货 + 仓库」分别累计。
+     *
+     * <p>此前是全局一个余额往下加，一张台账里混着多种存货时结存数量毫无意义
+     * （期初 5000 的下一条就变成 8000）。每一行只反映它自己那种存货的累计结存。
+     *
+     * @param inPeriod 本期要展示的移动行
+     * @param condition 查询条件（日期/存货等过滤）
+     * @param opening  期初余额（分组键 → [数量, 金额]），可为空
+     */
+    List<Map<String, Object>> ledgerRows(List<Map<String, Object>> inPeriod,
+                                         Map<String, Object> condition,
+                                         Map<String, BigDecimal[]> opening) {
+        Map<String, BigDecimal[]> balances = new HashMap<>();
+        if (opening != null) {
+            for (Map.Entry<String, BigDecimal[]> entry : opening.entrySet()) {
+                balances.put(entry.getKey(), new BigDecimal[]{entry.getValue()[0], entry.getValue()[1]});
+            }
+        }
+        List<Map<String, Object>> selected = filter(inPeriod, null, condition == null ? Map.of() : condition);
+        List<Map<String, Object>> sorted = new ArrayList<>(selected);
+        sorted.sort(Comparator.comparing((Map<String, Object> r) -> text(r.get("单据日期")))
+                .thenComparing(r -> text(r.get("单据时间")))
+                .thenComparingLong(r -> (long) number(r.get("时间序")).doubleValue()));
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> movement : sorted) {
+            String direction = text(movement.get("方向"));
+            BigDecimal qty = number(movement.get("数量"));
+            BigDecimal amount = number(movement.get("金额"));
+            boolean outgoing = "OUT".equals(direction);
+            BigDecimal[] balance = balances.computeIfAbsent(ledgerKey(movement),
+                    k -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+            BigDecimal balanceQty = outgoing ? balance[0].subtract(qty) : balance[0].add(qty);
+            BigDecimal balanceAmount = outgoing ? balance[1].subtract(amount) : balance[1].add(amount);
+            balance[0] = balanceQty;
+            balance[1] = balanceAmount;
+            Map<String, Object> row = row(
+                    "单据日期", movement.get("单据日期"), "单据时间", movement.get("单据时间"),
+                    "单据类型", movement.get("单据类型"),
+                    "单据编号", movement.get("单据编号"), "业务类型", movement.get("业务类型"),
+                    "往来单位", movement.get("往来单位"), "项目", movement.get("项目"),
+                    "收入数量", outgoing ? BigDecimal.ZERO : qty, "收入单价", outgoing ? BigDecimal.ZERO : movement.get("单价"),
+                    "收入金额", outgoing ? BigDecimal.ZERO : amount, "发出数量", outgoing ? qty : BigDecimal.ZERO,
+                    "发出单价", outgoing ? movement.get("单价") : BigDecimal.ZERO, "发出金额", outgoing ? amount : BigDecimal.ZERO,
+                    "结存数量", balanceQty, "结存平均单价", divide(balanceAmount, balanceQty), "结存金额", balanceAmount,
+                    "仓库", movement.get("仓库"), "存货", movement.get("存货"));
+            out.add(row);
+        }
+        return out;
+    }
+
+    /** 台账行滚动（无期初折叠）：直接对给定移动行算结存，供报表与单测使用。 */
+    List<Map<String, Object>> ledgerRows(List<Map<String, Object>> inPeriod, Map<String, Object> condition) {
+        return ledgerRows(inPeriod, condition, Map.of());
+    }
+
+    /** 台账结存的分组键：同一存货跨仓库要分别累计，不能把原料仓和成品仓混在一起。 */
+    private String ledgerKey(Map<String, Object> movement) {
+        return text(movement.get("存货")) + "\u0001" + text(movement.get("仓库"));
+    }
+
+    // ---------- sales and production reports ----------
+
+    private List<Map<String, Object>> salesOrderDetail() {
+        Map<String, Map<String, Object>> inventory = inventoryIndex();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("SO_ORDER")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String name = firstText(item, "存货名称", "存货", "产品名称");
+                Map<String, Object> inv = inventory.getOrDefault(name, Map.of());
+                BigDecimal quantity = number(first(item, Map.of(), "数量"));
+                BigDecimal price = number(first(item, Map.of(), "单价"));
+                BigDecimal amount = number(first(item, Map.of(), "金额"));
+                if (amount.signum() == 0) amount = quantity.multiply(price);
+                out.add(row("单据日期", value(doc, "单据日期"), "单据编号", documentNo(doc),
+                        "单据状态", doc.entity().getStatus(), "客户编码", value(doc, "客户编码"),
+                        "客户", value(doc, "客户"), "结算客户", value(doc, "结算客户"),
+                        "部门", value(doc, "部门"), "业务员", firstText(doc.head(), "业务员", "经手人"),
+                        "项目", first(item, doc.head(), "项目"), "存货编码", first(item, inv, "存货编码"),
+                        "存货", name, "规格型号", first(item, inv, "规格型号"),
+                        "计量单位", first(item, inv, "销售单位", "计量单位"), "数量", quantity,
+                        "单价", price, "税率%", number(first(item, Map.of(), "税率%")),
+                        "含税单价", number(first(item, Map.of(), "含税单价")), "金额", amount,
+                        "含税金额", number(first(item, Map.of(), "含税金额")),
+                        "折扣金额", number(first(item, Map.of(), "折扣金额")),
+                        "预计交货日期", first(item, doc.head(), "预计交货日期"), "现存量", number(first(item, Map.of(), "现存量")),
+                        "制单人", firstText(doc.head(), "制单人", "发起人编号"), "审核人", firstText(doc.head(), "审核人")));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> salesOrderStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : salesOrderDetail()) {
+            String key = join(source.get("客户编码"), source.get("存货编码"), source.get("存货"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "客户编码", source.get("客户编码"), "客户", source.get("客户"), "部门", source.get("部门"),
+                    "业务员", source.get("业务员"), "存货编码", source.get("存货编码"), "存货", source.get("存货"),
+                    "规格型号", source.get("规格型号"), "主单位", source.get("计量单位"),
+                    "单据数", BigDecimal.ZERO, "数量(主单位)", BigDecimal.ZERO, "金额", BigDecimal.ZERO,
+                    "含税金额", BigDecimal.ZERO, "折扣金额", BigDecimal.ZERO,
+                    "预计交货日期", source.get("预计交货日期")));
+            add(target, "单据数", BigDecimal.ONE);
+            add(target, "数量(主单位)", source.get("数量"));
+            add(target, "金额", source.get("金额"));
+            add(target, "含税金额", source.get("含税金额"));
+            add(target, "折扣金额", source.get("折扣金额"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("单价", divide(number(target.get("金额")), number(target.get("数量(主单位)"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> salesOrderExecution() {
+        Map<String, BigDecimal> shipped = shippedByOrderAndItem();
+        Map<String, Map<String, Object>> production = productionByOrderAndItem();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> detail : salesOrderDetail()) {
+            String key = join(detail.get("单据编号"), detail.get("存货编码"), detail.get("存货"));
+            BigDecimal ordered = number(detail.get("数量"));
+            BigDecimal shippedQty = shipped.getOrDefault(key, BigDecimal.ZERO);
+            Map<String, Object> prod = production.getOrDefault(key, Map.of());
+            BigDecimal produced = number(prod.get("已汇报数量"));
+            out.add(row("单据编号", detail.get("单据编号"), "单据日期", detail.get("单据日期"),
+                    "客户编码", detail.get("客户编码"), "客户", detail.get("客户"), "部门", detail.get("部门"),
+                    "业务员", detail.get("业务员"), "存货编码", detail.get("存货编码"), "存货", detail.get("存货"),
+                    "规格型号", detail.get("规格型号"), "订单数量", ordered, "已出库数量", shippedQty,
+                    "出库执行率%", percent(shippedQty, ordered), "已生产数量", produced,
+                    "生产进度%", percent(produced, ordered), "未执行数量", ordered.subtract(shippedQty),
+                    "预计交货日期", detail.get("预计交货日期"), "单据状态", detail.get("单据状态")));
+        }
+        return out;
+    }
+
+    private List<Map<String, Object>> salesOrderProgress() {
+        Map<String, Map<String, Object>> production = productionByOrderAndItem();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> detail : salesOrderDetail()) {
+            String key = join(detail.get("单据编号"), detail.get("存货编码"), detail.get("存货"));
+            Map<String, Object> prod = production.getOrDefault(key, Map.of());
+            BigDecimal ordered = number(detail.get("数量"));
+            BigDecimal reported = number(prod.get("已汇报数量"));
+            out.add(row("单据编号", detail.get("单据编号"), "单据日期", detail.get("单据日期"),
+                    "客户", detail.get("客户"), "存货编码", detail.get("存货编码"), "存货", detail.get("存货"),
+                    "规格型号", detail.get("规格型号"), "订单数量", ordered,
+                    "加工单号", prod.getOrDefault("加工单号", ""), "加工单数量", number(prod.get("加工单数量")),
+                    "已汇报数量", reported, "完工数量", number(prod.get("完工数量")),
+                    "生产进度%", percent(reported, ordered), "预完工日", prod.getOrDefault("预完工日", ""),
+                    "单据状态", prod.getOrDefault("单据状态", detail.get("单据状态"))));
+        }
+        return out;
+    }
+
+    private List<Map<String, Object>> manufactureDetail() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("MANU_ORDER")) {
+            for (Map<String, Object> item : detailRows(doc, "products")) {
+                out.add(row("单据编号", documentNo(doc), "单据状态", doc.entity().getStatus(),
+                        "生产车间", value(doc, "生产车间"), "客户编码", value(doc, "客户编码"), "客户", value(doc, "客户"),
+                        "产品编码", item.get("产品编码"), "产品名称", item.get("产品名称"), "规格型号", item.get("规格型号"),
+                        "生产单位", item.get("生产单位"), "数量", number(item.get("数量")),
+                        "齐套数量(主)", number(item.get("齐套数量(主)")),
+                        "累计汇报套数(工序单位)", number(item.get("累计汇报套数(工序单位)")),
+                        "可用量", number(item.get("可用量")), "现存量", number(item.get("现存量")), "图号", item.get("图号"),
+                        "单重", number(item.get("单重")), "总重", number(item.get("总重")), "需求令号", item.get("需求令号"),
+                        "预开工日", value(doc, "预开工日"), "预完工日", value(doc, "预完工日"),
+                        "销售订单号", value(doc, "销售订单号")));
+            }
+        }
+        return out;
+    }
+
+    private List<Map<String, Object>> manufactureStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : manufactureDetail()) {
+            String key = join(source.get("产品编码"), source.get("产品名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "产品编码", source.get("产品编码"), "产品名称", source.get("产品名称"),
+                    "规格型号", source.get("规格型号"), "生产单位", source.get("生产单位"),
+                    "加工单数", BigDecimal.ZERO, "计划数量", BigDecimal.ZERO,
+                    "累计汇报数量", BigDecimal.ZERO, "完工数量", BigDecimal.ZERO));
+            add(target, "加工单数", BigDecimal.ONE);
+            add(target, "计划数量", source.get("数量"));
+            add(target, "累计汇报数量", source.get("累计汇报套数(工序单位)"));
+            if ("已完工".equals(source.get("单据状态"))) add(target, "完工数量", source.get("数量"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("生产进度%", percent(number(target.get("累计汇报数量")), number(target.get("计划数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> manufactureProcessStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Doc doc : docs("MANU_ORDER")) {
+            for (Map<String, Object> process : detailRows(doc, "processes")) {
+                String key = join(process.get("工序编码"), process.get("工序名称"), process.get("生产车间"));
+                Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                        "工序编码", process.get("工序编码"), "工序名称", process.get("工序名称"),
+                        "生产车间", first(process, doc.head(), "生产车间"), "工作中心", process.get("工作中心"),
+                        "班组", first(process, Map.of(), "班组", "班组名称"), "设备", process.get("设备"),
+                        "加工单数", BigDecimal.ZERO, "计划数量", BigDecimal.ZERO, "金额", BigDecimal.ZERO,
+                        "已完工", BigDecimal.ZERO, "进行中", BigDecimal.ZERO, "未开工", BigDecimal.ZERO,
+                        "单位标准工时", number(process.get("单位标准工时"))));
+                add(target, "加工单数", BigDecimal.ONE);
+                add(target, "计划数量", process.get("计划数量"));
+                add(target, "金额", first(process, Map.of(), "金额", "计时/计件金额"));
+                String status = firstText(process, "工序完工状态", "派工加工状态");
+                if (status.contains("完工")) add(target, "已完工", BigDecimal.ONE);
+                else if (status.contains("进行") || status.contains("派工")) add(target, "进行中", BigDecimal.ONE);
+                else add(target, "未开工", BigDecimal.ONE);
+            }
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> processDetail() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("PROCESS_REPORT")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                BigDecimal reported = number(item.get("报工数量"));
+                BigDecimal qualified = number(item.get("合格数量"));
+                BigDecimal rejected = number(first(item, Map.of(), "不合格数量", "工废数量", "料废数量"));
+                BigDecimal amount = number(first(item, Map.of(), "金额", "计时/计件金额", "计件金额"));
+                out.add(row("单据编号", documentNo(doc), "单据状态", doc.entity().getStatus(),
+                        "单据日期", value(doc, "单据日期"), "加工单号", first(item, doc.head(), "加工单号"),
+                        "生产车间", first(item, doc.head(), "生产车间"), "产品编码", first(item, doc.head(), "产品编码"),
+                        "产品名称", first(item, doc.head(), "产品名称"), "规格型号", first(item, doc.head(), "规格型号"),
+                        "工序编码", item.get("工序编码"), "工序名称", item.get("工序名称"), "工作中心", item.get("工作中心"),
+                        "设备", item.get("设备"), "班组名称", first(item, Map.of(), "班组名称", "班组"),
+                        "工人名称", first(item, Map.of(), "工人名称", "工人"), "报工数量", reported,
+                        "合格数量", qualified, "不合格数量", rejected, "合格率%", percent(qualified, reported),
+                        "工资类型", item.get("工资类型"), "工价", number(item.get("工价")), "金额", amount,
+                        "开工日期", item.get("开工日期"), "完工日期", item.get("完工日期"), "备注", item.get("备注"),
+                        "待返修数量-本序发现", number(item.get("待返修数量-本序发现")),
+                        "待返修数量-他序发现", number(item.get("待返修数量-他序发现")),
+                        "返修责任工序", item.get("返修责任工序"), "返修状态", first(item, Map.of(), "返修状态", "工序完工状态"),
+                        "调整工资", number(item.get("调整工资")), "客户", value(doc, "客户")));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> processStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : processDetail()) {
+            String key = join(source.get("工序编码"), source.get("工人名称"), source.get("班组名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "工序编码", source.get("工序编码"), "工序名称", source.get("工序名称"),
+                    "生产车间", source.get("生产车间"), "班组名称", source.get("班组名称"),
+                    "工人名称", source.get("工人名称"), "报工单数", BigDecimal.ZERO,
+                    "报工数量", BigDecimal.ZERO, "合格数量", BigDecimal.ZERO,
+                    "不合格数量", BigDecimal.ZERO, "金额", BigDecimal.ZERO));
+            add(target, "报工单数", BigDecimal.ONE);
+            add(target, "报工数量", source.get("报工数量"));
+            add(target, "合格数量", source.get("合格数量"));
+            add(target, "不合格数量", source.get("不合格数量"));
+            add(target, "金额", source.get("金额"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("合格率%", percent(number(target.get("合格数量")), number(target.get("报工数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> salaryDetail() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> process : processDetail()) {
+            BigDecimal quantity = number(process.get("报工数量"));
+            BigDecimal price = number(process.get("工价"));
+            BigDecimal pieceAmount = number(process.get("金额"));
+            if (pieceAmount.signum() == 0) pieceAmount = quantity.multiply(price);
+            out.add(row("单据编号", process.get("单据编号"), "单据日期", process.get("单据日期"),
+                    "单据状态", process.get("单据状态"), "加工单号", process.get("加工单号"),
+                    "工序编码", process.get("工序编码"), "工序名称", process.get("工序名称"),
+                    "班组名称", process.get("班组名称"), "工人名称", process.get("工人名称"),
+                    "工资类型", process.get("工资类型"), "计件数量", quantity, "工价", price,
+                    "计件金额", pieceAmount, "金额", pieceAmount,
+                    "调整工资", process.get("调整工资")));
+        }
+        return out;
+    }
+
+    private List<Map<String, Object>> salaryStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : salaryDetail()) {
+            String key = join(source.get("工人名称"), source.get("班组名称"), source.get("工资类型"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "工人名称", source.get("工人名称"), "班组名称", source.get("班组名称"),
+                    "工资类型", source.get("工资类型"), "报工单数", BigDecimal.ZERO,
+                    "计件数量", BigDecimal.ZERO, "计件金额", BigDecimal.ZERO,
+                    "调整工资", BigDecimal.ZERO, "工资合计", BigDecimal.ZERO));
+            add(target, "报工单数", BigDecimal.ONE);
+            add(target, "计件数量", source.get("计件数量"));
+            add(target, "计件金额", source.get("计件金额"));
+            add(target, "调整工资", source.get("调整工资"));
+            target.put("工资合计", number(target.get("计件金额")).add(number(target.get("调整工资"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> reworkRows() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> source : processDetail()) {
+            BigDecimal own = number(source.get("待返修数量-本序发现"));
+            BigDecimal other = number(source.get("待返修数量-他序发现"));
+            if (own.add(other).signum() == 0 && !text(source.get("返修状态")).contains("返修")) continue;
+            out.add(row("单据编号", source.get("单据编号"), "单据日期", source.get("单据日期"),
+                    "单据状态", source.get("单据状态"), "加工单号", source.get("加工单号"),
+                    "产品编码", source.get("产品编码"), "产品名称", source.get("产品名称"),
+                    "规格型号", source.get("规格型号"), "客户", source.get("客户"),
+                    "工序编码", source.get("工序编码"), "工序名称", source.get("工序名称"),
+                    "工作中心", source.get("工作中心"), "设备", source.get("设备"),
+                    "班组", source.get("班组名称"), "工人", source.get("工人名称"),
+                    "待返修数量-本序发现", own, "待返修数量-他序发现", other,
+                    "待返修合计", own.add(other), "返修责任工序", source.get("返修责任工序"),
+                    "返修状态", source.get("返修状态")));
+        }
+        return out;
+    }
+
+    // ---------- outsource reports (T+ 委外管理 OM 模块, 2026-08-25) ----------
+
+    private List<Map<String, Object>> outsourceOrderProductDetail() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("OUTSOURCE_ORDER")) {
+            for (Map<String, Object> item : detailRows(doc, "products")) {
+                BigDecimal qty = number(item.get("数量"));
+                BigDecimal price = number(first(item, Map.of(), "委外单价", "单价"));
+                BigDecimal amount = number(item.get("金额"));
+                if (amount.signum() == 0) amount = qty.multiply(price);
+                out.add(row("单据编号", documentNo(doc), "单据状态", doc.entity().getStatus(),
+                        "单据日期", value(doc, "单据日期"), "委外供应商", value(doc, "委外供应商"),
+                        "生产车间", value(doc, "生产车间"), "经手人", value(doc, "经手人"),
+                        "交货日期", first(item, doc.head(), "交货日期", "预完工日"),
+                        "产品编码", item.get("产品编码"), "产品名称", item.get("产品名称"),
+                        "规格型号", item.get("规格型号"), "计量单位", first(item, Map.of(), "计量单位", "生产单位"),
+                        "数量", qty, "委外单价", price, "金额", amount,
+                        "预完工日", value(doc, "预完工日"), "制单人", firstText(doc.head(), "制单人", "发起人编号"),
+                        "审核人", firstText(doc.head(), "审核人")));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> outsourceOrderMaterialDetail() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("OUTSOURCE_ORDER")) {
+            for (Map<String, Object> item : detailRows(doc, "materials")) {
+                out.add(row("单据编号", documentNo(doc), "单据状态", doc.entity().getStatus(),
+                        "单据日期", value(doc, "单据日期"), "委外供应商", value(doc, "委外供应商"),
+                        "材料编码", item.get("材料编码"), "材料名称", item.get("材料名称"),
+                        "规格型号", item.get("规格型号"), "计量单位", first(item, Map.of(), "计量单位", "生产单位"),
+                        "计划数量", number(first(item, Map.of(), "计划数量", "需用数量")),
+                        "预出仓库", first(item, Map.of(), "预出仓库", "仓库"),
+                        "现存量", number(item.get("现存量")), "可用量", number(item.get("可用量"))));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> outsourceFeeDetail() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("OUTSOURCE_FEE")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                out.add(row("单据编号", documentNo(doc), "单据日期", value(doc, "单据日期"),
+                        "单据状态", doc.entity().getStatus(), "委外供应商", value(doc, "委外供应商"),
+                        "委外加工单号", value(doc, "委外加工单号"), "费用项目", item.get("费用项目"),
+                        "产品名称", item.get("产品名称"), "计量单位", item.get("计量单位"),
+                        "数量", number(item.get("数量")), "委外单价", number(item.get("委外单价")),
+                        "费用金额", number(first(item, Map.of(), "费用金额", "金额")),
+                        "费用合计", number(doc.head().get("费用合计")),
+                        "经手人", value(doc, "经手人"), "备注", item.get("备注")));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> outsourceOrderExecution() {
+        Map<String, BigDecimal> received = new HashMap<>();
+        Map<String, BigDecimal> issued = new HashMap<>();
+        for (Doc doc : docs("OUTSOURCE_IN")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String orderNo = firstText(doc.head(), "委外加工单号");
+                String key = join(orderNo, item.get("产品编码"), item.get("产品名称"));
+                received.merge(key, number(item.get("实收数量")), BigDecimal::add);
+            }
+        }
+        for (Doc doc : docs("OUTSOURCE_ISSUE")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String orderNo = firstText(doc.head(), "委外加工单号");
+                String key = join(orderNo, item.get("材料编码"), item.get("材料名称"));
+                issued.merge(key, number(item.get("数量")), BigDecimal::add);
+            }
+        }
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("OUTSOURCE_ORDER")) {
+            for (Map<String, Object> item : detailRows(doc, "products")) {
+                String key = join(documentNo(doc), item.get("产品编码"), item.get("产品名称"));
+                BigDecimal ordered = number(item.get("数量"));
+                BigDecimal receivedQty = received.getOrDefault(key, BigDecimal.ZERO);
+                BigDecimal issueQty = issued.getOrDefault(join(documentNo(doc), item.get("产品编码"), item.get("产品名称")), BigDecimal.ZERO);
+                out.add(row("单据编号", documentNo(doc), "单据日期", value(doc, "单据日期"),
+                        "委外供应商", value(doc, "委外供应商"), "产品编码", item.get("产品编码"),
+                        "产品名称", item.get("产品名称"), "规格型号", item.get("规格型号"),
+                        "订单数量", ordered, "已入库数量", receivedQty,
+                        "入库执行率%", percent(receivedQty, ordered),
+                        "已发料数量", issueQty, "未入库数量", ordered.subtract(receivedQty),
+                        "交货日期", first(item, doc.head(), "交货日期", "预完工日"),
+                        "单据状态", doc.entity().getStatus()));
+            }
+        }
+        return out;
+    }
+
+    private List<Map<String, Object>> outsourceIssueBalance() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("OUTSOURCE_ISSUE")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                BigDecimal issued = number(item.get("数量"));
+                out.add(row("单据编号", documentNo(doc), "单据日期", value(doc, "单据日期"),
+                        "委外供应商", value(doc, "委外供应商"), "委外加工单号", value(doc, "委外加工单号"),
+                        "材料编码", item.get("材料编码"), "材料名称", item.get("材料名称"),
+                        "规格型号", item.get("规格型号"), "计量单位", item.get("计量单位"),
+                        "发料数量", issued, "耗用数量", BigDecimal.ZERO, "结存数量", issued));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> outsourceOrderProductStats() {
+        // 已入库数量：按 加工单号+产品 归集 OUTSOURCE_IN 实收数量（与 outsourceOrderExecution 同口径）
+        Map<String, BigDecimal> received = new HashMap<>();
+        for (Doc doc : docs("OUTSOURCE_IN")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String key = join(firstText(doc.head(), "委外加工单号"), item.get("产品编码"), item.get("产品名称"));
+                received.merge(key, number(item.get("实收数量")), BigDecimal::add);
+            }
+        }
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : outsourceOrderProductDetail()) {
+            String key = join(source.get("委外供应商"), source.get("产品编码"), source.get("产品名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "委外供应商", source.get("委外供应商"), "产品编码", source.get("产品编码"),
+                    "产品名称", source.get("产品名称"), "规格型号", source.get("规格型号"),
+                    "计量单位", source.get("计量单位"), "加工单数", BigDecimal.ZERO,
+                    "订单数量", BigDecimal.ZERO, "已入库数量", BigDecimal.ZERO,
+                    "未入库数量", BigDecimal.ZERO, "委外金额", BigDecimal.ZERO));
+            add(target, "加工单数", BigDecimal.ONE);
+            add(target, "订单数量", source.get("数量"));
+            add(target, "金额", source.get("金额"));
+            add(target, "已入库数量", received.getOrDefault(
+                    join(text(source.get("单据编号")), source.get("产品编码"), source.get("产品名称")),
+                    BigDecimal.ZERO));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("委外金额", target.get("金额"));
+            target.put("未入库数量", number(target.get("订单数量")).subtract(number(target.get("已入库数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> outsourceOrderMaterialStats() {
+        // 已发料数量：按 加工单号+材料 归集 OUTSOURCE_ISSUE 发料数量
+        Map<String, BigDecimal> issued = new HashMap<>();
+        for (Doc doc : docs("OUTSOURCE_ISSUE")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String key = join(firstText(doc.head(), "委外加工单号"), item.get("材料编码"), item.get("材料名称"));
+                issued.merge(key, number(item.get("数量")), BigDecimal::add);
+            }
+        }
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : outsourceOrderMaterialDetail()) {
+            String key = join(source.get("委外供应商"), source.get("材料编码"), source.get("材料名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "委外供应商", source.get("委外供应商"), "材料编码", source.get("材料编码"),
+                    "材料名称", source.get("材料名称"), "规格型号", source.get("规格型号"),
+                    "计量单位", source.get("计量单位"), "加工单数", BigDecimal.ZERO,
+                    "计划数量", BigDecimal.ZERO, "已发料数量", BigDecimal.ZERO,
+                    "未发料数量", BigDecimal.ZERO));
+            add(target, "加工单数", BigDecimal.ONE);
+            add(target, "计划数量", source.get("计划数量"));
+            add(target, "已发料数量", issued.getOrDefault(
+                    join(text(source.get("单据编号")), source.get("材料编码"), source.get("材料名称")),
+                    BigDecimal.ZERO));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("未发料数量", number(target.get("计划数量")).subtract(number(target.get("已发料数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> outsourceFeeStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : outsourceFeeDetail()) {
+            String key = join(source.get("委外供应商"), source.get("费用项目"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "委外供应商", source.get("委外供应商"), "费用项目", source.get("费用项目"),
+                    "单据数", BigDecimal.ZERO, "数量", BigDecimal.ZERO,
+                    "委外单价", BigDecimal.ZERO, "费用金额", BigDecimal.ZERO,
+                    "费用合计", BigDecimal.ZERO));
+            add(target, "单据数", BigDecimal.ONE);
+            add(target, "数量", source.get("数量"));
+            add(target, "费用金额", source.get("费用金额"));
+            add(target, "费用合计", source.get("费用合计"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("委外单价", divide(number(target.get("费用金额")), number(target.get("数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    // ---------- 生产管理执行/跟踪/产成品材料报表（对齐真实 T+ 生产管理 MP 模块, 2026-08-25） ----------
+
+    private List<Map<String, Object>> manufactureOrderExecution() {
+        Map<String, BigDecimal> received = new HashMap<>();
+        for (Doc doc : docs("FINISH_IN")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String orderNo = firstText(doc.head(), "加工单号", "来源单号", "销售订单号");
+                if (orderNo.isBlank()) continue;
+                String key = join(orderNo, item.get("产品编码"), item.get("产品名称"));
+                received.merge(key, number(first(item, Map.of(), "实收数量", "数量")), BigDecimal::add);
+            }
+        }
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> source : manufactureDetail()) {
+            String orderNo = text(source.get("单据编号"));
+            String key = join(orderNo, source.get("产品编码"), source.get("产品名称"));
+            BigDecimal planned = number(source.get("数量"));
+            BigDecimal reported = number(source.get("累计汇报套数(工序单位)"));
+            BigDecimal completed = "已完工".equals(source.get("单据状态")) ? planned : BigDecimal.ZERO;
+            BigDecimal inStock = received.getOrDefault(key, BigDecimal.ZERO);
+            out.add(row("单据编号", orderNo, "单据状态", source.get("单据状态"),
+                    "生产车间", source.get("生产车间"), "客户", source.get("客户"),
+                    "产品编码", source.get("产品编码"), "产品名称", source.get("产品名称"),
+                    "规格型号", source.get("规格型号"), "计划数量", planned,
+                    "累计汇报数量", reported, "完工数量", completed,
+                    "累计入库数量", inStock, "未完工数量", planned.subtract(reported).max(BigDecimal.ZERO),
+                    "生产进度%", percent(reported, planned), "预完工日", source.get("预完工日")));
+        }
+        return out;
+    }
+
+    private List<Map<String, Object>> manufactureOrderTracker() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        Map<String, BigDecimal> reportedByProcess = new HashMap<>();
+        for (Doc doc : docs("PROCESS_REPORT")) {
+            // 只算已审核的汇报单：草稿/审批中/中止的还没真正报工，算进去会让进度虚高
+            if (!"已审核".equals(doc.entity().getStatus())) continue;
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String orderNo = text(first(item, doc.head(), "加工单号"));
+                String key = join(orderNo, item.get("工序编码"));
+                reportedByProcess.merge(key, number(first(item, Map.of(), "报工数量", "合格数量")), BigDecimal::add);
+            }
+        }
+        for (Doc doc : docs("MANU_ORDER")) {
+            // 工序行没带产品信息时回落到加工单的产成品：老单据的工序明细没有产品编码
+            Map<String, Object> headProduct = detailRows(doc, "products").isEmpty()
+                    ? Map.of() : detailRows(doc, "products").get(0);
+            for (Map<String, Object> process : detailRows(doc, "processes")) {
+                String orderNo = documentNo(doc);
+                String key = join(orderNo, process.get("工序编码"));
+                BigDecimal planQty = number(process.get("计划数量"));
+                BigDecimal reported = reportedByProcess.getOrDefault(key, BigDecimal.ZERO);
+                // 状态由实际报工数推出来，不照抄历史字段（老单据里可能还是「未完工」但实际已报满）
+                String status = planQty.signum() > 0 && reported.compareTo(planQty) >= 0
+                        ? "完工"
+                        : (reported.signum() > 0 ? "进行中" : "未开工");
+                out.add(row("单据编号", orderNo, "单据状态", doc.entity().getStatus(),
+                        "产品编码", first(process, headProduct, "产品编码"),
+                        "产品名称", first(process, headProduct, "产品名称"),
+                        "规格型号", first(process, headProduct, "规格型号"), "数量", planQty,
+                        "工序编码", process.get("工序编码"), "工序名称", process.get("工序名称"),
+                        "生产车间", first(process, doc.head(), "生产车间"), "工作中心", process.get("工作中心"),
+                        "设备", process.get("设备"), "班组", first(process, Map.of(), "班组", "班组名称"),
+                        "工人", first(process, Map.of(), "工人", "工人名称"),
+                        "计划数量", planQty, "报工数量", reported,
+                        "合格数量", reported,
+                        "工序完工状态", status,
+                        "工序进度%", percent(reported, planQty)));
+            }
+        }
+        return out;
+    }
+
+    private List<Map<String, Object>> manufactureMaterialDetail() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("MANU_ORDER")) {
+            for (Map<String, Object> item : detailRows(doc, "materials")) {
+                Map<String, Object> product = detailRows(doc, "products").isEmpty()
+                        ? Map.of() : detailRows(doc, "products").get(0);
+                out.add(row("单据编号", documentNo(doc), "单据状态", doc.entity().getStatus(),
+                        "生产车间", value(doc, "生产车间"),
+                        "产品编码", product.get("产品编码"), "产品名称", product.get("产品名称"),
+                        "材料编码", item.get("材料编码"), "材料名称", item.get("材料名称"),
+                        "规格型号", first(item, Map.of(), "规格型号", "材料规格"),
+                        "计量单位", first(item, Map.of(), "计量单位", "生产单位"),
+                        "计划数量", number(first(item, Map.of(), "计划数量", "需用数量", "定额需用数量")),
+                        "需用数量", number(first(item, Map.of(), "需用数量", "定额需用数量", "计划数量")),
+                        "预出仓库", first(item, Map.of(), "预出仓库", "仓库"),
+                        "现存量", number(item.get("现存量")), "可用量", number(item.get("可用量"))));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> manufactureProductStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : manufactureDetail()) {
+            String key = join(source.get("产品编码"), source.get("产品名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "产品编码", source.get("产品编码"), "产品名称", source.get("产品名称"),
+                    "规格型号", source.get("规格型号"), "生产单位", source.get("生产单位"),
+                    "加工单数", BigDecimal.ZERO, "计划数量", BigDecimal.ZERO,
+                    "已完工数量", BigDecimal.ZERO, "生产进度%", BigDecimal.ZERO));
+            add(target, "加工单数", BigDecimal.ONE);
+            add(target, "计划数量", source.get("数量"));
+            if ("已完工".equals(source.get("单据状态"))) add(target, "已完工数量", source.get("数量"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("生产进度%", percent(number(target.get("已完工数量")), number(target.get("计划数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> manufactureMaterialStats() {
+        // 已领料数量：按 加工单号+材料 归集 MATERIAL_OUT 出库数量
+        Map<String, BigDecimal> picked = new HashMap<>();
+        for (Doc doc : docs("MATERIAL_OUT")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String orderNo = text(first(item, doc.head(), "加工单号", "来源单号"));
+                String key = join(orderNo, item.get("材料编码"), item.get("材料名称"));
+                picked.merge(key, number(first(item, Map.of(), "数量", "实发数量")), BigDecimal::add);
+            }
+        }
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : manufactureMaterialDetail()) {
+            String key = join(source.get("材料编码"), source.get("材料名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "材料编码", source.get("材料编码"), "材料名称", source.get("材料名称"),
+                    "规格型号", source.get("规格型号"), "计量单位", source.get("计量单位"),
+                    "加工单数", BigDecimal.ZERO, "计划数量", BigDecimal.ZERO,
+                    "已领料数量", BigDecimal.ZERO, "未领料数量", BigDecimal.ZERO));
+            add(target, "加工单数", BigDecimal.ONE);
+            add(target, "计划数量", source.get("计划数量"));
+            add(target, "已领料数量", picked.getOrDefault(
+                    join(text(source.get("单据编号")), source.get("材料编码"), source.get("材料名称")),
+                    BigDecimal.ZERO));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("未领料数量", number(target.get("计划数量")).subtract(number(target.get("已领料数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    // ---------- 配货管理报表（对齐真实 T+ 配货管理 DIM 模块, 2026-08-25） ----------
+
+    private List<Map<String, Object>> pickOrderDetail() {
+        Map<String, Map<String, Object>> inventory = inventoryIndex();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("PICK_ORDER")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String name = firstText(item, "存货名称", "产品名称", "存货");
+                Map<String, Object> inv = inventory.getOrDefault(name, Map.of());
+                BigDecimal qty = number(first(item, Map.of(), "数量", "配货数量"));
+                BigDecimal price = number(first(item, Map.of(), "单价", "售价"));
+                BigDecimal amount = number(first(item, Map.of(), "金额", "销售金额"));
+                if (amount.signum() == 0 && qty.signum() != 0 && price.signum() != 0) amount = qty.multiply(price);
+                out.add(row("单据编号", documentNo(doc), "单据日期", value(doc, "单据日期"),
+                        "单据状态", doc.entity().getStatus(), "客户", value(doc, "客户"),
+                        "仓库", first(item, doc.head(), "仓库"), "存货编码", first(item, inv, "存货编码"),
+                        "存货名称", name, "规格型号", first(item, inv, "规格型号"),
+                        "计量单位", first(item, inv, "销售单位", "计量单位"), "数量", qty,
+                        "单价", price, "金额", amount, "销售订单号", firstText(doc.head(), "销售订单号", "来源单号"),
+                        "制单人", firstText(doc.head(), "制单人", "发起人编号"), "审核人", firstText(doc.head(), "审核人")));
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> pickOrderStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : pickOrderDetail()) {
+            String key = join(source.get("客户"), source.get("存货编码"), source.get("存货名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "客户", source.get("客户"), "存货编码", source.get("存货编码"),
+                    "存货名称", source.get("存货名称"), "规格型号", source.get("规格型号"),
+                    "主单位", source.get("计量单位"), "配货单数", BigDecimal.ZERO,
+                    "数量(主单位)", BigDecimal.ZERO, "金额", BigDecimal.ZERO));
+            add(target, "配货单数", BigDecimal.ONE);
+            add(target, "数量(主单位)", source.get("数量"));
+            add(target, "金额", source.get("金额"));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> pickOrderSummary() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : pickOrderDetail()) {
+            String key = join(source.get("仓库"), source.get("存货编码"), source.get("存货名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "仓库", source.get("仓库"), "存货编码", source.get("存货编码"),
+                    "存货名称", source.get("存货名称"), "规格型号", source.get("规格型号"),
+                    "配货单数", BigDecimal.ZERO, "配货数量", BigDecimal.ZERO,
+                    "销售出库数量", BigDecimal.ZERO, "未出库数量", BigDecimal.ZERO));
+            add(target, "配货单数", BigDecimal.ONE);
+            add(target, "配货数量", source.get("数量"));
+        }
+        // 销售出库数量：SALE_OUT 中 销售订单号 关联
+        for (Map<String, Object> row : inventoryDetail("SALE_OUT", "SALE")) {
+            String key = join(row.get("仓库"), row.get("存货编码"), row.get("存货"));
+            Map<String, Object> target = groups.get(key);
+            if (target != null) add(target, "销售出库数量", row.get("数量"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("未出库数量", number(target.get("配货数量")).subtract(number(target.get("销售出库数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    // ---------- 质检管理报表 ----------
+
+    private List<Map<String, Object>> qualityDetail(String panel) {
+        return qualityDetail(List.of(panel));
+    }
+
+    private List<Map<String, Object>> qualityDetail(List<String> panels) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (String panel : panels) {
+            for (Doc doc : docs(panel)) {
+                int line = 0;
+                for (Map<String, Object> item : detailRows(doc, "items")) {
+                    line++;
+                    BigDecimal reported = number(first(item, Map.of(), "报检数量", "到货数量", "数量"));
+                    BigDecimal inspected = number(first(item, Map.of(), "检验数量", "累计检验数量"));
+                    BigDecimal qualified = number(item.get("合格数量"));
+                    BigDecimal unqualified = number(item.get("不合格数量"));
+                    out.add(row(
+                            "面板", panel, "单据日期", value(doc, "单据日期"), "单据编号", documentNo(doc),
+                            "单据状态", doc.entity().getStatus(), "业务类型", value(doc, "业务类型"),
+                            "来源单号", first(item, doc.head(), "来源单号"), "来源行号", first(item, Map.of(), "来源行号"),
+                            "供应商", first(item, doc.head(), "供应商"), "生产车间", first(item, doc.head(), "生产车间"),
+                            "加工单号", first(item, doc.head(), "加工单号"),
+                            "存货编码", first(item, Map.of(), "存货编码", "产品编码", "物料编码"),
+                            "存货名称", first(item, Map.of(), "存货名称", "产品名称", "物料名称"),
+                            "规格型号", item.getOrDefault("规格型号", ""), "工序编码", item.getOrDefault("工序编码", ""),
+                            "工序名称", item.getOrDefault("工序名称", ""),
+                            "计量单位", first(item, Map.of(), "计量单位", "采购单位", "生产单位", "单位"),
+                            "报检数量", reported, "检验数量", inspected, "合格数量", qualified,
+                            "不合格数量", unqualified, "合格率%", percent(qualified, inspected),
+                            "累计检验数量", number(item.get("累计检验数量")), "累计入库数量", number(item.get("累计入库数量")),
+                            "检验结果判定", item.getOrDefault("检验结果判定", ""),
+                            "检验员", first(item, doc.head(), "检验员"), "检验日期", item.getOrDefault("检验日期", ""),
+                            "检验项目", item.getOrDefault("检验项目", ""), "行号", line));
+                }
+            }
+        }
+        out.sort(dateDesc());
+        return out;
+    }
+
+    private List<Map<String, Object>> qualityStats(List<String> panels) {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : qualityDetail(panels)) {
+            String key = join(source.get("业务类型"), source.get("存货编码"), source.get("存货名称"), source.get("工序名称"));
+            Map<String, Object> target = groups.computeIfAbsent(key, ignored -> row(
+                    "业务类型", source.get("业务类型"), "存货编码", source.get("存货编码"),
+                    "存货名称", source.get("存货名称"), "规格型号", source.get("规格型号"),
+                    "工序名称", source.get("工序名称"), "计量单位", source.get("计量单位"),
+                    "单据数", BigDecimal.ZERO, "报检数量", BigDecimal.ZERO, "检验数量", BigDecimal.ZERO,
+                    "合格数量", BigDecimal.ZERO, "不合格数量", BigDecimal.ZERO, "合格率%", BigDecimal.ZERO));
+            add(target, "单据数", BigDecimal.ONE);
+            add(target, "报检数量", source.get("报检数量"));
+            add(target, "检验数量", source.get("检验数量"));
+            add(target, "合格数量", source.get("合格数量"));
+            add(target, "不合格数量", source.get("不合格数量"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("合格率%", percent(number(target.get("合格数量")), number(target.get("检验数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> qualityExecution(String panel) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> source : qualityDetail(panel)) {
+            BigDecimal reported = number(source.get("报检数量"));
+            BigDecimal inspected = number(source.get("累计检验数量"));
+            if (inspected.signum() == 0) inspected = number(source.get("检验数量"));
+            BigDecimal inbound = number(source.get("累计入库数量"));
+            Map<String, Object> target = new LinkedHashMap<>(source);
+            target.put("未检验数量", reported.subtract(inspected).max(BigDecimal.ZERO));
+            target.put("检验执行率%", percent(inspected, reported));
+            target.put("入库执行率%", percent(inbound, reported));
+            out.add(target);
+        }
+        return out;
+    }
+
+    private List<Map<String, Object>> qualityItemList() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("QC_ITEM")) {
+            if (doc.detail().isEmpty()) out.add(new LinkedHashMap<>(doc.head()));
+            else for (Map<String, Object> item : allDetailRows(doc)) {
+                Map<String, Object> row = new LinkedHashMap<>(doc.head());
+                row.putAll(item);
+                out.add(row);
+            }
+        }
+        return out;
+    }
+
+    private List<Map<String, Object>> qualityItemStats() {
+        Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+        for (Map<String, Object> source : qualityDetail(List.of("INSPECTION", "PROCESS_INSPECTION"))) {
+            String configuredItem = text(source.get("检验项目"));
+            final String item = configuredItem.isBlank() ? "未指定项目" : configuredItem;
+            Map<String, Object> target = groups.computeIfAbsent(item, ignored -> row(
+                    "检验项目", item, "检验单数", BigDecimal.ZERO, "检验数量", BigDecimal.ZERO,
+                    "合格数量", BigDecimal.ZERO, "不合格数量", BigDecimal.ZERO, "合格率%", BigDecimal.ZERO));
+            add(target, "检验单数", BigDecimal.ONE);
+            add(target, "检验数量", source.get("检验数量"));
+            add(target, "合格数量", source.get("合格数量"));
+            add(target, "不合格数量", source.get("不合格数量"));
+        }
+        for (Map<String, Object> target : groups.values()) {
+            target.put("合格率%", percent(number(target.get("合格数量")), number(target.get("检验数量"))));
+        }
+        return new ArrayList<>(groups.values());
+    }
+
+    private List<Map<String, Object>> qualityTrace(boolean reverse) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (FormData targetEntity : formMapper.selectList(new LambdaQueryWrapper<FormData>())) {
+            Doc target = new Doc(targetEntity, parse(targetEntity.getData()), parse(targetEntity.getDetailData()));
+            for (Map<String, Object> item : allDetailRows(target)) {
+                String sourcePanel = text(item.get("来源面板"));
+                String sourceNo = text(item.get("来源单号"));
+                if (sourcePanel.isBlank() || sourceNo.isBlank()) continue;
+                out.add(row(
+                        "方向", reverse ? "反向" : "正向", "来源面板", sourcePanel, "来源单号", sourceNo,
+                        "来源行号", item.getOrDefault("来源行号", ""), "目标面板", targetEntity.getPanelCode(),
+                        "目标单号", targetEntity.getFormNo(), "目标状态", targetEntity.getStatus(),
+                        "存货编码", first(item, Map.of(), "存货编码", "产品编码", "材料编码"),
+                        "存货名称", first(item, Map.of(), "存货名称", "产品名称", "材料名称"),
+                        "规格型号", item.getOrDefault("规格型号", ""),
+                        "批号", first(item, Map.of(), "检验批号", "批号"),
+                        "数量", first(item, Map.of(), "检验数量", "实收数量", "报检数量", "来源数量", "数量"),
+                        "检验结果判定", item.getOrDefault("检验结果判定", ""), "单据日期", value(target, "单据日期")));
+            }
+        }
+        out.sort(reverse
+                ? Comparator.comparing(row -> text(row.get("目标单号")))
+                : Comparator.comparing(row -> text(row.get("来源单号"))));
+        return out;
+    }
+
+    // ---------- cross-report indexes ----------
+
+    private Map<String, BigDecimal> shippedByOrderAndItem() {
+        Map<String, BigDecimal> out = new HashMap<>();
+        for (Map<String, Object> row : inventoryDetail("SALE_OUT", "SALE")) {
+            String orderNo = text(row.get("销售订单号"));
+            if (orderNo.isBlank()) continue;
+            String key = join(orderNo, row.get("存货编码"), row.get("存货"));
+            out.merge(key, number(row.get("数量")), BigDecimal::add);
+        }
+        return out;
+    }
+
+    private Map<String, Map<String, Object>> productionByOrderAndItem() {
+        Map<String, Map<String, Object>> out = new LinkedHashMap<>();
+        for (Map<String, Object> row : manufactureDetail()) {
+            String orderNo = text(row.get("销售订单号"));
+            if (orderNo.isBlank()) continue;
+            String key = join(orderNo, row.get("产品编码"), row.get("产品名称"));
+            Map<String, Object> target = out.computeIfAbsent(key, ignored -> row(
+                    "加工单号", row.get("单据编号"), "加工单数量", BigDecimal.ZERO,
+                    "已汇报数量", BigDecimal.ZERO, "完工数量", BigDecimal.ZERO,
+                    "预完工日", row.get("预完工日"), "单据状态", row.get("单据状态")));
+            add(target, "加工单数量", row.get("数量"));
+            add(target, "已汇报数量", row.get("累计汇报套数(工序单位)"));
+            if ("已完工".equals(row.get("单据状态"))) add(target, "完工数量", row.get("数量"));
+        }
+        return out;
+    }
+
+    /**
+     * 销售毛利表：一张销售发票一行。
+     *
+     * <p>毛利 = 价税合计 − 分摊费用 − 成本金额。
+     * 成本优先取销售出库单行的成本金额（发票.销货单号 → 销货单.来源单号 → 销售出库单），
+     * 取不到再按「明细数量 × 存货参考成本」兜底，两条都拿不到按 0 计并在「成本口径」里标明，
+     * 免得 0 成本被当成真毛利。
+     */
+    private List<Map<String, Object>> saleProfitRows() {
+        Map<String, Doc> saleInvByNo = new HashMap<>();
+        for (Doc doc : docs("SALE_INV")) saleInvByNo.putIfAbsent(documentNo(doc), doc);
+
+        Map<String, BigDecimal> outCostByNo = new HashMap<>();
+        Map<String, BigDecimal> outCostByOrder = new HashMap<>();
+        for (Doc doc : docs("SALE_OUT")) {
+            BigDecimal cost = BigDecimal.ZERO;
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                BigDecimal amount = number(first(item, doc.head(), "成本金额"));
+                if (amount.signum() == 0) {
+                    amount = number(first(item, doc.head(), "数量"))
+                            .multiply(number(first(item, doc.head(), "成本价")));
+                }
+                cost = cost.add(amount);
+            }
+            outCostByNo.put(documentNo(doc), cost);
+            // 出库单表头带销售订单号：销货单的来源常是产成品入库单而不是出库单，
+            // 拿不到出库单号时按销售订单号找同一张订单的出库成本
+            String orderNo = firstText(doc.head(), "销售订单号", "来源单号");
+            if (!orderNo.isBlank()) outCostByOrder.put(orderNo, cost);
+        }
+
+        Map<String, Map<String, Object>> inventory = inventoryIndex();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Doc doc : docs("SALE_INVOICE")) {
+            BigDecimal total = number(first(doc.head(), Map.of(), "价税合计"));
+            BigDecimal alloc = number(first(doc.head(), Map.of(), "分摊费用"));
+            String saleInvNo = firstText(doc.head(), "销货单号", "来源单号");
+            BigDecimal cost = BigDecimal.ZERO;
+            String costSource = "无成本资料";
+
+            Doc saleInv = saleInvByNo.get(saleInvNo);
+            if (saleInv != null) {
+                String outNo = firstText(saleInv.head(), "来源单号");
+                String orderNo = firstText(saleInv.head(), "销售订单号");
+                if (outCostByNo.containsKey(outNo)) {
+                    cost = outCostByNo.get(outNo);
+                    costSource = "出库成本";
+                } else if (!orderNo.isBlank() && outCostByOrder.containsKey(orderNo)) {
+                    cost = outCostByOrder.get(orderNo);
+                    costSource = "出库成本(按订单)";
+                }
+            }
+            if (cost.signum() == 0) {
+                BigDecimal ref = BigDecimal.ZERO;
+                for (Map<String, Object> item : detailRows(doc, "items")) {
+                    Map<String, Object> inv = inventory.getOrDefault(firstText(item, "存货名称"), Map.of());
+                    ref = ref.add(number(first(item, doc.head(), "数量"))
+                            .multiply(number(first(inv, item, "参考成本"))));
+                }
+                if (ref.signum() != 0) {
+                    cost = ref;
+                    costSource = "参考成本";
+                }
+            }
+
+            BigDecimal profit = total.subtract(alloc).subtract(cost);
+            BigDecimal rate = total.signum() == 0 ? BigDecimal.ZERO
+                    : profit.multiply(BigDecimal.valueOf(100)).divide(total, 2, RoundingMode.HALF_UP);
+
+            out.add(row(
+                    "单据日期", value(doc, "单据日期"),
+                    "单据编号", documentNo(doc),
+                    "客户", value(doc, "客户"),
+                    "销货单号", saleInvNo,
+                    "价税合计", total,
+                    "分摊费用", alloc,
+                    "分摊单号", value(doc, "分摊单号"),
+                    "成本金额", cost,
+                    "毛利", profit,
+                    "毛利率%", rate,
+                    "成本口径", costSource));
+        }
+        return out;
+    }
+
+    private Map<String, Map<String, Object>> inventoryIndex() {
+        Map<String, Map<String, Object>> out = new HashMap<>();
+        for (Doc doc : docs("INV")) {
+            for (Map<String, Object> item : detailRows(doc, "items")) {
+                String name = firstText(item, "存货名称", "产品名称", "材料名称");
+                String code = firstText(item, "存货编码", "产品编码", "材料编码");
+                if (!name.isBlank()) out.put(name, item);
+                if (!code.isBlank()) out.put(code, item);
+            }
+        }
+        return out;
+    }
+
+    private Map<String, String> warehouseCodes() {
+        Map<String, String> out = new HashMap<>();
+        for (Doc doc : docs("WH")) {
+            for (Map<String, Object> item : allDetailRows(doc)) {
+                String name = firstText(item, "仓库名称", "仓库");
+                String code = firstText(item, "仓库编码");
+                if (!name.isBlank()) out.put(name, code);
+            }
+        }
+        return out;
+    }
+
+    // ---------- filtering and data access ----------
+
+    private List<Map<String, Object>> filter(List<Map<String, Object>> source, String keyword,
+                                              Map<String, Object> condition) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        LocalDate start = date(condition.get("开始日期"));
+        LocalDate end = date(condition.get("结束日期"));
+        // 截止日期是账龄等报表的时间边界参数（由 build() 消费），不是行字段，不能参与逐行模糊匹配，
+        // 否则账龄这种没有「截止日期」列的结果会被整表过滤成空。
+        String cutoff = textOf(condition, "截止日期", "截止时间");
+        for (Map<String, Object> row : source) {
+            LocalDate rowDate = date(first(row, row, "单据日期", "预开工日", "创建时间"));
+            if (start != null && rowDate != null && rowDate.isBefore(start)) continue;
+            if (end != null && rowDate != null && rowDate.isAfter(end)) continue;
+            boolean hit = true;
+            for (Map.Entry<String, Object> entry : condition.entrySet()) {
+                String key = entry.getKey();
+                String expected = text(entry.getValue());
+                if (expected.isBlank()) continue;
+                if (key.equals("开始日期") || key.equals("结束日期")) continue;
+                if (!cutoff.isEmpty() && (key.equals("截止日期") || key.equals("截止时间"))) continue;
+                if (!aliasValues(row, key).stream().anyMatch(value -> text(value).contains(expected))) {
+                    hit = false;
+                    break;
+                }
+            }
+            if (!hit) continue;
+            if (keyword != null && !keyword.isBlank()) {
+                boolean keywordHit = row.values().stream().anyMatch(value -> text(value).contains(keyword));
+                if (!keywordHit) continue;
+            }
+            out.add(row);
+        }
+        return out;
+    }
+
+    private List<Object> aliasValues(Map<String, Object> row, String key) {
+        Set<String> aliases = switch (key) {
+            case "存货" -> Set.of("存货", "存货名称", "产品名称", "材料名称");
+            case "材料名称" -> Set.of("材料名称", "存货", "存货名称");
+            case "产品名称" -> Set.of("产品名称", "存货", "存货名称");
+            case "工人" -> Set.of("工人", "工人名称");
+            case "工人名称" -> Set.of("工人名称", "工人");
+            case "班组" -> Set.of("班组", "班组名称");
+            case "班组名称" -> Set.of("班组名称", "班组");
+            default -> Set.of(key);
+        };
+        List<Object> values = new ArrayList<>();
+        for (String alias : aliases) if (row.containsKey(alias)) values.add(row.get(alias));
+        return values;
+    }
+
+    private List<Doc> docs(String panelCode) {
+        List<FormData> rows = formMapper.selectList(new LambdaQueryWrapper<FormData>()
+                .eq(FormData::getPanelCode, panelCode)
+                .orderByAsc(FormData::getCreateTime)
+                .orderByAsc(FormData::getId));
+        List<Doc> out = new ArrayList<>();
+        for (FormData row : rows) out.add(new Doc(row, parse(row.getData()), parse(row.getDetailData())));
+        return out;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> detailRows(Doc doc, String key) {
+        Object value = doc.detail().get(key);
+        if (value instanceof List<?>) return (List<Map<String, Object>>) value;
+        return List.of();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> allDetailRows(Doc doc) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Object value : doc.detail().values()) {
+            if (value instanceof List<?>) out.addAll((List<Map<String, Object>>) value);
+        }
+        return out;
+    }
+
+    private Map<String, Object> parse(String value) {
+        if (value == null || value.isBlank()) return new LinkedHashMap<>();
+        try {
+            return json.readValue(value, new TypeReference<Map<String, Object>>() {});
+        } catch (Exception ignored) {
+            return new LinkedHashMap<>();
+        }
+    }
+
+    private boolean effective(Doc doc) {
+        return EFFECTIVE_STATUSES.contains(doc.entity().getStatus());
+    }
+
+    private String documentNo(Doc doc) {
+        String configured = firstText(doc.head(), "单据编号", "锭号", "期初余额单号", "编号");
+        return configured.isBlank() ? text(doc.entity().getFormNo()) : configured;
+    }
+
+    private String documentType(String source) {
+        return switch (source) {
+            case "PURCHASE_IN" -> "采购入库单";
+            case "FINISH_IN" -> "产成品入库单";
+            case "OTHER_IN" -> "其他入库单";
+            case "SALE_OUT" -> "销售出库单";
+            case "MATERIAL_OUT" -> "材料出库单";
+            case "OTHER_OUT" -> "其他出库单";
+            default -> source;
+        };
+    }
+
+    private Object value(Doc doc, String key) {
+        return doc.head().getOrDefault(key, "");
+    }
+
+    private String created(Doc doc) {
+        Object configured = doc.head().get("创建时间");
+        if (configured != null && !text(configured).isBlank()) return text(configured);
+        LocalDateTime time = doc.entity().getCreateTime();
+        return time == null ? "" : time.format(DATE_TIME);
+    }
+
+    private Comparator<Map<String, Object>> dateDesc() {
+        return Comparator.comparing((Map<String, Object> row) -> text(first(row, row, "单据日期", "创建时间"))).reversed();
+    }
+
+    private Object first(Map<String, Object> primary, Map<String, Object> fallback, String... keys) {
+        for (String key : keys) {
+            Object value = primary.get(key);
+            if (value != null && !text(value).isBlank()) return value;
+        }
+        for (String key : keys) {
+            Object value = fallback.get(key);
+            if (value != null && !text(value).isBlank()) return value;
+        }
+        return "";
+    }
+
+    private String firstText(Map<String, Object> source, String... keys) {
+        for (String key : keys) {
+            Object value = source.get(key);
+            if (value != null && !text(value).isBlank()) return text(value);
+        }
+        return "";
+    }
+
+    private String text(Object value) {
+        return value == null ? "" : String.valueOf(value).trim();
+    }
+
+    /** 按候选键取第一个非空查询条件值；面板查询字段名可能有多种写法。 */
+    private String textOf(Map<String, Object> condition, String... keys) {
+        if (condition == null) return "";
+        for (String key : keys) {
+            String value = text(condition.get(key));
+            if (!value.isEmpty()) return value;
+        }
+        return "";
+    }
+
+    private static BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private BigDecimal number(Object value) {
+        if (value instanceof BigDecimal decimal) return decimal;
+        if (value instanceof Number number) return BigDecimal.valueOf(number.doubleValue());
+        try {
+            String raw = text(value).replace(",", "").replace("%", "");
+            return raw.isBlank() ? BigDecimal.ZERO : new BigDecimal(raw);
+        } catch (Exception ignored) {
+            return BigDecimal.ZERO;
+        }
+    }
+
+    private BigDecimal divide(BigDecimal amount, BigDecimal quantity) {
+        if (quantity == null || quantity.signum() == 0) return BigDecimal.ZERO;
+        return amount.divide(quantity, 4, RoundingMode.HALF_UP).stripTrailingZeros();
+    }
+
+    private BigDecimal percent(BigDecimal numerator, BigDecimal denominator) {
+        if (denominator == null || denominator.signum() == 0) return BigDecimal.ZERO;
+        return numerator.multiply(BigDecimal.valueOf(100)).divide(denominator, 2, RoundingMode.HALF_UP).stripTrailingZeros();
+    }
+
+    private LocalDate date(Object value) {
+        String raw = text(value);
+        if (raw.length() >= 10) raw = raw.substring(0, 10);
+        try {
+            return raw.isBlank() ? null : LocalDate.parse(raw);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private void add(Map<String, Object> row, String key, Object value) {
+        row.put(key, number(row.get(key)).add(number(value)));
+    }
+
+    private String join(Object... values) {
+        List<String> parts = new ArrayList<>();
+        for (Object value : values) parts.add(text(value));
+        return String.join("|", parts);
+    }
+
+    private Map<String, Object> row(Object... values) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (int i = 0; i + 1 < values.length; i += 2) out.put(String.valueOf(values[i]), values[i + 1]);
+        return out;
+    }
+}

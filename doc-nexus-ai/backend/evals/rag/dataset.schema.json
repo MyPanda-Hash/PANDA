@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "question", "scope_refs", "expected_source_refs", "forbidden_source_refs", "answerability", "required_facts", "tags", "permission_user_ref"],
+  "additionalProperties": true,
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "question": {"type": "string", "minLength": 1},
+    "scope_refs": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1},
+    "expected_source_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "forbidden_source_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "answerability": {"enum": ["answerable", "no-answer"]},
+    "required_facts": {"type": "array"},
+    "tags": {"type": "array", "items": {"type": "string"}},
+    "permission_user_ref": {"type": "string", "minLength": 1}
+  }
+}

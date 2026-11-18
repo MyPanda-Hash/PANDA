@@ -1,0 +1,74 @@
+# === Node / 鍓嶇 ===
+node_modules/
+dist/
+*.local
+.env.local
+.env.*.local
+
+# === Java / Maven ===
+target/
+*.class
+*.log
+
+# === IDE ===
+.idea/
+.vscode/
+*.iml
+
+# === 宸ュ叿杩愯鏃? ===
+runtime-logs/
+tools/tplus-grab/profile/
+tools/tplus-grab/profile-*/
+.tplus-grab-out/
+.dsh-vision-toolkit/
+tools/tmp-*.cjs
+tools/dup-scan*.cjs
+
+# === Milens 本地知识图谱 ===
+.milens/
+# 以下为外部参考资料和内置工具，不纳入代码知识图谱扫描。
+docs/ref/
+tools/apache-maven-3.9.9/
+
+# === 绯荤粺 ===
+Thumbs.db
+Desktop.ini
+.DS_Store
+# === 涓存椂杩樺師鏂囦欢 ===
+.vision-restore/
+
+# === 构建产物压缩包 ===
+dist.rar
+dist.tar.gz
+
+# === 部署产物与数据备份（含业务数据，不公开） ===
+docs/deploy/*.tar.gz
+docs/deploy/light_mes_deploy.sql
+docs/deploy/light_mes_full.sql
+docs/deploy/base.sql
+docs/deploy/local-panels.sql
+docs/deploy/pc-table.sql
+
+# Local database exports (contain environment data; never commit)
+/db-backup-local-before-20260825.sql
+/light_mes_full.sql
+/light_mes_full_fixed.sql
+
+# Local documentation archive (may contain historical environment details)
+/docs/archive/
+
+# === 本地探针产物与临时工作目录（非源码，不入库） ===
+/run/
+_scratch/
+.workbuddy/
+.dsh-tool-vision/
+
+# 发票回传票面（OFD/PDF）属业务文件，不入库
+backend/data/
+
+# === 本地备份文件（*.bak / *.bak-时间戳 / 整目录备份）===
+*.bak
+*.bak-*
+*.bak.*
+*.bak-*/
+src.bak-*/

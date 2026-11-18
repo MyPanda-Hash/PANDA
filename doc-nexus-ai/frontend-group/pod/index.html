@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>小缔 · 语音</title>
+<link rel="stylesheet" href="pod.css" />
+<script>
+  // ?embed=1：给新版工作台的语音页 / 对话页右侧面板内嵌用（铺满容器、隐藏窗口按钮）。
+  // 解析放在 head 里先跑，避免先画一遍带圆角的窗口再跳到嵌入形态。
+  // 不带参数时什么都不做，18091 的独立小窗行为与原来完全一致。
+  (() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("embed") !== "1") return;
+    document.documentElement.dataset.embed = "1";
+    if (params.get("theme") === "dark") document.documentElement.dataset.theme = "dark";
+  })();
+</script>
+</head>
+<body>
+<div id="pod" data-state="idle">
+
+  <header class="pod-head" id="podHead">
+    <span class="dot" id="podDot"></span>
+    <span class="title" id="podTitle">小缔 · 语音</span>
+    <span class="clock" id="podClock"></span>
+    <span class="grow"></span>
+    <button class="icon-btn" id="btnPin" title="钉在最前（始终置顶）" aria-label="钉在最前">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 13V3.5" />
+        <path d="M4.5 7 8 3.5 11.5 7" />
+        <path d="M3 14.5h10" />
+      </svg>
+    </button>
+    <button class="icon-btn" id="btnFold" title="最小化为悬浮球" aria-label="最小化为悬浮球">−</button>
+    <button class="icon-btn" id="btnClose" title="关闭" aria-label="关闭">×</button>
+  </header>
+
+  <main class="pod-body" id="podBody">
+    <section class="briefing" id="podBriefing" hidden>
+      <header class="briefing__head">
+        <span class="briefing__title">生产概况</span>
+        <span class="briefing__time" id="briefingTime"></span>
+        <button class="briefing__refresh" id="btnBriefingRefresh" type="button" aria-label="刷新汇报">刷新</button>
+      </header>
+      <p class="briefing__text" id="briefingText"></p>
+      <ul class="briefing__items" id="briefingItems"></ul>
+      <p class="briefing__hint">开始通话后，我会先把这段念给你听</p>
+    </section>
+
+    <div class="empty" id="podEmpty">
+      <div class="empty-orb" aria-hidden="true"></div>
+      <p class="empty-title">点下面的按钮，直接说话</p>
+      <p class="empty-hint">能查订单工单库存，也能把待办和通知派到人身上。<br />MES 单据只查不改。</p>
+    </div>
+    <div class="stream" id="podStream" hidden></div>
+  </main>
+
+  <footer class="pod-foot">
+    <div class="status" id="podStatus">未通话</div>
+    <button class="call-btn" id="btnCall" aria-label="开始通话">
+      <span class="call-icon" id="callIcon">●</span>
+      <span id="callLabel">开始通话</span>
+    </button>
+    <div class="foot-row">
+      <button class="ghost-btn" id="btnMute" disabled>静音</button>
+      <span class="hint" id="podHint">按住空格也能说话</span>
+    </div>
+  </footer>
+
+  <div class="login-gate" id="loginGate" hidden>
+    <p>还没登录</p>
+    <a class="link-btn" href="../" target="_blank" rel="noopener">打开门户登录</a>
+    <button class="ghost-btn" id="btnRetry">已登录，重试</button>
+  </div>
+</div>
+<div class="pod-orb-wrap" id="podOrbWrap">
+  <button class="pod-orb" id="podOrb" type="button" aria-label="展开语音助手" title="展开">
+    <span class="pod-orb__halo" aria-hidden="true"></span>
+    <span class="pod-orb__halo pod-orb__halo--late" aria-hidden="true"></span>
+    <span class="pod-orb__core">
+      <span class="pod-orb__mark">缔</span>
+      <span class="pod-orb__wave" aria-hidden="true"><i></i><i></i><i></i></span>
+    </span>
+  </button>
+  <p class="pod-orb__caption" id="orbCaption">小缔 · 已最小化 · 点击展开</p>
+  <p class="pod-orb__hint" id="orbHint" hidden>把窗口拖小，球会自动居中填满</p>
+</div>
+<script src="pod.js" defer></script>
+  <script src="../notify-bubble.js" defer></script>
+</body>
+</html>

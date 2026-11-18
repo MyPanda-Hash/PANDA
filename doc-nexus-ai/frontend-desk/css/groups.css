@@ -1,0 +1,74 @@
+/* =====================================================================
+   项目群聊（groups.js 专用）
+   同源 iframe 撑满可用高度；加载期间给骨架，失败给可行动的兜底。
+   ===================================================================== */
+
+.group-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* 高度交给容器，不要用 100dvh 减硬编码值：
+     嵌入模式隐藏顶栏后那个减法就错了，底部会留一大条空白（2026-11-17 实测差 105px）。 */
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* 群聊是「满屏嵌一个应用」的视图：让 .view__inner 撑满可用高度，
+   它才有的放矢地传高度给 .group-stage。:has() 限定只影响这一视图，
+   不改变待办/对话那些「内容长了整体滚动」的页面。 */
+.view__inner:has(> .group-stage) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.group-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 6px;
+  background: var(--ant-color-bg-container);
+}
+
+.group-stage__status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--ant-color-bg-container);
+}
+
+.group-stage__skeleton {
+  width: min(420px, 60%);
+  height: 16px;
+}
+
+.group-empty { padding: 64px 16px; }
+
+@media (max-width: 767px) {
+  .group-stage { height: calc(100dvh - 113px); }
+}
+
+/* 群聊是「整块嵌一个应用」，不该受 .view__inner 的 1280px 阅读宽度限制：
+   宽屏下那个限制会在左右各留几百像素空白，看起来像嵌在中间的小窗。 */
+.view__inner:has(> .group-stage) { max-width: none; }
+.view:has(> .view__inner > .group-stage) { padding: 12px; }
+
+/* 群聊必须铺满：refine.css 里 body:not([data-view="chat"]) .view__inner 的
+   特异度（0,2,1）高于 .view__inner:has(...)（0,2,0），所以 max-width:1080px 会赢，
+   群聊被挤在中间。这里补上同样带 body 前缀的规则把优先级顶回去。 */
+body:not([data-view="chat"]) .view__inner:has(> .group-stage) {
+  max-width: none;
+  width: 100%;
+}
+
+/* 群聊视图左右不留白：它是「整块嵌一个应用」，不是阅读型页面 */
+.view:has(> .view__inner > .group-stage) {
+  padding-left: 0;
+  padding-right: 0;
+}

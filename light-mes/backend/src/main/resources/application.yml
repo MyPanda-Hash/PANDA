@@ -1,0 +1,104 @@
+server:
+  # U 盘多机环境：端口随机器变化，统一走环境变量（默认回归提交约定 8080）
+  port: "${MES_HTTP_PORT:8080}"
+
+spring:
+  application:
+    name: light-mes-backend
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+      file-size-threshold: 10MB
+  datasource:
+    # PostgreSQL（2026-11-12 由 MySQL 迁移）。回滚到 MySQL 不改代码：在 .env.local 里
+    # 设 SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/light_mes?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    # 并设 MES_FLYWAY_ENABLED=false（MySQL 结构由 db/*.sql 提供，不走 Flyway）。
+    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://${MES_DB_HOST:localhost}:${MES_DB_PORT:5432}/light_mes}"
+    username: "${SPRING_DATASOURCE_USERNAME:postgres}"
+    password: "${SPRING_DATASOURCE_PASSWORD:}" # 本地/生产环境均通过环境变量注入
+  flyway:
+    # 结构唯一权威源：db/migration/V1__baseline.sql（由 tools/mysql2pg-schema.mjs 从运行库生成）
+    enabled: "${MES_FLYWAY_ENABLED:true}"
+    locations: classpath:db/migration
+    # 已存在的库（迁移搬过来的）只登记基线、不重放 DDL
+    baseline-on-migrate: true
+    baseline-version: 1
+  sql:
+    init:
+      mode: never
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    # SQL 仅按日志级别输出，避免生产环境默认打印业务参数。
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    db-config:
+      id-type: auto
+
+mes:
+  # 数据库主动备份：本机没有 PostgreSQL 客户端时把 pg-dump 设成
+  #   docker exec -i -e PGPASSWORD light-mes-pg pg_dump
+  backup:
+    dir: "${MES_BACKUP_DIR:/opt/light-mes/backup}"
+    pg-dump: "${MES_PG_DUMP_CMD:pg_dump}"
+    mysql-dump: "${MES_MYSQL_DUMP_CMD:mysqldump}" # pg-dialect-audit: allow 回滚窗口内保留 MySQL 分支
+    # 定时备份：默认每周一 02:00（Asia/Shanghai）。改 MES_BACKUP_CRON 可换频率，
+    # 例如 "0 0 2 * * MON"（周一） / "0 0 3 * * *"（每天）。MES_BACKUP_AUTO=false 关掉。
+    auto: "${MES_BACKUP_AUTO:true}"
+    cron: "${MES_BACKUP_CRON:0 0 2 * * MON}"
+    zone: "${MES_BACKUP_ZONE:Asia/Shanghai}"
+    # 只保留最近 N 份，避免把磁盘塞满
+    keep: "${MES_BACKUP_KEEP:8}"
+  # 开票方（销售方）信息：销售发票打印页使用，可用环境变量覆盖
+  # 销货单审批通过后是否自动开票。true=一路自动（发票直接进草稿）；
+  # false=由「销售开票」工作台手动勾选销货单开票。
+  invoice:
+    auto-issue: "${MES_INVOICE_AUTO_ISSUE:false}"
+  production:
+    # 报工前是否要求该加工单已有已审核材料出库单（防止用"黑料"生产、材料账对不上）
+    require-material-issue: "${MES_REQUIRE_MATERIAL_ISSUE:true}"
+  company:
+    name: "${MES_COMPANY_NAME:智造方寸（未配置企业全称）}"
+    tax-no: "${MES_COMPANY_TAX_NO:—}"
+    addr-tel: "${MES_COMPANY_ADDR_TEL:—}"
+    bank-account: "${MES_COMPANY_BANK_ACCOUNT:—}"
+  jwt:
+    # 生产环境必须通过环境变量 MES_JWT_SECRET 注入随机值（历史版本曾提交真实密钥且已公开，须轮换）
+    secret: "${MES_JWT_SECRET:}"
+    expire-hours: "${MES_JWT_EXPIRE_HOURS:24}"
+  ocr:
+    access-key-id: "${ALIBABA_CLOUD_ACCESS_KEY_ID:}"
+    access-key-secret: "${ALIBABA_CLOUD_ACCESS_KEY_SECRET:}"
+    endpoint: "${ALIBABA_CLOUD_OCR_ENDPOINT:ocr-api.cn-hangzhou.aliyuncs.com}"
+    connect-timeout-ms: "${ALIBABA_CLOUD_OCR_CONNECT_TIMEOUT_MS:5000}"
+    read-timeout-ms: "${ALIBABA_CLOUD_OCR_READ_TIMEOUT_MS:35000}"
+    requests-per-minute: "${ALIBABA_CLOUD_OCR_REQUESTS_PER_MINUTE:10}"
+    max-concurrent: "${ALIBABA_CLOUD_OCR_MAX_CONCURRENT:4}"
+  # 2026-09-01 阶段 A：机器翻译（默认与 OCR 共用一套阿里云凭证；未配置凭证时接口回退中文原文）
+  # 开放接口：供 AI 助手只读轮询待审批单据。默认关闭，令牌必须走环境变量；
+  # 只注册 GET，字段白名单见 OpenApprovalService.PENDING_FIELDS。
+  open-api:
+    enabled: "${MES_OPEN_API_ENABLED:false}"
+    token: "${MES_OPEN_API_TOKEN:}"
+    allowed-ips: "${MES_OPEN_API_ALLOWED_IPS:127.0.0.1,::1}"
+    rate-limit-per-minute: "${MES_OPEN_API_RATE_LIMIT:120}"
+
+  mt:
+    access-key-id: "${ALIBABA_CLOUD_ACCESS_KEY_ID:}"
+    access-key-secret: "${ALIBABA_CLOUD_ACCESS_KEY_SECRET:}"
+    endpoint: "${ALIBABA_CLOUD_MT_ENDPOINT:mt.cn-hangzhou.aliyuncs.com}"
+    connect-timeout-ms: "${ALIBABA_CLOUD_MT_CONNECT_TIMEOUT_MS:5000}"
+    read-timeout-ms: "${ALIBABA_CLOUD_MT_READ_TIMEOUT_MS:10000}"
+    cache-ttl-seconds: 30
+    max-keys-per-request: 50
+  # AI 助理（doc-nexus-ai）单点登录：与对方 DOC_NEXUS_MES_SSO_SECRET 用同一密钥；
+  # 密钥留空时 /api/ai/sso-ticket 返回 503，前端回落到「只打开对话页」。
+  ai:
+    sso:
+      secret: "${MES_AI_SSO_SECRET:}"
+      base-url: "${MES_AI_BASE_URL:http://localhost:18091}"
+      ticket-ttl-seconds: 60
+    # AI 后端的接口地址（与上面的静态站点地址不同）：桌面卡片取简报走它
+    api-base-url: "${MES_AI_API_BASE_URL:http://localhost:8000}"

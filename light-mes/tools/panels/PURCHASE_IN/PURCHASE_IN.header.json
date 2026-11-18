@@ -1,0 +1,19 @@
+[
+  { "dataName": "单据日期", "dataType": "日期", "isRequired": true, "defaultValue": "today" },
+  { "dataName": "单据编号", "dataType": "文本", "isRequired": true, "defaultValue": "", "autoCode": true },
+  { "dataName": "业务类型", "dataType": "下拉框", "isRequired": true, "defaultValue": "采购入库", "options": ["采购入库", "产成品入库", "其他入库"] },
+  { "dataName": "币种", "dataType": "下拉框", "isRequired": true, "defaultValue": "人民币", "options": ["人民币"] },
+  { "dataName": "汇率", "dataType": "小数", "isRequired": true, "defaultValue": 1 },
+  { "dataName": "供应商编码", "dataType": "参照", "isRequired": false, "defaultValue": "", "refPanel": "PARTNER", "refField": "往来单位编码", "displayField": "往来单位名称", "filter": { "停用": false } },
+  { "dataName": "供应商", "dataType": "参照", "isRequired": true, "defaultValue": "", "refPanel": "PARTNER", "refField": "往来单位名称", "displayField": "往来单位名称", "filter": { "停用": false }, "refMap": [{ "from": "往来单位编码", "to": "供应商编码" }, { "from": "往来单位简称", "to": "供应商简称" }, { "from": "往来单位名称", "to": "结算供应商" }], "refColumns": ["往来单位编码", "往来单位名称", "往来单位简称", "结算客户", "分管部门", "停用"] },
+  { "dataName": "供应商简称", "dataType": "文本", "isRequired": false, "defaultValue": "" },
+  { "dataName": "经手人", "dataType": "参照", "isRequired": false, "defaultValue": "", "refPanel": "EMP", "refField": "员工名称", "displayField": "员工名称", "filter": { "停用": false } },
+  { "dataName": "项目", "dataType": "参照", "isRequired": false, "defaultValue": "", "refPanel": "PROJ", "refField": "项目名称", "displayField": "项目名称", "filter": { "停用": false } },
+  { "dataName": "仓库", "dataType": "参照", "isRequired": false, "defaultValue": "", "refPanel": "WH", "refField": "仓库名称", "displayField": "仓库名称", "filter": { "停用": false } },
+  { "dataName": "外部单据号", "dataType": "文本", "isRequired": false, "defaultValue": "" },
+  { "dataName": "采购订单号", "dataType": "文本", "isRequired": false, "defaultValue": "" },
+  { "dataName": "合同号", "dataType": "文本", "isRequired": false, "defaultValue": "" },
+  { "dataName": "资金批次", "dataType": "文本", "isRequired": false, "defaultValue": "" },
+  { "dataName": "采购类型", "dataType": "下拉框", "isRequired": false, "defaultValue": "", "options": ["采购入库", "其他入库"] },
+  { "dataName": "合同号最新", "dataType": "文本", "isRequired": false, "defaultValue": "" }
+]

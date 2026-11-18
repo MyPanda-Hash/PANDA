@@ -1,0 +1,158 @@
+<template>
+  <div class="portal" :class="{ dark: app.dark }">
+    <TopBar />
+    <div class="portal-body">
+      <LeftNav v-if="!app.maxContent" />
+      <div class="portal-main">
+        <TabsBar />
+        <div class="portal-content">
+          <router-view v-slot="{ Component }">
+            <keep-alive :max="20">
+              <!-- key 按 path 区分实例：否则同组件类型的面板（如 /panelx/list/SO_ORDER 与 /panelx/list/PU_ORDER）
+                   复用同一缓存实例，切页签不会重新加载，显示上一个面板的数据。
+                   注意用 path 而非 fullPath：query 会被 ?focus=/?new= 等流程用 router.replace 改写，
+                   用 fullPath 会导致组件在数据加载后重挂载、二次请求 -->
+              <component :is="Component" :key="route.path" />
+            </keep-alive>
+          </router-view>
+        </div>
+      </div>
+    </div>
+
+    <!-- 移动端：抽屉遮罩 -->
+    <transition name="fade">
+      <div v-if="app.mobileNav" class="nav-mask" @click="app.toggleMobileNav()"></div>
+    </transition>
+
+    <!-- T+ 浮层：右侧帮助面板 / 初始化向导 -->
+    <HelpPanel />
+    <InitWizard />
+  </div>
+</template>
+
+<script setup>
+import { onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import TopBar from './TopBar.vue'
+import LeftNav from './LeftNav.vue'
+import TabsBar from './TabsBar.vue'
+import HelpPanel from './HelpPanel.vue'
+import InitWizard from './InitWizard.vue'
+import { useAppStore } from '@/stores/app'
+import { useUserStore } from '@/stores/user'
+import { useTabsStore } from '@/stores/tabs'
+import { findMenuByPath } from '@/business/menus'
+
+const app = useAppStore()
+const user = useUserStore()
+const tabs = useTabsStore()
+const route = useRoute()
+
+/**
+ * 嵌入模式：AI 助理页（/assistant）把外部工作台整个嵌进来，
+ * 上面再盖一层「系统初始化」向导会把它挡得没法用，所以这一页不弹。
+ *
+ * 只影响「要不要自动弹」，不改 initDone —— 换个页面（我的桌面/业务总览）
+ * 照样会弹，初始化该做还是得做。
+ */
+const EMBED_PATHS = ['/assistant']
+
+function isEmbedPage(path) {
+  return EMBED_PATHS.some((base) => path === base || path.startsWith(base + '/'))
+}
+
+onMounted(() => {
+  if (app.dark) document.documentElement.classList.add('dark')
+  // Login data is cached for fast startup; refresh it so server-side corrections
+  // and permission changes replace stale localStorage values on the next load.
+  Promise.allSettled([user.fetchUserInfo(), user.fetchFactories()])
+  // T+ 行业化配置向导：首次登录自动弹出（嵌入页除外）
+  if (!app.initDone && !isEmbedPage(route.path)) app.openInitWizard()
+})
+
+// 已经弹着的时候切到嵌入页，也要让路：否则用户从桌面点进 AI 助理还是被挡住
+watch(
+  () => route.path,
+  (path) => {
+    if (app.initWizardVisible && isEmbedPage(path)) app.closeInitWizard(false)
+  }
+)
+
+/**
+ * 外部深链补页签。
+ *
+ * 页签只在你「从菜单/单据里点开」时才创建：内部打开会显式调用 tabs.open()。
+ * 但从 AI 待办、书签、浏览器刷新直接命中 /panelx/form/XXX 时没有菜单项，
+ * 页签栏会只剩「我的桌面」，顶部看着跟平时不一样（单据还占着内容区，
+ * 却没有对应页签，也没法关掉）。这里给这类动态路由补一个页签。
+ */
+function openDeepLinkTab(path) {
+  const form = path.match(/^\/panelx\/form\/([^/]+)$/)
+  if (!form) return
+  const panel = form[1]
+  const code = route.query.code
+  const title = code ? `单据 ${code}` : `${panel}-新增`
+  tabs.open({ path, title, query: { ...route.query } })
+}
+
+watch(
+  () => route.path,
+  (p) => {
+    tabs.setActive(p)
+    const menu = findMenuByPath(p)
+    if (menu) {
+      if (!tabs.tabs.find((t) => t.path === p)) tabs.open(menu)
+      return
+    }
+    if (!tabs.tabs.find((t) => t.path === p)) openDeepLinkTab(p)
+  },
+  { immediate: true }
+)
+</script>
+
+<style scoped>
+.portal {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.portal-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+.portal-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.portal-content {
+  flex: 1;
+  overflow: auto;
+  background: var(--t-content-bg);
+  padding: 16px;
+}
+
+/* 移动端：抽屉遮罩 */
+.nav-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 900;
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+@media (max-width: 768px) {
+  .portal-content {
+    padding: 10px;
+  }
+}
+</style>

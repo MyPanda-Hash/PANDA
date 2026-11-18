@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>API 使用 demo</title>
+    <!--
+      登录态桥接：MES 把令牌存在同源的 localStorage.mes_token，
+      chat-demo 只认自己的 chat-demo:api-key，两边互不相通。
+      这段放在源码里（而不是每次构建后手工往产物里插），
+      保证「构建 → 复制」就能直接用，不用再记一步手工操作。
+    -->
+    <script>
+      (function () {
+        try {
+          var token = localStorage.getItem("mes_token");
+          if (token && token !== "undefined") {
+            localStorage.setItem("chat-demo:api-key", token);
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>轻MES · 生产制造执行系统</title>
+  <!-- 前端 /api 固定访问本地 Spring Boot + MySQL 后端。 -->
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+  <!-- AI 助手球（待办数 + 语音）：同源加载，由 AI 进程经 /ai 反代提供。
+       不要再写成 http://localhost:18092/...：跨源会把 cookie、权限与部署都绑死。 -->
+  <script src="/ai/mes-todo-pod.js" defer></script>
+</body>
+</html>

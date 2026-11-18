@@ -1,0 +1,6 @@
+{
+  "include": ["app", "alembic", "tests"],
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": ["."]
+}

@@ -1,0 +1,79 @@
+import { createRouter, createWebHashHistory } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { useBrandStore } from '@/stores/brand'
+import { flatMenus } from '@/business/menus'
+
+const ModuleView = () => import('@/views/modules/ModuleView.vue')
+const PanelxList = () => import('@core/views/PanelxList.vue')
+const PanelxForm = () => import('@core/views/PanelxForm.vue')
+
+const routes = [
+  { path: '/login', component: () => import('@/views/login/index.vue'), meta: { title: '登录' } },
+  {
+    path: '/',
+    component: () => import('@/layout/PortalLayout.vue'),
+    // 默认进「智能工作台」：登录后先看今日简报/待办，数据看板变成第二落点。
+    // 具体展示简报还是待办由 MES 岗位决定（见 stores/user.js 的 syncDeskRole）。
+    redirect: '/assistant',
+    children: [
+      { path: 'dashboard', component: () => import('@/views/dashboard/index.vue'), meta: { title: '数据看板' } },
+      { path: 'assistant', component: () => import('@/views/ai/Assistant.vue'), meta: { title: 'AI 助理', code: 'assistant' } },
+      { path: 'prod/manufacture/order', redirect: '/panelx/list/MANU_ORDER' },
+      { path: 'prod/manufacture/orderForm', redirect: '/panelx/form/MANU_ORDER' },
+      { path: 'prod/manufacture/board', component: () => import('@/views/modules/board/ManufactureBoard.vue'), meta: { title: '生产看板', code: 'manufactureBoard' } },
+      { path: 'prod/shop/reworkDesk', component: () => import('@/views/modules/rework/ReworkDesk.vue'), meta: { title: '返修工作台', code: 'reworkDesk' } },
+      { path: 'top/solution', component: () => import('@/views/modules/solution/SolutionCenter.vue'), meta: { title: '方案中心', code: 'solutionCenter' } },
+      { path: 'sys/console', component: () => import('@/views/sys/SystemConsole.vue'), meta: { title: '系统管理平台', code: 'sysConsole' } },
+      { path: 'sys/org', component: () => import('@/views/sys/OrgAdmin.vue'), meta: { title: '组织架构', requireAdmin: true } },
+      { path: 'sys/backup', component: () => import('@/views/sys/DbBackup.vue'), meta: { title: '数据备份', requireAdmin: true } },
+      { path: 'sys/usage', component: () => import('@/views/sys/UsageLog.vue'), meta: { title: '使用权限查看', requireAdmin: true } },
+      { path: 'scm/businessOverview', component: () => import('@/views/scm/BusinessOverview.vue'), meta: { title: '业务总览', code: 'businessOverview' } },
+      { path: 'scm/invoiceWorkbench', component: () => import('@/views/scm/InvoiceWorkbench.vue'), meta: { title: '销售开票', code: 'invoiceWorkbench' } },
+      { path: 'mes/productionBoard', component: () => import('@/views/mes/ProductionBoard.vue'), meta: { title: '生产进度看板', code: 'productionBoard' } },
+      { path: 'mes/dispatchBoard', component: () => import('@/views/mes/DispatchBoard.vue'), meta: { title: '排产批次看板', code: 'dispatchBoard' } },
+      { path: 'mes/processReport', component: () => import('@/views/mes/ProcessReportBoard.vue'), meta: { title: '工序报工', code: 'processReport' } },
+      { path: 'mes/plan', component: () => import('@/views/mes/PlanBoard.vue'), meta: { title: '工单排产', code: 'plan' } },
+      { path: 'mes/planAnalysis', component: () => import('@/views/mes/PlanAnalysisBoard.vue'), meta: { title: '计划分析', code: 'planAnalysis' } },
+      { path: 'mes/mps', component: () => import('@/views/mes/MpsBoard.vue'), meta: { title: '主生产计划', code: 'mps' } },
+      { path: 'mes/dc/config', component: () => import('@/views/dc/DcConfig.vue'), meta: { title: 'IOT设备配置', code: 'dcConfig' } },
+      { path: 'mes/dc/monitor', component: () => import('@/views/dc/DcMonitor.vue'), meta: { title: '数据监控', code: 'dcMonitor' } },
+      { path: 'mes/dc/stats', component: () => import('@/views/dc/DcStats.vue'), meta: { title: '状态统计', code: 'dcStats' } },
+      { path: 'pdm/engChange', component: () => import('@/views/pdm/EngChangeBoard.vue'), meta: { title: '工程变更', code: 'engChange' } },
+      { path: 'mes/materialIssue', component: () => import('@/views/mes/MaterialIssueBoard.vue'), meta: { title: '生产领料', code: 'materialIssue' } },
+      // 销售发票打印页（增值税发票版式）：不放在面板容器里，独立全屏渲染便于打印
+      { path: 'print/invoice', component: () => import('@/views/print/InvoicePrint.vue'), meta: { title: '销售发票打印' } },
+      { path: 'scm/mobileWarehouse', component: () => import('@/views/scm/MobileWarehouse.vue'), meta: { title: '移动仓管', code: 'mobileWarehouse' } },
+      { path: 'wms/workbench', component: () => import('@/views/wms/Workbench.vue'), meta: { title: '仓内作业', code: 'wmsWorkbench' } },
+      { path: 'scm/serialNumber', component: () => import('@/views/scm/SerialNumber.vue'), meta: { title: '序列号管理', code: 'serialNumber' } },
+      // 排产批次（派工单）不再用面板展示：所有列表入口统一落到只读看板
+      { path: 'panelx/list/DISPATCH', redirect: '/mes/dispatchBoard' },
+      { path: 'panelx/list/:panelCode', component: PanelxList, meta: { title: '单据', operationName: '新增流程' } },
+      { path: 'panelx/form/:panelCode', component: PanelxForm, meta: { title: '表单' } },
+      ...flatMenus()
+        .filter((m) => m.path && m.path !== '/dashboard' && m.code !== 'manufactureOrder' && m.code !== 'manufactureBoard' && m.code !== 'reworkDesk' && m.code !== 'solutionCenter' && m.code !== 'dbBackup' && m.code !== 'usageLog' && !m.panelCode)
+        .map((m) => ({
+          path: m.path.slice(1),
+          component: ModuleView,
+          meta: { title: m.title, code: m.code },
+        })),
+    ],
+  },
+  { path: '/:pathMatch(.*)*', component: () => import('@/views/error/404.vue'), meta: { title: '404' } },
+]
+
+const router = createRouter({
+  history: createWebHashHistory(),
+  routes,
+})
+
+router.beforeEach((to) => {
+  document.title = `${to.meta.title || ''} · ${useBrandStore().name}`
+  const user = useUserStore()
+  if (to.path !== '/login' && !user.isLogin) return '/login'
+  if (to.meta.requireAdmin && !user.isAdmin) return '/assistant'
+  // 已登录再访问登录页：也回工作台，保持「进来先看简报/待办」的一致落点
+  if (to.path === '/login' && user.isLogin) return '/assistant'
+  return true
+})
+
+export default router

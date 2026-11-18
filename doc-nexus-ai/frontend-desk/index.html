@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<script>
+window.__ERRS__ = [];
+window.addEventListener("error", (e) => { window.__ERRS__.push("error: " + (e.message || "") + " @ " + (e.filename || "") + ":" + (e.lineno || "")); });
+window.addEventListener("unhandledrejection", (e) => { var r = e.reason; window.__ERRS__.push("reject: " + String((r && r.stack) || r).slice(0, 400)); });
+</script>
+
+<!-- 嵌入模式标记：被 MES 用 iframe 承载时带上 ?embed=1，
+     内层就隐藏与外层重复的那条顶栏（MES 已有搜索/主题/用户菜单）。 -->
+<script>
+  (function () {
+    if (new URLSearchParams(location.search).get('embed') === '1') {
+      document.documentElement.dataset.embed = '1';
+    }
+  })();
+</script>
+<!-- 挂在 MES 同源路径 /ai/ 下时，相对资源要基于它解析 -->
+<base href="/ai/">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#ffffff" />
+<title>缔智元 · AI 助理</title>
+<script>
+  // 先定主题再画：与群聊页同一套约定（localStorage dnx-theme，未设置则跟随系统）
+  (() => {
+    try {
+      // ?theme=light|dark 给截图验收用；平时跟随 localStorage / 系统
+      const forced = new URLSearchParams(location.search).get('theme');
+      const saved = localStorage.getItem('dnx-theme');
+      const dark = forced ? forced === 'dark' : saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    } catch (_) {
+      document.documentElement.dataset.theme = 'light';
+    }
+  })();
+</script>
+<link rel="stylesheet" href="css/tokens.css" />
+<!-- MES 主题覆盖：必须在 tokens.css 之后，用制造绿替换 antd 默认蓝 -->
+<link rel="stylesheet" href="css/theme-mes.css" />
+<link rel="stylesheet" href="css/desk.css" />
+<!-- 各功能区自己的样式，由 main.js 按需启用，但保持静态引用以免切换视图闪烁 -->
+<link rel="stylesheet" href="css/todo.css" />
+<link rel="stylesheet" href="css/chat.css" />
+<link rel="stylesheet" href="css/voice.css" />
+<link rel="stylesheet" href="css/staff.css" />
+<link rel="stylesheet" href="css/groups.css" />
+<link rel="stylesheet" href="css/settings.css" />
+<link rel="stylesheet" href="css/events.css" />
+<link rel="stylesheet" href="css/refine.css" />
+<link rel="stylesheet" href="css/models.css" />
+<link rel="stylesheet" href="css/brief.css" />
+<link rel="stylesheet" href="css/floor.css" />
+<link rel="stylesheet" href="css/my.css" />
+</head>
+<body>
+<div class="desk" id="desk">
+
+  <!-- 左侧导航：品牌 + 三个一级入口 + 账号 -->
+  <nav class="rail" id="rail" aria-label="主导航">
+    <a class="rail__brand" href="#/todos" aria-label="缔智元 AI 助理首页">
+      <span class="rail__logo" id="brandLogo" aria-hidden="true">缔</span>
+      <span class="rail__brand-text" id="brandText">小智<i id="brandSub">AI 助理</i></span>
+    </a>
+
+    <ul class="rail__nav" id="railNav" role="list"></ul>
+
+    <div class="rail__foot">
+      <button class="rail__user" id="btnUserMenu" type="button" aria-haspopup="menu" aria-expanded="false">
+        <span class="avatar avatar--sm" id="meAvatar" aria-hidden="true"></span>
+        <span class="rail__user-name" id="meName">…</span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="back-slot" id="backToChat"></div>
+      <div class="topbar__title">
+        <h1 id="viewTitle">待办工作台</h1>
+        <p id="viewSubtitle">AI 整理出来的待办与发现，都收在这里</p>
+      </div>
+      <div class="topbar__actions">
+        <span class="factory-slot" id="factorySlot"></span>
+        <label class="search" title="搜索待办或对话">
+          <span class="search__icon" aria-hidden="true"></span>
+          <input id="globalSearch" type="search" placeholder="搜索待办、对话" aria-label="搜索待办或对话" />
+        </label>
+        <button class="icon-btn" id="btnNotify" type="button" aria-label="通知" title="通知">
+          <span class="icon" data-icon="bell" aria-hidden="true"></span>
+          <span class="icon-btn__dot" id="notifyDot" hidden></span>
+        </button>
+        <button class="pill-btn" id="btnSettings" type="button" aria-label="品牌与外观设置" title="品牌与外观设置" hidden>
+          <span class="icon" data-icon="filter" aria-hidden="true"></span>
+          <span class="pill-btn__label">设置</span>
+        </button>
+        <!-- 视角切换：只有管理员可见。选一个账号，就按那个账号的身份取数，
+             不只是换标签——否则会看到「管理员权限 + 别人口径」的混合。 -->
+        <label class="pill-btn role-switch" id="roleSwitchWrap" title="以某个账号的视角查看（仅管理员）" hidden>
+          <span class="icon" data-icon="user" aria-hidden="true"></span>
+          <select id="roleSwitch" aria-label="以某个账号的视角查看"></select>
+        </label>
+      </div>
+    </header>
+
+    <main class="view" id="view" tabindex="-1"></main>
+  </div>
+</div>
+
+<div id="overlayRoot"></div>
+<div id="toastRoot" class="toast-root" aria-live="polite" aria-atomic="true"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+
+/* =====================================================================
+   待办工作台观感升级（向 macOS 系统界面靠拢）
+   只调视觉，不动结构与交互：
+   - 卡片：更大圆角（10）、极轻边框、hover 不位移只提亮
+   - 统计卡：数字更突出、标签更轻，形成「标题小、数字大」的 mac 层级
+   - 留白：卡片内边距 20，块间距 20，比原来的 16 更松
+   - 不用阴影堆层次，靠边框与背景细微差异（macOS 的分离感来自留白）
+   ===================================================================== */
+
+/* ---------------------------------------------------------------- 卡片基调 */
+.todo-page .card {
+  border-radius: 10px;
+  border-color: var(--ant-color-border-secondary);
+  background: var(--ant-color-bg-container);
+}
+.todo-page .card__head { padding: 18px 20px 0; }
+.todo-page .card__head h2 { font-size: 14px; line-height: 22px; letter-spacing: -0.01em; }
+.todo-page .card__body { padding: 18px 20px; }
+.todo-page .card__foot { padding: 12px 20px; }
+
+/* ---------------------------------------------------------------- 统计卡 */
+.todo-stats { gap: 12px; }
+.todo-stat {
+  border-radius: 10px;
+  padding: 16px 18px;
+  background: var(--ant-color-bg-container);
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.todo-stat:hover { background: var(--ant-color-fill-quaternary); }
+.todo-stat .stat__label {
+  font-size: 13px;
+  line-height: 22px;
+  color: var(--ant-color-text-tertiary);
+  letter-spacing: .01em;
+}
+.todo-stat .stat__num {
+  font-size: 30px;
+  line-height: 38px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.todo-stat__foot { font-size: 12px; line-height: 22px; margin-top: 6px; }
+
+/* ---------------------------------------------------------------- 生产概况 */
+.todo-brief__body { padding-top: 16px; }
+.todo-brief__text {
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--ant-color-text);
+  letter-spacing: .005em;
+}
+.todo-brief .tag { font-size: 12px; }
+
+/* ---------------------------------------------------------------- 待办列表 */
+.todo-list .list__row {
+  padding: 12px 20px;
+  transition: background-color .12s ease;
+}
+.todo-list .list__title { font-size: 14px; line-height: 22px; font-weight: 500; }
+.todo-list .list__meta { font-size: 12px; line-height: 22px; }
+.todo-list .list__time { font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* 详情面板：macOS 侧栏质感（轻背景，与列表区分） */
+.todo-detail__body { padding: 20px; }
+.todo-detail__title { font-size: 15px; line-height: 22px; font-weight: 600; letter-spacing: -0.01em; }
+
+/* ---------------------------------------------------------------- tabbar 更像 mac 分段控件 */
+.todo-page .tabbar { gap: 4px; }
+.todo-page .tabbar__btn {
+  font-size: 14px;
+  border-radius: 6px;
+  transition: background-color .12s ease, color .12s ease;
+}
+
+/* ---------------------------------------------------------------- 深色下更收敛 */
+[data-theme="dark"] .todo-stat:hover,
+[data-theme="dark"] .todo-list .list__row:hover {
+  background: var(--ant-color-fill-tertiary);
+}
+
+@media (max-width: 767px) {
+  .todo-stat { padding: 14px; border-radius: 10px; }
+  .todo-stat .stat__num { font-size: 26px; line-height: 32px; }
+}
+
+/* ================================================================
+   待办页：按对话界面的排版重建（2026-11-17 深度改版）
+   ----------------------------------------------------------------
+   对话界面的特征是「一条宽内容流」：内容居中、极少卡片边框、
+   靠留白和极淡分隔线分区。这里把待办页从「卡片套卡片」改成同一套。
+   ================================================================ */
+
+/* 1) 内容列：居中并限宽，左右留出大块空白 */
+.todo-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  gap: 28px;
+  padding-bottom: 40px;
+}
+
+/* 2) 统计条：不再是四张卡片，而是顶部一条数据带 */
+.todo-stats {
+  gap: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, .07);
+}
+.todo-stat {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 6px 24px 18px;
+}
+.todo-stat:first-child { padding-left: 0; }
+.todo-stat + .todo-stat { border-left: 1px solid rgba(0, 0, 0, .07); }
+.todo-stat:hover { background: transparent; }
+.todo-stat .stat__num { font-size: 32px; line-height: 42px; letter-spacing: -0.02em; }
+.todo-stat .stat__label { font-size: 13px; color: var(--ant-color-text-tertiary); }
+.todo-stat__foot { font-size: 13px; line-height: 22px; margin-top: 4px; }
+
+/* 3) 所有区块卡片去边框：靠留白分区，而不是靠框 */
+.todo-page .card {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.todo-page .card__head { padding: 0 0 14px; align-items: baseline; }
+.todo-page .card__body { padding: 0; }
+.todo-page .card__foot { padding: 14px 0 0; border-top: 1px solid rgba(0, 0, 0, .06); }
+.todo-page .card__head h2 { font-size: 15px; line-height: 24px; font-weight: 600; }
+
+/* 4) 生产概况：像对话里的一段引言 */
+.todo-brief__body { padding-top: 4px; }
+.todo-brief__text { font-size: 14px; line-height: 24px; color: var(--ant-color-text-secondary); }
+
+/* 5) 待办列表：条目宽行、极淡分隔线，像一条条消息 */
+.todo-list .list__row {
+  padding: 18px 4px;
+  border-radius: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, .06);
+}
+.todo-list .list__row:last-child { border-bottom: 0; }
+.todo-list .list__row:hover { background: rgba(0, 0, 0, .02); }
+.todo-list .list__row[aria-current="true"] { background: var(--ant-color-primary-bg); }
+.todo-list .list__title { font-size: 14px; line-height: 22px; font-weight: 600; }
+.todo-list .list__meta { font-size: 13px; line-height: 22px; margin-top: 6px; }
+.todo-list .list__time { font-size: 13px; color: var(--ant-color-text-tertiary); }
+
+/* 6) 详情：右侧窄栏保留，但同样去边框 */
+.todo-split { grid-template-columns: minmax(0, 1fr) 320px; gap: 32px; align-items: start; }
+.todo-detail { padding-left: 24px; border-left: 1px solid rgba(0, 0, 0, .07) !important; }
+.todo-detail__body { padding: 0; }
+.todo-detail__title { font-size: 16px; line-height: 24px; }
+
+/* 7) AI 发现：与待办列表同一套行样式 */
+.todo-events .card__body { padding: 0; }
+
+/* 8) 窄屏：详情让位，回到单列 */
+@media (max-width: 1100px) {
+  .todo-split { grid-template-columns: minmax(0, 1fr); }
+  .todo-detail { padding-left: 0; border-left: 0 !important; border-top: 1px solid rgba(0, 0, 0, .07) !important; padding-top: 20px; }
+  .todo-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .todo-stat:nth-child(3) { padding-left: 0; }
+  .todo-stat { padding: 6px 16px 16px; }
+}
+
+/* ================================================================
+   其余视图（简报 / 我的活儿 / 员工画像 / 模型配置 / 群聊）
+   套用与待办、对话相同的「宽内容流」：居中限宽 + 去卡片边框
+   ================================================================ */
+body:not([data-view="chat"]) .view__inner {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+/* 群聊是嵌一个完整应用，仍要铺满，不能被限宽 */
+.view__inner:has(> .group-stage) { max-width: none; }
+
+/* 卡片：无边框、透明底、圆角只用于可点区域 */
+body:not([data-view="chat"]) .card {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+body:not([data-view="chat"]) .card__head {
+  padding: 0 0 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, .07);
+}
+body:not([data-view="chat"]) .card__body { padding: 14px 0; }
+body:not([data-view="chat"]) .card__foot { padding: 12px 0 0; border-top: 1px solid rgba(0, 0, 0, .06); }
+
+/* 指标格（简报/现场等页面共用）：去框，用分隔线 */
+body:not([data-view="chat"]) .stats { gap: 0; border-bottom: 1px solid rgba(0, 0, 0, .07); }
+body:not([data-view="chat"]) .stat {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 6px 24px 18px;
+}
+body:not([data-view="chat"]) .stat:first-child { padding-left: 0; }
+body:not([data-view="chat"]) .stat + .stat { border-left: 1px solid rgba(0, 0, 0, .07); }
+body:not([data-view="chat"]) .stat__num { font-size: 30px; line-height: 40px; letter-spacing: -0.02em; }
+
+/* 列表：宽行 + 极淡分隔 */
+body:not([data-view="chat"]) .list__row { padding: 16px 4px; border-radius: 10px; }
+body:not([data-view="chat"]) .list__row + .list__row { border-top: 1px solid rgba(0, 0, 0, .06); }
+body:not([data-view="chat"]) .list__row:hover { background: rgba(0, 0, 0, .02); }
+
+/* ================================================================
+   收尾：把剩余「带框小卡片」统一成对话界面的无框排版
+   ================================================================ */
+
+/* 简报页四格：去框，做成数据带 */
+body:not([data-view="chat"]) .brief__stats {
+  gap: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, .07);
+}
+body:not([data-view="chat"]) .brief__stat {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 6px 20px 16px;
+}
+body:not([data-view="chat"]) .brief__stat:first-child { padding-left: 0; }
+body:not([data-view="chat"]) .brief__stat + .brief__stat { border-left: 1px solid rgba(0, 0, 0, .07); }
+body:not([data-view="chat"]) .brief__stat-n { font-size: 30px; line-height: 40px; }
+
+/* 待办 / 简报里的条目块：去框，只留极淡分隔 */
+body:not([data-view="chat"]) .brief__item,
+body:not([data-view="chat"]) .brief__report {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, .06);
+}
+
+/* 员工画像：数据网格保留边框（表格语义），但用更淡的线与更大留白 */
+body:not([data-view="chat"]) .staff-page .card { background: var(--ant-color-bg-container); }
+body:not([data-view="chat"]) .staff-page .card__head { border-bottom: 0; }
+
+/* 模型配置等表单页：输入框与分组的圆角统一 */
+body:not([data-view="chat"]) .models-page .card { background: var(--ant-color-bg-container); padding: 8px 20px; border-radius: 16px; }

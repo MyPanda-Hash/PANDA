@@ -1,0 +1,2 @@
+# 官方 CLI；独立 venv 安装，不自动执行 init/login 或安装 Skill。
+tavily-cli==0.1.8

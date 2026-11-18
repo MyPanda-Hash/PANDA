@@ -1,0 +1,56 @@
+/* 一线看板：一屏看完「还有什么要报工」。比现场看板更窄更短，
+   因为一线是站着看手机的场景，一行一项、不塞进度条。 */
+
+.my { max-width: 680px; margin: 0 auto; padding: 4px 0 40px; }
+.my__head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.my__hello { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -.01em; }
+.my__meta { font-size: 12px; color: var(--ant-color-text-tertiary); }
+
+.my__headline {
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 8px; padding: 14px 18px;
+  font-size: 14px; line-height: 23px; margin-bottom: 8px;
+}
+
+.my__stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 8px 0 20px; }
+.my__stat { background: var(--ant-color-bg-container); border: 1px solid var(--ant-color-border-secondary); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.my__stat-n { font-size: 22px; line-height: 30px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.my__stat-n[data-tone="warn"] { color: #c84d3f; }
+.my__stat-n[data-tone="ok"] { color: var(--ant-color-primary); }
+.my__stat-n[data-tone="muted"] { color: var(--ant-color-text-tertiary); }
+.my__stat-l { font-size: 12px; color: var(--ant-color-text-tertiary); margin-top: 2px; }
+.my__stat-h { font-size: 11px; color: var(--ant-color-text-quaternary); margin-top: 5px; }
+
+.my__sect-h {
+  display: flex; align-items: baseline; gap: 8px;
+  font-size: 13px; font-weight: 600; color: var(--ant-color-text-secondary);
+  margin: 18px 0 8px 2px;
+}
+.my__sect-h span:last-child { font-weight: 400; font-size: 12px; color: var(--ant-color-text-tertiary); }
+
+.my__row {
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 8px; padding: 12px 16px; margin-bottom: 8px;
+  display: flex; gap: 12px; align-items: center;
+}
+.my__row-main { flex: 1; min-width: 0; }
+.my__row-t { font-size: 14px; line-height: 22px; font-weight: 600; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.my__row-s { font-size: 12px; line-height: 20px; color: var(--ant-color-text-tertiary); margin-top: 2px; }
+.my__row-acts { flex: none; }
+.my__tag { font-size: 11px; line-height: 18px; padding: 0 6px; border-radius: 4px; background: var(--ant-color-fill-tertiary); color: var(--ant-color-text-tertiary); font-weight: 400; }
+
+.my__note {
+  margin-top: 14px; font-size: 12px; line-height: 20px;
+  background: var(--ant-color-fill-quaternary);
+  border-radius: 6px; padding: 10px 12px; color: var(--ant-color-text-secondary);
+}
+
+@media (max-width: 620px) {
+  .my__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* 未归属的报工：视觉上明显「不是我的」，避免被当成自己的产量 */
+.my__row--muted { background: var(--ant-color-fill-quaternary); border-style: dashed; }
+.my__row--muted .my__row-t { font-weight: 500; color: var(--ant-color-text-secondary); }

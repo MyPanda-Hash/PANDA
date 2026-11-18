@@ -1,0 +1,349 @@
+import { existsSync, realpathSync } from "node:fs";
+import path from "node:path";
+
+const WORKSPACE_ENV = "PI_WORKSPACE_ROOT";
+const SHARED_SKILLS_ENV = "PI_SHARED_SKILLS_ROOT";
+const SANDBOX_PROFILE = process.env.PI_EXECUTION_PROFILE === "sandbox";
+const UNATTENDED_PROFILE = process.env.PI_UNATTENDED_RESTRICTED === "1";
+const UNATTENDED_NATIVE_TOOLS: Record<string, true> = {
+	read: true,
+	write: true,
+	edit: true,
+	grep: true,
+	find: true,
+};
+const UNATTENDED_NEXUS_TOOLS: Record<string, true> = {
+	nexus_list_spaces: true,
+	nexus_list_documents: true,
+	nexus_search_evidence: true,
+	nexus_preview_document: true,
+	nexus_expand_citation: true,
+	nexus_match_entities: true,
+	nexus_get_project_context: true,
+};
+const UNATTENDED_CONFIG_PATH =
+	/(^|[\\/])(?:\.pi|\.agents|\.omp|\.config)(?:[\\/]|$)/i;
+/** Executable prefixes only. File operands must stay inside the session workspace. */
+const SYSTEM_ROOTS = ["/bin", "/usr", "/opt", "/sbin", "/dev"];
+
+const SENSITIVE_PATH =
+	/(^|[\\/])(?:\.env(?:\..*)?|\.git|id_rsa|id_ed25519|credentials?|secrets?)(?:[\\/]|$)|\.(?:pem|key|p12|pfx)$/i;
+
+const RECOVERY_HINT =
+	"恢复建议：不要重复尝试；使用当前工作区的 read/write，业务 API 使用 http_request，技能发现使用 search_skill_catalog，能力型操作使用已批准 Skill。";
+const BLOCKED_COMMANDS: Array<[RegExp, string]> = [
+	[/\b(?:sudo|su|doas)\b/i, "禁止提权"],
+	[/\b(?:ssh|scp|sftp|docker|podman|kubectl)\b/i, "禁止访问外部主机或容器控制面"],
+	[/\b(?:systemctl|service|launchctl|mount|umount|mkfs|fdisk|parted|dd)\b/i, "禁止修改系统或磁盘"],
+	[/\b(?:kill|pkill|killall|reboot|shutdown|halt|poweroff)\b/i, "禁止结束进程或关机"],
+	[/\b(?:chmod|chown|chgrp)\b/i, "禁止修改权限或属主"],
+	[/\b(?:curl|wget|nc|ncat|netcat|socat|nmap)\b/i, "禁止从会话内发起网络请求"],
+	[/\b(?:python3?|pypy3?|node|nodejs|perl|ruby|php|lua)\b/i, "禁止通过解释器读写容器内任意文件"],
+	[/\b(?:pip\d*|npm|npx|pnpm|yarn|apt(?:-get)?|yum|dnf|apk)\s+/i, "禁止安装软件包"],
+	[/\bgit\s+(?:push|reset\s+--hard|clean\s+-f|checkout\s+--|restore\s+--source)/i, "禁止破坏性 Git 操作"],
+	[/(?:^|[\s'"`])(?:\/etc|\/root|\/proc|\/sys)(?:[\s'"`\/]|$)/i, "禁止访问系统敏感路径"],
+	[/(?:\.env(?:\.|\b)|id_rsa|id_ed25519|\.pem\b|\.key\b|\/\.ssh(?:\/|\b))/i, "禁止访问凭据或密钥"],
+	[/(?:PI_[A-Z0-9_]*(?:KEY|TOKEN|SECRET)|NEXUS_CAPABILITY_(?:TOKEN|SECRET)|API_KEY|ACCESS_KEY|SECRET_KEY)/i, "禁止读取凭据环境变量"],
+	[/\b(?:psql|pg_dump|pg_restore|pg_isready|createdb|dropdb|mysql|redis-cli)\b/i, "禁止访问业务数据库"],
+	[/(?:DOC_NEXUS_DATABASE_URL|DATABASE_URL|postgresql(?:\+psycopg)?):\/\//i, "禁止访问业务数据库"],
+	[/\b(?:from\s+app\.core\.database|db\.add\s*\(|SessionLocal\s*\()/i, "禁止通过脚本改写业务数据库"],
+	[/\b(?:printenv)\b/i, "禁止转储进程环境变量"],
+	[/\b(?:xxd|hexdump|od)\b/i, "不要逐字节检查 ZIP/DOCX；文件写入工作区后即可结束"],
+];
+const SANDBOX_CAPABILITY_COMMANDS: Array<[RegExp, string]> = [
+	[
+		/\bbelt\b/i,
+		"当前 sandbox 镜像未预装 belt CLI；web-search Skill 暂不可用。不要尝试 npm/npx 安装或改用其他域名，直接说明实时网页搜索能力未配置。",
+	],
+	[
+		/\b(?:npm|npx|pnpm|yarn|bun)\b/i,
+		"当前会话禁止直接调用 Node 包管理器；请按已批准 Skill 说明运行预装的 Node/Python 脚本，不要在线安装依赖或重复探测。",
+	],
+	[
+		/(?:^|[;&|()\s])which(?:\s|$)/i,
+		"当前 sandbox 不保证提供 which；不要用批量探测命令反复试错，直接使用已知工具或说明能力不可用。",
+	],
+];
+
+export function sandboxBashCapabilityReason(command: string): string | null {
+	if (!SANDBOX_PROFILE) return null;
+	for (const [pattern, reason] of SANDBOX_CAPABILITY_COMMANDS) {
+		if (pattern.test(command)) return reason;
+	}
+	return null;
+}
+
+export function strictBrowserToolReason(
+	toolName: string,
+	input: Record<string, unknown>,
+	sharedSkills: string,
+): string | null {
+	if (process.env.PI_STRICT_BROWSER_SOURCE !== "1") return null;
+	if (toolName === "browser_read_page") return null;
+	if (toolName === "read" && typeof input.path === "string" && sharedSkills) {
+		try {
+			const requested = realpathSync(path.resolve(input.path));
+			const approved = realpathSync(path.join(sharedSkills, "agent-browser", "SKILL.md"));
+			if (requested === approved) return null;
+		} catch {
+			// 路径无法确认时不放开其他读取能力。
+		}
+	}
+	return "严格原文模式仅允许读取 agent-browser 技能说明和调用 browser_read_page。";
+}
+
+
+type ToolCallEvent = { toolName: string; input: Record<string, unknown> };
+type ToolCallCtx = {
+	abort: () => void;
+	ui: {
+		confirm: (title: string, message: string) => Promise<boolean>;
+		notify: (message: string, type?: "info" | "warning" | "error") => void;
+	};
+};
+type PiHooks = {
+	on: (
+		event: "tool_call",
+		handler: (
+			event: ToolCallEvent,
+			ctx: ToolCallCtx,
+		) => Promise<{ block: true; reason: string } | void>,
+	) => void;
+};
+export function unattendedToolReason(toolName: string): string | null {
+	if (!UNATTENDED_PROFILE) return null;
+	if (UNATTENDED_NEXUS_TOOLS[toolName] || UNATTENDED_NATIVE_TOOLS[toolName]) {
+		return null;
+	}
+	return "无人值守任务仅允许资料读取、分析和在当前工作区生成新成果";
+}
+
+
+export function within(candidate: string, root: string): boolean {
+	if (!root || !candidate) return false;
+	const left = candidate.replace(/[\\/]+$/, "");
+	const right = root.replace(/[\\/]+$/, "");
+	return left === right || left.startsWith(`${right}${path.sep}`);
+}
+
+export function resolveRoot(raw: string, fallback = ""): string {
+	const value = (raw || fallback).trim();
+	if (!value) return "";
+	const resolved = path.resolve(value);
+	try {
+		return existsSync(resolved) ? realpathSync(resolved) : resolved;
+	} catch {
+		return resolved;
+	}
+}
+
+export function resolveThroughExistingParent(raw: string, cwd: string): string {
+	let candidate = path.resolve(cwd, raw);
+	const suffix: string[] = [];
+	while (!existsSync(candidate)) {
+		const parent = path.dirname(candidate);
+		if (parent === candidate) return candidate;
+		suffix.unshift(path.basename(candidate));
+		candidate = parent;
+	}
+	return path.resolve(realpathSync(candidate), ...suffix);
+}
+
+function isUrl(token: string): boolean {
+	return /^[a-z][a-z0-9+.-]*:\/\//i.test(token);
+}
+
+function looksLikePath(token: string): boolean {
+	return token.startsWith("/") || token.startsWith("./") || token.startsWith("../");
+}
+
+function isOfficePackagePart(token: string): boolean {
+	return (
+		/^\/(?:word|xl|ppt|_rels|docProps|customXml)(?:\/|$)/i.test(token) ||
+		/^\/\[Content_Types\]\.xml$/i.test(token)
+	);
+}
+
+export function stripHeredocBodies(command: string): string {
+	return command.replace(
+		/<<-?[ \t]*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1[ \t]*\r?\n[\s\S]*?\r?\n\2[ \t]*(?=\r?\n|$)/g,
+		(full, _quote, tag) => {
+			const newline = full.search(/\r?\n/);
+			return `${full.slice(0, newline + 1)}${tag}\n`;
+		},
+	);
+}
+
+export function extractBashPathTokens(command: string): string[] {
+	const found = new Set<string>();
+	const add = (raw: string) => {
+		const trimmed = raw.trim().replace(/^['"]+|['"]+$/g, "");
+		if (!trimmed || isUrl(trimmed) || !looksLikePath(trimmed) || isOfficePackagePart(trimmed)) {
+			return;
+		}
+		found.add(trimmed);
+	};
+	const scanned = stripHeredocBodies(command);
+	for (const match of scanned.matchAll(/(?:^|[\s="'`])((?:\.\.?\/|\/)[^ "'`;|&<>\n]+)/g)) {
+		add(match[1]);
+	}
+	for (const match of scanned.matchAll(/(['"])([^'"]+)\1/g)) {
+		add(match[2]);
+	}
+	for (const match of scanned.matchAll(/(?:>>?|<<?)\s*(['"]?)([^'";|&\n]+)\1/g)) {
+		add(match[2]);
+	}
+	return [...found];
+}
+
+function commandBinary(command: string): string {
+	const trimmed = command.trim().replace(/^(?:[A-Za-z_][A-Za-z0-9_]*=[^\s]+\s+)+/, "");
+	return trimmed.split(/\s+/)[0] || "";
+}
+
+function isApprovedSkillExecution(
+	command: string,
+	sharedSkills: string,
+): boolean {
+	if (!sharedSkills || !command.includes(sharedSkills)) return false;
+	for (const match of command.matchAll(
+		/(?:^|[\s;&|])sh\s+(?:"([^"]+)"|'([^']+)'|(\S+))/gi,
+	)) {
+		const target = match[1] || match[2] || match[3] || "";
+		if (!/(?:^|\/)scripts\/[\w.-]+\.sh$/.test(target)) continue;
+		// 相对路径（cd 到技能目录后执行）按技能根解析
+		if (/^scripts\/[\w.-]+\.sh$/.test(target)) return true;
+		if (within(resolveThroughExistingParent(target, sharedSkills), sharedSkills)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function bashBlockReason(command: string, sharedSkills: string): string | null {
+	for (const [pattern, reason] of BLOCKED_COMMANDS) {
+		if (
+			SANDBOX_PROFILE &&
+			(reason === "禁止从会话内发起网络请求" ||
+				reason === "禁止通过解释器读写容器内任意文件" ||
+				reason === "禁止安装软件包")
+		) {
+			continue;
+		}
+		if (pattern.test(command)) return reason;
+	}
+	if (command.includes(".pi/skills") || (sharedSkills && command.includes(sharedSkills))) {
+		return "共享 Skill 请使用 read 工具读取，禁止通过 bash 改写";
+	}
+	if (
+		!SANDBOX_PROFILE &&
+		/\b(?:rm|mv|cp|ln)\b/i.test(command) &&
+		!/(?:^|[\s'"`])(?:scratch|output)(?:[\/\s'"`]|$)/i.test(command)
+	) {
+		return "文件删除、移动和复制仅允许作用于当前会话临时目录";
+	}
+	return null;
+}
+
+function bashPathReason(command: string, workspace: string): string | null {
+	if (SANDBOX_PROFILE) return null;
+	const binary = commandBinary(command);
+	let commandCwd = workspace;
+	const cdMatch = command.match(
+		/^\s*cd\s+(?:"([^"]+)"|'([^']+)'|([^\s;&]+))\s*(?:&&|;|\n|$)/i,
+	);
+	if (cdMatch) {
+		const requested = cdMatch[1] || cdMatch[2] || cdMatch[3] || "";
+		const resolvedCwd = resolveThroughExistingParent(requested, workspace);
+		if (!within(resolvedCwd, workspace)) {
+			return "bash 只能在当前会话工作区内读写文件";
+		}
+		commandCwd = resolvedCwd;
+	}
+	for (const token of extractBashPathTokens(command)) {
+		const resolved = resolveThroughExistingParent(token, commandCwd);
+		if (token === binary && SYSTEM_ROOTS.some((root) => within(resolved, root))) {
+			continue;
+		}
+		if (!within(resolved, workspace)) {
+			return "bash 只能在当前会话工作区内读写文件";
+		}
+	}
+	return null;
+}
+
+export function evaluateBashCommand(
+	command: string,
+	workspace: string,
+	sharedSkills: string,
+): string | null {
+	const sandboxReason = sandboxBashCapabilityReason(command);
+	if (sandboxReason) return sandboxReason;
+	if (SANDBOX_PROFILE) return null;
+	if (isApprovedSkillExecution(command, sharedSkills)) return null;
+	return bashBlockReason(command, sharedSkills) || bashPathReason(command, workspace);
+}
+
+export function evaluateFileAccess(
+	toolName: string,
+	rawPath: string,
+	workspace: string,
+	sharedSkills: string,
+): string | null {
+	if (SANDBOX_PROFILE && !UNATTENDED_PROFILE) return null;
+	if (SENSITIVE_PATH.test(rawPath)) {
+		return "禁止访问敏感文件或凭据";
+	}
+	const resolved = resolveThroughExistingParent(rawPath, workspace);
+	if (!within(resolved, workspace) && !within(resolved, sharedSkills)) {
+		return "只能访问当前会话工作区或已挂载的共享 Skill 目录";
+	}
+	if (
+		UNATTENDED_PROFILE &&
+		(toolName === "write" || toolName === "edit") &&
+		UNATTENDED_CONFIG_PATH.test(rawPath)
+	) {
+		return "无人值守任务禁止创建或修改运行时配置与扩展目录";
+	}
+	if ((toolName === "write" || toolName === "edit") && within(resolved, sharedSkills)) {
+		return "禁止通过会话修改共享 Skill";
+	}
+	return null;
+}
+
+export default function toolPolicyExtension(pi: PiHooks) {
+	pi.on("tool_call", async (event, ctx) => {
+		const workspace = resolveRoot(process.env[WORKSPACE_ENV] || "", process.cwd());
+		const sharedSkills = resolveRoot(process.env[SHARED_SKILLS_ENV] || "");
+		const unattendedReason = unattendedToolReason(event.toolName);
+		if (unattendedReason) {
+			ctx.ui.notify("schedule_permission_required", "warning");
+			ctx.abort();
+			return { block: true, reason: unattendedReason };
+		}
+		const browserReason = strictBrowserToolReason(event.toolName, event.input, sharedSkills);
+		if (browserReason) return { block: true, reason: browserReason };
+		if (UNATTENDED_PROFILE && UNATTENDED_NEXUS_TOOLS[event.toolName]) return;
+
+		if (event.toolName === "bash") {
+			const command = String(event.input.command || "");
+			const reason = evaluateBashCommand(command, workspace, sharedSkills);
+			if (reason) return { block: true, reason: `${reason} ${RECOVERY_HINT}` };
+			return;
+		}
+		if (SANDBOX_PROFILE && !UNATTENDED_PROFILE) return;
+
+		const rawPath = String((event.input as { path?: string }).path || ".").trim();
+		const reason = evaluateFileAccess(event.toolName, rawPath, workspace, sharedSkills);
+		if (reason) {
+			if (UNATTENDED_PROFILE) {
+				ctx.ui.notify("schedule_permission_required", "warning");
+				ctx.abort();
+			}
+			return {
+				block: true,
+				reason: `${reason} 恢复建议：改用当前会话工作区内的相对路径；不要猜测绝对路径。`,
+			};
+		}
+	});
+}

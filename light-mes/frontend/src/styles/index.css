@@ -1,0 +1,328 @@
+/* 轻 MES 全局设计 token：制造绿 + 安全黄 + 中性钢灰。 */
+
+:root {
+  --t-primary: #116a5b;
+  --t-primary-dark: #0d584c;
+  --t-tab-active: #116a5b;
+  --t-badge: #c84d3f;
+  --t-navbar-bg: #ffffff;
+  --t-navbar-text: #40504b;
+  --t-navbar-info: #7b8984;
+  --t-sidebar-bg: #f7f9f8;
+  --t-content-bg: #f2f5f4;
+  --t-card-bg: #ffffff;
+  --t-text-1: #1e2b27;
+  --t-text-2: #5d6c67;
+  --t-text-3: #8b9893;
+  --t-border: #dce4e1;
+  --t-border-light: #edf1ef;
+  --t-hover-bg: #e9f3f0;
+
+  /* AI 入口浅色底（与主色同族，明暗两套各自成立；对齐 antd colorPrimaryBg 的用法） */
+  --t-primary-tint: #e8f1ef;
+  --t-primary-tint-hover: #d7e7e3;
+  --t-primary-tint-press: #c8ded9;
+  --t-primary-tint-border: #b8d3ce;
+
+  --el-color-primary: #116a5b;
+  --el-color-primary-light-3: #58958a;
+  --el-color-primary-light-5: #88b4ac;
+  --el-color-primary-light-7: #b8d3ce;
+  --el-color-primary-light-8: #cfe1de;
+  --el-color-primary-light-9: #e8f1ef;
+  --el-color-primary-dark-2: #0d584c;
+
+  /* ===== 设计基线：对齐 Ant Design v6（design-kits/antd 实测值）=====
+     主色保留项目品牌绿 #116a5b，其余尺寸/字号/间距全部按 antd 规范。
+     2026-11-14 补：此前缺这一层，导致 51 处 antd 蓝 #1677ff、
+     8 种圆角、6 种字号、含 1/3/5/7/9/11px 的非栅格间距并存。 */
+
+  /* 字号阶梯（antd fontSize 14 / SM 12 / LG 16 / XL 20） */
+  --fs-xl: 20px;
+  --fs-lg: 16px;
+  --fs-md: 14px;
+  --fs-sm: 13px;
+  --fs-xs: 12px;
+  --fs-xxs: 11px;
+
+  /* 行高（antd lineHeight 1.5714） */
+  --lh-xl: 28px;
+  --lh-lg: 24px;
+  --lh-md: 22px;
+  --lh-sm: 20px;
+  --lh-xs: 18px;
+
+  /* 间距（8pt 栅格） */
+  --sp-xxs: 4px;
+  --sp-xs: 8px;
+  --sp-sm: 12px;
+  --sp-md: 16px;
+  --sp-lg: 24px;
+  --sp-xl: 32px;
+
+  /* 控件高度（antd controlHeight 32） */
+  --ctl-h-sm: 24px;
+  --ctl-h: 32px;
+  --ctl-h-lg: 40px;
+
+  /* 圆角 */
+  --rd-sm: 4px;
+  --rd: 6px;
+  --rd-lg: 8px;
+
+  /* 中性色阶（antd colorText 88/65/45/25） */
+  --ink-1: rgba(0, 0, 0, 0.88);
+  --ink-2: rgba(0, 0, 0, 0.65);
+  --ink-3: rgba(0, 0, 0, 0.45);
+  --ink-4: rgba(0, 0, 0, 0.25);
+}
+
+html.dark {
+  --t-primary: #58b09e;
+  --t-primary-dark: #76c2b2;
+  --t-tab-active: #58b09e;
+  --t-navbar-bg: #202925;
+  --t-navbar-text: #d1d9d6;
+  --t-navbar-info: #8f9c97;
+  --t-sidebar-bg: #202925;
+  --t-content-bg: #18201d;
+  --t-card-bg: #222c28;
+  --t-text-1: #e2e8e5;
+  --t-text-2: #b3bfba;
+  --t-text-3: #7f8e88;
+  --t-border: #35423d;
+  --t-border-light: #303c37;
+  --t-hover-bg: #293a34;
+
+  /* 深色下用主色的半透明叠加，避免浅色底在深色顶栏里发白 */
+  --t-primary-tint: rgba(88, 176, 158, 0.16);
+  --t-primary-tint-hover: rgba(88, 176, 158, 0.26);
+  --t-primary-tint-press: rgba(88, 176, 158, 0.34);
+  --t-primary-tint-border: rgba(88, 176, 158, 0.42);
+
+  --el-bg-color: #222c28;
+  --el-bg-color-page: #18201d;
+  --el-bg-color-overlay: #27322e;
+  --el-text-color-primary: #e2e8e5;
+  --el-text-color-regular: #b3bfba;
+  --el-text-color-secondary: #8f9c97;
+  --el-text-color-placeholder: #73817b;
+  --el-border-color: #35423d;
+  --el-border-color-light: #3b4943;
+  --el-border-color-lighter: #303c37;
+  --el-fill-color: #2c3933;
+  --el-fill-color-light: #293630;
+  --el-fill-color-lighter: #27332e;
+  --el-fill-color-dark: #303f39;
+  --el-fill-color-blank: #222c28;
+}
+
+/* ===== 设计库语义层（映射 antd v6 token）：容器加 class="adx"，内部用 var(--d-*) =====
+   - 中性：colorBgContainer / colorBorderSecondary / colorBorder / colorText 阶梯 / colorFillTertiary
+   - 语义：colorSuccess #52c41a / colorWarning #faad14 / colorError #ff4d4f
+   - 尺寸：borderRadius 6、borderRadiusLG 8
+   - 主色保留项目品牌绿：全站导航与按钮都是绿，单页换 antd 蓝会割裂
+   已接入：我的桌面（dashboard）、组织架构（OrgAdmin）、排产批次看板（DispatchBoard）、
+   工序报工（ProcessReportBoard）。新页面请直接复用本类，不要再抄一份 token。 */
+/* 2026-11-14：--d-* 从 .adx 提升到 :root。
+   原因：el-dialog 用 append-to-body 挂到 body，脱离 .adx 作用域，
+   导致所有弹窗（选单/审批/导入/字段管理）用不了语义 token。
+   提升后全局可用，.adx 保留作为显式标记（不改变任何现有行为）。 */
+:root {
+  --d-card: var(--t-card-bg);
+  --d-border: var(--t-border-light);
+  --d-border-strong: var(--t-border);
+  --d-text: var(--t-text-1);
+  --d-text-2: var(--t-text-2);
+  --d-text-3: var(--t-text-3);
+  --d-fill: rgba(0, 0, 0, 0.04);
+  --d-fill-soft: rgba(0, 0, 0, 0.02);
+  --d-primary: var(--t-primary);
+  --d-primary-bg: rgba(17, 106, 91, 0.08);
+  --d-ok: #52c41a;
+  --d-ok-bg: rgba(82, 196, 26, 0.1);
+  --d-warn: #faad14;
+  --d-warn-bg: rgba(250, 173, 20, 0.12);
+  --d-bad: #ff4d4f;
+  --d-bad-bg: rgba(255, 77, 79, 0.1);
+  --d-radius: 8px;
+  --d-radius-sm: 6px;
+}
+
+/* .adx 保留：不改 token，只作为页面级标记（供将来差异化使用） */
+.adx {}
+
+/* 暗色下的中性色阶：antd dark 用白色透明度（85/65/45/25） */
+html.dark {
+  --ink-1: rgba(255, 255, 255, 0.85);
+  --ink-2: rgba(255, 255, 255, 0.65);
+  --ink-3: rgba(255, 255, 255, 0.45);
+  --ink-4: rgba(255, 255, 255, 0.25);
+}
+
+html.dark {
+  --d-fill: rgba(255, 255, 255, 0.08);
+  --d-fill-soft: rgba(255, 255, 255, 0.04);
+  --d-primary-bg: rgba(88, 176, 158, 0.16);
+  --d-ok: #49aa19;
+  --d-ok-bg: rgba(73, 170, 25, 0.16);
+  --d-warn: #d89614;
+  --d-warn-bg: rgba(216, 150, 20, 0.16);
+  --d-bad: #dc4446;
+  --d-bad-bg: rgba(220, 68, 70, 0.16);
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+  font-size: 14px;
+  color: var(--t-text-1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #c0c4cc;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ===== 表单/表头字段统一为「条框」输入框（2026-11-09 定稿） =====
+   原来是下划线（T+ 风格），但可编辑态与只读态（.field-readonly 自带边框）两种外观并存，
+   同一张单切换草稿/已审核会「变形」。统一成白底 + 1px 边框，两种状态只靠底色区分。
+   取值对齐设计库：边框 colorBorder #d9d9d9 系、圆角 4、控件高 28、正文 13/20。 */
+.udl-fields .el-input__wrapper,
+.udl-fields .el-select__wrapper,
+.udl-fields .el-textarea__inner {
+  box-shadow: none !important;
+  background: #fff !important;
+  border-radius: 4px;
+  border: 1px solid #d8dde6 !important;
+  padding-left: 8px;
+  padding-right: 8px;
+  transition: border-color 0.15s;
+}
+.udl-fields .el-input__wrapper:hover,
+.udl-fields .el-select__wrapper:hover {
+  border-color: var(--t-primary) !important;
+}
+.udl-fields .el-input__wrapper.is-focus,
+.udl-fields .el-select__wrapper.is-focused {
+  border-color: var(--t-primary) !important;
+  box-shadow: none !important;
+}
+.udl-fields .el-input__inner {
+  font-size: 13px;
+  color: #222;
+}
+.udl-fields .el-input__inner::placeholder {
+  color: #aab3bf;
+}
+/* 只读/禁用：灰底同边，不再是"没框" */
+.udl-fields .el-input.is-disabled .el-input__wrapper,
+.udl-fields .el-select.is-disabled .el-select__wrapper {
+  background: #f7f8fa !important;
+}
+.udl-fields .el-input-number .el-input__wrapper {
+  border: 1px solid #d8dde6;
+}
+/* 日期控件：wrapper 高度与文本/下拉控件一致，边框同款 */
+.udl-fields .el-date-editor.el-input {
+  width: 100%;
+  height: 28px;
+}
+.udl-fields .el-date-editor .el-input__wrapper {
+  height: 28px;
+  box-shadow: none !important;
+  background: #fff !important;
+  border-radius: 4px;
+  border: 1px solid #d8dde6 !important;
+  padding-left: 8px;
+  padding-right: 8px;
+  transition: border-color 0.15s;
+}
+.udl-fields .el-date-editor .el-input__wrapper:hover,
+.udl-fields .el-date-editor .el-input__wrapper.is-focus {
+  border-color: var(--t-primary) !important;
+  box-shadow: none !important;
+}
+
+/* 明细参照：按钮覆盖整格，所有元数据驱动表单共用。 */
+.el-table td.el-table__cell.detail-ref-col,
+.el-table td.el-table__cell.detail-ref-col > .cell {
+  padding: 0;
+}
+
+.detail-ref-cell {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 31px;
+  padding: 4px 12px;
+  border: 0;
+  appearance: none;
+  background: transparent;
+  color: var(--t-primary);
+  font: inherit;
+  line-height: 23px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.detail-ref-cell:not(:disabled):hover {
+  background: var(--t-hover-bg);
+}
+
+.detail-ref-cell:focus-visible {
+  outline: 2px solid var(--t-primary);
+  outline-offset: -2px;
+}
+
+.detail-ref-cell:disabled {
+  color: inherit;
+  cursor: default;
+}
+
+/* ===== 表格字段头全局居中对齐（2026-08-25）===== */
+.el-table th.el-table__cell,
+.el-table th.el-table__cell .cell {
+  text-align: center !important;
+  justify-content: center !important;
+}
+.el-table th.el-table__cell .cell > .el-checkbox,
+.el-table th.el-table__cell .cell > .el-table__cell-inner {
+  justify-content: center;
+}
+/* 表头排序/筛选图标跟随文字居中 */
+.el-table th.el-table__cell .cell .caret-wrapper,
+.el-table th.el-table__cell .cell .el-icon {
+  margin-right: 0;
+}
+
+/* ===== 移动端全局（≤768px）===== */
+@media (max-width: 768px) {
+  /* 弹窗宽度：覆盖 el-dialog 内联 --el-dialog-width（固定 420/440/560/760px 一律收窄） */
+  .el-dialog {
+    --el-dialog-width: 92vw !important;
+    max-width: 92vw;
+    margin-top: 8vh;
+  }
+  .el-message-box {
+    --el-messagebox-width: 90vw !important;
+  }
+}

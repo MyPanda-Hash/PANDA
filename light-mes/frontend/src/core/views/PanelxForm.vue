@@ -1,0 +1,2786 @@
+<template>
+  <div class="adx panelx-form" :class="{ 'sectioned-form': formSections.length }">
+    <div class="card">
+      <!-- 采购发票等分段式详情：独立操作栏，避免复用通用 T+ 工具栏的旧视觉 -->
+      <div v-if="formSections.length" class="invoice-topbar">
+        <div class="invoice-title">
+          <span class="no">{{ isEdit ? (form['单据编号'] || form['锭号'] || form['编号'] || '') : tt('（新增）') }}</span>
+          <el-tag v-if="form['单据状态']" size="small" :type="statusTag(form['单据状态'])">{{ tt(form['单据状态']) }}</el-tag>
+          <span v-if="formStamp" class="approved-stamp" :class="formStamp.tone">{{ tt(formStamp.text) }}</span>
+        </div>
+        <div class="invoice-actions">
+          <el-button type="primary" :disabled="isDisabled('保存')" @click="onButton('保存')">{{ tt('保存') }}</el-button>
+          <el-button :disabled="isDisabled('保存新增')" @click="onButton('保存新增')">{{ tt('保存新增') }}</el-button>
+          <el-button :disabled="isDisabled('提交审批')" @click="onButton('提交审批')">{{ tt('提交审批') }}</el-button>
+          <el-dropdown v-if="sectionMoreActions.length" trigger="click" @command="onButton">
+            <el-button>{{ tt('更多') }}<el-icon><ArrowDown /></el-icon></el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item v-for="action in sectionMoreActions" :key="action" :command="action" :disabled="isDisabled(action)">
+                  {{ tt(action) }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          <el-button @click="back">{{ tt('返回') }}</el-button>
+        </div>
+      </div>
+      <!-- 通用工具栏（T+ 分组形态） -->
+      <div v-else class="tools">
+        <template v-for="g in groups" :key="g.name">
+          <!-- 收纳组（更多/工具/设置）：整块按钮只负责展开菜单，不执行第一个动作 -->
+          <el-dropdown v-if="isCatchAllGroup(g)" @command="(a) => onButton(a)" trigger="click">
+            <span class="tb-group">
+              <span class="tb-main">{{ tt(g.name) }}</span>
+              <span class="tb-caret"><el-icon><ArrowDown /></el-icon></span>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item v-for="a in menuActionsOf(g, isDisabled)" :key="a" :command="a" :disabled="isDisabled(a)">
+                  <span class="act-name">{{ tt(a) }}</span><span v-if="SHORTCUTS[a]" class="act-sc">{{ SHORTCUTS[a] }}</span>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          <!-- 多来源组（生单/选单）：主按钮＝展开菜单，不再偷偷执行组内第一个动作 -->
+          <el-dropdown v-else-if="menuOnly(g)" @command="(a) => onButton(a)" trigger="click">
+            <span class="tb-group">
+              <span class="tb-main">{{ groupLabel(g) }}</span>
+              <span class="tb-caret"><el-icon><ArrowDown /></el-icon></span>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <!-- 纯菜单组：主按钮只负责展开，菜单里必须列出组内全部动作（含第一个），
+                     否则第一个动作永远点不到（选单组里「选生产加工单」就这样被藏掉） -->
+                <el-dropdown-item v-for="a in (g.actions || [])" :key="a" :command="a" :disabled="isDisabled(a)">
+                  <span class="act-name">{{ tt(a) }}</span><span v-if="SHORTCUTS[a]" class="act-sc">{{ SHORTCUTS[a] }}</span>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          <span v-else class="tb-group">
+            <span class="tb-main" :class="{ disabled: isDisabled(primaryOf(g)) }" @click="onButton(primaryOf(g))">{{ groupLabel(g) }}</span>
+            <el-dropdown v-if="menuActionsOf(g, isDisabled).length" @command="(a) => onButton(a)" trigger="click">
+              <span class="tb-caret"><el-icon><ArrowDown /></el-icon></span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-for="a in menuActionsOf(g, isDisabled)" :key="a" :command="a" :disabled="isDisabled(a)">
+                    <span class="act-name">{{ tt(a) }}</span><span v-if="SHORTCUTS[a]" class="act-sc">{{ SHORTCUTS[a] }}</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </span>
+          <!-- 审批中：通过做主按钮，驳回并列露出 -->
+          <span v-if="secondaryOf(g).length" class="tb-group">
+            <span class="tb-main danger" @click="onButton(secondaryOf(g)[0])">{{ tt(secondaryOf(g)[0]) }}</span>
+          </span>
+        </template>
+        <span class="tb-group">
+          <span v-if="!embedded" class="tb-main back" @click="back">{{ tt('返回') }}</span>
+        </span>
+        <div class="tools-right">
+          <span class="pg">◁</span><span class="pg">◀</span><span class="pg">▶</span><span class="pg">▷</span>
+        </div>
+      </div>
+
+      <!-- 单据标题 -->
+      <div v-if="!formSections.length" class="head">
+        <div class="title">
+          <span class="no">{{ isEdit ? (form['单据编号'] || form['锭号'] || form['编号'] || '') : tt('（新增）') }}</span>
+          <el-tag v-if="form['单据状态']" size="small" :type="statusTag(form['单据状态'])">{{ tt(form['单据状态']) }}</el-tag>
+        </div>
+        <div v-if="formStamp" class="approved-stamp" :class="formStamp.tone">{{ tt(formStamp.text) }}</div>
+      </div>
+
+      <!-- 表头（3 列；配置 formSections 时按「基本信息 / 发票信息」分段） -->
+      <div v-loading="loading" class="fields udl-fields">
+        <template v-for="section in sectionedMeta" :key="section.title || 'all'">
+          <div v-if="section.title" class="form-section-title">{{ tt(section.title) }}</div>
+          <div v-for="r in section.fields" :key="r.code" class="field">
+          <label :title="tt(r.label || r.name)">{{ tt(r.label || r.name) }}<span v-if="r.isNotNull" class="req">*</span></label>
+          <el-input v-if="isText(r)" v-model="form[r.code]" :disabled="!editable || fieldLocked(r)" :placeholder="tt(r.name)" />
+          <el-input-number
+            v-else-if="isNumber(r)"
+            v-model="form[r.code]"
+            :disabled="!editable || fieldLocked(r)"
+            :controls="false"
+            style="width: 100%"
+          />
+          <!-- 参照字段：点击弹窗拉取基础档案面板数据，勾选导入（开发约束十一-1） -->
+          <!-- 双模：参照数据 ≤20 行下拉直选，>20 行弹窗搜索定位（数据量跨越阈值自动切换） -->
+          <div v-else-if="isRefSelect(r)" class="ref-field">
+            <el-select
+              v-model="form[r.code]"
+              clearable
+              filterable
+              remote
+              :disabled="!editable || fieldLocked(r)"
+              :remote-method="(kw) => loadRefOptions(r, kw)"
+              :placeholder="tt('输入搜索')"
+              style="width: 100%"
+              popper-class="ref-paged-popper"
+              @change="(v) => onRefSelectChange(r, v)"
+              @focus="checkRefMode(r)"
+            >
+              <el-option
+                v-for="o in refPageOf(refFieldKey(r)).list"
+                :key="o.value"
+                :label="tt(o.label)"
+                :value="o.value"
+              />
+              <template v-if="refPageOf(refFieldKey(r)).pages > 1" #footer>
+                <div class="ref-pager">
+                  <span class="ref-pager-info">{{ refPageOf(refFieldKey(r)).page }}/{{ refPageOf(refFieldKey(r)).pages }}</span>
+                  <el-button link size="small" :disabled="refPageOf(refFieldKey(r)).page <= 1" @click.stop="turnRefPage(refFieldKey(r), -1)">{{ tt('上一页') }}</el-button>
+                  <el-button link size="small" :disabled="refPageOf(refFieldKey(r)).page >= refPageOf(refFieldKey(r)).pages" @click.stop="turnRefPage(refFieldKey(r), 1)">{{ tt('下一页') }}</el-button>
+                </div>
+              </template>
+            </el-select>
+            <!-- 参照来源是档案面板：给一个直接打开该档案的入口，别让用户自己找菜单 -->
+            <el-icon
+              v-if="r.refPanel"
+              class="ref-jump"
+              :title="tt('打开来源档案') + ' · ' + r.refPanel"
+              @click.stop="openRefPanel(r)"
+            ><TopRight /></el-icon>
+          </div>
+          <div v-else-if="isRef(r)" class="ref-ctl">
+            <el-input
+              :model-value="refText(r, form[r.code])"
+              readonly
+              :disabled="!editable || fieldLocked(r)"
+              :placeholder="isEdit ? '' : tt('点击选择')"
+              @click="openRefPick(r)"
+            >
+              <!-- 搜索图标放输入框内：按钮独立成框会让底部基线比其它字段高出一截 -->
+              <template v-if="editable && !fieldLocked(r)" #suffix>
+                <el-icon class="ref-suffix" :title="tt('打开参照')" @click.stop="openRefPick(r)"><Search /></el-icon>
+                <el-icon
+                  v-if="r.refPanel"
+                  class="ref-suffix ref-jump-inline"
+                  :title="tt('打开来源档案') + ' · ' + r.refPanel"
+                  @click.stop="openRefPanel(r)"
+                ><TopRight /></el-icon>
+              </template>
+            </el-input>
+          </div>
+          <el-select v-else-if="isSelect(r)" v-model="form[r.code]" :disabled="!editable || fieldLocked(r)" filterable clearable allow-create style="width: 100%">
+            <el-option v-for="o in r.options || []" :key="o" :label="tt(o.label ?? o)" :value="o.value ?? o" />
+          </el-select>
+          <el-date-picker
+            v-else-if="isDate(r)"
+            v-model="form[r.code]"
+            :disabled="!editable || fieldLocked(r)"
+            type="date"
+            value-format="YYYY-MM-DD"
+            style="width: 100%"
+          />
+          <el-switch v-else-if="isBool(r)" v-model="form[r.code]" :disabled="!editable || fieldLocked(r)" />
+          <el-input v-else v-model="form[r.code]" :disabled="!editable || fieldLocked(r)" :placeholder="tt(r.name)" />
+          </div>
+        </template>
+      </div>
+
+      <!-- 表体：三明细上下堆叠（对齐真实 T+：每区自带 明细/汇总 页签行 + 图标行 + 网格 + 分隔条） -->
+      <div v-if="formSections.length && tabs.length" class="form-section-title detail-section-title">{{ tt('商品信息') }}</div>
+      <div v-if="tabs.length" class="detail">
+        <div v-for="(tab, ti) in tabs" :key="tab.key" class="detail-block">
+          <div class="dt-head">
+            <div class="dt-tabs">
+              <span class="dt-tab" :class="{ on: (subActive[tab.key] || 'detail') === 'detail' }" @click="subActive[tab.key] = 'detail'">
+                {{ tt(tab.label) }}<span v-if="tab.isRequired" class="req">*</span>
+              </span>
+              <span
+                v-if="tab.summaryItems && tab.summaryItems.length"
+                class="dt-tab"
+                :class="{ on: subActive[tab.key] === 'summary' }"
+                @click="subActive[tab.key] = 'summary'"
+              >{{ tt(tab.label) }}{{ tt('汇总') }}</span>
+            </div>
+            <div class="dt-actions">
+              <el-button v-if="editable" type="primary" :icon="Plus" @click="addDetailRow(tab)" class="add-data-btn">{{ tt('新增数据') }}</el-button>
+              <span class="dt-ic" v-if="visibleFields(tab).some((field) => field.dataName === '现存量')" @click="refreshTabCurrentStock(tab)">{{ tt('现存量提取') }}</span>
+              <span v-if="tab.key === 'materials' && selectedProduct" class="filter-hint">{{ tt('当前产品') }}：{{ selectedProduct }} {{ tt('的 BOM 子件') }}</span>
+              <span v-if="formSections.length" class="dt-scroll-hint">{{ tt('左右滚动查看完整列') }}</span>
+              <span class="tab-hint">{{ tt(tabHint(tab)) }}</span>
+            </div>
+          </div>
+
+          <!-- 明细视图 -->
+          <template v-if="(subActive[tab.key] || 'detail') === 'detail'">
+            <el-table
+              :data="tabData(tab)"
+              size="small"
+              border
+              :show-summary="true"
+              :summary-method="(p) => summarize(p, tab)"
+              height="380"
+              :row-class-name="(o) => (tab.key === 'products' ? prodRowCls(o) : '')"
+              @click.capture="(e) => onTableClickCapture(tab, e)"
+              @row-click="(row) => onRowClickDetail(tab, row)"
+            >
+              <el-table-column v-if="tab.subTable" type="expand" width="40">
+                <template #default="{ row }">
+                  <div class="sub-wrap">
+                    <div class="sub-head">
+                      <span class="sub-title">{{ tt(tab.subTable.label) }}</span>
+                      <el-button v-if="editable" size="small" :icon="Plus" @click="addSubRow(row, tab)">{{ tt('增行') }}</el-button>
+                    </div>
+                    <el-table :data="row['子表材料'] || []" size="small" border>
+                      <el-table-column :label="tt('序号')" width="50" align="center">
+                        <template #default="{ $index }">{{ $index + 1 }}</template>
+                      </el-table-column>
+                      <el-table-column v-for="sr in tab.subTable.fields" :key="sr.dataName" :label="tt(sr.dataName)" min-width="100">
+                        <template #default="{ row: sr }">
+                          <el-select v-if="sr.dataType === '下拉框'" v-model="sr[sr.dataName]" :disabled="!editable" filterable allow-create style="width: 100%">
+                            <el-option v-for="o in sr.options || []" :key="o" :label="o" :value="o" />
+                          </el-select>
+                          <el-input-number v-else-if="sr.dataType === '小数' || sr.dataType === '整数'" v-model="sr[sr.dataName]" :controls="false" :disabled="!editable" style="width: 100%" />
+                          <el-input v-else v-model="sr[sr.dataName]" :disabled="!editable" />
+                        </template>
+                      </el-table-column>
+                      <el-table-column v-if="editable" :label="tt('操作')" width="50" align="center">
+                        <template #default="{ $index }">
+                          <el-icon class="del" @click="row['子表材料'].splice($index, 1)"><Delete /></el-icon>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column :label="tt('序号')" width="50" align="center" fixed="left">
+                <template #default="{ $index }">{{ $index + 1 }}</template>
+              </el-table-column>
+              <el-table-column
+                v-for="dr in visibleFields(tab)"
+                :key="dr.dataName"
+                :label="tt(detailAliases[dr.dataName] || dr.dataName)"
+                :min-width="formSections.length ? (['小数', '整数'].includes(dr.dataType) ? 76 : 96) : 110"
+                :class-name="dr.computed ? 'computed-col' : ''"
+              >
+                <template #default="{ row }">
+                  <template v-if="dr.dataType === '参照'">
+                    <span v-if="dr.dataName === '材料编码' && tab.key === 'materials'" class="mat-cell">
+                      <span class="ref-cell" :class="{ disabled: !detailRefEnabled(dr) }" @click="openDetailRef(dr, row, tab, 'click')">{{ drRefText(dr, row) }}</span>
+                      <span v-if="hasSubBom(row[dr.dataName])" class="mat-star" :title="tt('该材料有下级子件 BOM，点击行查看')">*</span>
+                    </span>
+                    <!-- 双模：档案行数 ≤20 时直接下拉选，不必再点开弹窗 -->
+                    <el-select
+                      v-else-if="isRefSelect(dr)"
+                      :model-value="row[dr.dataName]"
+                      clearable
+                      filterable
+                      remote
+                      :disabled="!editable || detailCellLocked(dr)"
+                      :remote-method="(kw) => loadRefOptions(dr, kw)"
+                      :placeholder="tt('请选择')"
+                      style="width: 100%"
+                      @change="(v) => onDetailRefSelectChange(dr, v, row, tab)"
+                      @focus="checkRefMode(dr)"
+                    >
+                      <el-option
+                        v-for="o in refPageOf(refFieldKey(dr)).list"
+                        :key="o.value"
+                        :label="tt(o.label)"
+                        :value="o.value"
+                      />
+                      <template v-if="refPageOf(refFieldKey(dr)).pages > 1" #footer>
+                        <div class="ref-pager">
+                          <span class="ref-pager-info">{{ refPageOf(refFieldKey(dr)).page }}/{{ refPageOf(refFieldKey(dr)).pages }}</span>
+                          <el-button link size="small" :disabled="refPageOf(refFieldKey(dr)).page <= 1" @click.stop="turnRefPage(refFieldKey(dr), -1)">{{ tt('上一页') }}</el-button>
+                          <el-button link size="small" :disabled="refPageOf(refFieldKey(dr)).page >= refPageOf(refFieldKey(dr)).pages" @click.stop="turnRefPage(refFieldKey(dr), 1)">{{ tt('下一页') }}</el-button>
+                        </div>
+                      </template>
+                    </el-select>
+                    <span
+                      v-else
+                      class="ref-cell"
+                      :class="{ disabled: !detailRefEnabled(dr), 'dblclick-ref': detailRefTrigger(dr) === 'dblclick' }"
+                      :title="detailRefTrigger(dr) === 'dblclick' && detailRefEnabled(dr) ? tt('双击选择存货') : ''"
+                      @click="openDetailRef(dr, row, tab, 'click')"
+                      @dblclick.stop="openDetailRef(dr, row, tab, 'dblclick')"
+                    >{{ drRefText(dr, row) }}</span>
+                  </template>
+                  <el-select v-else-if="dr.dataType === '下拉框'" v-model="row[dr.dataName]" :disabled="!editable || detailCellLocked(dr)" filterable allow-create style="width: 100%" @change="onDetailChange(dr, row, tab)">
+                    <el-option v-for="o in dr.options || []" :key="o" :label="tt(o.label ?? o)" :value="o.value ?? o" />
+                  </el-select>
+                  <el-switch v-else-if="dr.dataType === '是否'" v-model="row[dr.dataName]" :disabled="!editable || detailCellLocked(dr)" />
+                  <el-image
+                    v-else-if="dr.dataType === '图片'"
+                    :src="row[dr.dataName] || ''"
+                    fit="contain"
+                    style="width: 34px; height: 34px"
+                  >
+                    <template #error>
+                      <span class="img-ph">{{ tt('图') }}</span>
+                    </template>
+                  </el-image>
+                  <el-input-number
+                    v-if="dr.dataType === '小数' || dr.dataType === '整数'"
+                    v-model="row[dr.dataName]"
+                    :controls="false"
+                    :disabled="!editable || detailCellLocked(dr)"
+                    style="width: 100%"
+                  />
+                  <el-date-picker
+                    v-else-if="dr.dataType === '日期'"
+                    v-model="row[dr.dataName]"
+                    type="date"
+                    value-format="YYYY-MM-DD"
+                    :disabled="!editable || detailCellLocked(dr)"
+                    style="width: 100%"
+                  />
+                  <el-input v-else v-model="row[dr.dataName]" :disabled="!editable || detailCellLocked(dr)" />
+                </template>
+              </el-table-column>
+              <el-table-column v-if="editable" :label="tt('操作')" width="50" align="center" fixed="right">
+                <template #default="{ $index }">
+                  <el-icon class="del" @click="removeDetailRow(tab, $index)"><Delete /></el-icon>
+                </template>
+              </el-table-column>
+            </el-table>
+          </template>
+
+          <!-- 汇总视图（真实 T+ 仅产成品明细/材料明细有汇总页签） -->
+          <el-table v-else :data="summaryRows(tab)" size="small" border>
+            <el-table-column prop="label" :label="tt('汇总项目')" min-width="220" />
+            <el-table-column prop="value" :label="tt('数值')" min-width="160" align="right" />
+          </el-table>
+
+          <div v-if="ti < tabs.length - 1" class="dt-splitter"></div>
+        </div>
+      </div>
+
+      <!-- 金额信息：配置 formSummary 时在表体后汇总展示（金额/税额/价税合计/勾稽状态） -->
+      <div v-if="summaryFields.length" class="form-summary">
+        <div class="form-section-title">{{ tt(summaryTitle) }}</div>
+        <div class="summary-grid">
+          <div v-for="r in summaryFields" :key="r.code" class="summary-item">
+            <span class="summary-label">{{ tt(r.name) }}</span>
+            <span class="summary-value">{{ displayField(r, form[r.code]) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 表尾备注区（对齐真实 T+：备注 + 分隔线 + 审核信息行） -->
+      <div v-if="!formSections.length" class="remark">
+        <label>{{ tt('备注') }}</label>
+        <el-input v-model="form['备注']" :disabled="!editable" style="width: 100%" />
+      </div>
+      <div class="footer-hr"></div>
+
+      <!-- 表尾（审核信息栏，对齐真实 T+ 底栏） -->
+      <div class="audit-line">
+        <span>{{ tt('制单人') }}：{{ form['发起人编号'] || '-' }}</span>
+        <span>{{ tt('审核人') }}：{{ form['审核人'] || '-' }}</span>
+        <span>{{ tt('审核日期') }}：{{ rmtTime(form['审核日期']) }}</span>
+        <span>{{ tt('审核时间') }}：{{ rmtTime(form['审核时间']) }}</span>
+        <span>{{ tt('打印次数') }}：{{ form['打印次数'] ?? 0 }}</span>
+        <span>{{ tt('创建时间') }}：{{ rmtTime(form['创建时间']) }}</span>
+        <span>{{ tt('修改时间') }}：{{ rmtTime(form['更新时间']) }}</span>
+        <span>{{ tt('变更人') }}：{{ form['变更人'] || '-' }}</span>
+        <span>{{ tt('变更日期') }}：{{ rmtTime(form['变更日期']) }}</span>
+        <span>{{ tt('审核机器人') }}：{{ form['审核机器人'] || '-' }}</span>
+        <span>{{ tt('审核意见') }}：{{ form['审核意见'] || '-' }}</span>
+      </div>
+
+      <!-- 拉式选单（配置驱动：selectConfig 定义来源面板/列/字段映射，对齐 T+ 选单前提：已生效且未中止） -->
+      <!-- 工序汇报单选单：按加工单逐道工序报工（通用选单会把整单工序一起带进来） -->
+    <ProcessReportPickDialog v-model="processPickVisible" @generated="onProcessReported" />
+
+    <el-dialog v-model="selectVisible" :title="tt(selectCrg?.title || '选单')" width="920px" append-to-body>
+        <div class="sel-tip">{{ selectCrg?.tip || tt('选择来源单据，明细将带入当前单据') }}</div>
+        <el-table
+          :data="selectList"
+          v-loading="selectLoading"
+          size="small"
+          border
+          height="360"
+          @selection-change="(r) => (selectRows = r)"
+        >
+          <el-table-column type="selection" width="45" />
+          <el-table-column
+            v-for="c in selectCols"
+            :key="c"
+            :prop="c"
+            :label="c"
+            :width="['单据编号', '单据日期', '客户', '预完工日', '预计交货日期'].includes(c) ? 120 : undefined"
+            :min-width="['存货名称', '产品名称'].includes(c) ? 200 : undefined"
+          />
+          <el-table-column :label="tt('明细行')" min-width="240">
+            <template #default="{ row }">
+              <span class="sel-item">{{ row['存货名称'] || row['产品名称'] || '' }} × {{ row['数量'] }}{{ row['销售单位'] || row['生产单位'] || '' }}（{{ row['存货编码'] || row['产品编码'] || '' }}）</span>
+            </template>
+          </el-table-column>
+        </el-table>
+        <template #footer>
+          <el-button @click="selectVisible = false">{{ tt('取消') }}</el-button>
+          <el-button type="primary" :disabled="!selectRows.length" @click="confirmSelect">
+            确定生单（{{ selectRows.length }} 行）
+          </el-button>
+        </template>
+      </el-dialog>
+    </div>
+    <RefPickDialog v-model="refVisible" :field="refPick?.field" :mode="refPick?.mode" @confirm="onRefConfirm" />
+    <RouteFlowPickDialog v-model="routeFlowVisible" :field="refPick?.field" @confirm="onRefConfirm" />
+    <ApprovalHistoryDialog v-model="approvalVisible" :panelCode="panelCode" :formNo="approvalNo" />
+    <SelectVoucherDialog v-model="selVisible" :panelCode="panelCode" :config="selCfg" @generated="onSelGenerated" />
+    <ProducePreviewDialog v-model="produceVisible" :docNo="produceNo" @generated="onProduceGenerated" />
+    <SaleOutPreviewDialog v-model="saleOutVisible" :docNo="saleOutNo" @generated="onSaleOutGenerated" />
+    <FinishInPreviewDialog v-model="finishInVisible" :docNo="finishInNo" @generated="onFinishInGenerated" />
+    <InvoiceLinePickDialog
+      v-model="invoicePickVisible"
+      :mode="invoicePickMode"
+      :supplier="invoicePickSupplier"
+      :panel-code="panelCode"
+      @confirm="onInvoiceSourceConfirm"
+    />
+    <InvoiceImportDialog v-model="invoiceImportVisible" :panel-code="panelCode" @imported="onInvoiceImported" />
+    <ImportDialog v-model="impVisible" :fields="impFields" :target-label="impLabel" @imported="onImported" />
+    <SubBomDialog v-model="subBomVisible" :material="subBomMaterial" :bom="subBomBom" />
+    <ScanFillDialog
+      v-model="scanVisible"
+      :panel-code="panelCode"
+      :panel-name="payloadCache?.panelName || panelCode"
+      :header-fields="visibleMeta"
+      :detail-tabs="tabs"
+      @apply="onScanApply"
+    />
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, computed, watch, onMounted, onActivated, onDeactivated } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+// 2026-08-20：支持弹窗嵌入（列表页双击打开表单弹窗）——panelCodeProp/codeProp 优先于路由；embedded 时保存/返回改为 emit
+const props = defineProps({
+  panelCodeProp: { type: String, default: '' },
+  codeProp: { type: String, default: '' },
+  embedded: { type: Boolean, default: false },
+})
+const emit = defineEmits(['saved'])
+import { useTabsStore } from '@/stores/tabs'
+import { useUserStore } from '@/stores/user'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Back, Plus, Delete, ArrowDown, Search, TopRight } from '@element-plus/icons-vue'
+import { usePanelRuntime } from '@core/panel-runtime'
+import { clampInspectionQty } from '@core/inspection-qty.js'
+import { ensureScanFillAction, ensureSelectAction, hasSelectConfig, isApprovalGroup, isCatchAllGroup, primaryActionOf, approvalSecondaryOf, menuActionsOf } from '@core/button-groups'
+import { INVOICE_IMPORT_ACTION, INVOICE_LINE_ACTION, filterSupportedActions } from '@core/action-support'
+import { isDocApproved, docStatusStamp } from '@core/doc-status'
+import { hasUnqualifiedTab, syncUnqualifiedRow } from '@core/inspection-unqualified.js'
+import { applyHeaderCalc } from '@core/views/doc-calc.js'
+import { tt } from '@/i18n'
+import { useLocaleStore } from '@/stores/locale'
+import { useBrandStore } from '@/stores/brand'
+import RefPickDialog from './RefPickDialog.vue'
+import RouteFlowPickDialog from './RouteFlowPickDialog.vue'
+import ApprovalHistoryDialog from './ApprovalHistoryDialog.vue'
+import SelectVoucherDialog from './SelectVoucherDialog.vue'
+import ProcessReportPickDialog from './ProcessReportPickDialog.vue'
+import ProducePreviewDialog from './ProducePreviewDialog.vue'
+import SaleOutPreviewDialog from './SaleOutPreviewDialog.vue'
+import FinishInPreviewDialog from './FinishInPreviewDialog.vue'
+import InvoiceLinePickDialog from './InvoiceLinePickDialog.vue'
+import InvoiceImportDialog from './InvoiceImportDialog.vue'
+import ImportDialog from './ImportDialog.vue'
+import SubBomDialog from './SubBomDialog.vue'
+import ScanFillDialog from './ScanFillDialog.vue'
+
+const engine = usePanelRuntime()
+const { SHORTCUTS, filterButtonGroups, priceFieldLocked } = engine
+
+const route = useRoute()
+const router = useRouter()
+const tabsStore = useTabsStore()
+const user = useUserStore()
+const localeStore = useLocaleStore()
+
+const panelCode = computed(() => props.panelCodeProp || route.params.panelCode)
+const operationName = computed(() => route.query.operationName || '新增流程')
+const code = computed(() => props.codeProp || route.query.code)
+const isEdit = computed(() => !!code.value)
+
+const form = reactive({})
+const meta = ref([])
+const detailDef = ref(null)
+const detailData = reactive({})
+const activeTab = ref('')
+const subActive = reactive({})
+// 产成品明细选中行 → 材料明细联动过滤（显示该产品的 BOM 子件）
+const selectedProduct = ref(null)
+const selectedBomCodes = ref([])
+
+// 材料下级 BOM（红 * + 弹窗）：存货编码 → 物料清单 BOM 面板 children 子件行
+const subBomMap = ref({})
+const subBomVisible = ref(false)
+const subBomMaterial = ref(null)
+const subBomBom = ref([])
+const groups = ref([])
+// 审批按钮权限（提交审批/审批情况公开；审批通过/驳回需角色审批权限）
+const APPROVE_ACTIONS = ['审批通过', '审批驳回']
+function filterGroups(raw) {
+  const canApprove = user.isAdmin || user.approvePanels.includes(panelCode.value)
+  if (canApprove) return raw
+  return (raw || [])
+    .map((g) => ({ ...g, actions: (g.actions || g.items || []).filter((a) => !APPROVE_ACTIONS.includes(a)) }))
+    .filter((g) => (g.actions || []).length > 0)
+}
+
+const loading = ref(false)
+const saving = ref(false)
+const payloadCache = ref(null)
+const formSections = ref([])
+const formSummary = ref(null)
+const detailAliases = ref({})
+const approvalVisible = ref(false)
+const approvalNo = ref('')
+const selVisible = ref(false)
+const impVisible = ref(false)
+const impFields = ref([])
+const impLabel = ref('明细')
+const scanVisible = ref(false)
+const selCfg = ref(null)
+
+// 采购发票行级选入库单/退货单行：按业务类型取 mode，供应商取当前表头
+const invoicePickVisible = ref(false)
+const invoicePickMode = ref('purchase')
+const invoicePickSupplier = ref('')
+const invoiceImportVisible = ref(false)
+
+function openInvoiceLinePick() {
+  const businessType = String(form['业务类型'] || '')
+  invoicePickMode.value = businessType.includes('退货') ? 'return' : 'purchase'
+  invoicePickSupplier.value = String(form['供应商'] || '')
+  invoicePickVisible.value = true
+}
+
+/** 弹窗确认：追加到主明细，来源行按「来源面板+来源单号+来源行号」去重。 */
+function onInvoiceSourceConfirm(selected) {
+  const picked = Array.isArray(selected) ? selected : []
+  if (!picked.length) return
+  const tab = tabs.value[0]
+  if (!tab) return ElMessage.warning(tt('该面板无明细可追加'))
+  const target = detailData[tab.key] || (detailData[tab.key] = [])
+  const { rows, duplicates } = engine.buildInvoiceLineRows(picked, invoicePickMode.value, target)
+  for (const row of rows) target.push(row)
+
+  if (rows.length) {
+    const supplierRow = picked.find((row) => row['供应商'])
+    if (!String(form['供应商'] || '').trim() && supplierRow?.['供应商']) {
+      form['供应商'] = supplierRow['供应商']
+      if (!String(form['供应商编码'] || '').trim()) form['供应商编码'] = supplierRow['供应商编码'] || ''
+    }
+    if (!String(form['采购订单号'] || '').trim()) {
+      const orderNo = picked.find((row) => row['采购订单号'])?.['采购订单号']
+      if (orderNo) form['采购订单号'] = orderNo
+    }
+    applyCalc()
+    // 表头金额由明细汇总（与后端 deriveInvoiceHeader 同口径）
+    const totals = engine.invoiceHeaderTotals(target)
+    for (const [key, value] of Object.entries(totals)) {
+      if (Object.prototype.hasOwnProperty.call(form, key)) form[key] = value
+    }
+  }
+
+  if (!rows.length) {
+    ElMessage.warning(tt('所选来源行已在明细中，未重复追加'))
+  } else if (duplicates) {
+    ElMessage.success(tt('已追加') + ` ${rows.length} ` + tt('行') + '，' + tt('跳过') + ` ${duplicates} ` + tt('行重复来源'))
+  } else {
+    ElMessage.success(tt('已追加') + ` ${rows.length} ` + tt('行明细'))
+  }
+}
+
+// ---------- 拉式选单（配置驱动：selectConfig 定义来源面板/列/字段映射） ----------
+const selectVisible = ref(false)
+// 工序汇报选单：按加工单逐道工序报工
+const processPickVisible = ref(false)
+const selectList = ref([])
+const selectLoading = ref(false)
+const selectRows = ref([])
+const selectCrg = ref(null)
+const selectCols = computed(() => selectCrg.value?.columns || [])
+
+function selectConfigFor(action = '选单') {
+  const payload = payloadCache.value || {}
+  const configs = payload.selectConfigs || {}
+  if (configs[action]) return configs[action]
+  // 单来源面板的组动作常写成「选销售订单」「选报价单」，都指向同一份 selectConfig
+  if (payload.selectConfig && (action === '选单' || action.startsWith('选'))) return payload.selectConfig
+  return action === '选单' ? Object.values(configs)[0] : null
+}
+
+async function openSelectDialog(cfg = selectConfigFor()) {
+  if (!cfg) {
+    ElMessage.warning(tt('该面板未配置选单来源'))
+    return
+  }
+  selectCrg.value = cfg
+  selectVisible.value = true
+  selectLoading.value = true
+  selectRows.value = []
+  try {
+    // 对齐 T+ 选单前提：已生效（已审核）且未中止的来源单据
+    const condition = { ...(cfg.condition || {}), 单据状态: '已审核' }
+    const res = await engine.queryFormDataList({ panelCode: cfg.source, condition, pageNo: 1, pageSize: 100 })
+    let rows = res.list || []
+    // 来源列表返回单据级行（带 detail）时展开为明细行（对齐 T+ 选单按明细行展示/带出；有 detailRows 配置则保持单据粒度）
+    if (!cfg.detailRows && rows.some((r) => r.detail)) {
+      const flat = []
+      for (const r of rows) {
+        const d = r.detail
+        const key = cfg.detailKey || (d ? Object.keys(d)[0] : null)
+        if (key && Array.isArray(d[key])) {
+          d[key].forEach((it, index) => flat.push({
+            ...r,
+            ...it,
+            _sourceFormNo: r['编号'] || r['单据编号'] || r['锭号'] || '',
+            _sourceRowNo: index + 1,
+          }))
+        }
+      }
+      if (flat.length) rows = flat
+    }
+    // detailRows 配置时选单粒度=单据（如工序汇报单选生产加工单）：按单据编号去重，避免一张多产品单显示多行
+    if (cfg.detailRows) {
+      const seen = new Set()
+      rows = rows.filter((r) => {
+        const k = r['单据编号'] || r['编号'] || ''
+        if (!k || seen.has(k)) return false
+        seen.add(k)
+        return true
+      })
+    }
+    selectList.value = rows
+  } catch (e) {
+    ElMessage.error(engine.errMsg(e) || tt('来源单据加载失败'))
+  } finally {
+    selectLoading.value = false
+  }
+}
+
+function confirmSelect() {
+  const cfg = selectCrg.value
+  if (!cfg) return
+  // 表头字段映射（headerMap：from 来源字段 → to 当前表头字段；fixed 为固定值）
+  const first = selectRows.value[0] || {}
+  for (const m of cfg.headerMap || []) {
+    if (m.fixed !== undefined) form[m.to] = m.fixed
+    else if (m.from) form[m.to] = first[m.from] ?? form[m.to]
+  }
+  // 来源单号回填（对齐 T+：来源单据 + 来源单号）
+  const sourceNos = [...new Set(selectRows.value.map((r) => r['单据编号'] || r['编号'] || '').filter(Boolean))]
+  if (sourceNos.length) {
+    if (cfg.sourceNoField) form[cfg.sourceNoField] = sourceNos.join('、')
+    if (form['来源单据'] === undefined && form['匹配来源单号'] === undefined) form['来源单据'] = cfg.title || '选单'
+  }
+  // 明细行来源：默认选中行；配置 detailRows 时（如工序汇报单选生产加工单）对每个选中单据取工序明细合并（对齐 T+ 选单带出工序行）
+  let srcRows = selectRows.value
+  if (cfg.detailRows) {
+    const extra = []
+    for (const r of selectRows.value) {
+      const part = cfg.detailRows(r)
+      if (Array.isArray(part)) extra.push(...part)
+    }
+    if (extra.length) srcRows = extra
+  }
+  // 明细行映射（detailMap：from → to）
+  const rows = srcRows.map((r) => {
+    const out = {}
+    for (const m of cfg.detailMap || []) {
+      out[m.to] = r[m.from] ?? ''
+    }
+    const sourceNo = r._sourceFormNo || r['编号'] || r['单据编号'] || r['锭号'] || sourceNos[0] || ''
+    const sourceQtyField = cfg.sourceQuantityField || '数量'
+    const targetQtyField = cfg.targetQuantityField || ''
+    out['来源面板'] = cfg.source || ''
+    out['来源单号'] = sourceNo
+    out['来源行号'] = r._sourceRowNo || 1
+    out['来源数量'] = targetQtyField && out[targetQtyField] !== undefined
+      ? out[targetQtyField]
+      : (r[sourceQtyField] ?? 0)
+    return out
+  })
+  if (rows.length && detailDef.value?.tabs?.[0]) {
+    const targetTab = detailDef.value.tabs[0]
+    detailData[targetTab.key] = rows
+    // BOM 展开：目标单含 materials 明细且带入的是产成品明细 → 逐产品带出 BOM 材料（对齐 T+ 选单/生单联动）
+    if (targetTab.key === 'products' && detailDef.value.tabs.some((t) => t.key === 'materials')) {
+      for (const r of rows) {
+        const code = r['产品编码'] || r['存货编码'] || ''
+        if (code) loadBomFor(code)
+      }
+    }
+  }
+  selectVisible.value = false
+  ElMessage.success(tt('已带入') + ' ' + rows.length + ' ' + tt('行明细'))
+  applyCalc()
+}
+const status = computed(() => form['单据状态'] || '草稿')
+// 已审批印章（直接审核/审批流通用判据，见 core/doc-status）：标题区右侧斜置章
+const isApproved = computed(() => isEdit.value && isDocApproved(form))
+// 印章文字跟随单据状态：已审批 → 生产中 → 已完工
+const formStamp = computed(() => (isEdit.value ? docStatusStamp(form) : null))
+// 单据=草稿可编辑；基础档案（存货/部门等）状态为 启用/停用 同样可编辑（增行/改字段/保存）
+const editable = computed(() => !isEdit.value || status.value === '草稿' || status.value === '启用' || status.value === '停用')
+
+const STATUS_TAG = { 草稿: 'info', 已审核: 'primary', 生产中: 'warning', 已完工: 'success', 已中止: 'danger', 已关闭: 'info' }
+function statusTag(s) {
+  return STATUS_TAG[s] || 'info'
+}
+
+const tabs = computed(() => {
+  const d = detailDef.value
+  if (!d) return []
+  if (Array.isArray(d.tabs)) return d.tabs
+  return [{ key: 'detail', label: d.label || '明细', fields: d.fields || [], isRequired: true }]
+})
+
+function visibleFields(tab) {
+  return (tab.fields || []).filter((r) => !r.hidden)
+}
+
+const visibleMeta = computed(() => (meta.value || []).filter((r) => !r.hidden))
+
+const fieldKeyOf = (field) => field.code || field.dataName || field.name
+/** 表头分段：配置 formSections 时按业务分组渲染，未配置的字段兜底进「其他信息」。 */
+const sectionedMeta = computed(() => {
+  const all = visibleMeta.value
+  const sections = Array.isArray(formSections.value) ? formSections.value : []
+  if (!sections.length) return [{ title: '', fields: all }]
+  const summaryKeys = new Set((formSummary.value?.fields || []).map(String))
+  const byKey = new Map(all.map((field) => [fieldKeyOf(field), field]))
+  const seen = new Set()
+  const out = []
+  for (const section of sections) {
+    const fields = (section.fields || [])
+      .map((name) => byKey.get(name))
+      .filter((field) => field && !summaryKeys.has(fieldKeyOf(field)) && !seen.has(fieldKeyOf(field)))
+    for (const field of fields) seen.add(fieldKeyOf(field))
+    if (fields.length) out.push({ title: section.title || '', fields })
+  }
+  const missing = all.filter((field) => !seen.has(fieldKeyOf(field)) && !summaryKeys.has(fieldKeyOf(field)))
+  if (missing.length) out.push({ title: '其他信息', fields: missing })
+  return out.length ? out : [{ title: '', fields: all }]
+})
+/** 金额信息：表体后只读汇总，不参与表头录入。 */
+const summaryFields = computed(() => {
+  const config = formSummary.value
+  if (!config || !Array.isArray(config.fields) || !config.fields.length) return []
+  const byKey = new Map(visibleMeta.value.map((field) => [fieldKeyOf(field), field]))
+  return config.fields.map((name) => byKey.get(name)).filter(Boolean)
+})
+const summaryTitle = computed(() => formSummary.value?.title || '金额信息')
+function displayField(field, value) {
+  if (value === null || value === undefined || value === '') return '-'
+  if (isNumber(field)) {
+    const number = Number(value)
+    if (Number.isFinite(number)) return number.toLocaleString('zh-CN', { maximumFractionDigits: 4 })
+  }
+  return String(value)
+}
+
+function fieldLocked(r) {
+  // readonly：派生展示字段（如 BOM 的「工艺路线名称」由编码决定），不允许手改
+  if (r.readonly) return true
+  // 锭号：自动编码；仅勾选「是否手工修改单据编码」时草稿可改
+  if (r.autoCode) return !(status.value === '草稿' && form['是否手工修改单据编码'])
+  // 存货类别：创建后固定，不允许修改
+  if (r.code === '类别' && isEdit.value) return true
+  // price 权限未授权时价格/金额类字段只读
+  if (priceLocked(r.code)) return true
+  return false
+}
+
+/** price 权限未授权时价格/金额类字段只读（表头与明细同口径） */
+function priceLocked(fieldName) {
+  return priceFieldLocked(fieldName, panelCode.value, user)
+}
+
+/** 明细单元格锁定：computed 派生列 + price 权限 */
+function detailCellLocked(dr) {
+  return !!dr.computed || !!dr.readonly || priceLocked(dr.dataName)
+}
+
+function isDisabled(action) {
+  const s = status.value
+  const map = {
+    保存: !editable.value,
+    保存新增: !editable.value,
+    保存为草稿: !editable.value,
+    删除: s !== '草稿' || !isEdit.value,
+    审核: s !== '草稿' || !isEdit.value,
+    弃审: s !== '已审核',
+    中止执行: !['已审核', '生产中', '已完工'].includes(s) || !isEdit.value,
+    整单中止: !['已审核', '生产中', '已完工'].includes(s) || !isEdit.value,
+    草稿: s !== '已中止',
+    取消中止: s !== '已中止',
+    修改: !['已审核', '生产中', '已完工'].includes(s) || !isEdit.value,
+    审批情况: false,
+    提交审批: s !== '草稿' || !isEdit.value,
+    审批通过: s !== '审批中' || !isEdit.value,
+    审批驳回: s !== '审批中' || !isEdit.value,
+    扫描填单: false,
+    [INVOICE_LINE_ACTION]: !editable.value,
+  }
+  // 2026-08-25：所有「生成XX」生单按钮统一仅已审核/生产中可用（对齐 T+：已审核才能选择生单）
+  if (map[action] === undefined && action.startsWith('生成')) {
+    return !['已审核', '生产中'].includes(s) || !isEdit.value
+  }
+  return map[action] === true
+}
+
+// ---------- 工具栏主按钮（审批组跟着状态走，同列表页口径） ----------
+function primaryOf(g) {
+  return primaryActionOf(g, isDisabled) || g.name
+}
+function groupLabel(g) {
+  if (isApprovalGroup(g)) return tt(primaryOf(g))
+  const actions = g.actions || g.items || []
+  // 行级选来源单单独成组时直接显示动作名（如「关联」组只有「选入库单行」）
+  if (actions.length === 1 && actions[0] === INVOICE_LINE_ACTION) return tt(INVOICE_LINE_ACTION)
+  return tt(g.name)
+}
+/**
+ * 群组主按钮是否只展开菜单：
+ * 组内动作没有与组名同名的动作（如「生单」「选单」），说明主按钮没有无歧义的默认动作，
+ * 点了只能靠猜 —— 统一改成展开菜单，与右侧 ▼ 行为一致。
+ * 审批组、以及「保存」「删除」这类有同名动作的组仍保留直接执行。
+ */
+function menuOnly(g) {
+  if (isApprovalGroup(g)) return false
+  if ((g.actions || []).includes(g.name)) return false
+  return dropOf(g).length > 0
+}
+function dropOf(g) {
+  const primary = primaryOf(g)
+  const rest = (g.actions || []).filter((a) => a !== primary)
+  if (!isApprovalGroup(g)) return rest
+  const secondary = approvalSecondaryOf(g, primary, isDisabled)
+  return rest.filter((a) => !isDisabled(a) && !secondary.includes(a))
+}
+function secondaryOf(g) {
+  return approvalSecondaryOf(g, primaryOf(g), isDisabled)
+}
+
+/** 分段式详情操作栏的「更多」：保留权限过滤后的其余动作。 */
+const sectionMoreActions = computed(() => {
+  const primary = new Set(['保存', '保存新增', '提交审批', '返回'])
+  const out = []
+  for (const group of groups.value || []) {
+    for (const action of (group.actions || group.items || [])) {
+      if (!action || primary.has(action) || out.includes(action)) continue
+      out.push(action)
+    }
+  }
+  return out
+})
+
+function isText(r) {
+  return !r.dataType || r.dataType === '文本' || r.dataType === 'STRING'
+}
+function isNumber(r) {
+  return ['小数', '整数', 'Decimal', 'Long', 'Integer', 'Double'].includes(r.dataType)
+}
+function isDate(r) {
+  return ['日期', '时间', 'DATE', 'DateTime', 'Date'].includes(r.dataType)
+}
+function isBool(r) {
+  return ['是否', 'Boolean', 'BOOL'].includes(r.dataType)
+}
+function isSelect(r) {
+  return r.dataType === '下拉框' || r.dataType === '参照'
+}
+
+// ---------- 参照来源面板：直接打开档案 ----------
+/**
+ * 打开参照来源的档案面板（新浏览器标签，不打断当前单据编辑）。
+ * 有值时带关键字定位，没值就进列表。
+ */
+function openRefPanel(field) {
+  const panel = field?.refPanel
+  if (!panel) return
+  const value = String(form[field.code] ?? '').trim()
+  const path = `/panelx/list/${panel}`
+  const params = new URLSearchParams()
+  if (value) params.set('keyword', value)
+  // 带上来源页：档案页据此显示「返回」，跳过去还能一键回来
+  const here = location.hash.replace(/^#/, '') || route.fullPath
+  params.set('from', here)
+  window.open(`${location.origin}${location.pathname}#${path}?${params.toString()}`, '_blank')
+}
+
+// ---------- 参照字段弹窗选择（开发约束十一-1：能对应基础档案的字段弹窗拉取勾选导入） ----------
+const refVisible = ref(false)
+const routeFlowVisible = ref(false)
+const refPick = ref(null)
+
+function isRef(r) {
+  return r.dataType === '参照' && (r.ref || r.refPanel)
+}
+
+function refText(r, v) {
+  if (v === undefined || v === null || v === '') return ''
+  const t = engine.refLabelOf(r, v)
+  return t === null || t === undefined ? String(v) : t
+}
+
+function drRefText(dr, row) {
+  return refText(dr, row[dr.dataName])
+}
+
+function openRefPick(r) {
+  if (!editable.value || fieldLocked(r)) return
+  refPick.value = { field: r, kind: 'header', code: r.code, mode: 'header' }
+  // 工艺路线这类「要看工序流程」的字段走专用弹窗（panel_config 里声明 refDialog: route-flow）
+  if ((r.refDialog || r.ref?.dialog) === 'route-flow') {
+    routeFlowVisible.value = true
+    return
+  }
+  refVisible.value = true
+}
+
+function detailRefConfig(dr) {
+  return dr.ref || dr
+}
+
+function detailRefTrigger(dr) {
+  const r = detailRefConfig(dr)
+  return r.trigger || r.refTrigger || 'click'
+}
+
+function detailRefEnabled(dr) {
+  if (!editable.value || dr.computed) return false
+  const r = detailRefConfig(dr)
+  const statuses = r.statuses || r.refStatuses
+  return !Array.isArray(statuses) || statuses.length === 0 || statuses.includes(status.value)
+}
+
+function openDetailRef(dr, row, tab, trigger = 'click') {
+  if (!detailRefEnabled(dr) || detailRefTrigger(dr) !== trigger) return
+  refPick.value = { field: dr, kind: 'detail', row, tab, mode: 'detail' }
+  refVisible.value = true
+}
+
+async function onRefConfirm(rows) {
+  const p = refPick.value
+  if (!p || !rows.length) return
+  const r = p.field
+  const rp = r.ref || r
+  const refField = rp.field || rp.refField
+  const multi = !!(rp.multi || rp.refMulti)
+  const vals = rows.map((x) => x[refField])
+  if (p.kind === 'header') {
+    form[p.code] = multi ? vals.join('、') : vals[0]
+    const first = rows[0] || {}
+    for (const m of rp.map || rp.refMap || []) {
+      if (!m || first[m.from] === undefined) continue
+      const to = m.to || m.from
+      if (to !== p.code) form[to] = first[m.from]
+    }
+  } else {
+    const row = p.row
+    const tab = p.tab
+    const changedRows = []
+    const maps = rp.map || rp.refMap || []
+    const applyMap = (target, srcRow) => {
+      for (const m of maps) {
+        if (!m || srcRow[m.from] === undefined) continue
+        const to = m.to || m.from
+        if (to !== r.dataName) target[to] = srcRow[m.from]
+      }
+    }
+    const rillRow = (target, srcRow) => {
+      target[r.dataName] = srcRow[refField]
+      applyMap(target, srcRow)
+      changedRows.push(target)
+    }
+    // 明细行参照：勾选 N 行一次导入 → 当前行填第一行，其余每行生成一条明细（含 refMap 带出）
+    rillRow(row, rows[0] || {})
+    if (rows.length > 1 && tab) {
+      for (let i = 1; i < rows.length; i++) {
+        const nr = addDetailRow(tab)
+        rillRow(nr, rows[i])
+      }
+    }
+    if (tab) renumberSequence(tab)
+    if (tab?.key === 'products' && r.dataName === '产品编码') {
+      for (const selected of rows) loadBomFor(selected[refField])
+    }
+    if (tab) syncAllUnqualified()
+    await engine.fillCurrentStock(changedRows)
+  }
+  refVisible.value = false
+  applyCalc()
+  ElMessage.success(tt('已导入') + ` ${rows.length} ` + tt('行') + (await engine.refPanelName(r)) + tt('数据'))
+}
+
+// ---------- 参照字段双模（移植自 YINJIA 优化）：≤20 行下拉直选 / >20 行弹窗搜索定位 ----------
+// 多选参照（multi）只有弹窗支持多选，始终走弹窗。
+const REF_DROPDOWN_THRESHOLD = 20
+const refModeMap = reactive({})    // fieldKey -> 'dialog' | 'select'
+const refSelectData = reactive({}) // fieldKey -> { options: [{label, value, row}], loading }
+const refSelectTimers = {}
+
+function refFieldKey(r) {
+  const rp = r.ref || r
+  return `${rp.panel || r.refPanel || ''}|${r.code || r.dataName}`
+}
+
+function refMultiOf(r) {
+  const rp = r.ref || r
+  return !!(rp.multi || rp.refMulti)
+}
+
+async function checkRefMode(r) {
+  const key = refFieldKey(r)
+  if (refModeMap[key]) return refModeMap[key]
+  refModeMap[key] = 'dialog' // 默认弹窗，异步判定后可能切下拉
+  // 面板声明了 refDialog（如产品的编码+名称要一起看）就一直用弹窗，不退化成下拉
+  if (r.refDialog || r.ref?.dialog) return refModeMap[key]
+  if (!refMultiOf(r)) {
+    try {
+      const count = await engine.refRowCount(r)
+      // 少量数据（≤20）用下拉轻快；大量数据（>20）用弹窗带搜索定位
+      refModeMap[key] = count > REF_DROPDOWN_THRESHOLD ? 'dialog' : 'select'
+      if (refModeMap[key] === 'select') loadRefOptions(r, '')
+    } catch (e) {
+      /* 计数失败保持弹窗 */
+    }
+  }
+  return refModeMap[key]
+}
+
+/**
+ * 预热参照字段形态：加载后并行判定每个参照是下拉还是弹窗，
+ * 避免第一次点输入框时异步判定完成、控件从输入框切成下拉，画面抽一下。
+ */
+async function warmRefModes() {
+  const fields = [
+    ...(visibleMeta.value || []),
+    ...(tabs.value || []).flatMap((tab) => tab.fields || []),
+  ].filter((field) => field && (field.refPanel || field.ref?.panel))
+  await Promise.all(fields.map((field) => checkRefMode(field).catch(() => null)))
+}
+
+// ---------- 参照下拉分页：一屏只渲染一页，底部给翻页按钮 ----------
+const REF_PAGE_SIZE = 6
+const refPageMap = reactive({})
+
+function refPageOf(key) {
+  const list = refSelectData[key]?.options || []
+  const pages = Math.max(1, Math.ceil(list.length / REF_PAGE_SIZE))
+  const page = Math.min(Math.max(1, refPageMap[key] || 1), pages)
+  return { list: list.slice((page - 1) * REF_PAGE_SIZE, page * REF_PAGE_SIZE), page, pages }
+}
+
+function turnRefPage(key, delta) {
+  const { page, pages } = refPageOf(key)
+  refPageMap[key] = Math.min(pages, Math.max(1, page + delta))
+}
+
+// 远程搜索选项加载（300ms 防抖）
+function loadRefOptions(r, keyword) {
+  const key = refFieldKey(r)
+  if (!refSelectData[key]) refSelectData[key] = reactive({ options: [], loading: false })
+  // 没输入关键字且已预加载：直接用缓存，避免每次展开都重新取数导致下拉闪
+  if (!keyword && refSelectData[key].options.length) return
+  clearTimeout(refSelectTimers[key])
+  refSelectTimers[key] = setTimeout(async () => {
+    refSelectData[key].loading = true
+    try {
+      refSelectData[key].options = await engine.refSelectOptions(r, keyword)
+    refPageMap[key] = 1
+    } catch (e) {
+      refSelectData[key].options = []
+    } finally {
+      refSelectData[key].loading = false
+    }
+  }, 300)
+}
+
+function isRefSelect(r) {
+  // refDialog 的选择器强制走弹窗：下拉只显示单字段，看不到编码+名称的对应关系
+  if (r.refDialog || r.ref?.dialog) return false
+  return isRef(r) && !refMultiOf(r) && refModeMap[refFieldKey(r)] === 'select'
+}
+
+// 下拉选中后走与弹窗完全相同的 onRefConfirm 链路（含 refMap 带出与 applyCalc），避免两路径行为漂移
+function onRefSelectChange(r, value) {
+  const opt = (refSelectData[refFieldKey(r)]?.options || []).find((o) => o.value === value)
+  if (!opt?.row) return
+  refPick.value = { field: r, kind: 'header', code: r.code, mode: 'header' }
+  onRefConfirm([opt.row])
+}
+
+/** 明细行参照下拉：与弹窗共用 onRefConfirm，refMap 带出其它列 */
+function onDetailRefSelectChange(dr, value, row, tab) {
+  const opt = (refSelectData[refFieldKey(dr)]?.options || []).find((o) => o.value === value)
+  if (!opt?.row) return
+  refPick.value = { field: dr, kind: 'detail', row, tab, mode: 'detail' }
+  onRefConfirm([opt.row])
+}
+
+function rmtTime(t) {
+  if (!t) return '-'
+  if (typeof t === 'number') return new Date(t).toLocaleString('zh-CN', { hour12: false })
+  const s = String(t)
+  return s.length > 10 ? s.slice(0, 19).replace('T', ' ') : s
+}
+
+// 明细数据：材料明细在选中产成品时只显示其 BOM 子件（子件BOM=产品编码）
+function tabData(tab) {
+  const rows = detailData[tab.key] || []
+  if (tab.key === 'materials' && selectedProduct.value) {
+    // 优先按 子件BOM 标记精确过滤（回填/自动带出的材料行带 子件BOM=产品编码）；
+    // 兜底按该产品存货 BOM 的材料编码过滤（旧手工行无标记时）
+    const byBom = rows.filter((m) => m['子件BOM'] === selectedProduct.value)
+    if (byBom.length) return byBom
+    const byCode = rows.filter((m) => selectedBomCodes.value.includes(m['材料编码']))
+    if (byCode.length) return byCode
+    return rows
+  }
+  return rows
+}
+
+function prodRowCls({ row }) {
+  return selectedProduct.value && row['产品编码'] === selectedProduct.value ? 'prod-selected' : ''
+}
+
+// 捕获阶段监听：点产成品明细行触发联动；点材料明细行（该材料有下级 BOM）弹出子件 BOM
+async function onTableClickCapture(tab, e) {
+  if (!e || !e.target || !e.target.closest) return
+  const tr = e.target.closest('tr')
+  if (!tr) return
+  // 主表与固定列（序号列 fixed=left）都可能触发：两种 body 容器都支持
+  const body = tr.closest('.el-table__body-wrapper') || tr.closest('.el-table__fixed-body-wrapper')
+  const rows = body ? [...body.querySelectorAll('tbody tr')] : []
+  const idx = rows.indexOf(tr)
+  // 材料明细：点材料行 → 该材料有下级 BOM 则弹窗展示（拦截参照/其他点击），无下级放行
+  if (tab.key === 'materials') {
+    const row = (detailData['materials'] || [])[idx]
+    if (row && row['材料编码'] && hasSubBom(row['材料编码'])) {
+      openSubBom(row)
+      if (e.stopPropagation) e.stopPropagation()
+    }
+    return
+  }
+  if (tab.key !== 'products') return
+  const row = (detailData['products'] || [])[idx]
+  if (!row || !row['产品编码']) return
+  selectProduct(row['产品编码'])
+}
+
+// 材料下级 BOM 映射（BOM 面板 children：父件编码 → 子件行）；加载后材料编码行右上角显示红 *，点击行弹窗查看
+async function loadSubBomMap() {
+  try {
+    const res = await engine.queryFormDataList({ panelCode: 'BOM', condition: {}, pageNo: 1, pageSize: 100 })
+    const map = {}
+    for (const d of res.list || []) {
+      for (const it of (d.detail && d.detail.children) || []) {
+        const parent = it['父件编码']
+        if (!parent) continue
+        if (!map[parent]) map[parent] = []
+        map[parent].push({
+          材料编码: it['子件编码'],
+          材料名称: it['子件名称'],
+          规格型号: it['规格型号'] || '',
+          计量单位: it['子件计量单位'] || '件',
+          定额需用数量: it['定额数量'] ?? 0,
+          '损耗率%': it['损耗率%'] ?? 0,
+        })
+      }
+    }
+    subBomMap.value = map
+  } catch (err) {}
+}
+
+function hasSubBom(code) {
+  const b = subBomMap.value[code]
+  return Array.isArray(b) && b.length > 0
+}
+
+function openSubBom(row) {
+  const code = row['材料编码']
+  subBomMaterial.value = row
+  subBomBom.value = (subBomMap.value[code] || []).map((r) => ({ ...r }))
+  subBomVisible.value = true
+}
+
+// row-click 兜底：普通单元格点击走此路径（控件内点击被 el-select 等吞掉时由捕获阶段补上）
+function onRowClickDetail(tab, row) {
+  if (tab.key === 'products' && row && row['产品编码'] && row['产品编码'] !== selectedProduct.value) {
+    selectProduct(row['产品编码'])
+  }
+}
+
+// 选中产成品：行高亮 + 材料明细只显示该产品的 BOM 子件（物料清单 BOM 面板 children → 子件编码集合；2026-08-25 原 INV _bom 已迁移）
+async function selectProduct(code) {
+  selectedProduct.value = code
+  selectedBomCodes.value = []
+  try {
+    const res = await engine.queryFormDataList({ panelCode: 'BOM', condition: {}, pageNo: 1, pageSize: 200 })
+    const codes = []
+    for (const d of res.list || []) {
+      for (const it of (d.detail && d.detail.children) || []) {
+        if (String(it['父件编码']) !== code) continue
+        if (it['子件编码']) codes.push(String(it['子件编码']))
+      }
+    }
+    selectedBomCodes.value = codes
+  } catch (err) {
+    // 查询失败按 子件BOM 标记兜底
+  }
+}
+
+function tabHint(tab) {
+  if (tab.key === 'materials') return '需用数量 = 定额需用数量 × 产品数量 ÷ 定额生产数量；计划数量 = 需用数量 + 损耗数量（损耗数量手工录入）'
+  if (tab.key === 'processes') return '金额 = 计划数量 × 工价；行「手工完工」用于工序级完工；展开行维护本工序材料'
+  if (tab.key === 'products') return '产品数量为工单生产数量，材料明细按此数量展开定额'
+  return ''
+}
+
+/**
+ * 顺序列（工序顺序）永远等于行位置：第一行就是第一道工序，增删行后自动重排。
+ * 用户不用也不能手填，避免顺序和数据脱节。
+ */
+function renumberSequence(tab) {
+  if (!tab) return
+  const seqField = (tab.fields || []).find((f) => f.dataName === '工序顺序')
+  if (!seqField) return
+  const rows = detailData[tab.key]
+  if (!Array.isArray(rows)) return
+  rows.forEach((row, i) => { row['工序顺序'] = i + 1 })
+}
+
+/** 删除明细行：删完立即重排顺序列 */
+function removeDetailRow(tab, index) {
+  if (!Array.isArray(detailData[tab.key])) return
+  detailData[tab.key].splice(index, 1)
+  renumberSequence(tab)
+}
+
+function addDetailRow(tab) {
+  const rows = detailData[tab.key] || (detailData[tab.key] = [])
+  const row = {}
+  for (const dr of tab.fields || []) {
+    if (dr.dataType === '小数' || dr.dataType === '整数') row[dr.dataName] = dr.defaultValue ?? 0
+    else if (dr.dataType === '是否') row[dr.dataName] = dr.defaultValue ?? false
+    else row[dr.dataName] = dr.defaultValue ?? ''
+  }
+  if (tab.subTable) row['子表材料'] = []
+  // 材料明细：新增行自动归属当前选中的产成品（子件BOM=产品编码），保证联动过滤精确
+  if (tab.key === 'materials' && selectedProduct.value) row['子件BOM'] = selectedProduct.value
+  rows.push(row)
+  renumberSequence(tab)
+  return row
+}
+
+function addSubRow(row, tab) {
+  if (!row['子表材料']) row['子表材料'] = []
+  const sr = {}
+  for (const sr of tab.subTable.fields || []) {
+    if (sr.dataType === '小数' || sr.dataType === '整数') sr[sr.dataName] = sr.defaultValue ?? 0
+    else sr[sr.dataName] = sr.defaultValue ?? ''
+  }
+  row['子表材料'].push(sr)
+}
+
+// ---------- 表达式计算链 ----------
+
+function num(v) {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+function evaluateExpr(expr, vars) {
+  const tokens = String(expr).match(/\d+(?:\.\d+)?|[+\-*/()]|[^\s+\-*/()]+/g) || []
+  const output = []
+  const ops = []
+  const prec = { '+': 1, '-': 1, '*': 2, '/': 2 }
+  for (const tk of tokens) {
+    if (/^[\d.]+$/.test(tk)) {
+      output.push(parseFloat(tk))
+    } else if (tk in prec) {
+      while (ops.length && ops[ops.length - 1] !== '(' && prec[ops[ops.length - 1]] >= prec[tk]) output.push(ops.pop())
+      ops.push(tk)
+    } else if (tk === '(') {
+      ops.push(tk)
+    } else if (tk === ')') {
+      while (ops.length && ops[ops.length - 1] !== '(') output.push(ops.pop())
+      if (ops[ops.length - 1] === '(') ops.pop()
+    } else {
+      const v = vars[tk]
+      if (v === undefined) throw new Error('未知变量: ' + tk)
+      output.push(num(v))
+    }
+  }
+  while (ops.length) output.push(ops.pop())
+  const stack = []
+  for (const t of output) {
+    if (typeof t === 'number') stack.push(t)
+    else {
+      const b = stack.pop()
+      const a = stack.pop()
+      if (a === undefined || b === undefined) return 0
+      stack.push(t === '+' ? a + b : t === '-' ? a - b : t === '*' ? a * b : b === 0 ? 0 : a / b)
+    }
+  }
+  return stack[0] ?? 0
+}
+
+function productQty(data = detailData) {
+  const rows = data.products || []
+  return rows.reduce((s, r) => s + num(r['数量']), 0)
+}
+
+function applyCalc(data = detailData) {
+  for (const tab of tabs.value) {
+    const rows = data[tab.key] || []
+    for (const row of rows) {
+      if (tab.key === 'processes') {
+        // 工序顺序 = 行位置：第一行永远是第一道工序，增删/导入后自动重排
+        const seq = rows.indexOf(row) + 1
+        if (row['工序顺序'] !== seq) row['工序顺序'] = seq
+        row['工序行码'] = `GX${String(num(row['加工顺序']) || seq).padStart(3, '0')}`
+      }
+      // 检验类明细：合格/不合格不能越过报检数量（报检 10 却填合格 11、不合格 -1 这种直接压回去）
+      clampInspectionQty(row)
+      const vars = { ...row, 产品数量: productQty(data) }
+      for (const rule of tab.calc || []) {
+        let v
+        try {
+          v = evaluateExpr(rule.formula, vars)
+        } catch (e) {
+          v = 0
+        }
+        if (rule.round != null) v = engine.roundDecimal(v, rule.round)
+        if (row[rule.target] !== v) row[rule.target] = v
+        vars[rule.target] = v
+      }
+    }
+    // 表头自动汇总：页签声明 headerCalc 时把明细列汇总回表头（如委外费用单的「费用合计」）
+    if (Array.isArray(tab.headerCalc) && tab.headerCalc.length) {
+      applyHeaderCalc(form, tab.headerCalc, rows)
+    }
+  }
+}
+
+watch(detailData, applyCalc, { deep: true })
+
+// ---------- BOM 联动：产成品明细选产品 → 从存货面板（INV）BOM 子表带出材料明细 ----------
+const bomLoaded = new Set()
+
+async function onDetailChange(dr, row, tab) {
+  if (tab && tab.key === 'products' && dr.dataName === '产品编码') {
+    loadBomFor(row[dr.dataName])
+  }
+  syncInspectionUnqualified(tab, row)
+  if (['存货编码', '存货名称', '产品编码', '产品名称', '材料编码', '材料名称', '仓库', '预出仓库', '出库仓库'].includes(dr.dataName)) {
+    try { await engine.fillCurrentStock(row) } catch (error) { ElMessage.error(engine.errMsg(error) || tt('现存量刷新失败')) }
+  }
+}
+
+/** 检验单联动：上方检验行标记不合格后自动维护「不合格处理」页签的关联行。 */
+function syncInspectionUnqualified(tab, row) {
+  if (!tab || !hasUnqualifiedTab(tabs.value)) return
+  const mainTabKey = tabs.value[0]?.key || 'items'
+  if (tab.key !== mainTabKey) return
+  const rows = detailData[mainTabKey]
+  if (!Array.isArray(rows)) return
+  const lineNo = rows.indexOf(row) + 1
+  if (lineNo <= 0) return
+  syncUnqualifiedRow(detailData, lineNo, mainTabKey)
+}
+
+/** 参照批量带出后，按当前主明细整体刷新不合格处理行（幂等）。 */
+function syncAllUnqualified() {
+  if (!hasUnqualifiedTab(tabs.value)) return
+  const mainTabKey = tabs.value[0]?.key || 'items'
+  const rows = detailData[mainTabKey]
+  if (!Array.isArray(rows)) return
+  for (let index = 1; index <= rows.length; index += 1) {
+    syncUnqualifiedRow(detailData, index, mainTabKey)
+  }
+}
+
+async function refreshTabCurrentStock(tab) {
+  try {
+    const count = await engine.fillCurrentStock(detailData[tab.key] || [])
+    ElMessage.success(tt('已按库存状况表刷新') + ` ${count} ` + tt('行现存量'))
+  } catch (error) {
+    ElMessage.error(engine.errMsg(error) || tt('现存量提取失败'))
+  }
+}
+
+function bomRowFrom(b, code) {
+  const matTab = tabs.value.find((t) => t.key === 'materials')
+  const row = {}
+  for (const dr of (matTab ? matTab.fields : [])) {
+    if (dr.dataType === '小数' || dr.dataType === '整数') row[dr.dataName] = dr.defaultValue ?? 0
+    else if (dr.dataType === '是否') row[dr.dataName] = dr.defaultValue ?? false
+    else row[dr.dataName] = dr.defaultValue ?? ''
+  }
+  row['材料编码'] = b['材料编码'] || ''
+  row['材料名称'] = b['材料名称'] || ''
+  row['规格型号'] = b['规格型号'] || ''
+  row['计量单位'] = b['计量单位'] || 'kg'
+  row['定额需用数量'] = b['定额需用数量'] ?? 0
+  row['损耗率%'] = b['损耗率%'] ?? 0
+  row['子件BOM'] = code // BOM 关系：本材料属于哪个产成品
+  return row
+}
+
+/** BOM 自动展开：面板含 products+materials 明细、产品明细有行而材料明细为空时，按产品 BOM 带出材料 */
+async function autoExpandBom() {
+  const tabsDef = tabs.value || []
+  if (!tabsDef.some((t) => t.key === 'products') || !tabsDef.some((t) => t.key === 'materials')) return
+  const products = detailData['products'] || []
+  const mats = detailData['materials'] || []
+  if (!products.length || mats.length) return
+  for (const p of products) {
+    const code = p['产品编码'] || p['存货编码'] || ''
+    if (code) await loadBomFor(code)
+  }
+}
+
+async function loadBomFor(code) {
+  if (!code || bomLoaded.has(code)) return
+  bomLoaded.add(code)
+  try {
+    // BOM 数据源：物料清单 BOM 面板 children（父件编码 → 子件行；2026-08-25 原 INV 物品行 _bom 已迁移废弃）
+    const res = await engine.queryFormDataList({ panelCode: 'BOM', condition: {}, pageNo: 1, pageSize: 100 })
+    const bom = []
+    for (const d of res.list || []) {
+      for (const it of (d.detail && d.detail.children) || []) {
+        if (String(it['父件编码']) !== code) continue
+        bom.push({
+          材料编码: it['子件编码'],
+          材料名称: it['子件名称'],
+          规格型号: it['规格型号'] || '',
+          计量单位: it['子件计量单位'] || '件',
+          定额需用数量: it['定额数量'] ?? 0,
+          '损耗率%': it['损耗率%'] ?? 0,
+        })
+      }
+    }
+    if (!bom.length) return
+    const mats = detailData['materials'] || (detailData['materials'] = [])
+    for (const b of bom) mats.push(bomRowFrom(b, code))
+    ElMessage.success(tt('已按 BOM 带入') + ' ' + bom.length + ' ' + tt('行材料') + '（' + code + '）')
+  } catch (e) {
+    // 无 BOM 或查询失败不阻塞录入
+  }
+}
+
+// ---------- 汇总 ----------
+
+function summaryRows(tab) {
+  const items = tab.summaryItems || []
+  const rows = detailData[tab.key] || []
+  return items.map((it) => {
+    const v = rows.reduce((s, r) => s + num(r[it.field]), 0)
+    return { label: it.label, value: Math.round(v * 100) / 100 }
+  })
+}
+
+// 明细网格合计行（对齐 T+ 网格底部合计）
+function summarize({ columns }, tab) {
+  const rows = tabData(tab)
+  const sums = ['合计']
+  for (let i = 1; i < columns.length; i++) {
+    const col = columns[i]
+    if (!col) continue
+    const label = String(col.label || '')
+    if (i === columns.length - 1) {
+      sums.push('')
+      continue
+    }
+    const field = (tab.fields || []).find((r) => r.dataName === label)
+    if (field && (field.dataType === '小数' || field.dataType === '整数')) {
+      sums.push(Math.round(rows.reduce((s, r) => s + num(r[label]), 0) * 100) / 100)
+    } else {
+      sums.push('')
+    }
+  }
+  return sums
+}
+
+// ---------- 校验 / 加载 / 按钮 ----------
+
+function validate() {
+  for (const r of visibleMeta.value) {
+    if (r.isNotNull && (form[r.code] === undefined || form[r.code] === null || String(form[r.code]).trim() === '')) {
+      return `${r.name}不能为空`
+    }
+  }
+  for (const tab of tabs.value) {
+    if (tab.isRequired && !(detailData[tab.key] || []).length) return `请至少添加一行${tab.label}`
+  }
+  return ''
+}
+
+// 非中文语言：预取本表单可见词条（表头字段/明细列名/页签/按钮，静态包缺失的走机翻）
+function ensureFormDict() {
+  if (localeStore.isZh) return
+  localeStore.ensureDict(localeStore.current, [
+    ...meta.value.map((f) => f.name),
+    ...tabs.value.flatMap((t) => [t.label, ...(t.fields || []).map((f) => f.dataName)]),
+    ...(groups.value || []).flatMap((g) => [g.name, ...(g.actions || [])]),
+  ])
+}
+watch(() => localeStore.current, ensureFormDict)
+
+/**
+ * 新增表单带入值。
+ *
+ * <p>只写面板 dataSchema 里定义过的表头字段：prefill 是外部传来的跳转参数，
+ * 不能凭空往单据里塞面板没有定义的键（否则保存时把脏键写进 JSON）。
+ * 编辑态忽略：编辑已有单据时以库里的值为准。
+ */
+function applyPrefill(panelConfig) {
+  if (isEdit.value) return
+  const raw = route.query.prefill
+  if (!raw) return
+  let incoming
+  try {
+    incoming = JSON.parse(String(raw))
+  } catch {
+    return
+  }
+  if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) return
+  const headerFields = new Set(
+    (panelConfig?.dataSchema?.fields || []).map((f) => f && f.dataName).filter(Boolean),
+  )
+  for (const [key, value] of Object.entries(incoming)) {
+    if (!headerFields.has(key)) continue
+    if (value === null || value === undefined || value === '') continue
+    form[key] = value
+  }
+}
+
+async function load() {
+  loading.value = true
+  invoicePickVisible.value = false
+  try {
+    const configPromise = engine.getPanelConfig(panelCode.value).catch(() => null)
+    let payload
+    if (isEdit.value) {
+      payload = await engine.getFormDescriptor({ panelCode: panelCode.value, code: code.value })
+    } else {
+      payload = await engine.getNewFormPermMatrix({ panelCode: panelCode.value, operationName: operationName.value })
+    }
+    Object.keys(detailData).forEach((k) => delete detailData[k])
+    const dd = payload.detailData
+    if (Array.isArray(dd)) detailData.detail = dd
+    else if (dd && typeof dd === 'object') Object.assign(detailData, dd)
+    Object.keys(form).forEach((k) => delete form[k])
+    Object.assign(form, payload.data || {})
+    meta.value = payload.meta || []
+    detailDef.value = payload.detail || null
+    // 老数据 / 新建单据：顺序列按行位置补齐（工序顺序 = 第几道工序）
+    for (const t of detailDef.value?.tabs || []) renumberSequence(t)
+    // 参照字段双模检查（≤20 行下拉 / >20 行弹窗，按数据量动态切换）
+    for (const rf of (meta.value || []).filter(isRef)) checkRefMode(rf)
+    for (const t of detailDef.value?.tabs || []) {
+      for (const f of t.fields || []) if (isRef(f)) checkRefMode(f)
+    }
+    const panelConfig = await configPromise
+    const panelMetadata = panelConfig?.metadata || payload.metadata || {}
+    // 新增表单带入值：?prefill=<encodeURIComponent(JSON)>
+    // 空白新增数据只含「有默认值」的字段，所以不能按 form 现有键判断，
+    // 要按面板 dataSchema 里的表头字段清单校验，避免写进面板没定义的键。
+    applyPrefill(panelConfig)
+    formSections.value = Array.isArray(panelMetadata.formSections) ? panelMetadata.formSections : []
+    formSummary.value = panelMetadata.formSummary || null
+    detailAliases.value = panelMetadata.detailColumnAliases || {}
+    const configuredGroups = payload.buttonGroups?.length
+      ? payload.buttonGroups
+      : panelMetadata.buttonGroups
+    const hasSelect = hasSelectConfig(panelConfig) || hasSelectConfig(panelMetadata) || hasSelectConfig(payload)
+    const configured = ensureSelectAction(ensureScanFillAction(configuredGroups, panelMetadata), hasSelect)
+    // 表单页同样只留真有实现的动作（与列表页同一张表，见 core/action-support.js）
+    groups.value = filterGroups(filterButtonGroups(
+      filterSupportedActions(configured, { hasSelect }),
+      panelCode.value,
+      user,
+    ))
+    ensureFormDict()
+    payloadCache.value = payload
+    const firstTab = tabs.value.find((t) => t.type !== 'summary')
+    if (firstTab && !activeTab.value) activeTab.value = firstTab.key
+    for (const t of tabs.value) {
+      if (!subActive[t.key]) subActive[t.key] = 'detail'
+    }
+    applyCalc()
+    // 参照字段形态先判定好：首屏就定下拉/弹窗，点输入框时不再切成另一种控件
+    warmRefModes()
+    // 产成品→材料联动：默认不选中（点击产成品明细行才过滤材料明细），加载后重置
+    selectedProduct.value = null
+    selectedBomCodes.value = []
+    // BOM 自动展开：草稿单已有产品明细但材料明细为空时，按产品 BOM 带出材料
+    // （覆盖列表页选单生成、推式生单、历史草稿等所有入口；材料非空不重复展开）
+    autoExpandBom()
+    // 页签标题 = 面板名-单据号（新单显示 面板名-新增），便于多单据区分（弹窗嵌入模式跳过）
+    if (!props.embedded) {
+      const no = isEdit.value ? (form['单据编号'] || form['锭号'] || form['编号'] || '') : '新增'
+      // 复用顶部 tabsStore
+      const cur = tabsStore.tabs.find((x) => x.path === route.path)
+      if (cur) cur.title = (payload.panelName || '表单') + '-' + no
+      // 页面标题 = 真实面板名（路由 meta.title 是通用占位，配置加载后覆盖）
+      document.title = (payload.panelName || '表单') + ' · ' + useBrandStore().name
+    }
+  } catch (e) {
+    ElMessage.error(engine.errMsg(e) || tt('加载失败'))
+    // 单据没加载出来（单号不存在/已删除），别在页签栏留一张打不开的单据页签。
+    // 深链进来时这张页签是外部补的，不关掉就会一直挂着。
+    tabsStore.close(route.path)
+    back()
+  } finally {
+    loading.value = false
+  }
+}
+
+// 销售订单 → 生产加工单：先弹生单预览（库存与建议生产量）
+const produceVisible = ref(false)
+const produceNo = ref('')
+
+const saleOutVisible = ref(false)
+const saleOutNo = ref('')
+
+const finishInVisible = ref(false)
+const finishInNo = ref('')
+
+async function onFinishInGenerated(res) {
+  if (res?.gotoPanel) {
+    if (props.embedded) {
+      emit('saved', res)
+      return
+    }
+    const no = res['编号'] || res.formNo || ''
+    ElMessage.success(tt('已生成') + tt('产成品入库单') + '：' + no + '，' + tt('请在列表页继续填写'))
+    const targetPath = `/panelx/list/${res.gotoPanel}`
+    tabsStore.close(route.path)
+    await router.push({ path: targetPath, query: no ? { code: no } : {} })
+    tabsStore.open({ path: targetPath, title: res.gotoPanel, query: no ? { code: no } : {} })
+    return
+  }
+  await load()
+}
+
+async function onSaleOutGenerated(res) {
+  if (res?.gotoPanel) {
+    if (props.embedded) {
+      emit('saved', res)
+      return
+    }
+    const no = res['编号'] || res.formNo || ''
+    ElMessage.success(tt('已生成') + tt('销售出库单') + '：' + no + '，' + tt('请在列表页继续填写'))
+    const targetPath = `/panelx/list/${res.gotoPanel}`
+    tabsStore.close(route.path)
+    await router.push({ path: targetPath, query: no ? { code: no } : {} })
+    tabsStore.open({ path: targetPath, title: res.gotoPanel, query: no ? { code: no } : {} })
+    return
+  }
+  await load()
+}
+
+async function onProduceGenerated(res) {
+  if (res?.gotoPanel) {
+    if (props.embedded) {
+      emit('saved', res)
+      return
+    }
+    const no = res['编号'] || res.formNo || ''
+    ElMessage.success(tt('已生成') + tt('生产加工单') + '：' + no + '，' + tt('请在列表页继续填写'))
+    const targetPath = `/panelx/list/${res.gotoPanel}`
+    tabsStore.close(route.path)
+    await router.push({ path: targetPath, query: no ? { code: no } : {} })
+    tabsStore.open({ path: targetPath, title: res.gotoPanel, query: no ? { code: no } : {} })
+    return
+  }
+  await load()
+}
+
+async function onButton(action) {
+  // 采购发票 Excel 导入：前端弹窗按「发票号码 + 供应商」分组逐张保存，不走下面的 callButton 分发
+  if (action === INVOICE_IMPORT_ACTION) {
+    invoiceImportVisible.value = true
+    return
+  }
+  // 2026-08-25：灰按钮（disabled）点击直接忽略，不执行、不弹提示（如草稿态「生成XX」生单按钮）
+  if (isDisabled(action)) return
+  if (APPROVE_ACTIONS.includes(action) && !user.isAdmin && !user.approvePanels.includes(panelCode.value)) {
+    return ElMessage.warning(tt('当前角色无审批权限'))
+  }
+  if (action === '生成生产加工单' && panelCode.value === 'SO_ORDER') {
+    produceNo.value = form['编号'] || form['单据编号'] || ''
+    produceVisible.value = true
+    return
+  }
+  if (action === '生成产成品入库单' && panelCode.value === 'MANU_ORDER') {
+    finishInNo.value = form['编号'] || form['单据编号'] || ''
+    finishInVisible.value = true
+    return
+  }
+  // 销售发票打印：审批通过后可用
+  if (action === '打印发票') {
+    const no = form['编号'] || form['单据编号'] || ''
+    if (!no) return ElMessage.warning(tt('请先保存发票'))
+    if (status.value !== '已审核') return ElMessage.warning(tt('发票审批通过后才能打印'))
+    window.open(`${location.origin}${location.pathname}#/print/invoice?code=${encodeURIComponent(no)}`, '_blank')
+    return
+  }
+  if (['生成销售出库单', '生成销售出库单(普通销售)'].includes(action) && panelCode.value === 'SO_ORDER') {
+    saleOutNo.value = form['编号'] || form['单据编号'] || ''
+    saleOutVisible.value = true
+    return
+  }
+  // 采购发票「选入库单行」：前端弹窗按行追加，不走后端 callButton，也不能落到下面的选单分支
+  if (action === INVOICE_LINE_ACTION) {
+    openInvoiceLinePick()
+    return
+  }
+  if (action === '扫描填单') {
+    if (!editable.value) {
+      try {
+        await ElMessageBox.confirm(
+          tt('当前单据不可编辑，扫描结果将保存为一张新草稿。'),
+          tt('扫描填单'),
+          { confirmButtonText: tt('继续扫描'), cancelButtonText: tt('取消'), type: 'warning' },
+        )
+      } catch (error) {
+        return
+      }
+    }
+    scanVisible.value = true
+    return
+  }
+  if (action === '修改') {
+    ElMessage.info(isEdit.value ? tt('当前单据已处于编辑状态') : tt('请先打开单据后再修改'))
+    return
+  }
+  if (action === '放弃' || action === '取消') {
+    back()
+    return
+  }
+  // Excel 导入：识别当前主明细 tab 字段，导入后追加明细行
+  if (action === '导入') {
+    const tab = tabs.value[0]
+    if (!tab) return ElMessage.warning(tt('该面板无明细可导入'))
+    impFields.value = (tab.fields || []).filter((f) => !f.hidden)
+    impLabel.value = tab.label || '明细'
+    impVisible.value = true
+    return
+  }
+  // 工序汇报单的选单一律走专用弹窗（工具栏点「选单」和点「选生产加工单」是同一个入口，
+  // 通用选单只会把整张加工单的工序一起带进来）
+  if (panelCode.value === 'PROCESS_REPORT' && (action === '选单' || action.startsWith('选'))) {
+    processPickVisible.value = true
+    return
+  }
+  // 拉式选单（配置驱动：selectConfig.generateButton 存在 → 新弹窗直接生单；否则旧带入流程）
+  if (action === '选单' || action.startsWith('选')) {
+    const sc = selectConfigFor(action)
+    if (sc) {
+      if (sc.generateButton) {
+        selCfg.value = sc
+        selVisible.value = true
+      } else {
+        openSelectDialog(sc)
+      }
+      return
+    }
+    ElMessage.warning(tt('该面板未配置选单来源'))
+    return
+  }
+  if (action === '新增') {
+    if (isEdit.value && status.value === '草稿') {
+      try {
+        await ElMessageBox.confirm(tt('当前单据尚未保存，切换新增将丢弃修改，是否继续？'), tt('提示'), { type: 'warning' })
+      } catch (e) {
+        return
+      }
+    }
+    router.replace({ path: `/panelx/form/${panelCode.value}`, query: { operationName: operationName.value } })
+    return
+  }
+  if (action === '删除') {
+    try {
+      await ElMessageBox.confirm(tt('确认删除单据') + ` ${form['单据编号'] || form['锭号'] || form['编号']}？`, tt('提示'), { type: 'warning' })
+    } catch (e) {
+      return
+    }
+  }
+  // 人工审核：确认弹窗 + 审核意见（选填）；审核人取当前登录人（后端从 JWT 取）
+  let auditOpinion = ''
+  if (action === '审核') {
+    // 已审核过的单据不允许再次审核，也不允许补填审批意见
+    if (status.value !== '草稿') return ElMessage.warning(tt('仅草稿状态可审核，已审核单据不允许再次审核'))
+    const no = form['单据编号'] || form['锭号'] || form['编号'] || ''
+    try {
+      const { value } = await ElMessageBox.prompt(
+        '单据：' + no + '（当前状态：' + status.value + '）',
+        '人工审核确认',
+        { confirmButtonText: '确认审核', cancelButtonText: '取消', inputType: 'textarea', inputPlaceholder: '审核意见（选填）' }
+      )
+      auditOpinion = value || ''
+    } catch (e) {
+      return
+    }
+  } else if (action === '弃审') {
+    if (status.value !== '已审核') return ElMessage.warning(tt('仅已审核状态可弃审'))
+    try {
+      await ElMessageBox.confirm(tt('确认弃审该单据？弃审后需重新审核。'), tt('弃审确认'), { type: 'warning' })
+    } catch (e) {
+      return
+    }
+  }
+  // 审批流：提交审批/审批通过（确认+意见）、审批驳回（意见必填）、审批情况（历史弹窗）
+  let approvalOpinion = ''
+  if (action === '提交审批' || action === '审批通过') {
+    const need = action === '提交审批' ? '草稿' : '审批中'
+    if (status.value !== need) return ElMessage.warning(action === '提交审批' ? tt('仅草稿状态可提交审批') : tt('仅审批中状态可审批通过'))
+    const no = form['单据编号'] || form['锭号'] || form['编号'] || ''
+    try {
+      // 确认框是用户真正做决定的地方，必须把「这一步之后还差什么」写清楚：
+      // 只写单据号+状态，用户会以为提交即完成，随后点「生单」被 409 拦下。
+      const nextStep = action === '提交审批'
+        ? '提交后单据进入「审批中」，还需完成「审批通过」才算审核完成，之后才能生单。'
+        : '审批通过后单据归档为「已审核」，可继续生单。'
+      const { value } = await ElMessageBox.prompt(
+        '单据：' + no + '（当前状态：' + status.value + '）\n' + nextStep,
+        action + '确认',
+        { confirmButtonText: '确认' + action, cancelButtonText: '取消', inputType: 'textarea', inputPlaceholder: action === '审批通过' ? '审批意见（选填）' : '提交说明（选填）' }
+      )
+      approvalOpinion = value || ''
+    } catch (e) {
+      return
+    }
+  } else if (action === '审批驳回') {
+    if (status.value !== '审批中') return ElMessage.warning(tt('仅审批中状态可审批驳回'))
+    const no = form['单据编号'] || form['锭号'] || form['编号'] || ''
+    try {
+      const { value } = await ElMessageBox.prompt(
+        '单据：' + no + '（当前状态：审批中）\n驳回必须填写审批意见',
+        '审批驳回确认',
+        { confirmButtonText: '确认驳回', cancelButtonText: '取消', inputType: 'textarea', inputPlaceholder: '驳回原因（必填）', inputValidator: (v) => (v && v.trim() ? true : '驳回必须填写审批意见') }
+      )
+      approvalOpinion = value || ''
+    } catch (e) {
+      return
+    }
+  } else if (action === '审批情况') {
+    approvalNo.value = form['编号'] || form['单据编号'] || form['锭号'] || ''
+    approvalVisible.value = true
+    return
+  }
+  if (['保存', '保存为草稿', '保存新增'].includes(action)) {
+    const msg = validate()
+    if (msg) return ElMessage.warning(msg)
+  }
+  if (action === '刷新') {
+    await load()
+    return
+  }
+  saving.value = true
+  try {
+    const rd = { ...form }
+    if (tabs.value.length) rd.detail = { ...detailData }
+    if (auditOpinion !== '') rd['审核意见'] = auditOpinion
+    if (approvalOpinion !== '') rd['审批意见'] = approvalOpinion
+    const res = await engine.callButton({
+      panelCode: panelCode.value,
+      buttonName: action,
+      formData: rd,
+      buttonParam: isEdit.value ? { code: form['编号'] } : {},
+    })
+    // 推式生单结果：跳转目标面板列表页并定位到新单据（草稿内联可编辑），保留来源单据页签
+    if (res?.gotoPanel) {
+      if (props.embedded) {
+        emit('saved', res)
+        return
+      }
+      ElMessage.success(tt('已生成') + (res.gotoPanel === 'MANU_ORDER' ? tt('生产加工单') : res.gotoPanel) + '：' + res['编号'] + '，' + tt('请在列表页继续填写'))
+      const targetPath = `/panelx/list/${res.gotoPanel}`
+      const targetQuery = { code: res['编号'] }
+      router.push({ path: targetPath, query: targetQuery })
+      tabsStore.open({ path: targetPath, title: res.gotoPanel, query: targetQuery })
+      return
+    }
+    // 「审核」在审批面板上等价于提交审批；「提交审批」按钮本身也走这条路。
+    // 用户点了这两个里的任何一个，单据都停在「审批中」，必须提示还差「审批通过」这一步，
+    // 否则他会以为审完了，接着点「生单」被 409 拦下。
+    if (['审核', '提交审批'].includes(action) && res && res['单据状态'] === '审批中') {
+      ElMessage.success(tt('已提交审批') + '，' + tt('需「审批通过」后才算审核完成，之后才能生单'))
+    } else {
+      ElMessage.success('「' + tt(action) + '」' + tt('成功'))
+    }
+    if (action === '新增流程' && !isEdit.value) {
+      back()
+      return
+    }
+    if (action === '保存新增') {
+      router.replace({ path: `/panelx/form/${panelCode.value}`, query: { operationName: operationName.value } })
+    } else if (['保存', '保存为草稿', '删除', '审核', '弃审', '中止执行', '整单中止', '草稿', '取消中止'].includes(action)) {
+      if (action === '删除') {
+        back()
+      } else if (isEdit.value && res?.['编号']) {
+        await load()
+      } else {
+        back()
+      }
+    }
+  } catch (e) {
+    ElMessage.error(engine.errMsg(e) || '按钮执行失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+function normalizeScanData(payload) {
+  const header = {}
+  const fields = new Map(visibleMeta.value.map((field) => [field.code || field.dataName || field.name, field]))
+  for (const [key, value] of Object.entries(payload?.header || {})) {
+    const field = fields.get(key)
+    if (!field || field.hidden || field.computed || field.autoCode || fieldLocked(field)) continue
+    header[key] = value
+  }
+
+  const detail = {}
+  const tabMap = new Map(tabs.value.map((tab) => [tab.key, tab]))
+  for (const [tabKey, rows] of Object.entries(payload?.detail || {})) {
+    const tab = tabMap.get(tabKey)
+    if (!tab || !Array.isArray(rows)) continue
+    const writable = new Set((tab.fields || [])
+      .filter((field) => !field.hidden && !field.computed && !priceLocked(field.dataName || field.code || field.name))
+      .map((field) => field.dataName || field.code || field.name))
+    const recognizedRows = rows.map((row) => Object.fromEntries(
+      Object.entries(row || {}).filter(([key]) => writable.has(key)),
+    ))
+    detail[tabKey] = recognizedRows
+  }
+  return { header, detail }
+}
+
+async function onScanApply(payload) {
+  const recognized = normalizeScanData(payload)
+  if (!editable.value) {
+    let draftNo = ''
+    try {
+      const created = await engine.callButton({
+        panelCode: panelCode.value,
+        buttonName: '保存',
+        formData: {},
+        buttonParam: {},
+      })
+      draftNo = created?.['编号'] || created?.formNo || ''
+      if (!draftNo) throw new Error('未返回单据编号')
+
+      const descriptor = await engine.getFormDescriptor({ panelCode: panelCode.value, code: draftNo })
+      const detail = { ...(descriptor.detailData || {}) }
+      for (const [tabKey, rows] of Object.entries(recognized.detail)) {
+        detail[tabKey] = payload?.detailMode === 'append'
+          ? [...(detail[tabKey] || []), ...rows]
+          : rows
+      }
+      applyCalc(detail)
+      await engine.callButton({
+        panelCode: panelCode.value,
+        buttonName: '保存',
+        formData: { ...(descriptor.data || {}), ...recognized.header, detail },
+        buttonParam: { code: draftNo },
+      })
+
+      ElMessage.success(tt('识别数据已保存为新草稿') + ` ${draftNo}`)
+      if (props.embedded) {
+        emit('saved', { ...created, focus: draftNo })
+      } else {
+        await router.replace({
+          path: `/panelx/form/${panelCode.value}`,
+          query: { ...route.query, code: draftNo },
+        })
+      }
+      return
+    } catch (error) {
+      const prefix = draftNo ? tt('已创建空草稿') + ` ${draftNo}，` + tt('但') : ''
+      ElMessage.error(prefix + (engine.errMsg(error) || tt('识别数据保存失败')))
+      return
+    }
+  }
+
+  Object.assign(form, recognized.header)
+  for (const [tabKey, rows] of Object.entries(recognized.detail)) {
+    detailData[tabKey] = payload?.detailMode === 'append'
+      ? [...(detailData[tabKey] || []), ...rows]
+      : rows
+  }
+  applyCalc()
+  ElMessage.success(tt('识别数据已填入单据，请核对后保存'))
+}
+
+function back() {
+  if (props.embedded) {
+    emit('saved')
+    return
+  }
+  router.push({ path: `/panelx/list/${panelCode.value}` })
+}
+
+// Excel 导入完成：行追加到主明细，提示保存落库
+function onImported(rows) {
+  const tab = tabs.value[0]
+  if (!tab || !Array.isArray(rows)) return
+  const target = detailData[tab.key] || (detailData[tab.key] = [])
+  for (const r of rows) target.push(r)
+  ElMessage.success(tt('已导入') + ' ' + rows.length + ' ' + tt('行到「') + tt(tab.label || tab.key) + tt('」，请点击保存落库'))
+}
+
+// Excel 导入发票完成：成功保存的草稿已在后端建档，跳到发票列表继续处理；部分失败时留在弹窗看错误
+function onInvoiceImported(result) {
+  const count = result?.count || 0
+  if (!count) return
+  if (Array.isArray(result.failed) && result.failed.length) return
+  if (props.embedded) {
+    emit('saved', result)
+    return
+  }
+  const targetPath = `/panelx/list/${panelCode.value || 'PU_INVOICE'}`
+  router.push({ path: targetPath })
+  tabsStore.open({ path: targetPath, title: payloadCache.value?.panelName || panelCode.value, query: {} })
+}
+
+// 新选单弹窗生单完成：2026-08-25 不再弹窗展示，直接跳目标面板列表页并定位新选入单据
+function onSelGenerated(generated) {
+  const first = generated && generated[0]
+  if (!first) return
+  const path = '/panelx/list/' + first.panel
+  router.push({ path, query: { focus: first.no } })
+  tabsStore.open({ path, title: first.panel, query: { focus: first.no } })
+}
+
+onMounted(() => {
+  load()
+  // 材料下级 BOM 映射（红 * 标记 + 点击行弹窗）
+  loadSubBomMap()
+})
+
+// keep-alive 页签切回时刷新面板配置：后端重启后 panel_config 可能已更新，
+// 只刷新布局/字段定义，不重载当前单据，避免丢掉未保存的编辑。
+let formConfigActivated = false
+async function refreshFormConfig() {
+  if (!panelCode.value || panelCode.value === 'undefined') return
+  try {
+    const cfg = await engine.getPanelConfig(panelCode.value)
+    const metadata = cfg?.metadata || {}
+    formSections.value = Array.isArray(metadata.formSections) ? metadata.formSections : []
+    formSummary.value = metadata.formSummary || null
+    if (cfg?.detail) {
+      detailDef.value = cfg.detail
+      applyCalc()
+    }
+  } catch (e) {
+    // 配置刷新失败时保留当前页面，不影响正在编辑的单据
+  }
+}
+onActivated(() => {
+  if (!formConfigActivated) {
+    formConfigActivated = true
+    return
+  }
+  refreshFormConfig()
+})
+
+// keep-alive 切离时关闭所有弹窗（防止 append-to-body 弹窗在路由切换后残留）
+onDeactivated(() => {
+  selectVisible.value = false
+  selVisible.value = false
+  refVisible.value = false
+  impVisible.value = false
+  scanVisible.value = false
+  invoicePickVisible.value = false
+  invoiceImportVisible.value = false
+})
+
+// 从列表页「选单」入口（?select=1）跳转而来：load 完成后自动弹出选单对话框（payloadCache 异步赋值）
+watch(payloadCache, (v) => {
+  if (route.query.select && v && v.selectConfig && !selVisible.value) openSelectDialog()
+})
+
+watch(() => [panelCode.value, code.value], () => {
+  scanVisible.value = false
+  // 2026-08-20：关闭页签/切走时 panelCode 变 undefined——不触发加载
+  if (!panelCode.value || panelCode.value === 'undefined') return
+  // 路由参数变化（同组件切换面板）时关闭所有弹窗，防止 append-to-body 弹窗残留
+  selectVisible.value = false
+  selVisible.value = false
+  refVisible.value = false
+  impVisible.value = false
+  invoicePickVisible.value = false
+  invoiceImportVisible.value = false
+  Object.keys(refModeMap).forEach((k) => delete refModeMap[k])
+  Object.keys(refSelectData).forEach((k) => delete refSelectData[k])
+  Object.keys(refSelectTimers).forEach((k) => clearTimeout(refSelectTimers[k]))
+  load()
+})
+</script>
+
+<style scoped>
+/* 参照下拉固定高度：一页 6 条，加载前后高度一致，不闪 */
+:global(.ref-paged-popper .el-select-dropdown__list) {
+  min-height: 200px;
+}
+
+/* 参照下拉分页条：一屏一页，底部翻页 */
+.ref-pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 8px;
+  border-top: 1px solid var(--d-fill);
+  background: #fff;
+}
+.ref-pager-info {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 参照字段 + 打开来源档案的小跳转；只占右侧 18px，不影响输入框宽度 */
+.ref-field { position: relative; display: flex; align-items: center; }
+.ref-field :deep(.el-select) { flex: 1 1 auto; }
+.ref-jump {
+  position: absolute;
+  right: 26px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+.ref-jump:hover { color: var(--t-primary); }
+.ref-jump-inline { margin-left: 4px; }
+
+.card {
+  background: var(--t-card-bg);
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  background: var(--d-fill-soft);
+  border-bottom: 1px solid var(--d-border-strong);
+  padding: 8px 12px;
+}
+.tb-group {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 12px;
+}
+.tb-main {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  font-size: 13px;
+  color: #222;
+  background: transparent;
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+}
+.tb-main:hover {
+  color: var(--d-primary);
+}
+.tb-main.disabled {
+  color: #999;
+  cursor: not-allowed;
+}
+/* 审批驳回：与「审批通过」并列的第二个决策，用克制的危险色区分 */
+.tb-main.danger {
+  color: var(--t-badge);
+}
+.tb-main.danger:hover {
+  color: var(--d-bad);
+}
+.tb-main.back {
+  margin-left: 0;
+}
+.tb-caret {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 2px;
+  font-size: 12px;
+  color: #222;
+  cursor: pointer;
+  outline: none;
+}
+.tb-caret:hover {
+  color: var(--d-primary);
+}
+.tools-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.tools-right .pg {
+  width: 22px;
+  height: 20px;
+  border: 1px solid var(--d-border-strong);
+  background: #fff;
+  color: #222;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0 4px;
+  position: relative;
+}
+.title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* 印章：标题行右侧斜置（与 PanelxList 明细块印章同款），颜色随单据状态走 */
+.approved-stamp {
+  position: absolute;
+  right: 16px;
+  top: -6px;
+  z-index: 9;
+  transform: rotate(-12deg);
+  color: var(--d-ok);
+  border: 2px solid var(--d-ok);
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  background: rgba(240, 253, 244, 0.92);
+  pointer-events: none;
+}
+.approved-stamp.doing {
+  color: var(--d-warn);
+  border-color: var(--d-warn);
+  background: rgba(255, 251, 235, 0.94);
+}
+.approved-stamp.done {
+  color: var(--t-primary);
+  border-color: var(--t-primary);
+  background: rgba(239, 246, 255, 0.94);
+}
+.approved-stamp.stop {
+  color: var(--d-text-2);
+  border-color: var(--d-text-2);
+  background: rgba(249, 250, 251, 0.94);
+  letter-spacing: 3px;
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.25);
+}
+.title .no {
+  font-size: 16px;
+  font-weight: 700;
+  color: #222;
+}
+.fields {
+  display: block;
+  padding: 12px;
+  background: #fff;
+  min-height: 0;
+}
+/* 表头栅格（2026-11-03）：等宽列铺满容器，字段标签/输入框按列对齐。
+   此前是 inline-block + 固定 160px 宽输入框，宽屏下字段挤在左边、宽度参差、右侧大片留白。 */
+.fields.udl-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px 20px;
+  align-items: start;
+}
+.fields.udl-fields .field {
+  display: block;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+}
+.fields.udl-fields .field .el-input,
+.fields.udl-fields .field .el-input-number,
+.fields.udl-fields .field .el-select,
+.fields.udl-fields .field .el-date-editor,
+.fields.udl-fields .field .ref-ctl {
+  width: 100% !important;
+}
+/* 控件统一 32px 高（对齐设计基线）：日期选择器默认比输入框矮一截，逐行看会参差 */
+.fields.udl-fields .field :deep(.el-input__wrapper),
+.fields.udl-fields .field :deep(.el-select__wrapper) {
+  min-height: 32px;
+}
+.fields.udl-fields .field :deep(.el-date-editor.el-input),
+.fields.udl-fields .field :deep(.el-date-editor .el-input__wrapper) {
+  height: 32px;
+}
+.field {
+  display: inline-block;
+  vertical-align: top;
+  margin: 0 24px 8px 0;
+}
+.field label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #222;
+  text-align: left;
+  white-space: nowrap;
+}
+.field .req {
+  color: var(--d-bad);
+}
+.field .el-input,
+.field .el-select,
+.field .el-date-editor,
+.field .ref-ctl {
+  width: 160px !important;
+}
+.field .ref-ctl {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}.field .req {
+  color: var(--d-bad);
+}
+.detail {
+  margin-top: 12px;
+}
+.tab-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.prod-selected {
+  background: var(--d-primary-bg) !important;
+}
+.mat-cell {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+.mat-star {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  color: var(--d-bad);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+.filter-hint {
+  font-size: 12px;
+  color: var(--t-primary);
+  font-weight: 600;
+  margin-right: 8px;
+}
+.tab-hint {
+  font-size: 12px;
+  color: var(--t-text-3);
+}
+.sub-tabs {
+  margin-top: 2px;
+}
+.sub-wrap {
+  padding: 6px 8px;
+}
+.sub-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.sub-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--t-text-1);
+}
+.del {
+  cursor: pointer;
+  color: var(--d-bad);
+}
+.img-ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  font-size: 11px;
+  color: var(--t-text-3);
+  border: 1px dashed var(--t-border);
+  border-radius: 4px;
+}
+.act-name {
+  display: inline-flex;
+}
+.act-sc {
+  margin-left: 12px;
+  font-size: 12px;
+  color: var(--t-text-3);
+}
+.audit-line {
+  margin-top: 12px;
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--t-text-3);
+}
+.ref-ctl {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+.ref-ctl .el-input {
+  flex: 1;
+}
+.ref-suffix {
+  color: var(--t-text-3, rgba(0, 0, 0, 0.25));
+  cursor: pointer;
+  transition: color 0.12s ease;
+}
+.ref-suffix:hover {
+  color: var(--t-primary, #116a5b);
+}
+.ref-cell {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 6px;
+  color: var(--t-primary);
+  cursor: pointer;
+}
+.ref-cell.disabled {
+  color: inherit;
+  cursor: default;
+}
+.sel-tip {
+  font-size: 12px;
+  color: var(--t-text-3);
+  margin-bottom: 8px;
+}
+.sel-item {
+  margin-right: 10px;
+  white-space: nowrap;
+}
+:deep(.computed-col) {
+  background: var(--t-content-bg);
+}
+:deep(.el-table__footer-wrapper .cell) {
+  font-weight: 600;
+}
+.detail-block {
+  margin-bottom: 4px;
+}
+.dt-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0 2px;
+}
+.dt-tabs {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.dt-tab {
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  padding-bottom: 3px;
+  user-select: none;
+}
+.dt-tab.on {
+  color: var(--d-primary);
+  font-weight: 700;
+  border-bottom: 2px solid var(--d-primary);
+}
+.dt-tab .req {
+  color: var(--d-bad);
+}
+.dt-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #333;
+}
+.dt-ic {
+  color: #333;
+  cursor: pointer;
+}
+.dt-ic:hover {
+  color: var(--d-primary);
+}
+.dt-splitter {
+  height: 8px;
+  border-top: 1px solid #ddd;
+  margin: 6px 0;
+}.remark {
+  margin-top: 14px;
+}
+.remark label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #222;
+}
+.footer-hr {
+  border-top: 1px solid #ccc;
+  margin: 10px 0;
+}
+.audit-line {
+  margin-top: 10px;
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #222;
+}
+.dt-head {
+  border-bottom: 1px solid #ccc;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff;
+}
+.dt-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+.dt-tab {
+  display: inline-block;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #222;
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin-bottom: -1px;
+  user-select: none;
+  background: transparent;
+}
+.dt-tab.on {
+  border: 1px solid #ccc;
+  border-bottom: 1px solid #fff;
+  background: #fff;
+  font-weight: 700;
+}
+.dt-tab .req {
+  color: var(--d-bad);
+}
+.dt-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #222;
+}
+.dt-ic {
+  color: #222;
+  cursor: pointer;
+  text-decoration: none;
+}
+.dt-ic:hover {
+  color: var(--d-primary);
+}
+.dt-splitter {
+  height: 10px;
+  border-bottom: 1px solid var(--d-border-strong);
+  background: var(--d-fill-soft);
+}
+.detail :deep(.el-table th.el-table__cell) {
+  background: var(--d-fill-soft);
+  color: #222;
+  font-weight: 700;
+}
+
+/* ═══════ 移动端响应式（≤768px）：单列字段、触控尺寸、明细横向滚动 ═══════ */
+@media (max-width: 768px) {
+  .card { padding: 8px; border-radius: 0; }
+
+  .tools { gap: 4px 8px; padding: 8px; }
+  .tools .tb-group { margin-right: 8px; }
+  .tools .tb-main { min-height: 32px; font-size: 13px; }
+  .tools .tb-caret { min-height: 32px; }
+  .tools-right { font-size: 12px; }
+  .tools-right .pg { width: 26px; height: 26px; min-height: 26px; font-size: 11px; }
+
+  .head { margin: 6px 0 2px; }
+  .title .no { font-size: 16px; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .head :deep(.el-tag) { height: 22px; line-height: 20px; font-size: 12px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .fields.udl-fields { padding: 10px 8px; }
+  .fields.udl-fields .field { display: block; width: 100%; margin: 0 0 10px; }
+  .fields.udl-fields .field label { margin-bottom: 6px; }
+  .fields.udl-fields .field .el-input,
+  .fields.udl-fields .field .el-select,
+  .fields.udl-fields .field .el-date-editor,
+  .fields.udl-fields .field .ref-ctl { width: 100% !important; }
+  .fields.udl-fields .field :deep(.el-input__wrapper),
+  .fields.udl-fields .field :deep(.el-select__wrapper) { min-height: 32px; }
+  .fields.udl-fields :deep(.el-date-editor.el-input) { width: 100%; height: 32px; }
+  .fields.udl-fields :deep(.el-date-editor .el-input__wrapper) { height: 32px; }
+  .fields.udl-fields .ref-ctl .ref-btn { min-height: 32px; min-width: 32px; }
+
+  .detail-block { min-width: 0; }
+  .dt-head { overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 8px; padding: 8px 4px; }
+  .dt-head .dt-tabs, .dt-head .dt-actions { flex-shrink: 0; }
+  .dt-head .dt-tab { padding: 6px 10px; font-size: 13px; }
+  .dt-head .dt-actions { gap: 8px; font-size: 12px; }
+  .dt-head .add-data-btn { min-height: 36px; }
+
+  .remark { margin-top: 10px; }
+  .audit-line { gap: 6px 12px; font-size: 12px; line-height: 1.6; }
+}
+
+/* 分段式单据详情（采购发票）：基本信息 / 商品信息 / 金额信息各自成段 */
+.sectioned-form .card {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.sectioned-form .tools {
+  margin-bottom: 10px;
+  padding: 8px 14px;
+  background: #fff;
+  border: 1px solid var(--d-border);
+  border-radius: 8px;
+}
+.sectioned-form .head {
+  padding: 0 4px 10px;
+}
+.sectioned-form .invoice-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 4px 14px;
+}
+.sectioned-form .invoice-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.sectioned-form .invoice-title .no {
+  overflow: hidden;
+  color: var(--d-text);
+  font-size: 18px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sectioned-form .invoice-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sectioned-form .fields.udl-fields {
+  padding: 16px 18px 8px;
+  background: #fff;
+  border: 1px solid var(--d-border);
+  border-radius: 8px;
+  gap: 14px 24px;
+}
+.sectioned-form .form-section-title {
+  grid-column: 1 / -1;
+  margin: 2px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--d-fill);
+  color: var(--d-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.sectioned-form .form-section-title:not(:first-child) {
+  margin-top: 8px;
+}
+.sectioned-form .detail-section-title {
+  margin: 14px 0 8px;
+  padding: 0 2px 6px;
+  border-bottom: 1px solid var(--d-border);
+}
+.sectioned-form .detail {
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--d-border);
+  border-radius: 8px;
+}
+/* 发票明细：轻表格，单元格内控件不再画重边框，聚焦/悬停才提示可编辑 */
+.sectioned-form .detail :deep(.el-table--border .el-table__cell) {
+  border-right: 1px solid var(--d-fill-soft);
+}
+.sectioned-form .detail :deep(.el-table th.el-table__cell) {
+  background: var(--d-fill-soft);
+  color: var(--d-text-2);
+  font-weight: 600;
+}
+.sectioned-form .detail :deep(.el-input__wrapper),
+.sectioned-form .detail :deep(.el-select__wrapper) {
+  background: transparent;
+  box-shadow: none;
+}
+.sectioned-form .detail :deep(.el-input__wrapper:hover),
+.sectioned-form .detail :deep(.el-select__wrapper:hover) {
+  box-shadow: 0 0 0 1px var(--d-border-strong) inset;
+}
+.sectioned-form .dt-scroll-hint {
+  color: var(--d-text-3);
+  font-size: 12px;
+}
+.sectioned-form .form-summary {
+  margin-top: 10px;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid var(--d-border);
+  border-radius: 8px;
+}
+.sectioned-form .form-summary .form-section-title {
+  margin-bottom: 8px;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 4px 24px;
+}
+.summary-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--d-fill);
+}
+.summary-label {
+  color: var(--d-text-2);
+  font-size: 12px;
+}
+.summary-value {
+  color: var(--d-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+</style>

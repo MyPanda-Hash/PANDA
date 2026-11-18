@@ -1,0 +1,121 @@
+/* 简报看板（管理者视角）：一屏结论 + 四个数字 + 三条待拍板。
+   与待办清单的区别不是排版，是取舍：这里只放「要他决定的事」，
+   执行层待办折在数字块的 hint 里，不铺开。 */
+
+.brief { max-width: 900px; margin: 0 auto; padding: 4px 0 40px; }
+
+/* 结论 */
+.brief__head {
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.brief__hello { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -.01em; }
+.brief__meta { font-size: 13px; color: var(--ant-color-text-tertiary); }
+
+.brief__headline {
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 8px;
+  padding: 18px 22px;
+  font-size: 15px; line-height: 26px;
+  margin-bottom: 8px;
+}
+
+/* 四个数字 */
+.brief__stats {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px; margin: 8px 0 22px;
+}
+.brief__stat {
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 8px; padding: 13px 15px; min-width: 0;
+}
+.brief__stat-n {
+  font-size: 24px; line-height: 32px; font-weight: 600;
+  font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+  white-space: nowrap;
+}
+.brief__stat-n[data-tone="warn"] { color: #c84d3f; }
+.brief__stat-n[data-tone="ok"] { color: var(--ant-color-primary); }
+.brief__stat-n[data-tone="muted"] { color: var(--ant-color-text-tertiary); font-size: 16px; line-height: 32px; }
+.brief__stat-l { font-size: 13px; color: var(--ant-color-text-tertiary); margin-top: 2px; }
+.brief__stat-h { font-size: 12px; color: var(--ant-color-text-tertiary); margin-top: 6px; }
+
+/* 待拍板 */
+.brief__sect-h {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 600; color: var(--ant-color-text-secondary);
+  margin: 0 0 10px 2px;
+}
+.brief__sect-h span { font-weight: 400; color: var(--ant-color-text-tertiary); }
+
+.brief__item {
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 8px;
+  padding: 15px 18px;
+  margin-bottom: 8px;
+  display: flex; gap: 16px; align-items: flex-start;
+}
+.brief__item-body { flex: 1; min-width: 0; }
+.brief__item-t { font-size: 14px; line-height: 22px; font-weight: 600; margin-bottom: 3px; }
+.brief__item-r { font-size: 13px; color: var(--ant-color-text-tertiary); margin-bottom: 4px; }
+.brief__item-d { font-size: 14px; line-height: 21px; color: var(--ant-color-text-secondary); }
+.brief__item-acts { display: flex; gap: 8px; flex: none; }
+
+/* 追问 */
+.brief__ask {
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 8px; padding: 15px 18px; margin-top: 18px;
+}
+.brief__ask-label { font-size: 13px; color: var(--ant-color-text-tertiary); margin-bottom: 8px; }
+.brief__ask-row { display: flex; gap: 8px; }
+.brief__ask-input {
+  flex: 1; height: 36px; border-radius: 6px; padding: 0 12px;
+  border: 1px solid var(--ant-color-border);
+  background: var(--ant-color-bg-container); color: var(--ant-color-text);
+  font-size: 14px; font-family: inherit;
+}
+.brief__ask-input::placeholder { color: var(--ant-color-text-tertiary); }
+.brief__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.brief__chip {
+  font-size: 13px; line-height: 24px; padding: 0 10px; border-radius: 12px;
+  background: var(--ant-color-primary-bg); color: var(--ant-color-primary-text);
+  border: 0; cursor: pointer; font-family: inherit;
+}
+.brief__chip:hover { background: var(--ant-color-primary-bg-hover); }
+
+/* 角色提示条 */
+.brief__rolehint {
+  font-size: 13px; color: var(--ant-color-text-tertiary);
+  background: var(--ant-color-fill-quaternary);
+  border-radius: 6px; padding: 6px 10px; margin-bottom: 14px;
+}
+
+@media (max-width: 760px) {
+  .brief__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .brief__item { flex-direction: column; gap: 10px; }
+}
+
+/* 顶栏角色切换（管理员预览三种视角）：原生 select 去掉外观，跟 pill-btn 同高 */
+.role-switch { justify-content: center; }
+.role-switch { display: inline-flex; align-items: center; gap: 6px; padding-right: 6px; }
+.role-switch select {
+  height: 22px; border: 0; background: transparent; color: inherit;
+  font-size: 13px; font-family: inherit; cursor: pointer; outline: none;
+}
+.role-switch select option { color: #1e2b27; }
+
+/* 本期报表：三份一组，已生成/未生成用按钮主次区分 */
+.brief__reports { display: flex; flex-direction: column; gap: 8px; }
+.brief__report {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 8px; padding: 10px 14px;
+}
+.brief__report-main { flex: 1; min-width: 0; }
+.brief__report-t { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.brief__report-s { font-size: 13px; color: var(--ant-color-text-tertiary); margin-top: 2px; }

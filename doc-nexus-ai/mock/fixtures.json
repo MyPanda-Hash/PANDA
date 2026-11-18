@@ -1,0 +1,2340 @@
+{
+ "user": {
+  "id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+  "username": "admin",
+  "display_name": "管理员",
+  "role": "admin",
+  "email": null,
+  "avatar_url": null,
+  "dept_name": "信息部",
+  "first_login": false
+ },
+ "todos": [
+  {
+   "id": "gtodo_O7VMMLloRvEJYQ",
+   "group_id": "grp_m4LWCg4-pg4JNQ",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_93c743eda366e50d2674",
+   "assignee_display_name": "管理员",
+   "title": "恢复或重开生产加工单 SO-2026-08-0004-1",
+   "detail": "该加工单已中止，导致 SO-2026-08-0004 后续 9 个环节无法推进，需先恢复或重开",
+   "priority": "high",
+   "status": "pending",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": "gmsg_MiFFH9IFb69KDA",
+   "confidence": 0.75,
+   "created_at": "2026-11-14T06:27:58.758333+00:00",
+   "refs": [],
+   "nudge_count": 1,
+   "nudged_at": "2026-11-16T01:34:29.520932+00:00",
+   "escalated_at": null,
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_eAMsEFnEvPJcWA",
+   "group_id": "grp_Jkw9G3Qg2BFwvQ",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+   "assignee_display_name": "管理员",
+   "title": "跟进北方机械木箱样件并组织验收",
+   "detail": "CL005 木箱规格 1200x800x15，样件下周到货，验收通过后才可批量下单",
+   "priority": "high",
+   "status": "pending",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": "gmsg_6CgAni9ALDf0wA",
+   "confidence": 0.6,
+   "created_at": "2026-11-13T09:26:30.200323+00:00",
+   "refs": [],
+   "nudge_count": 2,
+   "nudged_at": "2026-11-16T01:34:29.520482+00:00",
+   "escalated_at": null,
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_opJU2iNFdqx8tg",
+   "group_id": "grp_m4LWCg4-pg4JNQ",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+   "assignee_display_name": "管理员",
+   "title": "核对明天中天客户的接待准备",
+   "detail": "会议室、样品、质检报告三样都要齐\n（语音派发，来自「管理员」）\n· 确认中天客户来访的产线参观路线（从冲压到装配，绕开正在调试的折弯机）\n· 把中天客户的样品提前摆到会议室（红色样件三套，附质检报告）\n· 安排中天客户午餐与伴手礼（两位客户，忌口已登记）\n· 准备中天客户的样品清单（三套样件）\n· 确认中天客户的接送车辆（上午九点到厂）",
+   "priority": "high",
+   "status": "pending",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": null,
+   "confidence": null,
+   "created_at": "2026-11-13T07:52:29.406853+00:00",
+   "refs": [],
+   "nudge_count": 2,
+   "nudged_at": "2026-11-16T01:34:29.519925+00:00",
+   "escalated_at": null,
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_ZFN6sZco5VvkAw",
+   "group_id": "grp_w4DsJIeHtd0DIA",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+   "assignee_display_name": "管理员",
+   "title": "汇总今日生产日报供晚上开会",
+   "detail": "整合李计划的工单完工数、赵车间的实际完工与试模情况、孙质检的公差实测数据、王销售的中天精工备货状态",
+   "priority": "high",
+   "status": "pending",
+   "due_at": "2026-11-12T00:00:00+00:00",
+   "origin": "ai",
+   "source_message_id": "gmsg_GmXAK6DHMT1HXQ",
+   "confidence": 0.85,
+   "created_at": "2026-11-12T09:55:16.734066+00:00",
+   "refs": [],
+   "nudge_count": 3,
+   "nudged_at": "2026-11-14T07:38:03.741510+00:00",
+   "escalated_at": "2026-11-14T07:39:03.967248+00:00",
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_TaVmGqLTIww3Fg",
+   "group_id": "grp_w4DsJIeHtd0DIA",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_7f96aba8ed4de5c066e6",
+   "assignee_display_name": "管理员",
+   "title": "提供今日各工单完工数量与在制进度",
+   "detail": "用于生产日报",
+   "priority": "high",
+   "status": "pending",
+   "due_at": "2026-11-12T00:00:00+00:00",
+   "origin": "ai",
+   "source_message_id": "gmsg_GmXAK6DHMT1HXQ",
+   "confidence": 0.9,
+   "created_at": "2026-11-12T09:55:16.734066+00:00",
+   "refs": [],
+   "nudge_count": 3,
+   "nudged_at": "2026-11-14T07:38:03.742752+00:00",
+   "escalated_at": "2026-11-14T07:39:03.967993+00:00",
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_qlensXS-4SoeSg",
+   "group_id": "grp_w4DsJIeHtd0DIA",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_b8756e3635623725ebaf",
+   "assignee_display_name": "管理员",
+   "title": "准备本月销售订单与回款明细用于业绩分析会",
+   "detail": "会上对比本月与上月订单量、金额、回款情况，说明业绩变化原因",
+   "priority": "high",
+   "status": "pending",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": "gmsg_mJerVuGQvTaQIQ",
+   "confidence": 0.75,
+   "created_at": "2026-11-12T09:52:13.237411+00:00",
+   "refs": [],
+   "nudge_count": 3,
+   "nudged_at": "2026-11-14T09:53:34.190953+00:00",
+   "escalated_at": "2026-11-14T09:54:34.249580+00:00",
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_0QsO_RDm8GjS5A",
+   "group_id": "grp_w4DsJIeHtd0DIA",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_cbe3ca64a14353d99443",
+   "assignee_display_name": "管理员",
+   "title": "核查两张未检到货单并补检",
+   "detail": "DH-20261112-001（华东热处理厂）、DH-20261109-001（华东铝业）检验状态为未检但单据已审核，需补检并确认是否放行",
+   "priority": "high",
+   "status": "pending",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": "gmsg_JENMYZKPIinZdQ",
+   "confidence": 0.85,
+   "created_at": "2026-11-12T09:51:17.736275+00:00",
+   "refs": [
+    {
+     "panel": "",
+     "docNo": "DH-20261112-001",
+     "label": "",
+     "url": ""
+    },
+    {
+     "panel": "",
+     "docNo": "DH-20261109-001",
+     "label": "",
+     "url": ""
+    }
+   ],
+   "nudge_count": 3,
+   "nudged_at": "2026-11-14T09:52:34.110943+00:00",
+   "escalated_at": "2026-11-14T09:53:34.188108+00:00",
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_wHzX8anm4Miweg",
+   "group_id": "grp_w4DsJIeHtd0DIA",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_b8756e3635623725ebaf",
+   "assignee_display_name": "管理员",
+   "title": "对接中天精工新一批订单",
+   "detail": "与客户确认产品型号、数量、交期，回群登记并走下单流程；现有中天订单为 SO-20261112-003\n· 对接中天精工新一批订单并确认型号数量交期（MES 中中天精工已有 SO-20261112-003（王销售，已审核），需确认新单是另开还是并入，并回报型号、数量、交期）\n· 确认并安排中天精工订单明天发货（SO-20261112-003，客户中天精工，已审核；需确认型号数量交期并安排明日发出）",
+   "priority": "high",
+   "status": "pending",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": "gmsg_3k4X2LGf8KkR4Q",
+   "confidence": 0.9,
+   "created_at": "2026-11-12T09:44:22.184889+00:00",
+   "refs": [
+    {
+     "panel": "",
+     "docNo": "SO-20261112-003",
+     "label": "",
+     "url": ""
+    }
+   ],
+   "nudge_count": 3,
+   "nudged_at": "2026-11-14T09:45:32.536286+00:00",
+   "escalated_at": "2026-11-14T09:46:32.761245+00:00",
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_41vtEcKKdqfhkA",
+   "group_id": "grp_w4DsJIeHtd0DIA",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+   "assignee_display_name": "管理员",
+   "title": "补充包装木箱库存",
+   "detail": "包装木箱快用完，需仓管补货；MES 无木箱库存记录，补货前先盘点实际余量",
+   "priority": "high",
+   "status": "pending",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": "gmsg_RpZTK1dZsW1RcA",
+   "confidence": 0.8,
+   "created_at": "2026-11-11T04:36:56.160692+00:00",
+   "refs": [],
+   "nudge_count": 3,
+   "nudged_at": "2026-11-14T07:38:03.739929+00:00",
+   "escalated_at": "2026-11-14T07:39:03.966189+00:00",
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_HlJRXNDC6Qe4lw",
+   "group_id": "grp_m4LWCg4-pg4JNQ",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_93c743eda366e50d2674",
+   "assignee_display_name": "管理员",
+   "title": "发出折弯模具的试模结果",
+   "detail": "明天上午发出折弯模具的试模结果\n（语音派发，来自「管理员」）",
+   "priority": "normal",
+   "status": "pending",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": null,
+   "confidence": null,
+   "created_at": "2026-11-13T07:39:55.473168+00:00",
+   "refs": [],
+   "nudge_count": 3,
+   "nudged_at": "2026-11-16T01:34:29.518835+00:00",
+   "escalated_at": "2026-11-16T01:50:02.744804+00:00",
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_yegXLNhSAo4Yng",
+   "group_id": "grp_w4DsJIeHtd0DIA",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_93c743eda366e50d2674",
+   "assignee_display_name": "管理员",
+   "title": "提供车间实际完工数及新折弯模具试模情况",
+   "detail": "用于生产日报",
+   "priority": "normal",
+   "status": "pending",
+   "due_at": "2026-11-12T00:00:00+00:00",
+   "origin": "ai",
+   "source_message_id": "gmsg_GmXAK6DHMT1HXQ",
+   "confidence": 0.85,
+   "created_at": "2026-11-12T09:55:16.734066+00:00",
+   "refs": [],
+   "nudge_count": 3,
+   "nudged_at": "2026-11-14T07:38:03.743258+00:00",
+   "escalated_at": "2026-11-14T07:39:03.968524+00:00",
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_gF-4EliyFN40gw",
+   "group_id": "grp_w4DsJIeHtd0DIA",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_cbe3ca64a14353d99443",
+   "assignee_display_name": "管理员",
+   "title": "提供折弯公差实测数据",
+   "detail": "用于生产日报",
+   "priority": "normal",
+   "status": "pending",
+   "due_at": "2026-11-12T00:00:00+00:00",
+   "origin": "ai",
+   "source_message_id": "gmsg_GmXAK6DHMT1HXQ",
+   "confidence": 0.8,
+   "created_at": "2026-11-12T09:55:16.734066+00:00",
+   "refs": [],
+   "nudge_count": 3,
+   "nudged_at": "2026-11-14T07:38:03.743697+00:00",
+   "escalated_at": "2026-11-14T07:39:03.969000+00:00",
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_Yx74LdRke6-aUQ",
+   "group_id": "grp_w4DsJIeHtd0DIA",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_7f96aba8ed4de5c066e6",
+   "assignee_display_name": "管理员",
+   "title": "汇总今日生产部门完工订单",
+   "detail": "报出今天各车间实际完工的订单及数量",
+   "priority": "normal",
+   "status": "pending",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": "gmsg_TnMOzmq18Dhdbg",
+   "confidence": 0.7,
+   "created_at": "2026-11-12T09:54:13.683231+00:00",
+   "refs": [],
+   "nudge_count": 3,
+   "nudged_at": "2026-11-14T09:55:34.322173+00:00",
+   "escalated_at": "2026-11-14T09:56:34.383168+00:00",
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_qxsQ6L4m3BCKIQ",
+   "group_id": "grp_w4DsJIeHtd0DIA",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+   "assignee_display_name": "管理员",
+   "title": "查明未检到货单的审核人",
+   "detail": "到货单无审核人字段，需查审核日志或询问经手人，确认谁在未检状态下审核签收",
+   "priority": "normal",
+   "status": "pending",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": "gmsg_JENMYZKPIinZdQ",
+   "confidence": 0.6,
+   "created_at": "2026-11-12T09:51:17.736275+00:00",
+   "refs": [],
+   "nudge_count": 3,
+   "nudged_at": "2026-11-14T09:52:34.111935+00:00",
+   "escalated_at": "2026-11-14T09:53:34.190162+00:00",
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_E1LiF9Ouk0lKDg",
+   "group_id": "grp_w4DsJIeHtd0DIA",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+   "assignee_display_name": "管理员",
+   "title": "查系统销售订单记录确认最新订单提交人",
+   "detail": "在 SO_ORDER 中按单据日期取最新一单，查看其提交人/业务员字段并回报群里",
+   "priority": "normal",
+   "status": "pending",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": "gmsg_U__s_zYkhSV4jw",
+   "confidence": 0.6,
+   "created_at": "2026-11-12T09:33:58.230831+00:00",
+   "refs": [],
+   "nudge_count": 3,
+   "nudged_at": "2026-11-14T09:35:30.233263+00:00",
+   "escalated_at": "2026-11-14T09:36:30.489556+00:00",
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_IUS7Du2GCMgu9Q",
+   "group_id": "grp_m4LWCg4-pg4JNQ",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_85df085f107f2ca18836",
+   "assignee_display_name": "管理员",
+   "title": "补充包装木箱库存",
+   "detail": "（语音派发，来自「管理员」）",
+   "priority": "normal",
+   "status": "pending",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": null,
+   "confidence": null,
+   "created_at": "2026-11-11T02:40:15.437507+00:00",
+   "refs": [],
+   "nudge_count": 3,
+   "nudged_at": "2026-11-14T07:42:04.613873+00:00",
+   "escalated_at": "2026-11-14T07:43:04.854116+00:00",
+   "last_action_at": null
+  },
+  {
+   "id": "gtodo_W1AKnPkVq7629w",
+   "group_id": "grp_m4LWCg4-pg4JNQ",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_93c743eda366e50d2674",
+   "assignee_display_name": "管理员",
+   "title": "生产加工单 SO-2026-08-0004-2 已过交期 86 天仍未完工",
+   "detail": "· 生产加工单 SO-2026-08-0004-2 已过交期 86 天仍未完工\n  影响：已经逾期 86 天\n  处置：1) 问车间剩余工序需要几天；2) 算出卖货日期，同步给销售；3) 确实赶不上就改交期，别让客户等空信\n  建议：确认剩余工序要几天，给客户一个准信或改交期\n（MES 状态已变化，AI 自动关闭）",
+   "priority": "urgent",
+   "status": "done",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": null,
+   "confidence": null,
+   "created_at": "2026-11-16T05:12:49.204112+00:00",
+   "refs": [],
+   "nudge_count": 2,
+   "nudged_at": null,
+   "escalated_at": null,
+   "last_action_at": "2026-11-16T05:12:49.204112+00:00"
+  },
+  {
+   "id": "gtodo_FBxP_mWkwydrBg",
+   "group_id": "grp_m4LWCg4-pg4JNQ",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_7f96aba8ed4de5c066e6",
+   "assignee_display_name": "管理员",
+   "title": "生产加工单 SO-2026-08-0004-2 已过交期 86 天仍未完工",
+   "detail": "· 生产加工单 SO-2026-08-0004-2 已过交期 86 天仍未完工\n  影响：已经逾期 86 天\n  处置：1) 问车间剩余工序需要几天；2) 算出卖货日期，同步给销售；3) 确实赶不上就改交期，别让客户等空信\n  建议：确认剩余工序要几天，给客户一个准信或改交期\n（MES 状态已变化，AI 自动关闭）",
+   "priority": "urgent",
+   "status": "done",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": null,
+   "confidence": null,
+   "created_at": "2026-11-16T05:12:49.204112+00:00",
+   "refs": [],
+   "nudge_count": 2,
+   "nudged_at": null,
+   "escalated_at": null,
+   "last_action_at": "2026-11-16T05:12:49.204112+00:00"
+  },
+  {
+   "id": "gtodo_1X6yrVTrlgGYLA",
+   "group_id": "grp_m4LWCg4-pg4JNQ",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+   "assignee_display_name": "管理员",
+   "title": "采购订单 PO-2026-08-0002 仍是草稿",
+   "detail": "· 采购订单 PO-2026-08-0002 仍是草稿\n  建议：确认后提交审批，否则不会进入采购流程\n（MES 状态已变化，AI 自动关闭）",
+   "priority": "urgent",
+   "status": "done",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": null,
+   "confidence": null,
+   "created_at": "2026-11-16T05:12:49.204112+00:00",
+   "refs": [],
+   "nudge_count": 2,
+   "nudged_at": null,
+   "escalated_at": null,
+   "last_action_at": "2026-11-16T05:12:49.204112+00:00"
+  },
+  {
+   "id": "gtodo_x3tslOaRUJjxDA",
+   "group_id": "grp_m4LWCg4-pg4JNQ",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_85df085f107f2ca18836",
+   "assignee_display_name": "管理员",
+   "title": "采购订单 PO-2026-08-0001 已过交期仍未发货",
+   "detail": "· 采购订单 PO-2026-08-0001 已过交期仍未发货\n  建议：联系供应商确认发货，必要时调整计划\n（MES 状态已变化，AI 自动关闭）",
+   "priority": "urgent",
+   "status": "done",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": null,
+   "confidence": null,
+   "created_at": "2026-11-16T05:12:49.204112+00:00",
+   "refs": [],
+   "nudge_count": 2,
+   "nudged_at": null,
+   "escalated_at": null,
+   "last_action_at": "2026-11-16T05:12:49.204112+00:00"
+  },
+  {
+   "id": "gtodo_0ASjPxPhsCPkRQ",
+   "group_id": "grp_m4LWCg4-pg4JNQ",
+   "group_name": "AI 调度台",
+   "assignee_user_id": "usr_cbe3ca64a14353d99443",
+   "assignee_display_name": "管理员",
+   "title": "到货单 DH-20261109-001 已 2 天以上未检验",
+   "detail": "· 到货单 DH-20261109-001 已 2 天以上未检验\n  建议：安排来料检验，避免影响入库和排产\n（MES 状态已变化，AI 自动关闭）",
+   "priority": "urgent",
+   "status": "done",
+   "due_at": null,
+   "origin": "ai",
+   "source_message_id": null,
+   "confidence": null,
+   "created_at": "2026-11-16T05:12:49.204112+00:00",
+   "refs": [],
+   "nudge_count": 2,
+   "nudged_at": null,
+   "escalated_at": null,
+   "last_action_at": "2026-11-16T05:12:49.204112+00:00"
+  }
+ ],
+ "events": [
+  {
+   "id": "aev_PeffG2ZkmC-qMg",
+   "kind": "material_spec",
+   "severity": "critical",
+   "status": "open",
+   "title": "要 切削液 20L/桶，辅料仓没有，货在别的仓",
+   "detail": "物料：CL004 切削液，规格 20L/桶，预出仓库 辅料仓\n需求合计 16.16\n涉及加工单：SO-20261112-003-1、SO-20261112-001-1、SO-2026-08-0004-2\n库存里同物料共 2 行：20L/桶@原料仓（200）\n影响：2 张未完工工单领不到料\n处置：1) 辅料仓只有别的规格，先确认能不能调拨；2) 可调拨的：原料仓（200）；3) 调拨单建好再发料，别先用后补",
+   "suggested_action": "从原料仓（200）调拨到辅料仓，领料就能发",
+   "panel_code": "MANU_ORDER",
+   "doc_no": "SO-20261112-003-1",
+   "targets": [
+    "worker",
+    "keeper"
+   ],
+   "created_at": "2026-11-16T04:31:23.645841+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 0,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/MANU_ORDER?code=SO-20261112-003-1",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_lXo0MyzxSIHB7g",
+   "kind": "manu_due",
+   "severity": "warning",
+   "status": "open",
+   "title": "生产工单 SO-2026-08-0004-2 已逾期 86 days, 0:00:00 天",
+   "detail": "状态：已审核；预完工：2026-08-22",
+   "suggested_action": "确认物料与工序进度，必要时调整排产",
+   "panel_code": "MANU_ORDER",
+   "doc_no": "SO-2026-08-0004-2",
+   "targets": [
+    "worker",
+    "planner"
+   ],
+   "created_at": "2026-11-16T02:49:51.618037+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 0,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/MANU_ORDER?code=SO-2026-08-0004-2",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_XIWoXKKxR7EfDg",
+   "kind": "delivery_risk",
+   "severity": "critical",
+   "status": "open",
+   "title": "生产加工单 SO-2026-08-0004-2 已过交期 86 天仍未完工",
+   "detail": "产品：轴套 C；交期：2026-08-22\n工序进度：0/3 完成\n当前状态：已审核\n影响：已经逾期 86 天\n处置：1) 问车间剩余工序需要几天；2) 算出卖货日期，同步给销售；3) 确实赶不上就改交期，别让客户等空信",
+   "suggested_action": "确认剩余工序要几天，给客户一个准信或改交期",
+   "panel_code": "MANU_ORDER",
+   "doc_no": "SO-2026-08-0004-2",
+   "targets": [
+    "worker",
+    "planner"
+   ],
+   "created_at": "2026-11-16T02:49:51.618037+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 0,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/MANU_ORDER?code=SO-2026-08-0004-2",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_RL-MxwMteicgwg",
+   "kind": "process_stalled",
+   "severity": "warning",
+   "status": "open",
+   "title": "生产加工单 SO-20261114-001-1 卡在钻孔：汇报单还没建",
+   "detail": "产品：铝型材-散热片；客户：南方重工\n开工 2026-11-14，已过 2 天\n停滞工序：钻孔、磨削（计划 10 件，无报工）\n工序进度：0/2 道已完成\n因此排不上：磨削（共 1 道）\n影响：钻孔、磨削 停滞 2 天未报工；1 道后续工序排不上；10 件未产出\n处置：1) 钻孔的工序汇报单还没建，不是没做——先建单；2) 汇报单建好后再排下一道工序；3) 车间如果已经做了，按实际数量补录",
+   "suggested_action": "先把钻孔的工序汇报单建出来，否则后面几道工序排不上",
+   "panel_code": "MANU_ORDER",
+   "doc_no": "SO-20261114-001-1",
+   "targets": [
+    "worker",
+    "planner"
+   ],
+   "created_at": "2026-11-16T01:34:29.382203+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 1,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/MANU_ORDER?code=SO-20261114-001-1",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_dx25IxJYeav26A",
+   "kind": "process_stalled",
+   "severity": "info",
+   "status": "open",
+   "title": "生产加工单 SO-2026-08-0004-1 卡在钻孔：汇报单还没建",
+   "detail": "产品：铝型材-散热片；客户：西部材料\n开工 2026-11-14，已过 2 天\n停滞工序：钻孔、磨削（计划 600 件，无报工）\n工序进度：0/2 道已完成\n因此排不上：磨削（共 1 道）\n预完工：2026-08-22\n影响：钻孔、磨削 停滞 2 天未报工；1 道后续工序排不上；预完工日 2026-08-22；600 件未产出\n处置：1) 钻孔的工序汇报单还没建，不是没做——先建单；2) 汇报单建好后再排下一道工序；3) 车间如果已经做了，按实际数量补录",
+   "suggested_action": "先把钻孔的工序汇报单建出来，否则后面几道工序排不上",
+   "panel_code": "MANU_ORDER",
+   "doc_no": "SO-2026-08-0004-1",
+   "targets": [
+    "worker",
+    "planner"
+   ],
+   "created_at": "2026-11-16T01:34:29.382203+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 1,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/MANU_ORDER?code=SO-2026-08-0004-1",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_E4JydIwi4rtwzg",
+   "kind": "manu_no_report",
+   "severity": "critical",
+   "status": "open",
+   "title": "生产工单 SO-20261112-001-1 已 4 天没有报工",
+   "detail": "状态：已审核；开工：2026-11-12；最近报工：从未",
+   "suggested_action": "确认是否停产、待料或漏报工",
+   "panel_code": "MANU_ORDER",
+   "doc_no": "SO-20261112-001-1",
+   "targets": [
+    "worker",
+    "planner"
+   ],
+   "created_at": "2026-11-16T01:34:29.382203+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 1,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/MANU_ORDER?code=SO-20261112-001-1",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_mj7kY54HhVwmgg",
+   "kind": "material_spec",
+   "severity": "critical",
+   "status": "resolved",
+   "title": "要 45#圆钢 Φ60，原料仓没有，货在别的仓",
+   "detail": "物料：CL001 45#圆钢，规格 Φ60，预出仓库 原料仓\n需求合计 530.17\n涉及加工单：SO-20261112-003-1、SO-20261112-002-2、SO-20261112-001-1、SO-2026-08-0004-2\n库存里同物料共 2 行：Φ60@委外仓1（820）\n影响：2 张未完工工单领不到料\n处置：1) 原料仓只有别的规格，先确认能不能调拨；2) 可调拨的：委外仓1（820）；3) 调拨单建好再发料，别先用后补",
+   "suggested_action": "从委外仓1（820）调拨到原料仓，领料就能发",
+   "panel_code": "MANU_ORDER",
+   "doc_no": "SO-20261112-003-1",
+   "targets": [
+    "worker",
+    "keeper"
+   ],
+   "created_at": "2026-11-14T06:37:17.830713+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 1,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/MANU_ORDER?code=SO-20261112-003-1",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_AvXfg8TjZ3xUIg",
+   "kind": "manu_due",
+   "severity": "critical",
+   "status": "resolved",
+   "title": "生产工单 SO-2026-08-0004-1 已逾期 86 days, 0:00:00 天",
+   "detail": "状态：已中止；预完工：2026-08-22",
+   "suggested_action": "确认物料与工序进度，必要时调整排产",
+   "panel_code": "MANU_ORDER",
+   "doc_no": "SO-2026-08-0004-1",
+   "targets": [
+    "worker",
+    "planner"
+   ],
+   "created_at": "2026-11-14T06:14:45.215365+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 2,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/MANU_ORDER?code=SO-2026-08-0004-1",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_fiyO9rLFXVQbeA",
+   "kind": "delivery_risk",
+   "severity": "critical",
+   "status": "resolved",
+   "title": "生产加工单 SO-2026-08-0004-1 已过交期 86 天仍未完工",
+   "detail": "产品：铝型材-散热片；交期：2026-08-22\n工序进度：0/2 完成\n当前状态：已中止\n影响：已经逾期 86 天\n处置：1) 问车间剩余工序需要几天；2) 算出卖货日期，同步给销售；3) 确实赶不上就改交期，别让客户等空信",
+   "suggested_action": "确认剩余工序要几天，给客户一个准信或改交期",
+   "panel_code": "MANU_ORDER",
+   "doc_no": "SO-2026-08-0004-1",
+   "targets": [
+    "worker",
+    "planner"
+   ],
+   "created_at": "2026-11-14T06:14:45.215365+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 2,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/MANU_ORDER?code=SO-2026-08-0004-1",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_mHdYiWEochLu9A",
+   "kind": "so_shipping_overdue",
+   "severity": "critical",
+   "status": "resolved",
+   "title": "销售订单 SO-2026-08-0004 已 97 天仍未出库",
+   "detail": "下单 2026-08-11；客户：西部材料",
+   "suggested_action": "确认是否已发货、是否需要补出库单",
+   "panel_code": "SO_ORDER",
+   "doc_no": "SO-2026-08-0004",
+   "targets": [
+    "陈强"
+   ],
+   "created_at": "2026-11-14T06:14:45.215365+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 2,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/SO_ORDER?code=SO-2026-08-0004",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_pfnRtcINNYSIlw",
+   "kind": "arrival_uninspected",
+   "severity": "critical",
+   "status": "resolved",
+   "title": "到货单 DH-20261112-001 已 2 天以上未检验",
+   "detail": "到货日期：2026-11-12；供应商：华东热处理厂",
+   "suggested_action": "安排来料检验，避免影响入库和排产",
+   "panel_code": "ARRIVAL_IN",
+   "doc_no": "DH-20261112-001",
+   "targets": [
+    "qc"
+   ],
+   "created_at": "2026-11-14T00:00:31.554087+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 3,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/ARRIVAL_IN?code=DH-20261112-001",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_Ra9PvSawFDSZrQ",
+   "kind": "process_stalled",
+   "severity": "critical",
+   "status": "resolved",
+   "title": "生产加工单 SO-20261112-001-1 卡在车削：汇报单还没建",
+   "detail": "产品：轴套 C；客户：华东铝业\n开工 2026-11-12，已过 4 天\n停滞工序：车削、钻孔、抛光（计划 15 件，无报工）\n工序进度：0/3 道已完成\n因此排不上：钻孔、抛光（共 2 道）\n影响：车削、钻孔、抛光 停滞 4 天未报工；2 道后续工序排不上；15 件未产出\n处置：1) 车削的工序汇报单还没建，不是没做——先建单；2) 汇报单建好后再排下一道工序；3) 车间如果已经做了，按实际数量补录",
+   "suggested_action": "先把车削的工序汇报单建出来，否则后面几道工序排不上",
+   "panel_code": "MANU_ORDER",
+   "doc_no": "SO-20261112-001-1",
+   "targets": [
+    "worker",
+    "planner"
+   ],
+   "created_at": "2026-11-13T17:11:10.346566+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 3,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/MANU_ORDER?code=SO-20261112-001-1",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_8M6EeNHlOiJLWg",
+   "kind": "so_unstarted",
+   "severity": "critical",
+   "status": "resolved",
+   "title": "销售订单 SO-20261113-001 已审核，尚未安排生产",
+   "detail": "客户：南方重工；业务员：张伟",
+   "suggested_action": "按这张销售订单生成生产工单并排产",
+   "panel_code": "SO_ORDER",
+   "doc_no": "SO-20261113-001",
+   "targets": [
+    "planner",
+    "worker"
+   ],
+   "created_at": "2026-11-13T06:48:31.208197+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 3,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/SO_ORDER?code=SO-20261113-001",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_HtDGmR9TujS-Bg",
+   "kind": "pending_approval",
+   "severity": "critical",
+   "status": "resolved",
+   "title": "其他入库单 OTHE-20261112-008 待 admin 审批",
+   "detail": "提交人：admin；提交时间：2026-11-12 17:24:21",
+   "suggested_action": "在 MES 打开该单据完成审批或退回",
+   "panel_code": "OTHER_IN",
+   "doc_no": "OTHE-20261112-008",
+   "targets": [
+    "admin"
+   ],
+   "created_at": "2026-11-12T09:24:28.028863+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 3,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/OTHER_IN?code=OTHE-20261112-008",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_Gv3reeijXJxSqQ",
+   "kind": "pending_approval",
+   "severity": "critical",
+   "status": "resolved",
+   "title": "其他入库单 OTHE-20261112-008 待 keeper 审批",
+   "detail": "提交人：admin；提交时间：2026-11-12 17:24:21",
+   "suggested_action": "在 MES 打开该单据完成审批或退回",
+   "panel_code": "OTHER_IN",
+   "doc_no": "OTHE-20261112-008",
+   "targets": [
+    "keeper"
+   ],
+   "created_at": "2026-11-12T09:24:28.028863+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 3,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/OTHER_IN?code=OTHE-20261112-008",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_3bWQ7Jge0CWvZw",
+   "kind": "pending_approval",
+   "severity": "warning",
+   "status": "resolved",
+   "title": "其他出库单 OTHE-20261112-008 待 admin 审批",
+   "detail": "提交人：admin；提交时间：2026-11-12 17:13:57",
+   "suggested_action": "在 MES 打开该单据完成审批或退回",
+   "panel_code": "OTHER_OUT",
+   "doc_no": "OTHE-20261112-008",
+   "targets": [
+    "admin"
+   ],
+   "created_at": "2026-11-12T09:14:17.749889+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 0,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/OTHER_OUT?code=OTHE-20261112-008",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_BxV77o5Y5ygh4w",
+   "kind": "pending_approval",
+   "severity": "critical",
+   "status": "resolved",
+   "title": "其他出库单 OTHE-20261112-007 待 admin 审批",
+   "detail": "提交人：admin；提交时间：2026-11-12 17:24:21",
+   "suggested_action": "在 MES 打开该单据完成审批或退回",
+   "panel_code": "OTHER_OUT",
+   "doc_no": "OTHE-20261112-007",
+   "targets": [
+    "admin"
+   ],
+   "created_at": "2026-11-12T09:14:17.749889+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 3,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/OTHER_OUT?code=OTHE-20261112-007",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_QGNRUqSao6JLxw",
+   "kind": "pending_approval",
+   "severity": "warning",
+   "status": "resolved",
+   "title": "其他入库单 OTHE-20261112-006 待 admin 审批",
+   "detail": "提交人：admin；提交时间：2026-11-12 17:13:57",
+   "suggested_action": "在 MES 打开该单据完成审批或退回",
+   "panel_code": "OTHER_IN",
+   "doc_no": "OTHE-20261112-006",
+   "targets": [
+    "admin"
+   ],
+   "created_at": "2026-11-12T09:14:17.749889+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 0,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/OTHER_IN?code=OTHE-20261112-006",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_uACnaanMZPyqiw",
+   "kind": "pending_approval",
+   "severity": "warning",
+   "status": "resolved",
+   "title": "其他入库单 OTHE-20261112-006 待 keeper 审批",
+   "detail": "提交人：admin；提交时间：2026-11-12 17:13:57",
+   "suggested_action": "在 MES 打开该单据完成审批或退回",
+   "panel_code": "OTHER_IN",
+   "doc_no": "OTHE-20261112-006",
+   "targets": [
+    "keeper"
+   ],
+   "created_at": "2026-11-12T09:14:17.749889+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 0,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/OTHER_IN?code=OTHE-20261112-006",
+   "note": "",
+   "acked_by": null
+  },
+  {
+   "id": "aev_lBjj1_y0ALZ-Gw",
+   "kind": "pending_approval",
+   "severity": "warning",
+   "status": "resolved",
+   "title": "其他入库单 OTHE-20261112-005 待 admin 审批",
+   "detail": "提交人：admin；提交时间：2026-11-12 17:12:10",
+   "suggested_action": "在 MES 打开该单据完成审批或退回",
+   "panel_code": "OTHER_IN",
+   "doc_no": "OTHE-20261112-005",
+   "targets": [
+    "admin"
+   ],
+   "created_at": "2026-11-12T09:12:21.237618+00:00",
+   "resolved_at": null,
+   "age_hours": 12.5,
+   "reminders": 0,
+   "escalated": false,
+   "monday_url": "http://localhost:4173/#/panelx/form/OTHER_IN?code=OTHE-20261112-005",
+   "note": "",
+   "acked_by": null
+  }
+ ],
+ "sessions": [
+  {
+   "id": "chs_IGPclA-PcWxobA",
+   "title": "MES 周报 2026-11-16 周",
+   "messages_revision": 1,
+   "agent_session_id": null,
+   "preferred_model": null,
+   "category_id": null,
+   "category_name": null,
+   "pinned": false,
+   "pinned_at": null,
+   "archived": false,
+   "archived_at": null,
+   "writing_project_id": null,
+   "message_count": 132,
+   "created_at": "2026-11-16T01:34:36.322108+00:00",
+   "updated_at": "2026-11-16T06:43:56.666999+00:00"
+  },
+  {
+   "id": "chs_BPpEJ49ZPuuRqw",
+   "title": "MES 日报 2026-11-15",
+   "messages_revision": 1,
+   "agent_session_id": null,
+   "preferred_model": null,
+   "category_id": null,
+   "category_name": null,
+   "pinned": false,
+   "pinned_at": null,
+   "archived": false,
+   "archived_at": null,
+   "writing_project_id": null,
+   "message_count": 137,
+   "created_at": "2026-11-16T01:34:32.914331+00:00",
+   "updated_at": "2026-11-16T06:42:53.020648+00:00"
+  },
+  {
+   "id": "chs_xDgEZ16SAjxNRw",
+   "title": "MES 日报 2026-11-13",
+   "messages_revision": 1,
+   "agent_session_id": null,
+   "preferred_model": null,
+   "category_id": null,
+   "category_name": null,
+   "pinned": false,
+   "pinned_at": null,
+   "archived": false,
+   "archived_at": null,
+   "writing_project_id": null,
+   "message_count": 16,
+   "created_at": "2026-11-14T01:00:47.862079+00:00",
+   "updated_at": "2026-11-14T07:08:57.887319+00:00"
+  },
+  {
+   "id": "chs_ONu58I9joG1J6A",
+   "title": "系统流程未推进导致工单停滞",
+   "messages_revision": 1,
+   "agent_session_id": null,
+   "preferred_model": null,
+   "category_id": null,
+   "category_name": null,
+   "pinned": false,
+   "pinned_at": null,
+   "archived": false,
+   "archived_at": null,
+   "writing_project_id": null,
+   "message_count": 2,
+   "created_at": "2026-11-14T06:26:56.723276+00:00",
+   "updated_at": "2026-11-14T06:27:20.386598+00:00"
+  },
+  {
+   "id": "chs_dhUszlY5Fn5XuA",
+   "title": "待办问题按供应客户审批归纳根因",
+   "messages_revision": 1,
+   "agent_session_id": null,
+   "preferred_model": null,
+   "category_id": null,
+   "category_name": null,
+   "pinned": false,
+   "pinned_at": null,
+   "archived": false,
+   "archived_at": null,
+   "writing_project_id": null,
+   "message_count": 2,
+   "created_at": "2026-11-14T06:10:05.408060+00:00",
+   "updated_at": "2026-11-14T06:10:50.352683+00:00"
+  },
+  {
+   "id": "chs_AWzBdscugKVVzg",
+   "title": "待办重复计数与合并处理审批",
+   "messages_revision": 1,
+   "agent_session_id": null,
+   "preferred_model": null,
+   "category_id": null,
+   "category_name": null,
+   "pinned": false,
+   "pinned_at": null,
+   "archived": false,
+   "archived_at": null,
+   "writing_project_id": null,
+   "message_count": 2,
+   "created_at": "2026-11-14T05:54:18.646581+00:00",
+   "updated_at": "2026-11-14T05:54:47.688337+00:00"
+  },
+  {
+   "id": "chs_IDknsAsKMEmilQ",
+   "title": "生产周报与下周排产优先事项",
+   "messages_revision": 1,
+   "agent_session_id": null,
+   "preferred_model": null,
+   "category_id": null,
+   "category_name": null,
+   "pinned": false,
+   "pinned_at": null,
+   "archived": false,
+   "archived_at": null,
+   "writing_project_id": null,
+   "message_count": 2,
+   "created_at": "2026-11-14T03:57:11.577140+00:00",
+   "updated_at": "2026-11-14T03:57:41.933476+00:00"
+  },
+  {
+   "id": "chs_kbrhqoBCV6cIWg",
+   "title": "MES服务端500报错致生产待办无法查询",
+   "messages_revision": 1,
+   "agent_session_id": null,
+   "preferred_model": null,
+   "category_id": null,
+   "category_name": null,
+   "pinned": false,
+   "pinned_at": null,
+   "archived": false,
+   "archived_at": null,
+   "writing_project_id": null,
+   "message_count": 8,
+   "created_at": "2026-11-13T17:12:28.777117+00:00",
+   "updated_at": "2026-11-13T17:16:17.713831+00:00"
+  },
+  {
+   "id": "chs_B7nts-rUiwXJqg",
+   "title": "询问生产加工单进度与销售数据整理",
+   "messages_revision": 1,
+   "agent_session_id": null,
+   "preferred_model": null,
+   "category_id": null,
+   "category_name": null,
+   "pinned": false,
+   "pinned_at": null,
+   "archived": false,
+   "archived_at": null,
+   "writing_project_id": null,
+   "message_count": 8,
+   "created_at": "2026-11-04T16:53:14.682215+00:00",
+   "updated_at": "2026-11-13T16:47:21.854161+00:00"
+  },
+  {
+   "id": "chs_jX9Xkgay_V9bnQ",
+   "title": "销售订单SO-20261112-003进度查询与出库指引",
+   "messages_revision": 1,
+   "agent_session_id": null,
+   "preferred_model": null,
+   "category_id": null,
+   "category_name": null,
+   "pinned": false,
+   "pinned_at": null,
+   "archived": false,
+   "archived_at": null,
+   "writing_project_id": null,
+   "message_count": 2,
+   "created_at": "2026-11-13T16:44:11.788012+00:00",
+   "updated_at": "2026-11-13T16:44:23.397525+00:00"
+  },
+  {
+   "id": "chs_N41DUuGN8wgm5Q",
+   "title": "MES 日报 2026-11-12",
+   "messages_revision": 1,
+   "agent_session_id": null,
+   "preferred_model": null,
+   "category_id": null,
+   "category_name": null,
+   "pinned": false,
+   "pinned_at": null,
+   "archived": false,
+   "archived_at": null,
+   "writing_project_id": null,
+   "message_count": 59,
+   "created_at": "2026-11-13T02:21:37.591975+00:00",
+   "updated_at": "2026-11-13T10:02:22.053845+00:00"
+  },
+  {
+   "id": "chs_zAw9W8h7VcoZ_A",
+   "title": "MES 日报 2026-11-11",
+   "messages_revision": 1,
+   "agent_session_id": null,
+   "preferred_model": null,
+   "category_id": null,
+   "category_name": null,
+   "pinned": false,
+   "pinned_at": null,
+   "archived": false,
+   "archived_at": null,
+   "writing_project_id": null,
+   "message_count": 30,
+   "created_at": "2026-11-12T08:09:38.209923+00:00",
+   "updated_at": "2026-11-12T09:44:27.112137+00:00"
+  }
+ ],
+ "briefing": {
+  "data": {
+   "text": "今天有 16 条待办等你处理，其中 9 条是高优先级。两张到货单还没检，两张销售订单已审核但没排产，生产加工单 SO-2026-08-0004-2 已过交期 86 天。",
+   "ok": true,
+   "note": "",
+   "lines": [
+    "待办 16 条（高优先级 9 条）",
+    "未检到货单 2 张",
+    "逾期生产单 1 张"
+   ],
+   "items": [
+    {
+     "title": "待办 16 条，其中高优先级 9 条",
+     "status": "待处理",
+     "extra": "AI 调度台",
+     "label": "待办",
+     "value": 16
+    },
+    {
+     "title": "两张到货单未检：DH-20261112-001 / 002",
+     "status": "紧急",
+     "extra": "采购入库被卡",
+     "label": "未检到货",
+     "value": 2
+    },
+    {
+     "title": "生产加工单 SO-2026-08-0004-2 逾期 86 天",
+     "status": "紧急",
+     "extra": "交付链受阻",
+     "label": "逾期生产单",
+     "value": 1
+    },
+    {
+     "title": "两张销售订单已审核未排产",
+     "status": "警告",
+     "extra": "SO-2026-08-0004 / 0002",
+     "label": "未排产",
+     "value": 2
+    }
+   ],
+   "skipped": [],
+   "generatedAt": "2026-11-16"
+  }
+ },
+ "voice": {
+  "data": {
+   "available": true,
+   "reason": "",
+   "model": "moss-live",
+   "voiceId": "zhixiaoxia",
+   "maxSeconds": 900,
+   "writeEnabled": true,
+   "writeLimit": 3,
+   "activeSessions": 0
+  }
+ },
+ "notifications": {
+  "data": {
+   "unread": 3,
+   "items": [
+    {
+     "id": "n1",
+     "title": "AI 主动汇报",
+     "body": "早间概况已生成",
+     "createdAt": "2026-11-16T08:00:00+08:00",
+     "read": false
+    },
+    {
+     "id": "n2",
+     "title": "待办升级",
+     "body": "「核查两张未检到货单并补检」已升级",
+     "createdAt": "2026-11-16T09:10:00+08:00",
+     "read": false
+    },
+    {
+     "id": "n3",
+     "title": "新待办",
+     "body": "AI 从群聊里整理了 3 条待办",
+     "createdAt": "2026-11-16T10:20:00+08:00",
+     "read": false
+    }
+   ]
+  }
+ },
+ "employees": [
+  {
+   "id": "emp_W_ksVxshyGppvg",
+   "user_id": "usr_cbe3ca64a14353d99443",
+   "display_name": "孙质检",
+   "username": "qc",
+   "period_start": "2026-11-15 16:00:00.000000",
+   "period_end": "2026-11-16 08:34:27.636917",
+   "chat_sessions": 0,
+   "chat_messages": 0,
+   "group_messages": 0,
+   "todo_assigned": 7,
+   "todo_completed": 5,
+   "events_acked": 0,
+   "actions_total": 0,
+   "active_days": 0,
+   "avg_response_hours": null,
+   "summary": "本周期活跃 0 天、待办 5/7 完成。",
+   "strengths": [],
+   "risks": [
+    "本周期几乎没有系统内活动"
+   ],
+   "focus_areas": [
+    "还有 2 条待办未闭环"
+   ],
+   "capability_tags": [],
+   "activity_digest": "本周期没有可观察的操作记录。",
+   "generated_at": "2026-11-16 08:34:29.440665",
+   "generated_by": "rules"
+  },
+  {
+   "id": "emp_UbSsfgUn9BMfeg",
+   "user_id": "usr_93c743eda366e50d2674",
+   "display_name": "赵车间",
+   "username": "worker",
+   "period_start": "2026-11-15 16:00:00.000000",
+   "period_end": "2026-11-16 08:34:25.150702",
+   "chat_sessions": 0,
+   "chat_messages": 0,
+   "group_messages": 0,
+   "todo_assigned": 43,
+   "todo_completed": 34,
+   "events_acked": 0,
+   "actions_total": 0,
+   "active_days": 0,
+   "avg_response_hours": null,
+   "summary": "本周期活跃 0 天、待办 34/43 完成。",
+   "strengths": [],
+   "risks": [
+    "本周期几乎没有系统内活动"
+   ],
+   "focus_areas": [
+    "还有 9 条待办未闭环"
+   ],
+   "capability_tags": [],
+   "activity_digest": "本周期没有可观察的操作记录。",
+   "generated_at": "2026-11-16 08:34:27.634408",
+   "generated_by": "rules"
+  },
+  {
+   "id": "emp_saX5PlV_ygxzYA",
+   "user_id": "usr_85df085f107f2ca18836",
+   "display_name": "张仓管",
+   "username": "keeper",
+   "period_start": "2026-11-15 16:00:00.000000",
+   "period_end": "2026-11-16 08:34:22.651324",
+   "chat_sessions": 0,
+   "chat_messages": 0,
+   "group_messages": 0,
+   "todo_assigned": 28,
+   "todo_completed": 22,
+   "events_acked": 0,
+   "actions_total": 0,
+   "active_days": 0,
+   "avg_response_hours": null,
+   "summary": "本周期活跃 0 天、待办 22/28 完成。",
+   "strengths": [],
+   "risks": [
+    "本周期几乎没有系统内活动"
+   ],
+   "focus_areas": [
+    "还有 6 条待办未闭环"
+   ],
+   "capability_tags": [],
+   "activity_digest": "本周期没有可观察的操作记录。",
+   "generated_at": "2026-11-16 08:34:25.150125",
+   "generated_by": "rules"
+  },
+  {
+   "id": "emp_Wbb98JHxSluqBw",
+   "user_id": "usr_7f96aba8ed4de5c066e6",
+   "display_name": "李计划",
+   "username": "planner",
+   "period_start": "2026-11-15 16:00:00.000000",
+   "period_end": "2026-11-16 08:34:20.532075",
+   "chat_sessions": 0,
+   "chat_messages": 0,
+   "group_messages": 0,
+   "todo_assigned": 39,
+   "todo_completed": 31,
+   "events_acked": 0,
+   "actions_total": 0,
+   "active_days": 0,
+   "avg_response_hours": null,
+   "summary": "本周期活跃 0 天、待办 31/39 完成。",
+   "strengths": [],
+   "risks": [
+    "本周期几乎没有系统内活动"
+   ],
+   "focus_areas": [
+    "还有 8 条待办未闭环"
+   ],
+   "capability_tags": [],
+   "activity_digest": "本周期没有可观察的操作记录。",
+   "generated_at": "2026-11-16 08:34:22.650553",
+   "generated_by": "rules"
+  },
+  {
+   "id": "emp_EgaS1UFrlJJwJQ",
+   "user_id": "usr_b8756e3635623725ebaf",
+   "display_name": "王销售",
+   "username": "sales",
+   "period_start": "2026-11-15 16:00:00.000000",
+   "period_end": "2026-11-16 08:34:19.090399",
+   "chat_sessions": 0,
+   "chat_messages": 0,
+   "group_messages": 0,
+   "todo_assigned": 0,
+   "todo_completed": 0,
+   "events_acked": 0,
+   "actions_total": 0,
+   "active_days": 0,
+   "avg_response_hours": null,
+   "summary": "本周期没有系统内的操作或协作记录。",
+   "strengths": [],
+   "risks": [
+    "整周期无任何系统活动记录，需确认是在岗、休假还是账号未使用"
+   ],
+   "focus_areas": [
+    "确认该员工的实际工作入口（是否从 MES 单点登录）"
+   ],
+   "capability_tags": [],
+   "activity_digest": "本周期没有可观察的操作记录。",
+   "generated_at": "2026-11-16 08:34:20.529956",
+   "generated_by": "rules"
+  },
+  {
+   "id": "emp__qDfl-tQZz6mmw",
+   "user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+   "display_name": "管理员",
+   "username": "admin",
+   "period_start": "2026-11-15 16:00:00.000000",
+   "period_end": "2026-11-16 08:34:16.933613",
+   "chat_sessions": 2,
+   "chat_messages": 375,
+   "group_messages": 0,
+   "todo_assigned": 14,
+   "todo_completed": 11,
+   "events_acked": 1,
+   "actions_total": 54,
+   "active_days": 1,
+   "avg_response_hours": 97.1,
+   "summary": "该员工在统计周期内仅活跃一天，但个人会话消息量很高，并完成了大部分接收到的待办，属于集中处理型的工作节奏。其操作以登录和从 MES 单点登录为主，说明主要依托 MES 系统开展日常事务。",
+   "strengths": [
+    "待办完成率较高，14 条接收待办完成 11 条",
+    "单日个人会话消息达 375 条，沟通投入集中",
+    "主动认领 1 次 AI 派单，具备任务承接意愿"
+   ],
+   "risks": [
+    "响应中位时长 97.1 小时，响应时效明显偏慢",
+    "活跃天数仅 1 天，工作节奏不连续，群聊发言为 0，协作可见度低"
+   ],
+   "focus_areas": [
+    "关注待办响应的及时性，缩短中位响应时长",
+    "提升活跃连续性，避免任务积压到单日集中处理",
+    "适度参与群聊协作，提高团队信息同步度"
+   ],
+   "capability_tags": [
+    "MES 系统操作",
+    "事务执行",
+    "待办处理",
+    "个人沟通"
+   ],
+   "activity_digest": "活跃 1 天；个人会话 2 个 / 375 条消息；接收待办 14 条、完成 11 条；认领 AI 派单 1 次；响应中位 97.1 小时；主要操作：登录 40、从 MES 单点登录 14。",
+   "generated_at": "2026-11-16 08:34:19.088777",
+   "generated_by": "model"
+  },
+  {
+   "id": "emp_Q8W1oPZuS2keOQ",
+   "user_id": "usr_cbe3ca64a14353d99443",
+   "display_name": "孙质检",
+   "username": "qc",
+   "period_start": "2026-11-08 16:00:00.000000",
+   "period_end": "2026-11-12 09:29:31.016621",
+   "chat_sessions": 0,
+   "chat_messages": 0,
+   "group_messages": 1,
+   "todo_assigned": 1,
+   "todo_completed": 0,
+   "events_acked": 0,
+   "actions_total": 0,
+   "active_days": 1,
+   "avg_response_hours": null,
+   "summary": "孙质检在本统计周期内活跃度极低，仅1天有活动记录，个人会话与消息均为零，仅在销售一部项目群中有1条发言。整体处于低参与、低产出的观察状态，角色存在感较弱。",
+   "strengths": [
+    "在项目群中保持基本可见度，有1条群聊发言",
+    "接收待办后进入任务视野，具备响应基础"
+   ],
+   "risks": [
+    "活跃天数仅1天，个人会话与消息为0，工作投入明显不足",
+    "接收1条待办但完成0条，任务闭环能力待验证"
+   ],
+   "focus_areas": [
+    "确认待办未完成的原因并推动闭环",
+    "提升日常活跃度与群内协作参与",
+    "明确质检岗在销售一部项目群中的具体职责与输出"
+   ],
+   "capability_tags": [
+    "质量检验",
+    "项目协作",
+    "任务执行"
+   ],
+   "activity_digest": "活跃 1 天；群聊发言 1 条（销售一部）；接收待办 1 条、完成 0 条。",
+   "generated_at": "2026-11-12 09:29:33.335923",
+   "generated_by": "model"
+  },
+  {
+   "id": "emp_yWivJX_-idymHw",
+   "user_id": "usr_93c743eda366e50d2674",
+   "display_name": "赵车间",
+   "username": "worker",
+   "period_start": "2026-11-08 16:00:00.000000",
+   "period_end": "2026-11-12 09:29:28.731493",
+   "chat_sessions": 0,
+   "chat_messages": 0,
+   "group_messages": 1,
+   "todo_assigned": 1,
+   "todo_completed": 0,
+   "events_acked": 0,
+   "actions_total": 0,
+   "active_days": 1,
+   "avg_response_hours": null,
+   "summary": "赵车间在本统计周期内活跃度极低，仅1天有活动，个人会话与消息均为0，仅在销售一部群内发言1条；接收1条待办但未完成，也未认领AI派单，整体处于低参与、低响应的状态。",
+   "strengths": [
+    "在销售一部群内有1条发言，保持最低限度的群内可见度"
+   ],
+   "risks": [
+    "接收待办1条但完成0条，待办响应与闭环能力存疑",
+    "活跃天数仅1天且个人会话为0，参与度与主动性明显不足"
+   ],
+   "focus_areas": [
+    "跟进并闭环已接收的1条待办",
+    "提升日常活跃与群内协作参与度",
+    "关注AI派单认领机制，明确是否具备接单条件"
+   ],
+   "capability_tags": [
+    "销售支持",
+    "群内协作",
+    "待办执行"
+   ],
+   "activity_digest": "活跃 1 天；群聊发言 1 条（销售一部）；接收待办 1 条、完成 0 条。",
+   "generated_at": "2026-11-12 09:29:31.016245",
+   "generated_by": "model"
+  },
+  {
+   "id": "emp_YVP0F6zjEZTctA",
+   "user_id": "usr_85df085f107f2ca18836",
+   "display_name": "张仓管",
+   "username": "keeper",
+   "period_start": "2026-11-08 16:00:00.000000",
+   "period_end": "2026-11-12 09:29:25.856479",
+   "chat_sessions": 0,
+   "chat_messages": 0,
+   "group_messages": 0,
+   "todo_assigned": 5,
+   "todo_completed": 0,
+   "events_acked": 0,
+   "actions_total": 0,
+   "active_days": 0,
+   "avg_response_hours": null,
+   "summary": "本周期活跃 0 天、待办 0/5 完成。",
+   "strengths": [],
+   "risks": [
+    "有派单但本周期没有完成记录",
+    "本周期几乎没有系统内活动"
+   ],
+   "focus_areas": [
+    "还有 5 条待办未闭环"
+   ],
+   "capability_tags": [],
+   "activity_digest": "本周期没有可观察的操作记录。",
+   "generated_at": "2026-11-12 09:29:28.730288",
+   "generated_by": "rules"
+  },
+  {
+   "id": "emp_ceyRC-G-oUzMWw",
+   "user_id": "usr_7f96aba8ed4de5c066e6",
+   "display_name": "李计划",
+   "username": "planner",
+   "period_start": "2026-11-08 16:00:00.000000",
+   "period_end": "2026-11-12 09:29:22.795134",
+   "chat_sessions": 0,
+   "chat_messages": 0,
+   "group_messages": 1,
+   "todo_assigned": 2,
+   "todo_completed": 0,
+   "events_acked": 0,
+   "actions_total": 0,
+   "active_days": 1,
+   "avg_response_hours": null,
+   "summary": "李计划在本统计周期内活跃度极低，仅1天有活动，个人会话与消息均为零，仅在销售一部项目群发言1条；接收2条待办但未完成，也未认领AI派单，整体处于低参与、低产出的观察状态。",
+   "strengths": [
+    "仍在销售一部项目群保持最低限度的信息在场",
+    "对群内事务有单次发言，未完全脱离团队沟通"
+   ],
+   "risks": [
+    "接收待办2条全部未完成，任务闭环能力存疑",
+    "活跃天数仅1天且无个人会话，工作投入度与主动性明显不足"
+   ],
+   "focus_areas": [
+    "优先清理已接收的2条待办，明确完成或反馈阻塞原因",
+    "提升日常活跃与沟通频次，避免信息脱节",
+    "关注AI派单认领机制，评估是否需调整任务分配方式"
+   ],
+   "capability_tags": [
+    "销售支持",
+    "任务执行",
+    "团队协作",
+    "待办管理"
+   ],
+   "activity_digest": "活跃 1 天；群聊发言 1 条（销售一部）；接收待办 2 条、完成 0 条。",
+   "generated_at": "2026-11-12 09:29:25.855187",
+   "generated_by": "model"
+  },
+  {
+   "id": "emp_H1z0JICp1nVoyA",
+   "user_id": "usr_b8756e3635623725ebaf",
+   "display_name": "王销售",
+   "username": "sales",
+   "period_start": "2026-11-08 16:00:00.000000",
+   "period_end": "2026-11-12 09:29:20.252679",
+   "chat_sessions": 0,
+   "chat_messages": 0,
+   "group_messages": 3,
+   "todo_assigned": 0,
+   "todo_completed": 0,
+   "events_acked": 0,
+   "actions_total": 0,
+   "active_days": 1,
+   "avg_response_hours": null,
+   "summary": "王销售在本统计周期内活跃度极低，仅1天有活动记录，且全部行为集中在销售一部项目群的3条群聊发言上。个人会话、待办处理与AI派单认领均为零，整体处于低参与、低产出的观察状态。",
+   "strengths": [
+    "在统计周期内仍保持群内发声，未完全脱离团队沟通",
+    "发言集中于所属项目群，沟通场景与岗位归属一致"
+   ],
+   "risks": [
+    "活跃天数仅1天，个人会话与消息量为零，客户侧主动触达明显不足",
+    "待办接收与完成均为零、AI派单认领为零，任务承接与执行链路处于停滞状态"
+   ],
+   "focus_areas": [
+    "确认低活跃原因，区分休假、外出等客观因素与主观投入不足",
+    "恢复个人会话与客户沟通的基本节奏，明确下周期最低触达量",
+    "建立待办与派单的接收、认领、闭环习惯，避免任务空转"
+   ],
+   "capability_tags": [
+    "销售执行",
+    "客户沟通",
+    "团队协作",
+    "任务管理"
+   ],
+   "activity_digest": "活跃 1 天；群聊发言 3 条（销售一部）。",
+   "generated_at": "2026-11-12 09:29:22.793786",
+   "generated_by": "model"
+  },
+  {
+   "id": "emp_uujQpdcd8LpkjQ",
+   "user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+   "display_name": "管理员",
+   "username": "admin",
+   "period_start": "2026-11-08 16:00:00.000000",
+   "period_end": "2026-11-12 09:29:17.233970",
+   "chat_sessions": 3,
+   "chat_messages": 33,
+   "group_messages": 3,
+   "todo_assigned": 4,
+   "todo_completed": 0,
+   "events_acked": 2,
+   "actions_total": 138,
+   "active_days": 3,
+   "avg_response_hours": 2.0,
+   "summary": "该管理员在统计周期内保持较高登录与系统操作频次，主要承担群组搭建、AI 分析与模型端点配置等平台侧事务，属于偏系统运营与工具维护的角色；但待办接收后零完成，任务闭环能力尚未体现。",
+   "strengths": [
+    "系统操作活跃，登录与单点登录频繁，平台使用黏性高",
+    "主动参与 AI 派单认领与 AI 分析触发，对智能化工具接受度高",
+    "具备群组与模型端点的搭建配置能力，能支撑协作环境落地"
+   ],
+   "risks": [
+    "接收待办 4 条完成 0 条，任务承接与交付闭环存在明显缺口",
+    "撤回消息 5 次、删除群 4 次，操作反复度偏高，需关注流程规范与操作准确性"
+   ],
+   "focus_areas": [
+    "推动已接收待办的实际推进与状态更新，建立闭环习惯",
+    "梳理建群/删群与撤回等高频操作的规范，减少重复返工",
+    "明确管理员在销售一部群内的协作定位与响应分工"
+   ],
+   "capability_tags": [
+    "系统运营",
+    "AI 工具应用",
+    "群组与权限管理",
+    "平台配置维护"
+   ],
+   "activity_digest": "活跃 3 天；个人会话 3 个 / 33 条消息；群聊发言 3 条（销售一部）；接收待办 4 条、完成 0 条；认领 AI 派单 2 次；响应中位 2.0 小时；主要操作：登录 93、从 MES 单点登录 8、触发 AI 分析 8、建群 5、测试模型端点 5、撤回消息 5。",
+   "generated_at": "2026-11-12 09:29:20.251097",
+   "generated_by": "model"
+  }
+ ],
+ "groups": [
+  {
+   "id": "grp_w4DsJIeHtd0DIA",
+   "name": "销售一部",
+   "member_count": 5,
+   "my_role": "owner",
+   "status": "active",
+   "created_at": "2026-11-11 08:28:42.926392"
+  },
+  {
+   "id": "grp_m4LWCg4-pg4JNQ",
+   "name": "AI 调度台",
+   "member_count": 6,
+   "my_role": "owner",
+   "status": "active",
+   "created_at": "2026-11-12 03:36:18.861432"
+  },
+  {
+   "id": "grp_Jkw9G3Qg2BFwvQ",
+   "name": "临时-经验提炼验证",
+   "member_count": 1,
+   "my_role": "owner",
+   "status": "archived",
+   "created_at": "2026-11-13 09:26:28.480564"
+  }
+ ],
+ "groupMessages": {
+  "grp_w4DsJIeHtd0DIA": [
+   {
+    "id": "gmsg_gpQKE2SwxPmDQw",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "我们来负责公司的销售业务，这是我们的销售群，欢迎大家",
+    "created_at": "2026-11-11 08:53:08.407567"
+   },
+   {
+    "id": "gmsg_tMLjHpL0iyQyOQ",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_b8756e3635623725ebaf",
+    "sender_kind": "user",
+    "content": "宏远机械下单了，200 件 A 型机架，要求周五前交货",
+    "created_at": "2026-11-12 02:08:29.756665"
+   },
+   {
+    "id": "gmsg_43y0dpjB2PKO_Q",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_7f96aba8ed4de5c066e6",
+    "sender_kind": "user",
+    "content": "排产到周四上午，机架线能出 120 件，剩下 80 件周五补",
+    "created_at": "2026-11-12 02:08:30.563239"
+   },
+   {
+    "id": "gmsg_2IFSc7JkaarojQ",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_cbe3ca64a14353d99443",
+    "sender_kind": "user",
+    "content": "上批抽检 2 件孔位偏 0.3mm，这批折弯公差要盯紧",
+    "created_at": "2026-11-12 02:08:31.374696"
+   },
+   {
+    "id": "gmsg_tn9kifDPUMk4-w",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_93c743eda366e50d2674",
+    "sender_kind": "user",
+    "content": "折弯模具上周换了新的，公差应该能压住",
+    "created_at": "2026-11-12 02:08:32.185705"
+   },
+   {
+    "id": "gmsg__9Tis-dMF_zIig",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_b8756e3635623725ebaf",
+    "sender_kind": "user",
+    "content": "现在这批进度怎么样？",
+    "created_at": "2026-11-12 02:08:33.004376"
+   },
+   {
+    "id": "gmsg_kcIQC41iJJUArQ",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "这批 200 件 A 型机架目前还没开始交付：李计划排产到周四上午，周四机架线先出 120 件，剩下 80 件周五补，正好卡在周五交货的节点上，没有余量。质量方面孙质检提醒折弯公差要盯紧，赵车间说新模具应该能压住，但还没看到本批实测数据。\n\n我整理出这些待办：\n- @李计划 跟进周四 120 件机架下线并确认周五补足 80 件\n- @孙质检 对本批机架折弯公差加严抽检并出具实测数据\n- @赵车间 确认新折弯模具试模公差是否稳定\n\n风险：周五补的 80 件没有缓冲时间，一旦周四产出或模具调试出问题就会直接逾期；本批折弯公差尚无实测数据支撑，上批曾出现孔位偏 0.3mm",
+    "created_at": "2026-11-12 02:08:36.349675"
+   },
+   {
+    "id": "gmsg_AaEoX4BA7GTm9g",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_b8756e3635623725ebaf",
+    "sender_kind": "user",
+    "content": "谁负责盯这单的交期？",
+    "created_at": "2026-11-12 02:08:37.453001"
+   },
+   {
+    "id": "gmsg_XmdeJqSEqgPyDw",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "交期这块目前是 @李计划 在盯，周四 120 件下线、周五补 80 件都由他跟进；质量数据要等 @孙质检 出实测，模具稳定性由 @赵车间 确认。整体交期没有单独指定负责人，需要的话我可以来统筹汇总。",
+    "created_at": "2026-11-12 02:08:39.422143"
+   },
+   {
+    "id": "gmsg_VGATRCXaKGztpA",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "微信式交互验证：这一条应该是绿色气泡在右侧",
+    "created_at": "2026-11-12 06:17:43.437989"
+   },
+   {
+    "id": "gmsg_7ZAQxEbgwznLWQ",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "第二条验证：按钮状态",
+    "created_at": "2026-11-12 06:17:59.677477"
+   },
+   {
+    "id": "gmsg_XAtg9F9ETmb4Ew",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "收到，按钮状态这条也显示正常，界面验证没问题。",
+    "created_at": "2026-11-12 06:18:01.495755"
+   },
+   {
+    "id": "gmsg_TS5zsc3_lRgh2w",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "最终验证：气泡、按钮、自动回复",
+    "created_at": "2026-11-12 06:18:44.588741"
+   },
+   {
+    "id": "gmsg_1lg3TgJCTv1tXQ",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "引用回复：这条要带上引用块",
+    "created_at": "2026-11-12 06:39:14.990354"
+   },
+   {
+    "id": "gmsg_tfCgK4ucPmAt1g",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "已读回执验证",
+    "created_at": "2026-11-12 06:39:59.249171"
+   },
+   {
+    "id": "gmsg_EtO2ceeK6-p8Yw",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "system",
+    "content": "管理员 撤回了一条消息",
+    "created_at": "2026-11-12 06:40:01.561744"
+   },
+   {
+    "id": "gmsg_RHG3yWbmFWwQ2w",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "",
+    "created_at": "2026-11-12 06:40:17.102687"
+   },
+   {
+    "id": "gmsg_EBE-BgCdbCVnjQ",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "机架图纸示意，请确认孔位",
+    "created_at": "2026-11-12 06:58:37.930754"
+   },
+   {
+    "id": "gmsg_OCXLHfN68ZIe4Q",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "system",
+    "content": "管理员 撤回了一条消息",
+    "created_at": "2026-11-12 07:03:23.744736"
+   },
+   {
+    "id": "gmsg_mveCrjz9nOMoXQ",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "system",
+    "content": "管理员 撤回了一条消息",
+    "created_at": "2026-11-12 07:03:23.747048"
+   },
+   {
+    "id": "gmsg_shMxQhcb22bIrQ",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "system",
+    "content": "管理员 撤回了一条消息",
+    "created_at": "2026-11-12 07:03:23.748917"
+   },
+   {
+    "id": "gmsg_y6p3Z6DeGPmMnw",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "system",
+    "content": "管理员 撤回了一条消息",
+    "created_at": "2026-11-12 07:03:23.750880"
+   },
+   {
+    "id": "gmsg_1r_dXjN2HGF6Dw",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "最新的销售订单谁提交的？",
+    "created_at": "2026-11-12 09:31:10.853709"
+   },
+   {
+    "id": "gmsg_U__s_zYkhSV4jw",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "聊天记录里没有出现「最新销售订单是谁提交的」这条信息，我这边查不到提交人，需要有人去系统里查一下订单记录才能确认。\n\n风险：最新销售订单的提交人无法从现有聊天记录确认，需查系统订单记录",
+    "created_at": "2026-11-12 09:31:13.134309"
+   },
+   {
+    "id": "gmsg_0kbllvHBrgR4NQ",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "聊天记录里没有出现过最新销售订单的提交人，我这边无法从对话确认。需要有人去系统里查一下订单记录（SO_ORDER 的提交人字段）才能给出准确答案，目前还没人认领这件事。\n\n我整理出这些待办：\n- @管理员 查系统销售订单记录确认最新订单提交人\n\n风险：最新销售订单的提交人无法从聊天记录确认，需查系统订单记录",
+    "created_at": "2026-11-12 09:33:58.236146"
+   },
+   {
+    "id": "gmsg_LLTBhHUtJbbczg",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "查了 MES 的销售订单：11-12 当天最新的 4 张单（SO-20261112-001 到 004，客户分别是华东铝业、中天精工、西部材料）提交人都是 sales，业务员是王销售，审核人是 planner，状态都已审核。所以最新订单的提交人是 sales 这个账号，不是群里某位成员；如果要追到具体是谁，得看 sales 账号的登录记录。",
+    "created_at": "2026-11-12 09:34:36.449195"
+   },
+   {
+    "id": "gmsg_r06fTlUI3EubpA",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "MES 库存里没有包装木箱这一项，只查到 45#圆钢 5708.47、6061铝锭 8409.88、6063铝棒 2000、切削液 199.8、铝棒 Φ80 200，都在原料仓，没有木箱的存货记录。可能是没建编码或不在这个仓库，需要的话我按存货名称再核一遍。\n\n风险：MES 库存无包装木箱记录，宏远机械 200 件发货所需木箱数量无法确认，可能影响周五交货包装",
+    "created_at": "2026-11-12 09:34:39.911817"
+   },
+   {
+    "id": "gmsg_xexjuRxOWz-q7Q",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "最新的销售订单谁提交的？",
+    "created_at": "2026-11-12 09:35:18.804040"
+   },
+   {
+    "id": "gmsg_NDBdna65rjxVbA",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "最新的是 11-12 那 4 张单（SO-20261112-001~004，客户华东铝业、中天精工、西部材料），提交人都是 sales，业务员是王销售，审核人 planner，状态都已审核。另外还有一张 08-11 的老单 SO-2026-08-0004，业务员是陈强。",
+    "created_at": "2026-11-12 09:35:21.607414"
+   },
+   {
+    "id": "gmsg_3k4X2LGf8KkR4Q",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "中天客户又要下单一批订单，销售去对接一下",
+    "created_at": "2026-11-12 09:41:29.336229"
+   },
+   {
+    "id": "gmsg__vcnHTc-2qEoWQ",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "收到，中天精工的新单已派给王销售对接。系统里中天现有的是 SO-20261112-003（已审核），这次是新的一批，请王销售跟客户确认型号、数量和交期后回来登记。\n\n我整理出这些待办：\n- @王销售 对接中天精工新一批订单\n\n风险：中天新单的型号、数量、交期尚未确认，无法判断是否与宏远周五交期冲突",
+    "created_at": "2026-11-12 09:44:22.191350"
+   },
+   {
+    "id": "gmsg_RpZTK1dZsW1RcA",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "包装木箱快没了，让仓管补一下",
+    "created_at": "2026-11-12 09:44:38.315355"
+   },
+   {
+    "id": "gmsg_aJn790ebI3celg",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "已记录，包装木箱补货派给仓管跟进。\n\n我整理出这些待办：\n- @管理员 补充包装木箱库存\n\n风险：群成员中没有仓管，木箱补货暂无明确责任人",
+    "created_at": "2026-11-12 09:44:40.620365"
+   },
+   {
+    "id": "gmsg_s74ISZpMY1nfRw",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "中天客户又要下单一批订单，销售去对接一下",
+    "created_at": "2026-11-12 09:50:15.350616"
+   },
+   {
+    "id": "gmsg_iHBGRQ9b07SuIw",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "已记录，中天精工新单派给王销售对接。MES 里中天精工 11-12 已有一张已审核订单 SO-20261112-003（业务员王销售），请王销售确认这次新单是另开还是并入，并把型号、数量、交期回群里。\n\n我整理出这些待办：\n- @王销售 对接中天精工新一批订单并确认型号数量交期\n\n风险：中天精工新单与已有 SO-20261112-003 的关系未明，存在重复下单或漏排产风险",
+    "created_at": "2026-11-12 09:50:19.212639"
+   },
+   {
+    "id": "gmsg_JENMYZKPIinZdQ",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "那个到货单谁审的，怎么回事，都没有检验也签收吗",
+    "created_at": "2026-11-12 09:51:13.203473"
+   },
+   {
+    "id": "gmsg_9uJ3zz7Qo8xH8A",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "查了 MES 到货单，未检就审核签收的有两张：DH-20261112-001（供应商华东热处理厂，到货 11-12，检验状态未检，单据已审核）和 DH-20261109-001（供应商华东铝业，对应采购单 PO-2026-08-0001，到货 11-09，未检，已审核）。系统里到货单只记录检验状态和单据状态，没有审核人字段，所以具体是谁审的从到货单上查不出来，得看审核日志或问经手人。另外 DH-2026-08-0002（中天精工）还是草稿，DH-2026-08-0001（华东铝业）没填检验状态。这两张未检签收的单建议让孙质检先补检并确认能否放行。\n\n我整理出这些待办：\n- @孙质检 核查两张未检到货单并补检\n- @管理员 查明未检到货单的审核人\n\n风险：两张到货单未检即审核签收，物料质量未确认已入库，存在质量与追溯风险；到货单系统无审核人字段，责任难以定位",
+    "created_at": "2026-11-12 09:51:17.740901"
+   },
+   {
+    "id": "gmsg_mJerVuGQvTaQIQ",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "销售部的这个月的业绩是不是下降了，怎么回事，今天晚上加班开个会",
+    "created_at": "2026-11-12 09:52:09.061610"
+   },
+   {
+    "id": "gmsg_89D8ohqwmHlBXA",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "业绩是否下降我这边没有月度汇总数据，只能看到 11-12 当天有 4 张已审核销售订单（华东铝业、中天精工、西部材料，业务员都是王销售），单日数据说明不了整月趋势。今晚加班会已记录，建议会上让王销售带上本月订单和回款明细对比。\n\n我整理出这些待办：\n- @王销售 准备本月销售订单与回款明细用于业绩分析会\n\n风险：缺少月度销售汇总数据，业绩下滑原因暂无法量化",
+    "created_at": "2026-11-12 09:52:13.240730"
+   },
+   {
+    "id": "gmsg_TnMOzmq18Dhdbg",
+    "group_id": "grp_w4DsJIeHtd0DIA",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "今天生产部门完成了哪些订单，明天把中天的货发出去",
+    "created_at": "2026-11-12 09:54:10.278597"
+   }
+  ],
+  "grp_m4LWCg4-pg4JNQ": [
+   {
+    "id": "gmsg_ZGHzXzQ6HT9lzQ",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "我在 MES 里发现了这些待办：\n- 销售订单 SO-2026-08-0004 已审核，尚未安排生产 @planner、@worker\n- 销售订单 SO-2026-08-0002 已审核，尚未安排生产 @planner、@worker\n- 销售订单 SO-2026-08-0001 已审核，尚未安排生产 @planner、@worker\n- 销售订单 SO-2026-08-0003 仍是草稿 @王芳",
+    "created_at": "2026-11-12 03:36:18.869207"
+   },
+   {
+    "id": "gmsg_FYlZlNmXBubVGQ",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "我在 MES 里发现了这些待办：\n- @planner：4 张销售订单待安排生产（SO-2026-08-0004、SO-2026-08-0002、SO-2026-08-0001、SO-2026-08-0003）\n- @worker：4 张销售订单待安排生产（SO-2026-08-0004、SO-2026-08-0002、SO-2026-08-0001、SO-2026-08-0003）",
+    "created_at": "2026-11-12 05:04:05.845531"
+   },
+   {
+    "id": "gmsg_g8_Tm9MG4CR-oA",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "我在 MES 里发现了这些待办：\n- @planner：3 张销售订单待安排生产（SO-2026-08-0004、SO-2026-08-0002、SO-2026-08-0001）\n- @worker：3 张销售订单待安排生产（SO-2026-08-0004、SO-2026-08-0002、SO-2026-08-0001）\n- @王芳：销售订单 SO-2026-08-0003 仍是草稿",
+    "created_at": "2026-11-12 05:04:48.740538"
+   },
+   {
+    "id": "gmsg_wT-QMuwKEp4ZZg",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "我在 MES 里发现了这些待办：\n- @planner：3 张销售订单待安排生产（SO-2026-08-0004、SO-2026-08-0002、SO-2026-08-0001）\n- @worker：3 张销售订单待安排生产（SO-2026-08-0004、SO-2026-08-0002、SO-2026-08-0001）\n- @王芳：销售订单 SO-2026-08-0003 仍是草稿\n- @keeper：2 项存货低于下限（CP004、CL005）\n- @planner：2 项存货低于下限（CP004、CL005）\n- @admin：采购订单 PO-2026-08-0002 仍是草稿\n- @keeper：采购订单 PO-2026-08-0001 已过交期仍未发货\n- @qc：到货单 DH-20261109-001 已 2 天以上未检验",
+    "created_at": "2026-11-12 05:46:15.983706"
+   },
+   {
+    "id": "gmsg_dJ0j5le6UV61MA",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "我在 MES 里发现了这些待办：\n- @planner：3 张销售订单待安排生产（SO-2026-08-0004、SO-2026-08-0002、SO-2026-08-0001）；2 项存货低于下限（CP004、CL005）\n- @worker：3 张销售订单待安排生产（SO-2026-08-0004、SO-2026-08-0002、SO-2026-08-0001）\n- @王芳：销售订单 SO-2026-08-0003 仍是草稿\n- @keeper：2 项存货低于下限（CP004、CL005）；采购订单 PO-2026-08-0001 已过交期仍未发货\n- @admin：采购订单 PO-2026-08-0002 仍是草稿\n- @qc：到货单 DH-20261109-001 已 2 天以上未检验",
+    "created_at": "2026-11-12 05:47:00.475050"
+   },
+   {
+    "id": "gmsg_ZzFq9nLqk7bLuw",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "我在 MES 里发现了这些待办：\n- @planner：3 张销售订单待安排生产（SO-2026-08-0004、SO-2026-08-0002、SO-2026-08-0001）；2 项存货低于下限（CP004、CL005）\n- @worker：3 张销售订单待安排生产（SO-2026-08-0004、SO-2026-08-0002、SO-2026-08-0001）\n- @王芳：销售订单 SO-2026-08-0003 仍是草稿\n- @keeper：2 项存货低于下限（CP004、CL005）；采购订单 PO-2026-08-0001 已过交期仍未发货\n- @admin：采购订单 PO-2026-08-0002 仍是草稿\n- @qc：到货单 DH-20261109-001 已 2 天以上未检验",
+    "created_at": "2026-11-12 07:09:52.965064"
+   },
+   {
+    "id": "gmsg_Su08HnTuz5vRLA",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "我在 MES 里发现了这些待办：\n- @planner：3 张销售订单待安排生产（SO-2026-08-0004、SO-2026-08-0002、SO-2026-08-0001）；2 项存货低于下限（CP004、CL005）\n- @worker：3 张销售订单待安排生产（SO-2026-08-0004、SO-2026-08-0002、SO-2026-08-0001）\n- @王芳：销售订单 SO-2026-08-0003 仍是草稿\n- @keeper：2 项存货低于下限（CP004、CL005）；采购订单 PO-2026-08-0001 已过交期仍未发货\n- @admin：采购订单 PO-2026-08-0002 仍是草稿\n- @qc：到货单 DH-20261109-001 已 2 天以上未检验",
+    "created_at": "2026-11-12 07:25:52.595570"
+   },
+   {
+    "id": "gmsg_4zRMdzJ_xair3Q",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "今天的 MES 待办汇总：\n- 新发现 9 条，处理 0 条，还剩 9 条未处理\n- 待处理分布：@planner 5 条、@worker 3 条、@keeper 3 条、@王芳 1 条、@admin 1 条、@qc 1 条\n- 主要类型：销售订单未排产 3、库存低于下限 2、销售订单草稿 1、采购订单草稿 1、采购订单未发货 1、到货未检验 1",
+    "created_at": "2026-11-12 07:35:24.919457"
+   },
+   {
+    "id": "gmsg_gDtpKAFg74-lRw",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "今天的 MES 待办汇总：\n- 新发现 9 条，处理 0 条，还剩 9 条未处理\n- 待处理分布：@planner 5 条、@worker 3 条、@keeper 3 条、@王芳 1 条、@admin 1 条、@qc 1 条\n- 主要类型：销售订单未排产 3、库存低于下限 2、销售订单草稿 1、采购订单草稿 1、采购订单未发货 1、到货未检验 1",
+    "created_at": "2026-11-12 07:35:27.951412"
+   },
+   {
+    "id": "gmsg_8tDJmJyhOJfgXw",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "今天的 MES 待办汇总：\n- 新发现 9 条，处理 1 条，还剩 8 条未处理\n- 待处理分布：@planner 5 条、@worker 3 条、@keeper 2 条、@王芳 1 条、@admin 1 条、@qc 1 条\n- 主要类型：销售订单未排产 3、库存低于下限 2、销售订单草稿 1、采购订单草稿 1、采购订单未发货 1、到货未检验 1",
+    "created_at": "2026-11-12 07:44:00.361403"
+   },
+   {
+    "id": "gmsg_m_mMz2LcdQp3rQ",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "今天的 MES 待办汇总：\n- 新发现 9 条，处理 2 条，还剩 7 条未处理\n- 待处理分布：@planner 4 条、@worker 2 条、@keeper 2 条、@王芳 1 条、@admin 1 条、@qc 1 条\n- 主要类型：销售订单未排产 3、库存低于下限 2、销售订单草稿 1、采购订单草稿 1、采购订单未发货 1、到货未检验 1",
+    "created_at": "2026-11-12 07:44:58.827926"
+   },
+   {
+    "id": "gmsg__Tev4IeOjAYu6Q",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "今天的 MES 待办汇总：\n- 新发现 9 条，处理 2 条，还剩 7 条未处理\n- 待处理分布：@planner 4 条、@worker 2 条、@keeper 2 条、@王芳 1 条、@admin 1 条、@qc 1 条\n- 主要类型：销售订单未排产 3、库存低于下限 2、销售订单草稿 1、采购订单草稿 1、采购订单未发货 1、到货未检验 1",
+    "created_at": "2026-11-12 07:47:44.783114"
+   },
+   {
+    "id": "gmsg_HPrgaX78VU8J2A",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "今天的 MES 待办汇总：\n- 新发现 9 条，处理 2 条，还剩 7 条未处理\n- 待处理分布：@planner 4 条、@worker 2 条、@keeper 2 条、@王芳 1 条、@admin 1 条、@qc 1 条\n- 主要类型：销售订单未排产 3、库存低于下限 2、销售订单草稿 1、采购订单草稿 1、采购订单未发货 1、到货未检验 1",
+    "created_at": "2026-11-12 07:52:38.902757"
+   },
+   {
+    "id": "gmsg_gLgxEUJF-C5HvA",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "今天的 MES 待办汇总：\n- 新发现 9 条，处理 2 条，还剩 7 条未处理\n- 待处理分布：@planner 4 条、@worker 2 条、@keeper 2 条、@王芳 1 条、@admin 1 条、@qc 1 条\n- 主要类型：销售订单未排产 3、库存低于下限 2、销售订单草稿 1、采购订单草稿 1、采购订单未发货 1、到货未检验 1",
+    "created_at": "2026-11-12 07:54:00.013864"
+   },
+   {
+    "id": "gmsg_NmHm1pnkM4DmRQ",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "今天的 MES 待办汇总：\n- 新发现 9 条，处理 2 条，还剩 7 条未处理\n- 待处理分布：@planner 4 条、@worker 2 条、@keeper 2 条、@王芳 1 条、@admin 1 条、@qc 1 条\n- 主要类型：销售订单未排产 3、库存低于下限 2、销售订单草稿 1、采购订单草稿 1、采购订单未发货 1、到货未检验 1",
+    "created_at": "2026-11-12 07:54:43.393559"
+   },
+   {
+    "id": "gmsg_PWRInfsu4F05vg",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "今天的 MES 待办汇总：\n- 新发现 9 条，处理 2 条，还剩 7 条未处理\n- 待处理分布：@planner 4 条、@worker 2 条、@keeper 2 条、@王芳 1 条、@admin 1 条、@qc 1 条\n- 主要类型：销售订单未排产 3、库存低于下限 2、销售订单草稿 1、采购订单草稿 1、采购订单未发货 1、到货未检验 1",
+    "created_at": "2026-11-12 07:56:11.649307"
+   },
+   {
+    "id": "gmsg_-_9f9YEUw3XpeA",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "今天的 MES 待办汇总：\n- 新发现 9 条，处理 2 条，还剩 7 条未处理\n- 待处理分布：@planner 4 条、@worker 2 条、@keeper 2 条、@王芳 1 条、@admin 1 条、@qc 1 条\n- 主要类型：销售订单未排产 3、库存低于下限 2、销售订单草稿 1、采购订单草稿 1、采购订单未发货 1、到货未检验 1",
+    "created_at": "2026-11-12 07:57:47.720021"
+   },
+   {
+    "id": "gmsg_EPJRip5_JqJDKw",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "我在 MES 里发现了这些待办：\n- @admin：2 张单据待你审批（OTHE-20261112-005、OTHE-20261112-004）\n- @keeper：2 张单据待你审批（OTHE-20261112-005、OTHE-20261112-004）",
+    "created_at": "2026-11-12 09:12:21.243975"
+   },
+   {
+    "id": "gmsg_PQkTEGy0tGkQ1Q",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "我在 MES 里发现了这些待办：\n- @admin：3 张单据待你审批（OTHE-20261112-008、OTHE-20261112-007、OTHE-20261112-006）\n- @keeper：其他入库单 OTHE-20261112-006 待 keeper 审批",
+    "created_at": "2026-11-12 09:14:17.758435"
+   },
+   {
+    "id": "gmsg_ZM8o8jXCedUq4A",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "我在 MES 里发现了这些待办：\n- @admin：其他入库单 OTHE-20261112-008 待 admin 审批\n- @keeper：其他入库单 OTHE-20261112-008 待 keeper 审批",
+    "created_at": "2026-11-12 09:24:28.033740"
+   },
+   {
+    "id": "gmsg_aDuLYCiyh9c3Rw",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "这些还没处理，再提醒一次：\n- @planner：4 件事未处理（SO-2026-08-0002、SO-2026-08-0001、CP004、CL005）\n- @worker：2 件事未处理（SO-2026-08-0002、SO-2026-08-0001）\n- @王芳：销售订单 SO-2026-08-0003 仍是草稿\n- @keeper：4 件事未处理（CP004、CL005、OTHE-20261112-004、OTHE-20261112-008）\n- @admin：4 件事未处理（PO-2026-08-0002、OTHE-20261112-004、OTHE-20261112-007、OTHE-20261112-008）\n- @qc：到货单 DH-20261109-001 已 2 天以上未检验",
+    "created_at": "2026-11-13 02:21:33.190005"
+   },
+   {
+    "id": "gmsg_fjkZ_pid7x-Xkg",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "这些还没处理，再提醒一次：\n- @planner：销售订单 SO-2026-08-0004 已审核，尚未安排生产\n- @worker：销售订单 SO-2026-08-0004 已审核，尚未安排生产\n- @keeper：采购订单 PO-2026-08-0001 已过交期仍未发货",
+    "created_at": "2026-11-13 02:37:13.628544"
+   },
+   {
+    "id": "gmsg_cNqBkq_ZNsWQpw",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "这些还没处理，再提醒一次：\n- @planner：4 件事未处理（SO-2026-08-0002、SO-2026-08-0001、CP004、CL005）\n- @worker：2 件事未处理（SO-2026-08-0002、SO-2026-08-0001）\n- @王芳：销售订单 SO-2026-08-0003 仍是草稿\n- @keeper：4 件事未处理（CP004、CL005、OTHE-20261112-004、OTHE-20261112-008）\n- @admin：4 件事未处理（PO-2026-08-0002、OTHE-20261112-004、OTHE-20261112-007、OTHE-20261112-008）\n- @qc：到货单 DH-20261109-001 已 2 天以上未检验",
+    "created_at": "2026-11-13 06:22:12.591525"
+   },
+   {
+    "id": "gmsg_rNmA1rS79mhtpQ",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "这些还没处理，再提醒一次：\n- @planner：销售订单 SO-2026-08-0004 已审核，尚未安排生产\n- @worker：销售订单 SO-2026-08-0004 已审核，尚未安排生产\n- @keeper：采购订单 PO-2026-08-0001 已过交期仍未发货",
+    "created_at": "2026-11-13 06:37:15.708431"
+   },
+   {
+    "id": "gmsg_r_TehTpV28S5Ow",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "我在 MES 里发现了这些待办：\n- @planner：销售订单 SO-20261113-001 已审核，尚未安排生产\n- @worker：销售订单 SO-20261113-001 已审核，尚未安排生产",
+    "created_at": "2026-11-13 06:48:31.213480"
+   },
+   {
+    "id": "gmsg_T5qeXkW0eQ0W-Q",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "@sales 明天（11月14日）中天客户要来厂里看厂，请提前准备接待。",
+    "created_at": "2026-11-13 07:25:33.750859"
+   },
+   {
+    "id": "gmsg_Xf-xR5mhYGMXBA",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "@sales 明天中天客户要来看厂，请提前做好准备。",
+    "created_at": "2026-11-13 07:26:26.408209"
+   },
+   {
+    "id": "gmsg_yrH-FJTjjfLRkQ",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "@sales 明天中天客户要来厂里看厂，请提前准备接待。",
+    "created_at": "2026-11-13 07:27:23.783966"
+   },
+   {
+    "id": "gmsg_OVVEiktxWKdPMA",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "@sales 提醒一下：确认并安排中天精工订单明天发货（已超期 7 小时）。",
+    "created_at": "2026-11-13 07:36:51.853257"
+   },
+   {
+    "id": "gmsg_WB2t7xHn9rHvsQ",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "@admin 提醒一下：汇总今日生产日报供晚上开会（已超期 1 天）。",
+    "created_at": "2026-11-13 07:36:51.854020"
+   },
+   {
+    "id": "gmsg_cwg8pHulWjbmGQ",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "@planner 提醒一下：提供今日各工单完工数量与在制进度（已超期 1 天）。",
+    "created_at": "2026-11-13 07:36:51.854600"
+   },
+   {
+    "id": "gmsg_23r9HlZX-C-PDg",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "@worker 提醒一下：提供车间实际完工数及新折弯模具试模情况（已超期 1 天）。",
+    "created_at": "2026-11-13 07:36:51.854940"
+   },
+   {
+    "id": "gmsg_9S-NQ9NuvciwUA",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "@qc 提醒一下：提供折弯公差实测数据（已超期 1 天）。",
+    "created_at": "2026-11-13 07:36:51.855249"
+   },
+   {
+    "id": "gmsg_5QQqRWaIxIs_Qg",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "@admin 提醒一下：补充包装木箱库存（还没开始，已 2 天没动）。",
+    "created_at": "2026-11-13 07:37:17.106780"
+   },
+   {
+    "id": "gmsg_IgRMKgplzd7aEQ",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "@keeper 提醒一下：补充包装木箱库存（刚派下去）。",
+    "created_at": "2026-11-13 07:37:30.532311"
+   },
+   {
+    "id": "gmsg_9yhSb-7gJeaC2Q",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "@worker 提醒一下：发出折弯模具的试模结果（刚派下去）。",
+    "created_at": "2026-11-13 07:40:02.987215"
+   },
+   {
+    "id": "gmsg_yxt33a8WnYrbRQ",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "@keeper 提醒一下：补充包装木箱库存（还没开始，已 2 天没动）。",
+    "created_at": "2026-11-13 07:40:50.453649"
+   },
+   {
+    "id": "gmsg_2dQ6IGnXctT_gQ",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "今天的 MES 待办汇总：\n- 新发现 11 条，处理 5 条，还剩 15 条未处理（其中 9 条已超过 1 天）\n- 待处理分布：@planner 6 条、@keeper 5 条、@worker 4 条、@admin 4 条、@王芳 1 条、@qc 1 条\n- 主要类型：待审批 10、销售订单未排产 1",
+    "created_at": "2026-11-13 08:03:08.848883"
+   },
+   {
+    "id": "gmsg_TAZHBzWLQgm7rA",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "@admin 提醒一下：查系统销售订单记录确认最新订单提交人（还没开始，已 1 天没动）。",
+    "created_at": "2026-11-13 09:34:05.225070"
+   },
+   {
+    "id": "gmsg_a2f50K0oVfTNWQ",
+    "group_id": "grp_m4LWCg4-pg4JNQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "@sales 提醒一下：对接中天精工新一批订单（还没开始，已 1 天没动）。",
+    "created_at": "2026-11-13 09:44:37.758624"
+   }
+  ],
+  "grp_Jkw9G3Qg2BFwvQ": [
+   {
+    "id": "gmsg_QrxbEAo9Q8ynMw",
+    "group_id": "grp_Jkw9G3Qg2BFwvQ",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "客户要求木箱加厚到 15mm，因为上次运输破损了三件。",
+    "created_at": "2026-11-13 09:26:28.488907"
+   },
+   {
+    "id": "gmsg_kWI984NDzozSLQ",
+    "group_id": "grp_Jkw9G3Qg2BFwvQ",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "那我们把 CL005 木箱规格改 1200x800x15，供应商北方机械下周给样。",
+    "created_at": "2026-11-13 09:26:28.494118"
+   },
+   {
+    "id": "gmsg_6CgAni9ALDf0wA",
+    "group_id": "grp_Jkw9G3Qg2BFwvQ",
+    "sender_user_id": "usr_0b4680a0-ce96-4e06-879a-fed69a0f70c7",
+    "sender_kind": "user",
+    "content": "结论：后续木箱一律按 15mm 下单，样件验收通过后再批量。",
+    "created_at": "2026-11-13 09:26:28.498778"
+   },
+   {
+    "id": "gmsg_aKRljhbIEzj-MQ",
+    "group_id": "grp_Jkw9G3Qg2BFwvQ",
+    "sender_user_id": null,
+    "sender_kind": "ai",
+    "content": "已记录：CL005 木箱按 1200x800x15 执行，等北方机械下周的样件验收通过后再批量下单。\n\n我整理出这些待办：\n- @管理员 跟进北方机械木箱样件并组织验收\n\n风险：样件验收未通过则批量下单无法启动",
+    "created_at": "2026-11-13 09:26:30.201604"
+   }
+  ]
+ }
+}

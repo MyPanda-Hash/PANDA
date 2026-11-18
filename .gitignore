@@ -1,0 +1,29 @@
+# ---- 凭据（绝不入库）----
+.env.local
+.env.local.bak-*
+.env
+.env.*
+!.env.example
+
+# ---- 运行产物与过程文件 ----
+_scratch/
+screenshots/
+run/
+runtime-logs/
+*.log
+probe-shell-pid.txt
+*.bak-*
+
+# ---- 依赖与构建产物 ----
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+target/
+dist/
+build/
+
+# ---- 系统文件 ----
+.DS_Store
+.dsh-tool-vision/

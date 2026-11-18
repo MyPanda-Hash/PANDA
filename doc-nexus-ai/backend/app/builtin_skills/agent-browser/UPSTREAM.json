@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/vercel-labs/agent-browser",
+  "commit": "39a74c70d7759d5a6de7a22c04570bb626bbd081",
+  "version": "0.38.2",
+  "license": "Apache-2.0",
+  "package": "https://registry.npmjs.org/agent-browser/-/agent-browser-0.38.2.tgz",
+  "integrity": "sha512-b/7hvo2RrqocvybjB9kwpX12kGkxkFvtdJ4XPDoott5TLK2n3aPX+lYg7ALd+2YvPi2LrTKGzQYu/rxZC2Y7ZA==",
+  "adaptations": [
+    "Doc Nexus replaces the upstream discovery stub with a platform workflow using the pinned image binary and system Chromium, without runtime package installation or browser downloads.",
+    "The image distributes the native binary, complete skill-data resources, upstream license and embedded axe-core third-party licenses under /usr/local/share/agent-browser. AGENT_BROWSER_SKILLS_DIR selects these read-only resources.",
+    "Admission remains an explicit, versioned SkillInstaller operation; readiness and authorized public-web use are distinct from static prompt-only skill approval."
+  ]
+}

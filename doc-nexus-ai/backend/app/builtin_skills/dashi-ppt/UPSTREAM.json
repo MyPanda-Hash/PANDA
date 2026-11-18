@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/chuspeeism/dashi-ppt-skill",
+  "commit": "2c33503313869ceefb7a47f5e0b0c137a3c9db3b",
+  "version": "0.2.7",
+  "license": "AGPL-3.0",
+  "export_engine_license": "MIT",
+  "adaptations": [
+    "技能名称统一为 dashi-ppt；离线运行依赖由镜像提供；批准技能不修改，工作区副本运行。",
+    "2026-09-19：修复导出器跳过零尺寸/页外定位父节点时丢失可见子节点；保留隐藏与裁剪边界。",
+    "2026-09-19：文本框采用 shrink 适配，避免 LibreOffice 再次扩框导致单行文字换行重叠。",
+    "2026-09-19：半透明文字保留可编辑性与透明度，但不叠加字距，规避 LibreOffice 透明层边界忽略 tracking 导致的截字；不透明文字不变。"
+  ]
+}

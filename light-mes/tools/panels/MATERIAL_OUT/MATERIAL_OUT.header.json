@@ -1,0 +1,12 @@
+[
+  { "dataName": "生产车间", "dataType": "下拉框", "isRequired": false, "defaultValue": "", "options": ["熔铸车间", "轧制车间", "精整车间", "测试车间"] },
+  { "dataName": "单据日期", "dataType": "日期", "isRequired": true, "defaultValue": "today" },
+  { "dataName": "单据编号", "dataType": "文本", "isRequired": true, "defaultValue": "", "autoCode": true },
+  { "dataName": "业务类型", "dataType": "下拉框", "isRequired": true, "defaultValue": "材料出库", "options": ["材料出库"] },
+  { "dataName": "出库类别", "dataType": "下拉框", "isRequired": false, "defaultValue": "", "options": ["直接领料", "自制领料", "退料", "共耗领料"] },
+  { "dataName": "领用人", "dataType": "参照", "isRequired": false, "defaultValue": "", "refPanel": "EMP", "refField": "员工名称", "displayField": "员工名称", "filter": { "停用": false } },
+  { "dataName": "项目", "dataType": "参照", "isRequired": false, "defaultValue": "", "refPanel": "PROJ", "refField": "项目名称", "displayField": "项目名称", "filter": { "停用": false } },
+  { "dataName": "仓库", "dataType": "参照", "isRequired": false, "defaultValue": "", "refPanel": "WH", "refField": "仓库名称", "displayField": "仓库名称", "filter": { "停用": false } },
+  { "dataName": "来源单号", "dataType": "文本", "isRequired": false, "defaultValue": "" },
+  { "dataName": "加工单号", "dataType": "文本", "isRequired": false, "defaultValue": "" }
+]

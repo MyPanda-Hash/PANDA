@@ -1,0 +1,116 @@
+
+/* =====================================================================
+   模型与 API 配置（models.js）
+   macOS 观感：靠留白与细分隔线；列表行 hover 只提亮不提位移。
+   ===================================================================== */
+
+.models-page { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.models-intro { font-size: 12px; line-height: 20px; margin: 0; max-width: 78ch; }
+
+.models-list { display: flex; flex-direction: column; }
+
+.models-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--ant-color-split);
+  transition: background-color .12s ease;
+}
+.models-row:last-child { border-bottom: 0; }
+.models-row:hover { background: var(--ant-color-fill-quaternary); }
+.models-row__main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.models-row__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.models-row__model { font-size: 13px; line-height: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.models-row__meta {
+  font-size: 11px;
+  line-height: 18px;
+  color: var(--ant-color-text-tertiary);
+  overflow-wrap: anywhere;
+}
+.models-row__test { display: flex; align-items: center; gap: 4px; font-size: 11px; line-height: 18px; flex-wrap: wrap; }
+.models-row__err { color: var(--ant-color-error-text); }
+.models-row__actions { flex: none; display: flex; gap: 6px; }
+.models-skel { height: 20px; width: 100%; }
+.models-empty { padding: 40px 16px; }
+
+/* 新增端点浮层 */
+.models-panel { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.models-panel__mask { position: absolute; inset: 0; background: rgba(0,0,0,.35); }
+.models-panel__body {
+  position: relative;
+  width: min(460px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 10px;
+  box-shadow: var(--ant-box-shadow);
+  padding: 20px;
+}
+.models-panel__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.models-panel__title { font-size: 16px; line-height: 24px; font-weight: 600; }
+
+.models-req { color: var(--ant-color-error-text); }
+.models-checks { display: flex; gap: 16px; }
+.models-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; }
+.models-form .btn { align-self: auto; }
+
+@media (max-width: 767px) {
+  .models-row { flex-direction: column; gap: 8px; }
+  .models-row__actions { align-self: flex-start; }
+}
+
+/* 语音助手配置区：两列网格，密钥与开关单独分区 */
+.voice-cfg { display: flex; flex-direction: column; gap: 16px; padding: 18px 20px; }
+.voice-cfg__note { font-size: 12px; line-height: 20px; margin: 0; max-width: 80ch; }
+.voice-cfg__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px 20px;
+}
+.voice-cfg__ok { margin-left: 6px; }
+.voice-cfg__warn { margin-left: 6px; }
+.voice-cfg__toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ant-color-split);
+}
+.voice-cfg__hint { font-size: 11px; margin-left: 8px; }
+.voice-cfg__actions { display: flex; justify-content: flex-end; }
+
+@media (max-width: 767px) {
+  .voice-cfg { padding: 14px; }
+  .voice-cfg__grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* 行内改密钥：贴在端点行下面，不弹遮罩；左缩进跟行内容对齐 */
+.models-secret {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 6px;
+  background: var(--ant-color-fill-quaternary);
+}
+.models-secret__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+.models-secret__btns { display: flex; gap: 8px; flex: none; }
+.models-secret .settings-hint { margin: 0; }
+.models-secret .settings-hint[data-tone="danger"] { color: var(--ant-color-error-text); }
+.models-secret .settings-hint[data-tone="warn"] { color: var(--ant-color-warning-text); }
+
+/* 依赖未就绪的字段：置灰但不隐藏——让人知道有这么一项，且知道缺什么 */
+.settings-field.is-disabled .settings-field__label { color: var(--ant-color-text-tertiary); }
+.settings-field.is-disabled .input,
+.settings-field .input:disabled {
+  background: var(--ant-color-fill-quaternary);
+  color: var(--ant-color-text-tertiary);
+  cursor: not-allowed;
+}
