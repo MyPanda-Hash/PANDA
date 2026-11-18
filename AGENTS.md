@@ -2,7 +2,12 @@
 
 > 本工作区（`_light-m-ai`）的开工手册：**怎么启动、改完怎么生效、怎么验证、哪些坑别再踩**。
 > 业务规则与面板/权限纪律见 `light-mes/AGENTS.md`；迁移背景见 `README-MAC.md`。
-> 「写代码怎么不翻车」一节跨 `light-mes` 与 `doc-nexus-ai` 两个仓库通用。
+> 「写代码怎么不翻车」一节对 `light-mes` 与 `doc-nexus-ai` 两个子项目都适用。
+>
+> **仓库结构（2026-11-18 起）**：整个工作区是**一个 git 仓库**，远端 `PANDA`。
+> 根目录有 `light-mes/`（MES 主系统）与 `doc-nexus-ai/`（AI 数字员工）两个子目录，
+> 它们不再是独立仓库。历史以 `legacy/light-mes`（153 提交）和 `legacy/doc-nexus-ai`（5 提交）
+> 两个分支保留在同一个远端里，需要考古时 `git log legacy/light-mes` 即可。
 
 ## 项目一句话
 
