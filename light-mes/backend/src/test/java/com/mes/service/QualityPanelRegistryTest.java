@@ -381,6 +381,56 @@ class QualityPanelRegistryTest {
     }
 
     @Test
+    void finishInspectGetsInspectionTabsAndDisposition() {
+        Map<String, Object> config = new LinkedHashMap<>();
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("buttonGroups", new ArrayList<>());
+        metadata.put("panelButtons", new ArrayList<>());
+        Map<String, Object> grid = new LinkedHashMap<>();
+        grid.put("label", "明细");
+        grid.put("columns", new ArrayList<>(List.of(
+                "存货编码", "存货名称", "报检数量", "合格数量", "不合格数量", "检验结果")));
+        Map<String, Object> table = new LinkedHashMap<>();
+        table.put("gridTabs", List.of(grid));
+        Map<String, Object> form = new LinkedHashMap<>();
+        form.put("formName", "成品报检单");
+        form.put("fieldNames", "单据日期,单据编号,业务类型");
+        Map<String, Object> pageDto = new LinkedHashMap<>();
+        pageDto.put("tablePages", List.of(table));
+        pageDto.put("formPages", List.of(form));
+        metadata.put("panelPageDto", pageDto);
+        config.put("metadata", metadata);
+        config.put("dataSchema", Map.of("type", "object", "fields", new ArrayList<>()));
+        config.put("detail", Map.of("tabs", new ArrayList<>(List.of(new LinkedHashMap<>(Map.of(
+                "key", "items", "label", "明细", "fields", new ArrayList<>()))))));
+        config.put("selectConfig", new LinkedHashMap<>(Map.of("source", "MANU_ORDER")));
+
+        QualityPanelRegistry.upgradeFinishInspect(config);
+
+        List<Map<String, Object>> tabs = maps(map(config.get("detail")).get("tabs"));
+        assertEquals(3, tabs.size(), "成品报检单补齐 明细+检验项目+不合格处理");
+        assertTrue(tabs.stream().anyMatch(tab -> "projects".equals(tab.get("key"))));
+        assertTrue(tabs.stream().anyMatch(tab -> "unqualified".equals(tab.get("key"))));
+        List<Map<String, Object>> fields = maps(tabs.get(0).get("fields"));
+        for (String name : List.of("处置方式", "处置数量", "处置状态", "复检要求", "复检结果",
+                "验收退回数量", "让步接收数量", "报废数量", "判定退货数量", "返工数量")) {
+            assertNotNull(fieldOf(fields, name), "成品报检明细缺 " + name);
+        }
+        assertEquals("待确认", fieldOf(fields, "处置状态").get("defaultValue"));
+        List<Object> columns = gridColumns(config);
+        assertColumnAfter(columns, "不合格数量", "验收退回数量");
+        assertColumnAfter(columns, "验收退回数量", "让步接收数量");
+        assertColumnAfter(columns, "让步接收数量", "报废数量");
+        List<Map<String, Object>> groups = maps(map(config.get("metadata")).get("buttonGroups"));
+        Map<String, Object> dispose = groups.stream()
+                .filter(group -> "处置".equals(group.get("name"))).findFirst().orElseThrow();
+        assertTrue(((List<?>) dispose.get("actions")).contains("确认处置"));
+        Map<String, Object> edit = groups.stream()
+                .filter(group -> "修改".equals(group.get("name"))).findFirst().orElseThrow();
+        assertTrue(((List<?>) edit.get("actions")).containsAll(List.of("中止", "取消中止")));
+    }
+
+    @Test
     void registersProcessInspectionWithOwnProcessFields() throws Exception {
         new QualityPanelRegistry(panelMapper, json).syncPanelConfigs();
 
@@ -402,9 +452,20 @@ class QualityPanelRegistryTest {
         assertEquals(3, maps(map(config.get("detail")).get("tabs")).size(), "明细+检验项目+不合格处理");
         Map<String, Object> select = map(config.get("selectConfig"));
         assertEquals("PROCESS_INSPECT_APPLY", select.get("source"));
+        for (String name : List.of("处置方式", "处置数量", "处置状态", "验收退回数量", "让步接收数量", "报废数量")) {
+            assertNotNull(fieldOf(fields, name), "生产过程检验处置字段缺 " + name);
+        }
+        assertEquals("待确认", fieldOf(fields, "处置状态").get("defaultValue"));
         List<Map<String, Object>> groups = maps(map(config.get("metadata")).get("buttonGroups"));
-        assertFalse(groups.stream().anyMatch(group -> "生单".equals(group.get("name"))),
-                "过程检验当前不做下游转换，不应挂生单组");
+        assertTrue(groups.stream().anyMatch(group -> "审批".equals(group.get("name"))),
+                "过程检验要能走提交审批→审批通过");
+        Map<String, Object> generate = groups.stream()
+                .filter(group -> "生单".equals(group.get("name"))).findFirst().orElseThrow();
+        assertEquals(List.of("生成产成品入库单", "生成委外入库单"), generate.get("actions"));
+        assertTrue(groups.stream().anyMatch(group -> "处置".equals(group.get("name"))),
+                "过程检验要有确认处置");
+        List<?> states = (List<?>) map(map(config.get("metadata")).get("panelState")).get("defaultOptions");
+        assertTrue(states.contains("审批中"), "过程检验状态要包含审批中");
     }
 
     private void assertSetting(PanelConfig row, String tplusCode, String expectedField) throws Exception {

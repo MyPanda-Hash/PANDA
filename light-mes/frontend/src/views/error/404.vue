@@ -2,7 +2,7 @@
   <div class="nf">
     <el-result icon="warning" title="404" :sub-title="tt('页面不存在')">
       <template #extra>
-        <el-button type="primary" @click="$router.replace('/assistant')">{{ tt('回工作台') }}</el-button>
+        <el-button type="primary" @click="$router.replace('/dashboard')">{{ tt('回工作台') }}</el-button>
       </template>
     </el-result>
   </div>

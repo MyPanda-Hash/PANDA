@@ -1,5 +1,5 @@
 <template>
-  <div class="adx panelx-form" :class="{ 'sectioned-form': formSections.length }">
+  <div class="adx panelx-form" :class="{ 'sectioned-form': formSections.length, 'has-fixed-hscroll': panelCode === 'PU_REQ' && !embedded && fixedBarVisible }">
     <div class="card">
       <!-- 采购发票等分段式详情：独立操作栏，避免复用通用 T+ 工具栏的旧视觉 -->
       <div v-if="formSections.length" class="invoice-topbar">
@@ -185,7 +185,7 @@
       <!-- 表体：三明细上下堆叠（对齐真实 T+：每区自带 明细/汇总 页签行 + 图标行 + 网格 + 分隔条） -->
       <div v-if="formSections.length && tabs.length" class="form-section-title detail-section-title">{{ tt('商品信息') }}</div>
       <div v-if="tabs.length" class="detail">
-        <div v-for="(tab, ti) in tabs" :key="tab.key" class="detail-block">
+        <div v-for="(tab, ti) in tabs" :key="tab.key" class="detail-block" @mouseenter="setActiveHScroll(tab.key)" @mousedown="setActiveHScroll(tab.key)">
           <div class="dt-head">
             <div class="dt-tabs">
               <span class="dt-tab" :class="{ on: (subActive[tab.key] || 'detail') === 'detail' }" @click="subActive[tab.key] = 'detail'">
@@ -210,6 +210,7 @@
           <!-- 明细视图 -->
           <template v-if="(subActive[tab.key] || 'detail') === 'detail'">
             <el-table
+              :ref="(el) => setDetailTableRef(tab.key, el)"
               :data="tabData(tab)"
               size="small"
               border
@@ -422,6 +423,17 @@
         </template>
       </el-dialog>
     </div>
+    <!-- 视口底部固定的横向滚动条：随页面滚动始终可用，不再需要先滚到表格底部 -->
+    <div
+      v-show="!embedded && panelCode === 'PU_REQ' && fixedBarVisible"
+      ref="fixedBarRef"
+      class="dt-hscroll-fixed"
+      :style="fixedBarStyle"
+      :title="tt('左右拖动查看完整列')"
+      @scroll.passive="onFixedHScroll"
+    >
+      <div class="dt-hscroll-inner" :style="{ width: fixedBarWidth + 'px' }"></div>
+    </div>
     <RefPickDialog v-model="refVisible" :field="refPick?.field" :mode="refPick?.mode" @confirm="onRefConfirm" />
     <RouteFlowPickDialog v-model="routeFlowVisible" :field="refPick?.field" @confirm="onRefConfirm" />
     <ApprovalHistoryDialog v-model="approvalVisible" :panelCode="panelCode" :formNo="approvalNo" />
@@ -451,7 +463,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted, onActivated, onDeactivated } from 'vue'
+import { ref, reactive, computed, watch, nextTick, onMounted, onBeforeUnmount, onActivated, onDeactivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 // 2026-08-20：支持弹窗嵌入（列表页双击打开表单弹窗）——panelCodeProp/codeProp 优先于路由；embedded 时保存/返回改为 emit
@@ -508,6 +520,114 @@ const meta = ref([])
 const detailDef = ref(null)
 const detailData = reactive({})
 const activeTab = ref('')
+
+// 明细表横向滚动条固定到视口底部：随页面滚动始终可见，不再需要先滚到表格底部。
+// 与 el-table 内部横向滚动容器双向同步；多明细区时跟随鼠标所在的明细表。
+const detailTableRefs = {}
+const hScrollBound = new WeakSet()
+const activeHScrollKey = ref('')
+const fixedBarRef = ref(null)
+const fixedBarWidth = ref(0)
+const fixedBarVisible = ref(false)
+const fixedBarStyle = reactive({ left: '0px', width: '0px' })
+let fixedBarRaf = 0
+
+function setDetailTableRef(key, el) {
+  if (!el) return
+  detailTableRefs[key] = el
+  if (!activeHScrollKey.value) activeHScrollKey.value = key
+  // ref 回调发生在表格挂载后，再等一帧让 el-table 完成宽度计算
+  nextTick(() => requestAnimationFrame(() => measureHScroll(key)))
+}
+
+function tableScrollWrap(key) {
+  const root = detailTableRefs[key]?.$el || detailTableRefs[key]
+  return root?.querySelector('.el-table__body-wrapper .el-scrollbar__wrap')
+    || root?.querySelector('.el-scrollbar__wrap')
+    || null
+}
+
+function activeTableWrap() {
+  return tableScrollWrap(activeHScrollKey.value)
+}
+
+function measureHScroll(key) {
+  const wrap = tableScrollWrap(key)
+  if (!wrap) return
+  if (!hScrollBound.has(wrap)) {
+    hScrollBound.add(wrap)
+    wrap.addEventListener('scroll', () => {
+      if (key === activeHScrollKey.value) syncFixedBar()
+    }, { passive: true })
+  }
+  if (key === activeHScrollKey.value) updateFixedBar()
+}
+
+function updateFixedBar() {
+  // 本次体验优化只针对请购单，报价单等其他共享表单保持原布局/交互
+  if (panelCode.value !== 'PU_REQ') {
+    fixedBarVisible.value = false
+    return
+  }
+  const key = activeHScrollKey.value
+  const root = detailTableRefs[key]?.$el || detailTableRefs[key]
+  const wrap = tableScrollWrap(key)
+  if (!root || !wrap) {
+    fixedBarVisible.value = false
+    return
+  }
+  const rect = root.getBoundingClientRect()
+  const overflow = wrap.scrollWidth - wrap.clientWidth > 2
+  const inView = rect.bottom > 0 && rect.top < window.innerHeight
+    && rect.right > 0 && rect.left < window.innerWidth
+  fixedBarVisible.value = overflow && inView
+  if (!fixedBarVisible.value) return
+  fixedBarWidth.value = wrap.scrollWidth
+  const left = Math.max(0, rect.left)
+  fixedBarStyle.left = left + 'px'
+  fixedBarStyle.width = Math.max(0, Math.min(rect.width, window.innerWidth - left)) + 'px'
+  nextTick(() => {
+    const bar = fixedBarRef.value
+    if (bar) bar.scrollLeft = wrap.scrollLeft
+  })
+}
+
+function syncFixedBar() {
+  const bar = fixedBarRef.value
+  const wrap = activeTableWrap()
+  if (bar && wrap) bar.scrollLeft = wrap.scrollLeft
+}
+
+function onFixedHScroll() {
+  const bar = fixedBarRef.value
+  const wrap = activeTableWrap()
+  if (bar && wrap) wrap.scrollLeft = bar.scrollLeft
+}
+
+function setActiveHScroll(key) {
+  if (!key || activeHScrollKey.value === key) return
+  activeHScrollKey.value = key
+  updateFixedBar()
+}
+
+function measureAllHScroll() {
+  nextTick(() => {
+    Object.keys(detailTableRefs).forEach(measureHScroll)
+    if (!detailTableRefs[activeHScrollKey.value]) {
+      activeHScrollKey.value = Object.keys(detailTableRefs)[0] || ''
+    }
+    updateFixedBar()
+  })
+}
+
+function scheduleFixedBar() {
+  if (fixedBarRaf) return
+  fixedBarRaf = requestAnimationFrame(() => {
+    fixedBarRaf = 0
+    updateFixedBar()
+  })
+}
+
 const subActive = reactive({})
 // 产成品明细选中行 → 材料明细联动过滤（显示该产品的 BOM 子件）
 const selectedProduct = ref(null)
@@ -1092,8 +1212,17 @@ function loadRefOptions(r, keyword) {
   refSelectTimers[key] = setTimeout(async () => {
     refSelectData[key].loading = true
     try {
-      refSelectData[key].options = await engine.refSelectOptions(r, keyword)
-    refPageMap[key] = 1
+      const loaded = await engine.refSelectOptions(r, keyword)
+      const options = Array.isArray(loaded) ? loaded : []
+      // 新建请购单的请购人是当前登录人，但未必在 EMP 档案中；补一个临时选项，避免下拉回显空白
+      if (!keyword && panelCode.value === 'PU_REQ'
+          && (r.dataName === '请购人' || r.code === '请购人')
+          && form['请购人']
+          && !options.some((o) => String(o.value) === String(form['请购人']))) {
+        options.unshift({ label: form['请购人'], value: form['请购人'], row: { 员工名称: form['请购人'] } })
+      }
+      refSelectData[key].options = options
+      refPageMap[key] = 1
     } catch (e) {
       refSelectData[key].options = []
     } finally {
@@ -1579,6 +1708,12 @@ async function load() {
     else if (dd && typeof dd === 'object') Object.assign(detailData, dd)
     Object.keys(form).forEach((k) => delete form[k])
     Object.assign(form, payload.data || {})
+    // 请购单新建：请购人默认当前登录人（可修改）；历史草稿若请购人为空且当前用户就是发起人，也一并补齐
+    const puReqCreator = form['发起人编号'] || form['制单人'] || form['创建人'] || ''
+    if (panelCode.value === 'PU_REQ' && !form['请购人'] && user.realName
+        && (!isEdit.value || puReqCreator === user.account)) {
+      form['请购人'] = user.realName
+    }
     meta.value = payload.meta || []
     detailDef.value = payload.detail || null
     // 老数据 / 新建单据：顺序列按行位置补齐（工序顺序 = 第几道工序）
@@ -1624,6 +1759,7 @@ async function load() {
     // BOM 自动展开：草稿单已有产品明细但材料明细为空时，按产品 BOM 带出材料
     // （覆盖列表页选单生成、推式生单、历史草稿等所有入口；材料非空不重复展开）
     autoExpandBom()
+    measureAllHScroll()
     // 页签标题 = 面板名-单据号（新单显示 面板名-新增），便于多单据区分（弹窗嵌入模式跳过）
     if (!props.embedded) {
       const no = isEdit.value ? (form['单据编号'] || form['锭号'] || form['编号'] || '') : '新增'
@@ -2066,6 +2202,14 @@ onMounted(() => {
   load()
   // 材料下级 BOM 映射（红 * 标记 + 点击行弹窗）
   loadSubBomMap()
+  window.addEventListener('resize', measureAllHScroll)
+  // 页面滚动时重新判断表格是否在视口内，固定底部滚动条随之显示/隐藏
+  window.addEventListener('scroll', scheduleFixedBar, { passive: true, capture: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', measureAllHScroll)
+  window.removeEventListener('scroll', scheduleFixedBar, true)
 })
 
 // keep-alive 页签切回时刷新面板配置：后端重启后 panel_config 可能已更新，
@@ -2087,12 +2231,20 @@ async function refreshFormConfig() {
   }
 }
 onActivated(() => {
+  measureAllHScroll()
   if (!formConfigActivated) {
     formConfigActivated = true
     return
   }
   refreshFormConfig()
 })
+
+// 页签/明细列变化后重新测量横向溢出；切换明细/汇总时也刷新一次
+watch(
+  () => tabs.value.map((t) => `${t.key}:${visibleFields(t).length}`).join('|'),
+  () => measureAllHScroll(),
+)
+watch(subActive, () => measureAllHScroll(), { deep: true })
 
 // keep-alive 切离时关闭所有弹窗（防止 append-to-body 弹窗在路由切换后残留）
 onDeactivated(() => {
@@ -2168,6 +2320,10 @@ watch(() => [panelCode.value, code.value], () => {
   border-radius: 6px;
   padding: 12px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+/* 固定底部横向滚动条出现时给页面留出空间，避免遮住表尾/备注 */
+.panelx-form.has-fixed-hscroll {
+  padding-bottom: 22px;
 }
 .tools {
   display: flex;
@@ -2353,7 +2509,8 @@ watch(() => [panelCode.value, code.value], () => {
   display: flex;
   align-items: center;
   gap: 2px;
-}.field .req {
+}
+.field .req {
   color: var(--d-bad);
 }
 .detail {
@@ -2488,6 +2645,37 @@ watch(() => [panelCode.value, code.value], () => {
 }
 .detail-block {
   margin-bottom: 4px;
+}
+/* 明细表横向滚动条固定在视口底部：随页面滚动始终可见，宽度与左侧对齐当前明细表。
+   内部宽度由脚本按表格 scrollWidth 同步，双向同步 scrollLeft。 */
+.dt-hscroll-fixed {
+  position: fixed;
+  bottom: 0;
+  z-index: 80;
+  height: 18px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-top: 1px solid #aeb8c5;
+  border-left: 1px solid #d7dde7;
+  border-right: 1px solid #d7dde7;
+  background: #f5f7fa;
+  box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.12);
+}
+.dt-hscroll-inner {
+  height: 1px;
+}
+.dt-hscroll-fixed::-webkit-scrollbar {
+  height: 12px;
+}
+.dt-hscroll-fixed::-webkit-scrollbar-track {
+  background: #eef1f5;
+}
+.dt-hscroll-fixed::-webkit-scrollbar-thumb {
+  background: #aeb8c5;
+  border-radius: 6px;
+}
+.dt-hscroll-fixed::-webkit-scrollbar-thumb:hover {
+  background: #8794a6;
 }
 .dt-head {
   display: flex;

@@ -74,6 +74,25 @@ test('非法行号/无明细时安全返回', () => {
   assert.equal(syncUnqualifiedRow({ items: [{}] }, 0), false)
 })
 
+test('成品报检单结构（报检数量+检验结果）同样能生成处理行', () => {
+  const detail = {
+    items: [{
+      存货编码: 'CP001', 存货名称: '散热片', 规格型号: '120×80', 仓库: '成品仓',
+      报检数量: 10, 合格数量: 7, 不合格数量: 3, 检验结果: '不合格',
+      不合格原因: '尺寸不良',
+    }],
+  }
+
+  assert.equal(syncUnqualifiedRow(detail, 1), true)
+  const row = detail.unqualified[0]
+  assert.equal(row['关联明细行号'], 1)
+  assert.equal(row['存货编码'], 'CP001')
+  assert.equal(row['存货名称'], '散热片')
+  assert.equal(row['不合格原因'], '尺寸不良')
+  assert.equal(row['处理数量'], 3)
+  assert.equal(row['处理方式'], '退回')
+})
+
 test('只有配置了 unqualified 页签的面板才启用联动', () => {
   assert.equal(hasUnqualifiedTab([{ key: 'items' }]), false)
   assert.equal(hasUnqualifiedTab([{ key: 'items' }, { key: 'unqualified' }]), true)

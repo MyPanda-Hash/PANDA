@@ -176,7 +176,7 @@ public class PurchasePanelRegistry {
             Map<String, Object> select = new LinkedHashMap<>();
             select.put("source", "PU_REQ");
             select.put("title", "选请购单");
-            select.put("tip", "仅显示已审核且未中止的请购单，选中后按请购明细生成采购订单");
+            select.put("tip", "仅显示已审核且未中止的请购单，整单一次性生成采购订单（不支持拆单）");
             select.put("detailKey", "items");
             select.put("columns", List.of("单据编号", "单据日期", "建议供应商", "请购人", "部门", "需求日期"));
             select.put("headerMap", maps("单据编号", "来源单号", "单据编号", "合同号",

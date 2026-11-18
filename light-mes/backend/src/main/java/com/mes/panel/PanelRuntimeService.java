@@ -182,6 +182,11 @@ public interface PanelRuntimeService {
         return List.of();
     }
 
+    /** 采购开票工作台：以采购入库单为行，带发票号与状态。默认返回空表。 */
+    default List<Map<String, Object>> purchaseInvoiceWorkbench() {
+        return List.of();
+    }
+
     /**
      * 计划分析可选的销售订单：已审核且还有未排产数量。
      * 默认返回空表。
@@ -196,6 +201,11 @@ public interface PanelRuntimeService {
      */
     default Map<String, Object> planAnalyze(String salesOrderNo) {
         throw new UnsupportedOperationException("planAnalyze is not supported by this runtime");
+    }
+
+    /** 计划分析（snapshot=true 时把缺口行写成采购需求来源快照）。 */
+    default Map<String, Object> planAnalyze(String salesOrderNo, boolean snapshot) {
+        return planAnalyze(salesOrderNo);
     }
 
     /**

@@ -53,11 +53,10 @@ export const menuTree = [
         children: [
           {
             code: 'doc', title: '单据', children: [
-              { code: 'puReqAnalysis', title: '采购需求分析', path: '/panelx/list/PU_REQ_ANALYSIS', icon: 'DataAnalysis', panelCode: 'PU_REQ_ANALYSIS' },
               { code: 'puReq', title: '请购单', path: '/panelx/list/PU_REQ', icon: 'Tickets', panelCode: 'PU_REQ', operationName: '新增流程' },
               { code: 'puOrder', title: '采购订单', path: '/panelx/list/PU_ORDER', icon: 'Tickets', panelCode: 'PU_ORDER', operationName: '新增流程' },
               { code: 'purchaseReturn', title: '采购退货单', path: '/panelx/list/PURCHASE_RETURN', icon: 'Tickets', panelCode: 'PURCHASE_RETURN', operationName: '新增流程' },
-              { code: 'puInvoice', title: '采购发票', path: '/panelx/list/PU_INVOICE', icon: 'Tickets', panelCode: 'PU_INVOICE', operationName: '新增流程' },
+              { code: 'puInvoice', title: '采购发票', path: '/scm/purchaseInvoiceWorkbench', icon: 'Tickets', panelCode: 'PU_INVOICE' },
               { code: 'invoiceMatch', title: '发票勾稽表', path: '/panelx/list/PURCHASE_INVOICE_MATCH', icon: 'Link', panelCode: 'PURCHASE_INVOICE_MATCH' },
               { code: 'expense', title: '费用单', path: '/panelx/list/EXPENSE', icon: 'Tickets', panelCode: 'EXPENSE', operationName: '新增流程' },
               { code: 'puCostAlloc', title: '采购费用分摊单', path: '/panelx/list/PU_COST_ALLOC', icon: 'Tickets', panelCode: 'PU_COST_ALLOC', operationName: '新增流程' },
@@ -133,7 +132,7 @@ export const menuTree = [
         children: [
           { code: 'planAnalysis', title: '计划分析', path: '/mes/planAnalysis', icon: 'DataAnalysis' },
           { code: 'mpsPlan', title: '主生产计划', path: '/mes/mps', icon: 'Calendar' },
-          { code: 'puReqAnalysis2', title: '采购需求分析', path: '/panelx/list/PU_REQ_ANALYSIS', icon: 'DataAnalysis', panelCode: 'PU_REQ_ANALYSIS' },
+          { code: 'puReqAnalysis2', title: '采购需求分析', path: '/mes/purchaseReqAnalysis', icon: 'DataAnalysis', panelCode: 'PU_REQ_ANALYSIS' },
         ],
       },
       {

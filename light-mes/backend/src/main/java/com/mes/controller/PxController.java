@@ -27,12 +27,15 @@ public class PxController {
     private final PanelRuntimeService service;
     private final RoleService roleService;
     private final com.mes.service.UsageLogService usageLog;
+    private final com.mes.service.PurchaseReqAnalysisService purchaseReqAnalysisService;
 
     public PxController(PanelRuntimeService service, RoleService roleService,
-                        com.mes.service.UsageLogService usageLog) {
+                        com.mes.service.UsageLogService usageLog,
+                        com.mes.service.PurchaseReqAnalysisService purchaseReqAnalysisService) {
         this.service = service;
         this.roleService = roleService;
         this.usageLog = usageLog;
+        this.purchaseReqAnalysisService = purchaseReqAnalysisService;
     }
 
     /**
@@ -490,7 +493,7 @@ public class PxController {
                                                       @RequestBody Map<String, Object> body) {
         requireVisible(auth, "SO_ORDER");
         String salesOrderNo = String.valueOf(body.getOrDefault("salesOrderNo", "")).trim();
-        return ApiResult.ok(service.planAnalyze(salesOrderNo));
+        return ApiResult.ok(service.planAnalyze(salesOrderNo, true));
     }
 
     /**
@@ -548,6 +551,12 @@ public class PxController {
     @GetMapping("/invoiceWorkbench")
     public ApiResult<List<Map<String, Object>>> invoiceWorkbench() {
         return ApiResult.ok(service.invoiceWorkbench());
+    }
+
+    /** 采购开票工作台：以采购入库单为行，带出发票号与状态。 */
+    @GetMapping("/purchaseInvoiceWorkbench")
+    public ApiResult<List<Map<String, Object>>> purchaseInvoiceWorkbench() {
+        return ApiResult.ok(service.purchaseInvoiceWorkbench());
     }
 
     /**
@@ -611,5 +620,111 @@ public class PxController {
         String panelCode = String.valueOf(body.getOrDefault("panelCode", ""));
         service.retireCustomField(panelCode, body);
         return ApiResult.ok(null);
+    }
+
+    // ---------- 采购需求分析（轻量工作台） ----------
+
+    /** 缺口汇总（分页）+ 概览。 */
+    @PostMapping("/purchaseReqAnalysis/query")
+    public ApiResult<Map<String, Object>> purchaseReqAnalysisQuery(Authentication auth,
+            @RequestBody(required = false) Map<String, Object> body) {
+        requireVisible(auth, "PU_REQ_ANALYSIS");
+        Map<String, Object> filters = new java.util.LinkedHashMap<>();
+        if (body != null && body.get("filters") instanceof Map<?, ?> raw) {
+            for (Map.Entry<?, ?> entry : raw.entrySet()) {
+                filters.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+        }
+        int pageNo = body != null && body.get("pageNo") instanceof Number n ? n.intValue() : 1;
+        int pageSize = body != null && body.get("pageSize") instanceof Number n ? n.intValue() : 50;
+        return ApiResult.ok(purchaseReqAnalysisService.query(filters, pageNo, pageSize));
+    }
+
+    /** 某物料的来源明细（计划分析/手工）。 */
+    @GetMapping("/purchaseReqAnalysis/sources")
+    public ApiResult<List<Map<String, Object>>> purchaseReqAnalysisSources(Authentication auth,
+            @RequestParam("materialCode") String materialCode,
+            @RequestParam(value = "spec", required = false) String spec,
+            @RequestParam(value = "unit", required = false) String unit) {
+        requireVisible(auth, "PU_REQ_ANALYSIS");
+        return ApiResult.ok(purchaseReqAnalysisService.sources(materialCode, spec, unit));
+    }
+
+    /** 某物料的单据链路：请购 → 采购订单 → 采购入库。 */
+    @GetMapping("/purchaseReqAnalysis/chain")
+    public ApiResult<List<Map<String, Object>>> purchaseReqAnalysisChain(Authentication auth,
+            @RequestParam("materialCode") String materialCode) {
+        requireVisible(auth, "PU_REQ_ANALYSIS");
+        return ApiResult.ok(purchaseReqAnalysisService.chain(materialCode));
+    }
+
+    /** 生成请购单（单行/批量）。 */
+    @PostMapping("/purchaseReqAnalysis/generate")
+    public ApiResult<Map<String, Object>> purchaseReqAnalysisGenerate(Authentication auth,
+            @RequestBody Map<String, Object> body) {
+        requireVisible(auth, "PU_REQ_ANALYSIS");
+        List<Map<String, Object>> items = new ArrayList<>();
+        if (body != null && body.get("items") instanceof List<?> list) {
+            for (Object one : list) {
+                if (one instanceof Map<?, ?> raw) {
+                    Map<String, Object> item = new java.util.LinkedHashMap<>();
+                    for (Map.Entry<?, ?> e : raw.entrySet()) item.put(String.valueOf(e.getKey()), e.getValue());
+                    items.add(item);
+                }
+            }
+        }
+        return ApiResult.ok(purchaseReqAnalysisService.generate(items));
+    }
+
+    /** 手工补录需求。 */
+    @PostMapping("/purchaseReqAnalysis/manual")
+    public ApiResult<Map<String, Object>> purchaseReqAnalysisManual(Authentication auth,
+            @RequestBody Map<String, Object> body) {
+        requireVisible(auth, "PU_REQ_ANALYSIS");
+        Map<String, Object> data = new java.util.LinkedHashMap<>();
+        if (body != null) {
+            for (Map.Entry<String, Object> e : body.entrySet()) data.put(e.getKey(), e.getValue());
+        }
+        data.put("operator", auth == null ? "" : auth.getName());
+        return ApiResult.ok(purchaseReqAnalysisService.manual(data));
+    }
+
+    /** 撤销手工需求。 */
+    @PostMapping("/purchaseReqAnalysis/manual/revoke")
+    public ApiResult<Map<String, Object>> purchaseReqAnalysisManualRevoke(Authentication auth,
+            @RequestBody Map<String, Object> body) {
+        requireVisible(auth, "PU_REQ_ANALYSIS");
+        Object id = body == null ? null : body.get("id");
+        if (!(id instanceof Number n)) throw new IllegalArgumentException("缺少手工需求 id");
+        return ApiResult.ok(purchaseReqAnalysisService.revokeManual(n.longValue()));
+    }
+
+    /** 手工需求列表。 */
+    @GetMapping("/purchaseReqAnalysis/manual")
+    public ApiResult<List<Map<String, Object>>> purchaseReqAnalysisManualList(Authentication auth) {
+        requireVisible(auth, "PU_REQ_ANALYSIS");
+        return ApiResult.ok(purchaseReqAnalysisService.manualList());
+    }
+
+    /** 导出缺口汇总（xlsx）。 */
+    @PostMapping("/purchaseReqAnalysis/export")
+    public org.springframework.http.ResponseEntity<byte[]> purchaseReqAnalysisExport(Authentication auth,
+            @RequestBody(required = false) Map<String, Object> body) throws java.io.IOException {
+        requireVisible(auth, "PU_REQ_ANALYSIS");
+        Map<String, Object> filters = new java.util.LinkedHashMap<>();
+        if (body != null && body.get("filters") instanceof Map<?, ?> raw) {
+            for (Map.Entry<?, ?> entry : raw.entrySet()) {
+                filters.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+        }
+        byte[] bytes = purchaseReqAnalysisService.export(filters);
+        String name = "采购需求分析-" + java.time.LocalDate.now() + ".xlsx";
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        org.springframework.http.ContentDisposition.attachment()
+                                .filename(name, java.nio.charset.StandardCharsets.UTF_8).build().toString())
+                .contentType(org.springframework.http.MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(bytes);
     }
 }

@@ -152,6 +152,14 @@ public class QualityPanelRegistry {
         ensureColumnAfter(config, "累计已退数量", "不合格原因");
         ensureDetailReference(config, "检验方案", "QC_PLAN", "方案名称");
         ensureColumnAfter(config, "不合格原因", "检验方案");
+        // 2026-11-12：成品报检单按来料/成品检验单模式补齐处置联动（不合格数量 → 不合格处理页签）
+        addUnqualifiedTab(config);
+        addProjectTab(config);
+        ensureDispositionQuantityFields(config);
+        ensureDispositionFields(config);
+        ensureAction(config, "处置", "确认处置");
+        ensureAction(config, "修改", "中止");
+        ensureAction(config, "修改", "取消中止");
     }
 
     static void upgradeInspection(Map<String, Object> config) {
@@ -274,6 +282,38 @@ public class QualityPanelRegistry {
         tab.put("fields", fields);
         detail.put("tabs", tabs);
         config.put("detail", detail);
+    }
+
+    /**
+     * 处置页签回写到明细的数量字段（成品报检/生产过程检验与来料检验共用同一套推导口径）。
+     * 验收退回/让步接收/报废对外可见，判定退货/返工/让步接收含税单价只存不占列。
+     */
+    private static void ensureDispositionQuantityFields(Map<String, Object> config) {
+        for (String name : List.of("验收退回数量", "让步接收数量", "报废数量")) {
+            ensureDetailField(config, name, "小数", true, true);
+        }
+        ensureDetailField(config, "判定退货数量", "小数", true, false);
+        ensureDetailField(config, "返工数量", "小数", true, false);
+        ensureDetailField(config, "让步接收含税单价", "小数", false, false);
+        String after = "不合格数量";
+        for (String name : List.of("验收退回数量", "让步接收数量", "报废数量")) {
+            ensureColumnAfter(config, after, name);
+            after = name;
+        }
+    }
+
+    /** 审批面板的状态集合：除草稿/已审核/已中止外还要能落到「审批中」。 */
+    private static void ensureApprovalStates(Map<String, Object> config) {
+        Map<String, Object> metadata = map(config.get("metadata"));
+        Map<String, Object> state = new LinkedHashMap<>();
+        if (metadata.get("panelState") instanceof Map<?, ?> raw) {
+            raw.forEach((key, value) -> state.put(String.valueOf(key), value));
+        }
+        state.put("dataName", "单据状态");
+        state.put("dataType", "STRING");
+        state.put("defaultOptions", List.of("草稿", "审批中", "已审核", "已中止"));
+        metadata.put("panelState", state);
+        config.put("metadata", metadata);
     }
 
     private static Map<String, Object> optionalSelect(String name, String... options) {
@@ -536,12 +576,28 @@ public class QualityPanelRegistry {
         head.add(reference("检验部门", "DEPT", "部门名称"));
         head.add(field("数据来源", "文本", false));
         List<Map<String, Object>> items = processInspectionFields();
-        // 生产过程检验单当前只做单据本身；下游退回/入库转换未实现，不挂错误生单入口
-        List<Map<String, Object>> groups = voucherGroups(new ArrayList<>(selects.keySet()), null);
+        // 与来料/成品检验单同一套动作：选报检单 → 检验 → 确认处置 → 产成品/委外入库
+        List<Map<String, Object>> groups = new ArrayList<>(List.of(
+                group("新增", "新增"),
+                group("选单", selects.keySet().toArray(String[]::new)),
+                group("修改", "修改", "中止", "取消中止"),
+                group("保存", "保存", "保存新增", "保存为草稿"),
+                group("删除", "删除", "删除单据"),
+                group("审批", "提交审批", "审批通过", "审批驳回", "审批情况", "弃审"),
+                group("生单", "生成产成品入库单", "生成委外入库单"),
+                group("处置", "确认处置"),
+                group("工具", "生单流程联查", "执行情况"),
+                group("更多", "刷新", "放弃")));
         Map<String, Object> cfg = config(code, name, "单据", head,
                 List.of(tab("items", "明细", items, "检验数量")), groups, selects);
         addUnqualifiedTab(cfg);
         addProjectTab(cfg);
+        ensureDispositionQuantityFields(cfg);
+        ensureDispositionFields(cfg);
+        // 过程检验没有采购退回链：验收退回只存不展示，避免把采购口径带到工序现场
+        ensureDetailField(cfg, "验收退回数量", "小数", true, false);
+        removeColumn(cfg, "验收退回数量");
+        ensureApprovalStates(cfg);
         return cfg;
     }
 

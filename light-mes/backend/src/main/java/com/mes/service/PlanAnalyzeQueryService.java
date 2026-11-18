@@ -1,14 +1,20 @@
 package com.mes.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mes.entity.FormData;
+import com.mes.entity.PuReqSource;
 import com.mes.entity.StockBalance;
 import com.mes.mapper.FormDataMapper;
+import com.mes.mapper.PuReqSourceMapper;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -35,14 +41,17 @@ public class PlanAnalyzeQueryService {
     private final ObjectMapper json;
     private final PlanAnalyzeService engine;
     private final StockBalanceService stockBalanceService;
+    private final PuReqSourceMapper puReqSourceMapper;
 
     public PlanAnalyzeQueryService(FormDataMapper formMapper, ObjectMapper json,
                                    PlanAnalyzeService engine,
-                                   StockBalanceService stockBalanceService) {
+                                   StockBalanceService stockBalanceService,
+                                   PuReqSourceMapper puReqSourceMapper) {
         this.formMapper = formMapper;
         this.json = json;
         this.engine = engine;
         this.stockBalanceService = stockBalanceService;
+        this.puReqSourceMapper = puReqSourceMapper;
     }
 
     /**
@@ -92,8 +101,71 @@ public class PlanAnalyzeQueryService {
      * @param salesOrderNo 销售订单号
      */
     public Map<String, Object> analyze(String salesOrderNo) {
+        return analyze(salesOrderNo, false);
+    }
+
+    /**
+     * 分析一张销售订单；snapshot=true 时把「外购 + 净需求>0」的行写成采购需求来源快照。
+     *
+     * <p>只有用户显式点「分析」才落快照；请购生单等内部复用不落，避免重复写。
+     */
+    public Map<String, Object> analyze(String salesOrderNo, boolean snapshot) {
         Analyzed analyzed = analyzeTyped(salesOrderNo);
+        if (snapshot) snapshotSources(analyzed);
         return toContract(analyzed.result(), analyzed.data(), analyzed.lines());
+    }
+
+    /** 本次分析的缺口行落快照；同一销售订单的旧计划快照标记失效。 */
+    private void snapshotSources(Analyzed analyzed) {
+        String soNo = analyzed.result().order().no();
+        if (soNo == null || soNo.isBlank()) return;
+        LocalDateTime now = LocalDateTime.now();
+        puReqSourceMapper.update(null, new LambdaUpdateWrapper<PuReqSource>()
+                .eq(PuReqSource::getSoNo, soNo)
+                .eq(PuReqSource::getSourceType, "计划")
+                .eq(PuReqSource::getStatus, "有效")
+                .set(PuReqSource::getStatus, "失效")
+                .set(PuReqSource::getUpdateTime, now));
+        List<PlanAnalyzeService.MaterialLine> lines;
+        try {
+            lines = engine.purchasableLines(analyzed.result(), null);
+        } catch (IllegalArgumentException noShortage) {
+            return;
+        }
+        String planNo = "PA-" + now.format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS"));
+        String operator = currentUserName();
+        for (PlanAnalyzeService.MaterialLine line : lines) {
+            PuReqSource row = new PuReqSource();
+            row.setPlanNo(planNo);
+            row.setSoNo(soNo);
+            row.setCustomer(analyzed.result().order().customer());
+            row.setDueDate(analyzed.result().order().dueDate());
+            row.setMaterialCode(line.code());
+            row.setMaterialName(line.name());
+            row.setSpec(line.spec());
+            row.setUnit(line.unit());
+            row.setLevel(line.level());
+            row.setPath(line.path());
+            row.setGrossQty(line.grossQty());
+            row.setStockQty(line.stockQty());
+            row.setNetQty(line.netQty());
+            row.setSupplyType(line.supplyType());
+            row.setSourceType("计划");
+            row.setStatus("有效");
+            row.setCreatedBy(operator);
+            row.setCreateTime(now);
+            row.setUpdateTime(now);
+            puReqSourceMapper.insert(row);
+        }
+    }
+
+    private static String currentUserName() {
+        try {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            return auth == null ? "" : String.valueOf(auth.getName());
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     /** 分析结果与它的装载数据：请购生单要复用同一份结果，不重复算两遍。 */

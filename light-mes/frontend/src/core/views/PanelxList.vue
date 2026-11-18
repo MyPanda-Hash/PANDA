@@ -3085,7 +3085,17 @@ function loadRefSelectOptions(field, key, keyword) {
   refSelectTimers[key] = setTimeout(async () => {
     refSelectData[key].loading = true
     try {
-      refSelectData[key].options = await engine.refSelectOptions(field, keyword)
+      const loaded = await engine.refSelectOptions(field, keyword)
+      const options = Array.isArray(loaded) ? loaded : []
+      // 请购人的默认值可能是当前登录人（未必在 EMP 档案中），补临时选项避免下拉回显空白
+      if (!keyword && panelCode.value === 'PU_REQ'
+          && (field.dataName === '请购人' || field.code === '请购人')) {
+        const value = cur.value?.['请购人'] || ''
+        if (value && !options.some((o) => String(o.value) === String(value))) {
+          options.unshift({ label: value, value, row: { 员工名称: value } })
+        }
+      }
+      refSelectData[key].options = options
       refPageMap[key] = 1
     } catch (e) {
       refSelectData[key].options = []
@@ -3374,7 +3384,10 @@ async function directAdd() {
     return
   }
   try {
-    const res = await engine.callButton({ panelCode: panelCode.value, buttonName: '保存', formData: {}, buttonParam: {} })
+    // 请购单：列表页直接新增会先落一张空草稿，这里把请购人一并写入，避免列表内联表单显示为空
+    const createForm = {}
+    if (panelCode.value === 'PU_REQ' && user.realName) createForm['请购人'] = user.realName
+    const res = await engine.callButton({ panelCode: panelCode.value, buttonName: '保存', formData: createForm, buttonParam: {} })
     const no = res && (res['编号'] || res.formNo)
     if (!no) return ElMessage.error(tt('新增失败') + '：' + tt('未返回单据编号'))
     await load() // 刷新列表（新单按创建时间倒序置顶）
@@ -3877,6 +3890,19 @@ async function onScanApply(payload) {
   ElMessage.success('识别数据已填入草稿，请核对后保存')
 }
 
+/** 请购单草稿：列表内联编辑时补齐请购人；新建已由 directAdd 写入，历史草稿按发起人兜底。 */
+function applyPuReqRequesterDefaults() {
+  if (panelCode.value !== 'PU_REQ' || !user.realName) return
+  for (const row of list.value) {
+    if (!row || row['请购人']) continue
+    const status = row['单据状态'] || row['状态']
+    if (status && status !== '草稿') continue
+    const creator = row['发起人编号'] || row['制单人'] || row['创建人'] || ''
+    if (creator && creator !== user.account) continue
+    row['请购人'] = user.realName
+  }
+}
+
 async function load() {
   delMode.value = false
   delSel.value = []
@@ -3891,6 +3917,7 @@ async function load() {
     if (query.keyword) params.keyword = query.keyword
     const res = await engine.queryFormDataList(params)
     list.value = res.list || []
+    applyPuReqRequesterDefaults()
     total.value = res.totalSize || 0
     // 报表有「仓库」列时，预取仓库档案给筛选栏做分组下拉
     if (pageExtraSelects.value.length) loadWarehouseGroups()

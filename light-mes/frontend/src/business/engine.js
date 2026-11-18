@@ -680,6 +680,36 @@ export async function invoiceWorkbench() {
   return unwrap(await request.get('/px/invoiceWorkbench'))
 }
 
+export async function purchaseInvoiceWorkbench() {
+  return unwrap(await request.get('/px/purchaseInvoiceWorkbench'))
+}
+
+// ---------- 采购需求分析 ----------
+export async function purchaseReqAnalysisQuery(payload) {
+  return unwrap(await request.post('/px/purchaseReqAnalysis/query', payload))
+}
+export async function purchaseReqAnalysisSources(params) {
+  return unwrap(await request.get('/px/purchaseReqAnalysis/sources', { params }))
+}
+export async function purchaseReqAnalysisChain(materialCode) {
+  return unwrap(await request.get('/px/purchaseReqAnalysis/chain', { params: { materialCode } }))
+}
+export async function purchaseReqAnalysisGenerate(items) {
+  return unwrap(await request.post('/px/purchaseReqAnalysis/generate', { items }))
+}
+export async function purchaseReqAnalysisManual(body) {
+  return unwrap(await request.post('/px/purchaseReqAnalysis/manual', body))
+}
+export async function purchaseReqAnalysisManualRevoke(id) {
+  return unwrap(await request.post('/px/purchaseReqAnalysis/manual/revoke', { id }))
+}
+export async function purchaseReqAnalysisManualList() {
+  return unwrap(await request.get('/px/purchaseReqAnalysis/manual'))
+}
+export async function purchaseReqAnalysisExport(filters) {
+  return asBlob(await request.post('/px/purchaseReqAnalysis/export', { filters }, { responseType: 'blob' }))
+}
+
 /** 开票方（销售方）信息，销售发票打印用。 */
 export async function companyInfo() {
   return unwrap(await request.get('/px/companyInfo'))

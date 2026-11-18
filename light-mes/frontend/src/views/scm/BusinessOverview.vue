@@ -172,7 +172,7 @@
             <span class="bo-meta-item bo-meta-tip">{{ tt('节点点击进入 · 箭头为生单/选单流转') }}</span>
           </div>
         </div>
-        <div class="bo-canvas" :style="{ height: canvasH + 'px' }">
+        <div ref="canvasEl" class="bo-canvas" :style="{ height: canvasH + 'px' }">
           <VueFlow
             v-model:nodes="nodes"
             v-model:edges="edges"
@@ -1358,12 +1358,20 @@ watch(pickPanel, () => {
 // ---------- Vue Flow 图数据（按当前模块构建） ----------
 const nodes = ref([])
 const edges = ref([])
+const canvasEl = ref(null)
 const { fitView } = useVueFlow()
 
 /** 画布尺寸就绪后再 fitView：VueFlow 在容器高度为 0 时会算出错误的比例。 */
 async function fitNow() {
   await nextTick()
   requestAnimationFrame(() => fitView({ padding: 0.03, maxZoom: 1, minZoom: 0.75 }))
+}
+
+/** 尺寸变化后稍等一拍再适配：Vue Flow 自己的尺寸状态更新可能晚于本组件的 ResizeObserver。 */
+let fitTimer = 0
+function scheduleFit() {
+  clearTimeout(fitTimer)
+  fitTimer = setTimeout(fitNow, 60)
 }
 
 const EDGE_COLOR = '#98a2b3'
@@ -1455,6 +1463,8 @@ function buildFlow() {
     const bothHit = tracked.value && !!fromHit && !!toHit
     // 两端都命中且下游仍未完成 → 正在流转，给流光动画
     const flowing = bothHit && toHit.some((h) => h.state !== '完成')
+    // 标签说明流转条件，追踪态下只给命中的边显示；不显示时留空，避免残留在未命中的边上
+    const showLabel = !!e.label && (!tracked.value || bothHit)
     return {
       id: 'e' + i + '-' + e.from + '-' + e.to,
       source: e.from,
@@ -1465,12 +1475,13 @@ function buildFlow() {
       pathOptions: { borderRadius: 6, offset: Number(e.offset) || 8 },
       ...edgeHandles(e, layout),
       // 流转标签：写在线上，让人不用悬停就知道这条箭头是生单还是选单
-      label: e.label ? tt(e.label) : '',
+      label: showLabel ? tt(e.label) : '',
       labelShowBg: true,
-      labelBgPadding: [5, 3],
-      labelBgBorderRadius: 4,
+      labelBgPadding: [4, 2],
+      labelBgBorderRadius: 3,
       labelBgStyle: { fill: '#ffffff', fillOpacity: 1, stroke: '#e6e9ef' },
-      labelStyle: { fill: '#59616e', fontSize: '11px' },
+      // 12px 是卡片间隙（72px）能放下 5 个汉字标签的上限，再大就会被相邻卡片盖住
+      labelStyle: { fill: bothHit ? '#1677ff' : '#59616e', fontSize: '12px' },
       markerEnd: {
         type: MarkerType.ArrowClosed,
         width: 14,
@@ -1491,17 +1502,6 @@ function buildFlow() {
           },
       animated: flowing,
       class: flowing ? 'bo-edge-flow' : (bothHit ? 'bo-edge-done' : ''),
-      // 边标签说明流转条件（到货/报检/合格入库/不合格退回…），追踪态下命中边才显示
-      ...(e.label && (!tracked.value || bothHit)
-        ? {
-            label: e.label,
-            labelShowBg: true,
-            labelBgPadding: [4, 2],
-            labelBgBorderRadius: 3,
-            labelBgStyle: { fill: '#ffffff', fillOpacity: 0.95 },
-            labelStyle: { fill: bothHit ? '#1677ff' : '#8c8c8c', fontSize: 11 },
-          }
-        : {}),
     }
   })
 }
@@ -1513,12 +1513,24 @@ watch([cur, filterText, traceKey], async () => {
   setTimeout(fitNow, 400)
 }, { immediate: true })
 
+let canvasObserver = null
 onMounted(() => {
   fitNow()
-  window.addEventListener('resize', fitNow)
+  window.addEventListener('resize', scheduleFit)
+  // 画布高度由 flex 和侧栏内容共同决定，首帧量到的尺寸可能偏大；
+  // 尺寸稳定后再适配一次，否则 minZoom 会按旧高度把图整体压到画布下半部。
+  if (canvasEl.value && typeof ResizeObserver !== 'undefined') {
+    canvasObserver = new ResizeObserver(scheduleFit)
+    canvasObserver.observe(canvasEl.value)
+  }
 })
 
-onUnmounted(() => window.removeEventListener('resize', fitNow))
+onUnmounted(() => {
+  window.removeEventListener('resize', scheduleFit)
+  clearTimeout(fitTimer)
+  canvasObserver?.disconnect()
+  canvasObserver = null
+})
 
 /** 面板进入权限：与后端 requireVisible 同口径（admin 全通，其余按 sys_role_panel 可见面板判定）。只拦“进入”，不影响流程图与相关单据的展示。 */
 function canOpenPanel(panelCode) {
@@ -1537,6 +1549,7 @@ function openPanel(panelCode, title, permCode) {
     ElMessage.warning(tt('无权限访问该面板') + '：' + tt(title || panelCode))
     return
   }
+  // 有专属作业界面的面板（如销售开票工作台）与菜单落点保持一致，不再一律进通用列表页。
   go(pathOf(panelCode), title)
 }
 
@@ -1546,6 +1559,13 @@ function openPanel(panelCode, title, permCode) {
  */
 const CUSTOM_PAGES = {
   SALE_INVOICE: '/scm/invoiceWorkbench',
+  // 采购发票：与菜单一致进采购开票工作台，不再进通用单据表格
+  PU_INVOICE: '/scm/purchaseInvoiceWorkbench',
+  // 采购需求分析：计划分析之后的缺口闭环工作台，不再进通用单据表格
+  PU_REQ_ANALYSIS: '/mes/purchaseReqAnalysis',
+  // 工序报工 / 生产领料 与菜单落点保持一致：节点点进去进作业看板，不再进通用单据表格。
+  PROCESS_REPORT: '/mes/processReport',
+  MATERIAL_OUT: '/mes/materialIssue',
   PLAN: '/mes/plan',
   PLAN_ANALYSIS: '/mes/planAnalysis',
   MATERIAL_ISSUE: '/mes/materialIssue',

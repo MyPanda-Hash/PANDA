@@ -356,7 +356,7 @@ async function createRequisition(codes) {
     const res = await engine.planAnalyzePurchaseReq(selected.value, codes)
     const no = res?.['编号'] || ''
     ElMessage.success(`已生成请购单 ${no}（草稿），待采购入库后回到本页重新分析`)
-    if (no) openPanelForm('PU_REQ', no)
+    if (no) openRequisition(no)
   } catch (e) {
     ElMessage.error(engine.errMsg(e) || '生成请购单失败')
   } finally {
@@ -386,6 +386,14 @@ function goConfigureRoute(product) {
   }
   router.push({ path, query })
   tabs.open({ path, title: '工艺路线-新增', query })
+}
+
+/** 打开请购单列表页并定位单据：单据统一走列表页，表单页不作为默认入口。 */
+function openRequisition(docNo) {
+  const path = '/panelx/list/PU_REQ'
+  const query = { code: docNo, from: '/mes/planAnalysis' }
+  router.push({ path, query })
+  tabs.open({ path, title: '请购单-' + docNo, query })
 }
 
 /** 打开某张已存在的单据表单。 */

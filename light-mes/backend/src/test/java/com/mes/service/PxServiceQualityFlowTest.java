@@ -129,7 +129,7 @@ class PxServiceQualityFlowTest {
                 () -> service.callButton("PROCESS_INSPECTION", "审核",
                         Map.of("编号", "GC-001"), Map.of()));
 
-        assertTrue(error.getMessage().contains("检验返工数量 + 工废数量 + 料废数量必须等于不合格数量"));
+        assertTrue(error.getMessage().contains("返工数量 + 报废数量（未填时按工废+料废）必须等于不合格数量"));
     }
 
     @Test

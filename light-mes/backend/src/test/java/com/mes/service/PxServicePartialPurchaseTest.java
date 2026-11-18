@@ -20,12 +20,14 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * 部分下单/部分到货（2026-11-05）：同一来源行按剩余量分批下推，不超量、不跨下游面板混用。
+ * 采购转单规则：请购→订单整单一次性转单（不拆单）；订单→到货按剩余量分批到货。
  */
 @ExtendWith(MockitoExtension.class)
 class PxServicePartialPurchaseTest {
@@ -44,7 +46,31 @@ class PxServicePartialPurchaseTest {
     }
 
     @Test
-    void generatesRemainingOrderQuantityFromRequisition() throws Exception {
+    void rejectsSplittingRequisitionIntoMultipleOrders() throws Exception {
+        Map<String, Object> reqItem = new HashMap<>();
+        reqItem.put("存货编码", "CL001");
+        reqItem.put("存货名称", "铝棒");
+        reqItem.put("采购单位", "件");
+        reqItem.put("数量", 10);
+        FormData requisition = document("PU_REQ", "CG-001", "已审核",
+                Map.of("单据编号", "CG-001", "建议供应商", "华东铝业"),
+                Map.of("items", List.of(reqItem)));
+        FormData existingOrder = document("PU_ORDER", "PO-001", "草稿",
+                Map.of("单据编号", "PO-001"),
+                Map.of("items", List.of(Map.of(
+                        "物料编码", "CL001", "数量", 6,
+                        "来源面板", "PU_REQ", "来源单号", "CG-001", "来源行号", 1, "来源数量", 6))));
+        when(formMapper.selectOne(any())).thenReturn(requisition);
+        when(formMapper.selectList(any())).thenReturn(List.of(existingOrder));
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.callButton("PU_REQ", "生成采购订单", Map.of("编号", "CG-001"), Map.of()));
+        assertTrue(error.getMessage().contains("不允许拆分多次转单"));
+        verify(formMapper, never()).insert(any(FormData.class));
+    }
+
+    @Test
+    void generatesFullRequisitionInOneOrder() throws Exception {
         Map<String, Object> reqItem = new HashMap<>();
         reqItem.put("存货编码", "CL001");
         reqItem.put("存货名称", "铝棒");
@@ -58,13 +84,8 @@ class PxServicePartialPurchaseTest {
         FormData requisition = document("PU_REQ", "CG-001", "已审核",
                 Map.of("单据编号", "CG-001", "建议供应商", "华东铝业"),
                 Map.of("items", List.of(reqItem)));
-        FormData existingOrder = document("PU_ORDER", "PO-001", "草稿",
-                Map.of("单据编号", "PO-001"),
-                Map.of("items", List.of(Map.of(
-                        "物料编码", "CL001", "数量", 6,
-                        "来源面板", "PU_REQ", "来源单号", "CG-001", "来源行号", 1, "来源数量", 6))));
         when(formMapper.selectOne(any())).thenReturn(requisition);
-        when(formMapper.selectList(any())).thenReturn(List.of(existingOrder));
+        when(formMapper.selectList(any())).thenReturn(List.of());
         when(formMapper.selectCount(any())).thenReturn(0L);
         when(panelMapper.selectOne(any())).thenReturn(panelConfig("PU_ORDER", "采购订单"));
 
@@ -74,9 +95,10 @@ class PxServicePartialPurchaseTest {
         verify(formMapper).insert(inserted.capture());
         Map<?, ?> detail = json.readValue(inserted.getValue().getDetailData(), Map.class);
         Map<?, ?> row = (Map<?, ?>) ((List<?>) detail.get("items")).get(0);
-        assertEquals(4.0, ((Number) row.get("数量")).doubleValue());
-        assertEquals(40.0, ((Number) row.get("金额")).doubleValue());
-        assertEquals(45.2, ((Number) row.get("含税金额")).doubleValue(), 0.0001);
+        assertEquals(10.0, ((Number) row.get("数量")).doubleValue());
+        assertEquals(100.0, ((Number) row.get("金额")).doubleValue());
+        assertEquals(113.0, ((Number) row.get("含税金额")).doubleValue(), 0.0001);
+        assertEquals(10.0, ((Number) row.get("来源数量")).doubleValue());
         assertEquals("CG-001", row.get("来源单号"));
     }
 

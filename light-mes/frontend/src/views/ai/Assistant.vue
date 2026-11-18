@@ -16,7 +16,10 @@
     </div>
 
     <div class="ai-page__frame-wrap">
-      <iframe ref="frameRef" class="ai-page__frame" :src="src" :title="tt('AI 助理')" allow="microphone" />
+      <div v-if="unavailable" class="ai-page__missing">
+        {{ tt('AI 工作台未部署（/ai/），当前环境暂不可用。') }}
+      </div>
+      <iframe v-else ref="frameRef" class="ai-page__frame" :src="src" :title="tt('AI 助理')" allow="microphone" />
     </div>
   </div>
 </template>
@@ -28,6 +31,7 @@ import { useI18n } from 'vue-i18n'
 const { t: tt } = useI18n()
 const frameRef = ref(null)
 const pageRef = ref(null)
+const unavailable = ref(false)
 let onResize = null
 
 /**
@@ -60,7 +64,16 @@ function openExternal() {
   window.open(new URL('/ai/', window.location.origin).toString(), '_blank', 'noopener,noreferrer')
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // /ai/ 未部署时 nginx 会回退成 MES 自己的 index.html，iframe 会无限自我嵌套；
+  // 先探测一次，回退页或 404 都按「未部署」处理。
+  try {
+    const res = await fetch('/ai/?embed=1', { headers: { Accept: 'text/html' } })
+    const text = await res.text()
+    unavailable.value = !res.ok || text.includes('id="app"') || text.includes('<title>轻MES')
+  } catch (e) {
+    unavailable.value = true
+  }
   // 首屏与窗口变化都要重算：外壳高度会随页签栏/缩放变化
   fitHeight()
   onResize = () => fitHeight()
@@ -108,6 +121,17 @@ onBeforeUnmount(() => {
 .ai-page__icon { color: var(--t-primary); font-size: 16px; }
 .ai-page__hint { font-size: 12px; color: var(--t-text-3); }
 .ai-page__acts { display: flex; gap: 8px; }
+.ai-page__missing {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8c8c8c;
+  font-size: 13px;
+  border: 1px dashed #e5e5e5;
+  border-radius: 6px;
+  background: #fafafa;
+}
 .ai-page__frame-wrap { position: relative; flex: 1; min-height: 0; }
 .ai-page__frame { width: 100%; height: 100%; border: 0; display: block; }
 </style>

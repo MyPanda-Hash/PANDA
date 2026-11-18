@@ -12,9 +12,8 @@ const routes = [
   {
     path: '/',
     component: () => import('@/layout/PortalLayout.vue'),
-    // 默认进「智能工作台」：登录后先看今日简报/待办，数据看板变成第二落点。
-    // 具体展示简报还是待办由 MES 岗位决定（见 stores/user.js 的 syncDeskRole）。
-    redirect: '/assistant',
+    // 默认进「数据看板」：AI 工作台（/ai/）未部署时不能落 /assistant，否则 iframe 会递归加载 MES。
+    redirect: '/dashboard',
     children: [
       { path: 'dashboard', component: () => import('@/views/dashboard/index.vue'), meta: { title: '数据看板' } },
       { path: 'assistant', component: () => import('@/views/ai/Assistant.vue'), meta: { title: 'AI 助理', code: 'assistant' } },
@@ -29,11 +28,13 @@ const routes = [
       { path: 'sys/usage', component: () => import('@/views/sys/UsageLog.vue'), meta: { title: '使用权限查看', requireAdmin: true } },
       { path: 'scm/businessOverview', component: () => import('@/views/scm/BusinessOverview.vue'), meta: { title: '业务总览', code: 'businessOverview' } },
       { path: 'scm/invoiceWorkbench', component: () => import('@/views/scm/InvoiceWorkbench.vue'), meta: { title: '销售开票', code: 'invoiceWorkbench' } },
+      { path: 'scm/purchaseInvoiceWorkbench', component: () => import('@/views/scm/PurchaseInvoiceWorkbench.vue'), meta: { title: '采购开票', code: 'purchaseInvoiceWorkbench' } },
       { path: 'mes/productionBoard', component: () => import('@/views/mes/ProductionBoard.vue'), meta: { title: '生产进度看板', code: 'productionBoard' } },
       { path: 'mes/dispatchBoard', component: () => import('@/views/mes/DispatchBoard.vue'), meta: { title: '排产批次看板', code: 'dispatchBoard' } },
       { path: 'mes/processReport', component: () => import('@/views/mes/ProcessReportBoard.vue'), meta: { title: '工序报工', code: 'processReport' } },
       { path: 'mes/plan', component: () => import('@/views/mes/PlanBoard.vue'), meta: { title: '工单排产', code: 'plan' } },
       { path: 'mes/planAnalysis', component: () => import('@/views/mes/PlanAnalysisBoard.vue'), meta: { title: '计划分析', code: 'planAnalysis' } },
+      { path: 'mes/purchaseReqAnalysis', component: () => import('@/views/mes/PurchaseReqAnalysisBoard.vue'), meta: { title: '采购需求分析', code: 'purchaseReqAnalysis' } },
       { path: 'mes/mps', component: () => import('@/views/mes/MpsBoard.vue'), meta: { title: '主生产计划', code: 'mps' } },
       { path: 'mes/dc/config', component: () => import('@/views/dc/DcConfig.vue'), meta: { title: 'IOT设备配置', code: 'dcConfig' } },
       { path: 'mes/dc/monitor', component: () => import('@/views/dc/DcMonitor.vue'), meta: { title: '数据监控', code: 'dcMonitor' } },
@@ -42,11 +43,17 @@ const routes = [
       { path: 'mes/materialIssue', component: () => import('@/views/mes/MaterialIssueBoard.vue'), meta: { title: '生产领料', code: 'materialIssue' } },
       // 销售发票打印页（增值税发票版式）：不放在面板容器里，独立全屏渲染便于打印
       { path: 'print/invoice', component: () => import('@/views/print/InvoicePrint.vue'), meta: { title: '销售发票打印' } },
+      { path: 'print/purchaseInvoice', component: () => import('@/views/print/PurchaseInvoicePrint.vue'), meta: { title: '采购发票打印' } },
       { path: 'scm/mobileWarehouse', component: () => import('@/views/scm/MobileWarehouse.vue'), meta: { title: '移动仓管', code: 'mobileWarehouse' } },
       { path: 'wms/workbench', component: () => import('@/views/wms/Workbench.vue'), meta: { title: '仓内作业', code: 'wmsWorkbench' } },
       { path: 'scm/serialNumber', component: () => import('@/views/scm/SerialNumber.vue'), meta: { title: '序列号管理', code: 'serialNumber' } },
       // 排产批次（派工单）不再用面板展示：所有列表入口统一落到只读看板
       { path: 'panelx/list/DISPATCH', redirect: '/mes/dispatchBoard' },
+      // 采购需求分析旧面板已下线：地址直链统一落到缺口闭环工作台
+      { path: 'panelx/list/PU_REQ_ANALYSIS', redirect: '/mes/purchaseReqAnalysis' },
+      // 采购发票旧列表页已下线：入口统一到采购开票工作台（表单页仍保留供草稿编辑）
+      { path: 'panelx/list/PU_INVOICE', redirect: '/scm/purchaseInvoiceWorkbench' },
+      { path: 'panelx/form/PU_REQ_ANALYSIS', redirect: '/mes/purchaseReqAnalysis' },
       { path: 'panelx/list/:panelCode', component: PanelxList, meta: { title: '单据', operationName: '新增流程' } },
       { path: 'panelx/form/:panelCode', component: PanelxForm, meta: { title: '表单' } },
       ...flatMenus()
@@ -70,9 +77,9 @@ router.beforeEach((to) => {
   document.title = `${to.meta.title || ''} · ${useBrandStore().name}`
   const user = useUserStore()
   if (to.path !== '/login' && !user.isLogin) return '/login'
-  if (to.meta.requireAdmin && !user.isAdmin) return '/assistant'
+  if (to.meta.requireAdmin && !user.isAdmin) return '/dashboard'
   // 已登录再访问登录页：也回工作台，保持「进来先看简报/待办」的一致落点
-  if (to.path === '/login' && user.isLogin) return '/assistant'
+  if (to.path === '/login' && user.isLogin) return '/dashboard'
   return true
 })
 

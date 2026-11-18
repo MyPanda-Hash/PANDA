@@ -34,8 +34,6 @@ public class MybatisPlusConfig {
 
     /**
      * 不写死方言：PaginationInnerInterceptor 按 JDBC URL 自动识别（当前为 PostgreSQL 16）。
-     * 回滚窗口内把 MES_DB_PORT 指回 MySQL 也不用改代码。
-     *
      * TenantLineInnerInterceptor 必须排在分页之前：
      * 它改写的是 WHERE 条件，先拼条件再算分页总数，否则 count 会多算别的账套。
      */

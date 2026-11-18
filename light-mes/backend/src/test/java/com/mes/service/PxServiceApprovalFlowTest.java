@@ -33,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -84,6 +85,25 @@ class PxServiceApprovalFlowTest {
         assertEquals("已审核", document.getStatus());
         assertEquals(List.of("SUBMIT", "APPROVE"), history.stream().map(FormApproval::getAction).toList());
         assertEquals(List.of("PENDING", "APPROVED"), history.stream().map(FormApproval::getResult).toList());
+    }
+
+    @Test
+    void purchaseOrderCannotSubmitWithoutSupplier() throws Exception {
+        FormData document = new FormData();
+        document.setId(9L);
+        document.setPanelCode("PU_ORDER");
+        document.setFormNo("PO-TEST-001");
+        document.setStatus("草稿");
+        document.setData(json.writeValueAsString(Map.of("单据编号", "PO-TEST-001", "供应商", "")));
+        document.setDetailData(json.writeValueAsString(Map.of("items", List.of(Map.of(
+                "物料编码", "CP001", "物料名称", "铝棒", "单位", "件", "数量", 1, "单价", 1)))));
+        document.setCreateTime(LocalDateTime.now());
+        when(formMapper.selectOne(any())).thenReturn(document);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.callButton("PU_ORDER", "提交审批", Map.of("编号", "PO-TEST-001"), Map.of()));
+        assertTrue(error.getMessage().contains("必须填写供应商"));
+        verify(formMapper, never()).updateById(any(FormData.class));
     }
 
     @Test

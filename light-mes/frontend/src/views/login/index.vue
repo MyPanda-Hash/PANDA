@@ -182,7 +182,7 @@ async function doLogin() {
     else localStorage.removeItem(REMEMBERED_ACCOUNT_KEY)
     // 登录后进「智能工作台」：先看今日简报/待办。
     // 具体展示简报还是待办由岗位决定（stores/user.js 的 syncDeskRole 写 dnx-role）。
-    await router.replace('/assistant')
+    await router.replace('/dashboard')
   } catch (error) {
     errorMessage.value = error.response?.data?.message || error.message || tt('登录失败，请稍后重试')
   } finally {

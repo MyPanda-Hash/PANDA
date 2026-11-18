@@ -25,9 +25,8 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * 数据库主动备份：调用 pg_dump（PostgreSQL）或 mysqldump（MySQL，回滚窗口内）导出当前库并
- * gzip 落盘，每次留痕到 sys_backup_log。密码只经环境变量传递（PGPASSWORD / MYSQL_PWD），
- * 不出现在命令行（ps 看不到）。
+ * 数据库主动备份：调用 pg_dump（PostgreSQL）导出当前库并 gzip 落盘，每次留痕到
+ * sys_backup_log。密码只经环境变量传递（PGPASSWORD），不出现在命令行（ps 看不到）。
  *
  * <p>本机没有 PostgreSQL 客户端时，把 mes.backup.pg-dump 设成
  * {@code docker exec -i -e PGPASSWORD light-mes-pg pg_dump} 即可借用容器内的客户端。
@@ -37,7 +36,6 @@ public class DbBackupService {
 
     private static final Pattern SAFE_NAME = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9._-]*\\.sql\\.gz$");
     private static final Pattern JDBC_PG = Pattern.compile("jdbc:postgresql://([^:/]+):(\\d+)/([^?]+)");
-    private static final Pattern JDBC_MYSQL = Pattern.compile("jdbc:mysql://([^:/]+):(\\d+)/([^?]+)"); // pg-dialect-audit: allow 回滚窗口内保留 MySQL 分支
     private static final DateTimeFormatter TS = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
 
     private final SysBackupLogMapper logMapper;
@@ -52,8 +50,6 @@ public class DbBackupService {
     private String backupDir;
     @Value("${mes.backup.pg-dump:pg_dump}")
     private String pgDumpCmd;
-    @Value("${mes.backup.mysql-dump:mysqldump}") // pg-dialect-audit: allow 同上
-    private String mysqlDumpCmd;
 
     public DbBackupService(SysBackupLogMapper logMapper) {
         this.logMapper = logMapper;
@@ -74,9 +70,8 @@ public class DbBackupService {
         row.setCreateTime(LocalDateTime.now());
 
         try {
-            boolean pg = jdbcUrl != null && jdbcUrl.startsWith("jdbc:postgresql:");
-            Matcher m = (pg ? JDBC_PG : JDBC_MYSQL).matcher(jdbcUrl == null ? "" : jdbcUrl);
-            if (!m.find()) throw new IllegalStateException("无法解析数据库连接串");
+            Matcher m = JDBC_PG.matcher(jdbcUrl == null ? "" : jdbcUrl);
+            if (!m.find()) throw new IllegalStateException("无法解析 PostgreSQL 连接串");
             String host = m.group(1);
             String port = m.group(2);
             String db = m.group(3);
@@ -85,19 +80,10 @@ public class DbBackupService {
             Files.createDirectories(dir);
             out = dir.resolve(fileName);
 
-            ProcessBuilder pb;
-            if (pg) {
-                pb = new ProcessBuilder(tokens(pgDumpCmd));
-                pb.command().addAll(List.of("-h", host, "-p", port, "-U", dbUser, "-d", db,
-                        "--no-owner", "--no-privileges"));
-                pb.environment().put("PGPASSWORD", dbPassword == null ? "" : dbPassword);
-            } else {
-                pb = new ProcessBuilder(tokens(mysqlDumpCmd));
-                pb.command().addAll(List.of("-h", host, "-P", port, "-u", dbUser,
-                        "--single-transaction", "--routines", "--triggers",
-                        "--default-character-set=utf8mb4", db));
-                pb.environment().put("MYSQL_PWD", dbPassword == null ? "" : dbPassword); // pg-dialect-audit: allow 同上
-            }
+            ProcessBuilder pb = new ProcessBuilder(tokens(pgDumpCmd));
+            pb.command().addAll(List.of("-h", host, "-p", port, "-U", dbUser, "-d", db,
+                    "--no-owner", "--no-privileges"));
+            pb.environment().put("PGPASSWORD", dbPassword == null ? "" : dbPassword);
             File errFile = File.createTempFile("dbdump-", ".err");
             pb.redirectError(errFile);
 

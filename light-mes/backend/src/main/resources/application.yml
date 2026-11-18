@@ -11,9 +11,7 @@ spring:
       max-request-size: 11MB
       file-size-threshold: 10MB
   datasource:
-    # PostgreSQL（2026-11-12 由 MySQL 迁移）。回滚到 MySQL 不改代码：在 .env.local 里
-    # 设 SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/light_mes?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    # 并设 MES_FLYWAY_ENABLED=false（MySQL 结构由 db/*.sql 提供，不走 Flyway）。
+    # 运行库固定为 PostgreSQL（2026-11-12 由 MySQL 迁移；MySQL 分支 2026-11-16 已清理）。
     url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://${MES_DB_HOST:localhost}:${MES_DB_PORT:5432}/light_mes}"
     username: "${SPRING_DATASOURCE_USERNAME:postgres}"
     password: "${SPRING_DATASOURCE_PASSWORD:}" # 本地/生产环境均通过环境变量注入
@@ -43,7 +41,6 @@ mes:
   backup:
     dir: "${MES_BACKUP_DIR:/opt/light-mes/backup}"
     pg-dump: "${MES_PG_DUMP_CMD:pg_dump}"
-    mysql-dump: "${MES_MYSQL_DUMP_CMD:mysqldump}" # pg-dialect-audit: allow 回滚窗口内保留 MySQL 分支
     # 定时备份：默认每周一 02:00（Asia/Shanghai）。改 MES_BACKUP_CRON 可换频率，
     # 例如 "0 0 2 * * MON"（周一） / "0 0 3 * * *"（每天）。MES_BACKUP_AUTO=false 关掉。
     auto: "${MES_BACKUP_AUTO:true}"
