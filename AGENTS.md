@@ -44,6 +44,7 @@ cd /Users/panda/Projects/_light-m-ai && bash ensure-services.sh
 | MySQL | **2026-11-16 停用**。容器 `light-mes-db` 保留不删，回滚才 `docker start light-mes-db` |
 | 旧门户 | **:18091 已停用**（`serve-ai-web.mjs`）。群聊、语音现在都走 :18092 |
 | 应用起法 | 只用 `start-local.sh`；`start-all.sh` 会检查系统 java/node，本机起不来 |
+| GitHub 推送 | **直连超时**（`Recv failure: Operation timed out`），须走本机代理 `127.0.0.1:7890`。本仓库已配 `git config http.proxy`，但 `.git/config` 不随仓库分发，**换机器/重新 clone 后要重配**：`git config http.proxy http://127.0.0.1:7890`；代理不可用时 `git config --unset http.proxy` 关掉 |
 
 `start-local.sh` 自己会设好 `JAVA_HOME` 与 `PATH`（含 `~/.local/{jdk,node,lima,pi-runtime}`）并 source `.env.local`，
 **只有手动敲构建命令时**才需要按上表补路径。
